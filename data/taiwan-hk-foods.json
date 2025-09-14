@@ -1,0 +1,5042 @@
+{
+  "metadata": {
+    "name": "Taiwan Hong Kong Medical Food Database",
+    "version": "1.0.0",
+    "created": "2025-09-14T21:45:06.179050",
+    "total_items": 209,
+    "medical_focus": [
+      "IBD",
+      "化療",
+      "過敏",
+      "IBS"
+    ],
+    "regions": [
+      "Taiwan",
+      "Hong Kong"
+    ],
+    "medical_guidelines": [
+      "American Gastroenterological Association (IBD)",
+      "Johns Hopkins Chemotherapy Nutrition",
+      "Stanford Allergy Guidelines",
+      "International Foundation for Gastrointestinal Disorders (IBS)"
+    ]
+  },
+  "categories": {
+    "taiwan_staples": 50,
+    "hongkong_classics": 50,
+    "common_proteins": 25,
+    "vegetables_fruits": 35,
+    "grains_starches": 20,
+    "snacks_beverages": 20
+  },
+  "medical_scoring": {
+    "ibd_scores": {
+      "4": "完美 - IBD 友善食物",
+      "3": "好 - 通常安全",
+      "2": "普通 - 需要注意",
+      "1": "差 - 可能引發症狀"
+    },
+    "chemo_safety": {
+      "safe": "化療期間安全",
+      "caution": "需要注意食品安全",
+      "avoid": "化療期間應避免"
+    },
+    "fodmap_levels": {
+      "low": "IBS 友善 - 低 FODMAP",
+      "medium": "適量攝取",
+      "high": "IBS 患者應限制"
+    }
+  },
+  "foods": [
+    {
+      "id": "26f7a6bf-b0b5-48aa-b8e8-1e1d3bd4b963",
+      "name_zh": "牛肉麵",
+      "name_en": "Beef Noodle Soup",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sodium",
+          "gluten"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "high"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178220",
+      "medical_validated": true
+    },
+    {
+      "id": "9ecc684d-7814-4f49-8f48-6ef890581361",
+      "name_zh": "滷肉飯",
+      "name_en": "Braised Pork Rice",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_fat"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178235",
+      "medical_validated": true
+    },
+    {
+      "id": "b65e8181-b12d-4784-be88-76a159f0c70f",
+      "name_zh": "小籠包",
+      "name_en": "Xiaolongbao",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "gluten",
+          "high_fat"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178240",
+      "medical_validated": true
+    },
+    {
+      "id": "b694b802-a6c5-4b66-8e9b-1b1bd07658b6",
+      "name_zh": "蚵仔煎",
+      "name_en": "Oyster Omelet",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "shellfish"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "eggs",
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178245",
+      "medical_validated": true
+    },
+    {
+      "id": "b2c62511-326c-4ebd-ba59-040f7e3afa1b",
+      "name_zh": "臭豆腐",
+      "name_en": "Stinky Tofu",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "fermented"
+        ],
+        "chemo_safety": "avoid",
+        "major_allergens": [
+          "soy"
+        ],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178249",
+      "medical_validated": true
+    },
+    {
+      "id": "b876c60c-21c5-452c-8ab8-0d18d4be9dba",
+      "name_zh": "雞排",
+      "name_en": "Fried Chicken Cutlet",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 1,
+        "ibd_risk_factors": [
+          "deep_fried",
+          "high_fat"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178252",
+      "medical_validated": true
+    },
+    {
+      "id": "45c50bfa-1c41-43be-859f-91ea672711bd",
+      "name_zh": "胡椒餅",
+      "name_en": "Pepper Bun",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "gluten",
+          "high_fat"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178258",
+      "medical_validated": true
+    },
+    {
+      "id": "be785803-28cf-48d8-9fd3-93945c5034fa",
+      "name_zh": "刈包",
+      "name_en": "Gua Bao",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178262",
+      "medical_validated": true
+    },
+    {
+      "id": "896a5d81-9212-4491-bc74-330c85f94206",
+      "name_zh": "肉圓",
+      "name_en": "Ba-wan",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "starch",
+          "high_fat"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178265",
+      "medical_validated": true
+    },
+    {
+      "id": "da6ee068-99b4-463f-b226-ee93a7c42c10",
+      "name_zh": "鹹酥雞",
+      "name_en": "Taiwanese Popcorn Chicken",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 1,
+        "ibd_risk_factors": [
+          "deep_fried"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178269",
+      "medical_validated": true
+    },
+    {
+      "id": "a0566aa3-afbb-40f2-9fa0-b70357a1b4bb",
+      "name_zh": "四神湯",
+      "name_en": "Four Spirits Soup",
+      "category": "soup",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178273",
+      "medical_validated": true
+    },
+    {
+      "id": "8d3676e0-db4f-41ac-80a2-8eebcfdfce53",
+      "name_zh": "蛤蜊湯",
+      "name_en": "Clam Soup",
+      "category": "soup",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178276",
+      "medical_validated": true
+    },
+    {
+      "id": "96e1c755-fdeb-465c-a10d-8582e5346915",
+      "name_zh": "冬瓜排骨湯",
+      "name_en": "Winter Melon Pork Rib Soup",
+      "category": "soup",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178280",
+      "medical_validated": true
+    },
+    {
+      "id": "334f0e3e-50db-4d96-bd07-e34a94dedc37",
+      "name_zh": "玉米濃湯",
+      "name_en": "Corn Soup",
+      "category": "soup",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "dairy"
+        ],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178283",
+      "medical_validated": true
+    },
+    {
+      "id": "3ed3f6e3-28e5-4487-b083-2a7b227eb56b",
+      "name_zh": "酸辣湯",
+      "name_en": "Hot and Sour Soup",
+      "category": "soup",
+      "medical_scores": {
+        "ibd_score": 1,
+        "ibd_risk_factors": [
+          "spicy",
+          "acidic"
+        ],
+        "chemo_safety": "avoid",
+        "major_allergens": [],
+        "fodmap_level": "high"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178287",
+      "medical_validated": true
+    },
+    {
+      "id": "39b730a2-1821-4f0c-9542-68078e979b8e",
+      "name_zh": "豆漿",
+      "name_en": "Soy Milk",
+      "category": "beverage",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "soy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178290",
+      "medical_validated": true
+    },
+    {
+      "id": "937ff0b4-28ad-4ba0-9f54-99b8ffa57062",
+      "name_zh": "燒餅",
+      "name_en": "Sesame Flatbread",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "gluten"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten",
+          "sesame"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178293",
+      "medical_validated": true
+    },
+    {
+      "id": "189b1068-1c48-4d21-ae8b-712e3e3c6da8",
+      "name_zh": "油條",
+      "name_en": "Chinese Cruller",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 1,
+        "ibd_risk_factors": [
+          "deep_fried",
+          "gluten"
+        ],
+        "chemo_safety": "avoid",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178297",
+      "medical_validated": true
+    },
+    {
+      "id": "762355a2-2b48-4566-9eb7-475b576f9712",
+      "name_zh": "蛋餅",
+      "name_en": "Taiwanese Egg Crepe",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "eggs",
+          "gluten"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178300",
+      "medical_validated": true
+    },
+    {
+      "id": "4cb59260-0f52-4559-a5e5-18b718e18ea9",
+      "name_zh": "蘿蔔糕",
+      "name_en": "Turnip Cake",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178304",
+      "medical_validated": true
+    },
+    {
+      "id": "642b1243-2b9e-48b2-9354-1d23abc6cf7e",
+      "name_zh": "珍珠奶茶",
+      "name_en": "Bubble Tea",
+      "category": "beverage",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sugar",
+          "dairy"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "dairy"
+        ],
+        "fodmap_level": "high"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178307",
+      "medical_validated": true
+    },
+    {
+      "id": "e398f096-69ed-4bdc-8166-7485f1696eae",
+      "name_zh": "冬瓜茶",
+      "name_en": "Winter Melon Tea",
+      "category": "beverage",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_sugar"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178311",
+      "medical_validated": true
+    },
+    {
+      "id": "e3a18e54-4f11-4334-98d7-1d82d12b67bb",
+      "name_zh": "青草茶",
+      "name_en": "Herbal Tea",
+      "category": "beverage",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178314",
+      "medical_validated": true
+    },
+    {
+      "id": "2667c3c3-fd35-4c19-b06d-1b1d9e8999ff",
+      "name_zh": "愛玉",
+      "name_en": "Aiyu Jelly",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178318",
+      "medical_validated": true
+    },
+    {
+      "id": "eb8465ea-dc63-4d7d-a7eb-ba06b24d868a",
+      "name_zh": "仙草",
+      "name_en": "Grass Jelly",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178321",
+      "medical_validated": true
+    },
+    {
+      "id": "354173a2-12e7-4588-9ae5-fdf0c6fefa0e",
+      "name_zh": "滷白菜",
+      "name_en": "Braised Chinese Cabbage",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178324",
+      "medical_validated": true
+    },
+    {
+      "id": "41d7b8bb-b8ee-42ce-a6bd-8032f19e20cc",
+      "name_zh": "地瓜葉",
+      "name_en": "Sweet Potato Leaves",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178328",
+      "medical_validated": true
+    },
+    {
+      "id": "b247cf37-d077-45a2-a6c5-3f957c5964c7",
+      "name_zh": "空心菜",
+      "name_en": "Water Spinach",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178331",
+      "medical_validated": true
+    },
+    {
+      "id": "7bc60a9f-093d-4017-94cd-c2b4206529e2",
+      "name_zh": "高麗菜",
+      "name_en": "Cabbage",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178335",
+      "medical_validated": true
+    },
+    {
+      "id": "e9ad0f8b-cc16-4a0a-a3c9-b2e55abf1a1f",
+      "name_zh": "青江菜",
+      "name_en": "Bok Choy",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178338",
+      "medical_validated": true
+    },
+    {
+      "id": "4cefa60f-56c1-4516-9da9-56d447eaeb44",
+      "name_zh": "虱目魚",
+      "name_en": "Milkfish",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178342",
+      "medical_validated": true
+    },
+    {
+      "id": "9a16da11-3753-4e86-bc18-2cc0ea10305c",
+      "name_zh": "白帶魚",
+      "name_en": "Largehead Hairtail",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178345",
+      "medical_validated": true
+    },
+    {
+      "id": "9dfbf9ae-7fc9-4198-890b-6dfda7e023da",
+      "name_zh": "吳郭魚",
+      "name_en": "Tilapia",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178348",
+      "medical_validated": true
+    },
+    {
+      "id": "e6a8173c-9e97-4a21-91ef-85a2a6b2738a",
+      "name_zh": "蝦仁",
+      "name_en": "Shrimp",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178352",
+      "medical_validated": true
+    },
+    {
+      "id": "d60be036-ccf4-48bb-986e-65eaec3e0831",
+      "name_zh": "花枝",
+      "name_en": "Squid",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178355",
+      "medical_validated": true
+    },
+    {
+      "id": "9cba042b-18b2-4cf6-9bd6-25395dbe1195",
+      "name_zh": "紅豆湯",
+      "name_en": "Red Bean Soup",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_fiber"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "high"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178359",
+      "medical_validated": true
+    },
+    {
+      "id": "c316ec6d-fe8d-4cf9-ad2c-d437f2b26197",
+      "name_zh": "綠豆湯",
+      "name_en": "Mung Bean Soup",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_fiber"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178363",
+      "medical_validated": true
+    },
+    {
+      "id": "9967f9df-6e3d-4979-9e03-d12634abe678",
+      "name_zh": "芋圓",
+      "name_en": "Taro Balls",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "starch"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178366",
+      "medical_validated": true
+    },
+    {
+      "id": "8ce1cb68-0054-46f9-a99d-3bb1712d52f5",
+      "name_zh": "湯圓",
+      "name_en": "Tang Yuan",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sugar",
+          "glutinous"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178371",
+      "medical_validated": true
+    },
+    {
+      "id": "b0c8712d-9112-4300-93cc-5c94bed89514",
+      "name_zh": "鳳梨酥",
+      "name_en": "Pineapple Cake",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sugar",
+          "high_fat"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten",
+          "eggs"
+        ],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178374",
+      "medical_validated": true
+    },
+    {
+      "id": "d841446f-d25a-40fc-bbe8-4b2fc7faf48b",
+      "name_zh": "醬瓜",
+      "name_en": "Pickled Cucumber",
+      "category": "condiment",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sodium"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178378",
+      "medical_validated": true
+    },
+    {
+      "id": "ee1f840e-087b-4021-9f94-c596cf577812",
+      "name_zh": "豆瓣醬",
+      "name_en": "Doubanjiang",
+      "category": "condiment",
+      "medical_scores": {
+        "ibd_score": 1,
+        "ibd_risk_factors": [
+          "fermented",
+          "spicy"
+        ],
+        "chemo_safety": "avoid",
+        "major_allergens": [
+          "soy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178382",
+      "medical_validated": true
+    },
+    {
+      "id": "5e68c00a-1cb1-4f4e-8d2a-a6b840ff5e03",
+      "name_zh": "甜辣醬",
+      "name_en": "Sweet Chili Sauce",
+      "category": "condiment",
+      "medical_scores": {
+        "ibd_score": 1,
+        "ibd_risk_factors": [
+          "spicy",
+          "high_sugar"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178385",
+      "medical_validated": true
+    },
+    {
+      "id": "494a91a9-166b-4868-964e-0dfe28759259",
+      "name_zh": "花生醬",
+      "name_en": "Peanut Butter",
+      "category": "condiment",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_fat"
+        ],
+        "chemo_safety": "avoid",
+        "major_allergens": [
+          "peanuts"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178389",
+      "medical_validated": true
+    },
+    {
+      "id": "56ac9511-5588-4a75-a39d-e3ff95d7af05",
+      "name_zh": "芒果",
+      "name_en": "Mango",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178392",
+      "medical_validated": true
+    },
+    {
+      "id": "38ac68b6-4d8f-4bb2-b991-29273d0badeb",
+      "name_zh": "火龍果",
+      "name_en": "Dragon Fruit",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178396",
+      "medical_validated": true
+    },
+    {
+      "id": "2dd975de-c0de-45af-98de-774ee51d2d8b",
+      "name_zh": "釋迦",
+      "name_en": "Sugar Apple",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178399",
+      "medical_validated": true
+    },
+    {
+      "id": "ab644544-0312-4483-9ca2-be6ebba6f339",
+      "name_zh": "蓮霧",
+      "name_en": "Wax Apple",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178403",
+      "medical_validated": true
+    },
+    {
+      "id": "0c5dd4d9-5b73-4f38-bc69-ea6f5e85b01e",
+      "name_zh": "番石榴",
+      "name_en": "Guava",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_fiber"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178406",
+      "medical_validated": true
+    },
+    {
+      "id": "d33dade0-63af-4d1c-aaf3-c7eb27fa3088",
+      "name_zh": "白米飯",
+      "name_en": "White Rice",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178410",
+      "medical_validated": true
+    },
+    {
+      "id": "4a29b107-c51a-4621-b188-5e4a869f8763",
+      "name_zh": "糙米飯",
+      "name_en": "Brown Rice",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_fiber"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178413",
+      "medical_validated": true
+    },
+    {
+      "id": "500af78b-6b3c-49ca-a15f-f3fbfc1d8714",
+      "name_zh": "米粉",
+      "name_en": "Rice Noodles",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178417",
+      "medical_validated": true
+    },
+    {
+      "id": "408e43ee-6943-4a79-9b3b-1b39cd1a726e",
+      "name_zh": "河粉",
+      "name_en": "Rice Noodle Sheets",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178420",
+      "medical_validated": true
+    },
+    {
+      "id": "fb00dc10-e9c6-4784-80a7-381cf10d0106",
+      "name_zh": "米苔目",
+      "name_en": "Flat Rice Noodles",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178424",
+      "medical_validated": true
+    },
+    {
+      "id": "f82e8a84-1d6e-4d14-8a35-633770ca80d2",
+      "name_zh": "港式奶茶",
+      "name_en": "Hong Kong Milk Tea",
+      "category": "beverage",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_caffeine"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "dairy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178428",
+      "medical_validated": true
+    },
+    {
+      "id": "fb8374dc-7822-4743-9ca2-4dfa63d88d7d",
+      "name_zh": "菠蘿包",
+      "name_en": "Pineapple Bun",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sugar",
+          "high_fat"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten",
+          "eggs"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178431",
+      "medical_validated": true
+    },
+    {
+      "id": "8c5ec571-4028-4d77-89fd-9b1dd744f81f",
+      "name_zh": "雞蛋仔",
+      "name_en": "Egg Waffles",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sugar"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "eggs",
+          "gluten"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178435",
+      "medical_validated": true
+    },
+    {
+      "id": "7d8450d4-e0d0-478a-bfb8-e084a41f9d40",
+      "name_zh": "港式燒臘",
+      "name_en": "Hong Kong BBQ",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sodium",
+          "preservatives"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178438",
+      "medical_validated": true
+    },
+    {
+      "id": "e1a4f435-abaf-4f9c-86eb-a9db9a29e128",
+      "name_zh": "叉燒",
+      "name_en": "Char Siu",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sugar",
+          "high_sodium"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178442",
+      "medical_validated": true
+    },
+    {
+      "id": "b53ce5c8-4900-4468-93c8-7257f882e22a",
+      "name_zh": "蝦餃",
+      "name_en": "Har Gow",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178445",
+      "medical_validated": true
+    },
+    {
+      "id": "e1a153bb-de12-4312-ad6c-048b4b7a606f",
+      "name_zh": "燒賣",
+      "name_en": "Siu Mai",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178449",
+      "medical_validated": true
+    },
+    {
+      "id": "43bfbc97-fcf8-40ca-87f5-ecee9efd2a71",
+      "name_zh": "叉燒包",
+      "name_en": "Char Siu Bao",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178452",
+      "medical_validated": true
+    },
+    {
+      "id": "a858bdb8-28ca-4f07-8084-db37658d97dd",
+      "name_zh": "腸粉",
+      "name_en": "Cheong Fun",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178455",
+      "medical_validated": true
+    },
+    {
+      "id": "1b1e4a3b-79b1-4299-8a10-5ed0fd2a6353",
+      "name_zh": "流沙包",
+      "name_en": "Molten Custard Bun",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sugar",
+          "high_fat"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "eggs",
+          "dairy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178459",
+      "medical_validated": true
+    },
+    {
+      "id": "8ba34371-b7f1-42b4-b20d-3623fd24a819",
+      "name_zh": "煲仔飯",
+      "name_en": "Clay Pot Rice",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178462",
+      "medical_validated": true
+    },
+    {
+      "id": "8b3de779-9841-4616-9670-2d76589c3f42",
+      "name_zh": "魚蛋河",
+      "name_en": "Fish Ball Noodle Soup",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "processed"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178465",
+      "medical_validated": true
+    },
+    {
+      "id": "306f0d9b-7ac5-485b-a643-379788024d33",
+      "name_zh": "雲吞麵",
+      "name_en": "Wonton Noodles",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178468",
+      "medical_validated": true
+    },
+    {
+      "id": "55d52f66-c81c-490a-aa5f-149923a7fe3e",
+      "name_zh": "牛腩河",
+      "name_en": "Beef Brisket Noodles",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_fat"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178471",
+      "medical_validated": true
+    },
+    {
+      "id": "70667bea-4200-4c0f-acce-4c2c878585c6",
+      "name_zh": "車仔麵",
+      "name_en": "Cart Noodles",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sodium",
+          "processed"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178475",
+      "medical_validated": true
+    },
+    {
+      "id": "243fffaa-ff46-4604-8cac-e3207497f838",
+      "name_zh": "楊枝甘露",
+      "name_en": "Mango Pomelo Sago",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_sugar"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "dairy"
+        ],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178481",
+      "medical_validated": true
+    },
+    {
+      "id": "ca07f0d9-e7dd-42f0-9cd5-c3c79e31a3e7",
+      "name_zh": "雙皮奶",
+      "name_en": "Double Skin Milk",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "dairy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178485",
+      "medical_validated": true
+    },
+    {
+      "id": "4d1376bd-467c-4062-8d91-d3fe25e86eff",
+      "name_zh": "龜苓膏",
+      "name_en": "Gui Ling Gao",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178488",
+      "medical_validated": true
+    },
+    {
+      "id": "17dad7de-d3e1-4d79-b481-f29bb6168d78",
+      "name_zh": "豆腐花",
+      "name_en": "Tofu Pudding",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "soy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178491",
+      "medical_validated": true
+    },
+    {
+      "id": "c33eef2e-a6e3-4899-a5d2-27f22afe6c65",
+      "name_zh": "芝麻糊",
+      "name_en": "Black Sesame Soup",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "sesame"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178494",
+      "medical_validated": true
+    },
+    {
+      "id": "1b410247-c42c-40f8-b370-6afb87b10962",
+      "name_zh": "白灼蝦",
+      "name_en": "Blanched Shrimp",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178498",
+      "medical_validated": true
+    },
+    {
+      "id": "074f91bd-c0b4-49f4-b459-264720544e3d",
+      "name_zh": "清蒸魚",
+      "name_en": "Steamed Fish",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178501",
+      "medical_validated": true
+    },
+    {
+      "id": "d5a1bfc1-32cd-4f1d-a79f-38ed1dd91c2a",
+      "name_zh": "椒鹽九肚魚",
+      "name_en": "Salt and Pepper Fish",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "deep_fried"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178504",
+      "medical_validated": true
+    },
+    {
+      "id": "ce0e92a1-0edd-4c99-9eb4-d66eea8d4db0",
+      "name_zh": "薑蔥龍躉",
+      "name_en": "Ginger Scallion Grouper",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178507",
+      "medical_validated": true
+    },
+    {
+      "id": "6dff043f-fa7f-4647-ab76-d44927955375",
+      "name_zh": "蒜蓉粉絲蒸扇貝",
+      "name_en": "Steamed Scallops",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178510",
+      "medical_validated": true
+    },
+    {
+      "id": "3c3c2ee3-148d-4232-a936-72ffa34ac58f",
+      "name_zh": "白切雞",
+      "name_en": "White Cut Chicken",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178514",
+      "medical_validated": true
+    },
+    {
+      "id": "6d615c5e-bd59-428b-90c6-bf9aea2f5f54",
+      "name_zh": "油麥菜",
+      "name_en": "A-choy",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178517",
+      "medical_validated": true
+    },
+    {
+      "id": "ea5fce68-f804-4a4e-8495-755abfffe970",
+      "name_zh": "芥蘭",
+      "name_en": "Chinese Broccoli",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178520",
+      "medical_validated": true
+    },
+    {
+      "id": "fe95d5be-eca6-4527-8b64-b438b5953976",
+      "name_zh": "菜心",
+      "name_en": "Choy Sum",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178523",
+      "medical_validated": true
+    },
+    {
+      "id": "77823999-4c3a-4279-b0ae-d0ca82d0dbed",
+      "name_zh": "西洋菜",
+      "name_en": "Watercress",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178526",
+      "medical_validated": true
+    },
+    {
+      "id": "151f18c8-d9ac-4e2c-8b57-048617495fa3",
+      "name_zh": "揚州炒飯",
+      "name_en": "Yang Chow Fried Rice",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_sodium"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "eggs"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178530",
+      "medical_validated": true
+    },
+    {
+      "id": "b47dacc9-6808-4e02-b2d7-859c9644ac61",
+      "name_zh": "福建炒飯",
+      "name_en": "Fujian Fried Rice",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_sodium"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "eggs"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178533",
+      "medical_validated": true
+    },
+    {
+      "id": "3b740aa1-d15d-422e-a164-44734dc80d0f",
+      "name_zh": "生炒糯米飯",
+      "name_en": "Sticky Rice",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "glutinous"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178536",
+      "medical_validated": true
+    },
+    {
+      "id": "a9e03e6e-3bde-4f8b-af52-1c0da43270c7",
+      "name_zh": "瑤柱蛋白炒飯",
+      "name_en": "Scallop Egg White Fried Rice",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "eggs"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178539",
+      "medical_validated": true
+    },
+    {
+      "id": "a83c3e5e-0341-4feb-ae87-547b19febe89",
+      "name_zh": "撈麵",
+      "name_en": "Lo Mein",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_sodium"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178542",
+      "medical_validated": true
+    },
+    {
+      "id": "4b997257-4bf9-4719-b8f5-cacc5f509d13",
+      "name_zh": "伊麵",
+      "name_en": "Yi Mein",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178546",
+      "medical_validated": true
+    },
+    {
+      "id": "36fa8c0f-cc03-4c6d-b623-9fd4022d447a",
+      "name_zh": "米線",
+      "name_en": "Rice Vermicelli",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178549",
+      "medical_validated": true
+    },
+    {
+      "id": "6300cd75-8efc-41e7-9d19-56b368e06967",
+      "name_zh": "瀨粉",
+      "name_en": "Lai Fun",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178552",
+      "medical_validated": true
+    },
+    {
+      "id": "8e173566-d60f-446d-83ce-7c9e86471096",
+      "name_zh": "咖喱魚蛋",
+      "name_en": "Curry Fish Balls",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "spicy",
+          "processed"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178555",
+      "medical_validated": true
+    },
+    {
+      "id": "ed4403b7-70f3-4b72-a867-1fa96258811d",
+      "name_zh": "臭豆腐",
+      "name_en": "Stinky Tofu HK Style",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "fermented"
+        ],
+        "chemo_safety": "avoid",
+        "major_allergens": [
+          "soy"
+        ],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178558",
+      "medical_validated": true
+    },
+    {
+      "id": "ea106467-1834-48f0-8454-53a0a9e3ab14",
+      "name_zh": "雞蛋仔",
+      "name_en": "Bubble Waffles",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sugar"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "eggs",
+          "gluten"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178562",
+      "medical_validated": true
+    },
+    {
+      "id": "5efc8da9-485f-4421-b919-4705d0f9bde6",
+      "name_zh": "格仔餅",
+      "name_en": "Waffle",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sugar",
+          "high_fat"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten",
+          "eggs"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178565",
+      "medical_validated": true
+    },
+    {
+      "id": "3f523bcd-b9cc-4dd8-9ae2-02d88b8eee92",
+      "name_zh": "燉蛋",
+      "name_en": "Steamed Egg Custard",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "eggs"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178568",
+      "medical_validated": true
+    },
+    {
+      "id": "3b104c9a-e37b-4969-9f9c-663f83e1c8ef",
+      "name_zh": "冰糖燕窩",
+      "name_en": "Bird's Nest Soup",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178571",
+      "medical_validated": true
+    },
+    {
+      "id": "154f0684-8848-4bb1-9ee2-d2e17d4a5e53",
+      "name_zh": "雪耳蓮子",
+      "name_en": "White Fungus Lotus Seed Soup",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178574",
+      "medical_validated": true
+    },
+    {
+      "id": "373c10d0-74d9-4e4c-93cd-8d9aee18e1f4",
+      "name_zh": "合桃露",
+      "name_en": "Walnut Soup",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "nuts"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178577",
+      "medical_validated": true
+    },
+    {
+      "id": "75df47ec-f50e-4c86-be03-24a0e0ba9f73",
+      "name_zh": "XO醬",
+      "name_en": "XO Sauce",
+      "category": "condiment",
+      "medical_scores": {
+        "ibd_score": 1,
+        "ibd_risk_factors": [
+          "spicy",
+          "high_sodium"
+        ],
+        "chemo_safety": "avoid",
+        "major_allergens": [
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178581",
+      "medical_validated": true
+    },
+    {
+      "id": "db5f9bc6-4c28-4e54-9a8c-28b514a81e96",
+      "name_zh": "蠔油",
+      "name_en": "Oyster Sauce",
+      "category": "condiment",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sodium"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178584",
+      "medical_validated": true
+    },
+    {
+      "id": "3854bf17-3b88-4b37-a766-0b3e66dd3bef",
+      "name_zh": "生抽",
+      "name_en": "Light Soy Sauce",
+      "category": "condiment",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sodium"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "soy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178588",
+      "medical_validated": true
+    },
+    {
+      "id": "7f9ea857-879c-4c29-b79b-d157747daeb0",
+      "name_zh": "老抽",
+      "name_en": "Dark Soy Sauce",
+      "category": "condiment",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sodium"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "soy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178592",
+      "medical_validated": true
+    },
+    {
+      "id": "9b551b54-ef42-4472-9902-ab195e6b016c",
+      "name_zh": "榴蓮",
+      "name_en": "Durian",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sulfur"
+        ],
+        "chemo_safety": "avoid",
+        "major_allergens": [],
+        "fodmap_level": "high"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178595",
+      "medical_validated": true
+    },
+    {
+      "id": "31fa3621-99ff-47cb-a732-230a098434e6",
+      "name_zh": "山竹",
+      "name_en": "Mangosteen",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178598",
+      "medical_validated": true
+    },
+    {
+      "id": "f017eb17-a83e-4403-9f1e-de5a38154e3f",
+      "name_zh": "紅毛丹",
+      "name_en": "Rambutan",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178601",
+      "medical_validated": true
+    },
+    {
+      "id": "2b3c168d-11b0-4c55-b965-7abaf91b05aa",
+      "name_zh": "龍眼",
+      "name_en": "Longan",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178605",
+      "medical_validated": true
+    },
+    {
+      "id": "57266448-ed0f-4862-83df-f844c50ade2b",
+      "name_zh": "荔枝",
+      "name_en": "Lychee",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178608",
+      "medical_validated": true
+    },
+    {
+      "id": "2c6d8330-9fc6-4ed1-b9db-9a158b783d58",
+      "name_zh": "白斬雞",
+      "name_en": "Poached Chicken",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178612",
+      "medical_validated": true
+    },
+    {
+      "id": "e39194ec-8a65-4968-9147-72d04908549e",
+      "name_zh": "口水雞",
+      "name_en": "Sichuan Chicken",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 1,
+        "ibd_risk_factors": [
+          "spicy"
+        ],
+        "chemo_safety": "avoid",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178615",
+      "medical_validated": true
+    },
+    {
+      "id": "ab85dfc5-d08d-4ac8-9554-bd458b5c8037",
+      "name_zh": "宮保雞丁",
+      "name_en": "Kung Pao Chicken",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 1,
+        "ibd_risk_factors": [
+          "spicy"
+        ],
+        "chemo_safety": "avoid",
+        "major_allergens": [
+          "peanuts"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178618",
+      "medical_validated": true
+    },
+    {
+      "id": "f93d7c42-f5b0-4d19-ad8c-4eea231affaa",
+      "name_zh": "蒸蛋",
+      "name_en": "Steamed Eggs",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "eggs"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178621",
+      "medical_validated": true
+    },
+    {
+      "id": "e7af05c3-f0b5-4a32-9c1a-c0b2c1fbf300",
+      "name_zh": "炒蛋",
+      "name_en": "Scrambled Eggs",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_fat"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "eggs"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178624",
+      "medical_validated": true
+    },
+    {
+      "id": "f27d43fd-3df7-4a68-a3f0-e9917a2695a5",
+      "name_zh": "白切肉",
+      "name_en": "Boiled Pork",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178628",
+      "medical_validated": true
+    },
+    {
+      "id": "6eb88682-c196-4190-ad48-00985693b7e0",
+      "name_zh": "紅燒肉",
+      "name_en": "Braised Pork Belly",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_fat"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178631",
+      "medical_validated": true
+    },
+    {
+      "id": "310f0da8-8290-452c-abde-628e1ae0a97d",
+      "name_zh": "糖醋里肌",
+      "name_en": "Sweet and Sour Pork",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sugar",
+          "deep_fried"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178635",
+      "medical_validated": true
+    },
+    {
+      "id": "03a2a2e4-673d-48f9-a95b-cb0354f02fef",
+      "name_zh": "蒜泥白肉",
+      "name_en": "Garlic Pork",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178638",
+      "medical_validated": true
+    },
+    {
+      "id": "d4ed847d-1e51-4943-8dfb-58db65f8a6a5",
+      "name_zh": "叉燒肉",
+      "name_en": "BBQ Pork",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sugar",
+          "preservatives"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178642",
+      "medical_validated": true
+    },
+    {
+      "id": "b457d24d-f005-438d-b0c8-59d26a60ff20",
+      "name_zh": "清蒸石斑",
+      "name_en": "Steamed Grouper",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178645",
+      "medical_validated": true
+    },
+    {
+      "id": "f0e4cda7-6460-4f97-8a48-69b54eff5ef4",
+      "name_zh": "糖醋魚",
+      "name_en": "Sweet and Sour Fish",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sugar",
+          "deep_fried"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178650",
+      "medical_validated": true
+    },
+    {
+      "id": "c844a444-9989-40f4-8740-3bca8cac5c2d",
+      "name_zh": "紅燒魚",
+      "name_en": "Braised Fish",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_sodium"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178653",
+      "medical_validated": true
+    },
+    {
+      "id": "28c95fd7-a555-4517-90ab-f8816f0c7dee",
+      "name_zh": "魚片粥",
+      "name_en": "Fish Porridge",
+      "category": "main_dish",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178656",
+      "medical_validated": true
+    },
+    {
+      "id": "a7e014e0-7c26-40b4-8e5a-187cb9b35851",
+      "name_zh": "生魚片",
+      "name_en": "Sashimi",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "raw"
+        ],
+        "chemo_safety": "avoid",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178659",
+      "medical_validated": true
+    },
+    {
+      "id": "ac005db1-2dde-4158-9db0-ef75e7cea2c0",
+      "name_zh": "蒜蓉蒸蝦",
+      "name_en": "Garlic Steamed Shrimp",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178663",
+      "medical_validated": true
+    },
+    {
+      "id": "2c7142e4-2032-4e87-ba81-f3249a3e532a",
+      "name_zh": "椒鹽蝦",
+      "name_en": "Salt and Pepper Shrimp",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "deep_fried"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178666",
+      "medical_validated": true
+    },
+    {
+      "id": "a12dc805-606d-479b-a0dd-be88ce885306",
+      "name_zh": "清蒸螃蟹",
+      "name_en": "Steamed Crab",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178669",
+      "medical_validated": true
+    },
+    {
+      "id": "c7318f43-b6f8-49d3-8945-f6b39ca22644",
+      "name_zh": "蛤蜊",
+      "name_en": "Clams",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178672",
+      "medical_validated": true
+    },
+    {
+      "id": "f96c0915-f5ce-481a-98a5-fed9ec5b4b61",
+      "name_zh": "生蠔",
+      "name_en": "Oysters",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "raw"
+        ],
+        "chemo_safety": "avoid",
+        "major_allergens": [
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178675",
+      "medical_validated": true
+    },
+    {
+      "id": "152aba2f-7261-42e4-a71f-ef42a185fec1",
+      "name_zh": "麻婆豆腐",
+      "name_en": "Mapo Tofu",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 1,
+        "ibd_risk_factors": [
+          "spicy"
+        ],
+        "chemo_safety": "avoid",
+        "major_allergens": [
+          "soy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178678",
+      "medical_validated": true
+    },
+    {
+      "id": "171806cd-a2d2-4e1d-82c8-b1847d939e68",
+      "name_zh": "清蒸豆腐",
+      "name_en": "Steamed Tofu",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "soy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178682",
+      "medical_validated": true
+    },
+    {
+      "id": "cbf46570-900d-4638-ab9e-854294f014da",
+      "name_zh": "煎豆腐",
+      "name_en": "Pan-fried Tofu",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "soy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178685",
+      "medical_validated": true
+    },
+    {
+      "id": "262ae15a-0df6-47b1-96da-55d7382e0540",
+      "name_zh": "豆干",
+      "name_en": "Dried Tofu",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "processed"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "soy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178688",
+      "medical_validated": true
+    },
+    {
+      "id": "4effbbd8-a9d1-4a87-8a17-adf42c5a669b",
+      "name_zh": "豆皮",
+      "name_en": "Tofu Skin",
+      "category": "protein",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "soy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178693",
+      "medical_validated": true
+    },
+    {
+      "id": "266c6075-736c-4fb1-9e51-ac5d746a49a7",
+      "name_zh": "菠菜",
+      "name_en": "Spinach",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "oxalates"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178697",
+      "medical_validated": true
+    },
+    {
+      "id": "f0b6560d-8f18-4ecf-9b5e-3eb016390b36",
+      "name_zh": "小白菜",
+      "name_en": "Baby Bok Choy",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178700",
+      "medical_validated": true
+    },
+    {
+      "id": "ac88df0e-4da7-4266-ba01-c4f937e0214a",
+      "name_zh": "萵苣",
+      "name_en": "Lettuce",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178704",
+      "medical_validated": true
+    },
+    {
+      "id": "9bdfc267-b19b-4706-b5b9-028d0c9b3b62",
+      "name_zh": "韭菜",
+      "name_en": "Chinese Chives",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_fiber"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "high"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178707",
+      "medical_validated": true
+    },
+    {
+      "id": "934b060c-bb4d-4f7c-ba80-da027d567285",
+      "name_zh": "芹菜",
+      "name_en": "Celery",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_fiber"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178710",
+      "medical_validated": true
+    },
+    {
+      "id": "0c3c64ff-b3b0-4825-bd8e-3d3d3679bc5c",
+      "name_zh": "紅蘿蔔",
+      "name_en": "Carrots",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178713",
+      "medical_validated": true
+    },
+    {
+      "id": "58df4ca4-1a98-4da4-b849-25b6e6d04b68",
+      "name_zh": "白蘿蔔",
+      "name_en": "Daikon Radish",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178717",
+      "medical_validated": true
+    },
+    {
+      "id": "d6bee74f-0de2-4434-a1c1-cc2bd116251f",
+      "name_zh": "馬鈴薯",
+      "name_en": "Potatoes",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178720",
+      "medical_validated": true
+    },
+    {
+      "id": "ceee1c17-befa-4533-b4e1-e978ac22b640",
+      "name_zh": "地瓜",
+      "name_en": "Sweet Potatoes",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_fiber"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178723",
+      "medical_validated": true
+    },
+    {
+      "id": "bd4f0821-07dc-48af-a96b-1c5684d8ce2a",
+      "name_zh": "芋頭",
+      "name_en": "Taro",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178726",
+      "medical_validated": true
+    },
+    {
+      "id": "34c68259-ee45-4c85-9cc0-26ffb41016df",
+      "name_zh": "冬瓜",
+      "name_en": "Winter Melon",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178729",
+      "medical_validated": true
+    },
+    {
+      "id": "d9a57dcb-89ae-49a6-b102-14962a61e378",
+      "name_zh": "苦瓜",
+      "name_en": "Bitter Melon",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "bitter"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178732",
+      "medical_validated": true
+    },
+    {
+      "id": "921c3e97-e2bb-4bca-ac1d-1f02837b6662",
+      "name_zh": "絲瓜",
+      "name_en": "Luffa",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178735",
+      "medical_validated": true
+    },
+    {
+      "id": "10b74964-cadc-4a56-b587-f6e80680361b",
+      "name_zh": "南瓜",
+      "name_en": "Pumpkin",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178739",
+      "medical_validated": true
+    },
+    {
+      "id": "95bbc2b8-ef61-438f-b2c8-df2d968e66db",
+      "name_zh": "小黃瓜",
+      "name_en": "Cucumber",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178742",
+      "medical_validated": true
+    },
+    {
+      "id": "5f02c2e5-6e40-442f-9195-367773bd946a",
+      "name_zh": "香菇",
+      "name_en": "Shiitake Mushrooms",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178745",
+      "medical_validated": true
+    },
+    {
+      "id": "6d7f6e03-3876-4370-afe7-6fad9b8856fb",
+      "name_zh": "金針菇",
+      "name_en": "Enoki Mushrooms",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178748",
+      "medical_validated": true
+    },
+    {
+      "id": "427da674-f042-45db-80fb-0b37ffbf1792",
+      "name_zh": "杏鮑菇",
+      "name_en": "King Oyster Mushrooms",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178751",
+      "medical_validated": true
+    },
+    {
+      "id": "9e3525ae-c951-459a-9985-65781d27d1c6",
+      "name_zh": "木耳",
+      "name_en": "Black Fungus",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178754",
+      "medical_validated": true
+    },
+    {
+      "id": "d52a8519-f002-4f96-843e-c617077ff32e",
+      "name_zh": "白木耳",
+      "name_en": "White Fungus",
+      "category": "vegetable",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178758",
+      "medical_validated": true
+    },
+    {
+      "id": "df6b21fa-6d41-46a3-8f02-2ef2353180e9",
+      "name_zh": "蘋果",
+      "name_en": "Apple",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178761",
+      "medical_validated": true
+    },
+    {
+      "id": "11bcfdbc-08fb-49c4-9229-4835fccac3a5",
+      "name_zh": "香蕉",
+      "name_en": "Banana",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178764",
+      "medical_validated": true
+    },
+    {
+      "id": "456bb936-1e67-4c6d-930f-b7bc47fdcf11",
+      "name_zh": "葡萄",
+      "name_en": "Grapes",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_sugar"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178767",
+      "medical_validated": true
+    },
+    {
+      "id": "f6b89dbe-f2d0-4d10-960b-f4812fed5534",
+      "name_zh": "橘子",
+      "name_en": "Orange",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "citric_acid"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178770",
+      "medical_validated": true
+    },
+    {
+      "id": "853579b8-19dc-4e1f-876a-a768c0af6a49",
+      "name_zh": "梨子",
+      "name_en": "Pear",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178774",
+      "medical_validated": true
+    },
+    {
+      "id": "bd01f2fe-39af-46fc-bc4a-3dc768aa4875",
+      "name_zh": "鳳梨",
+      "name_en": "Pineapple",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "acidic",
+          "enzyme"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178777",
+      "medical_validated": true
+    },
+    {
+      "id": "5fa231fd-8ef3-4064-9707-e99db0e4692f",
+      "name_zh": "木瓜",
+      "name_en": "Papaya",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178780",
+      "medical_validated": true
+    },
+    {
+      "id": "45c36c49-2213-4b48-88cd-e69eb05b5ac4",
+      "name_zh": "香瓜",
+      "name_en": "Cantaloupe",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178783",
+      "medical_validated": true
+    },
+    {
+      "id": "f94bd6b5-1d64-490e-83e3-12c33e3ed513",
+      "name_zh": "西瓜",
+      "name_en": "Watermelon",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178786",
+      "medical_validated": true
+    },
+    {
+      "id": "9204e2bf-3c8b-4a83-ac27-5d8e4aa8ee4c",
+      "name_zh": "奇異果",
+      "name_en": "Kiwi",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "acidic"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178789",
+      "medical_validated": true
+    },
+    {
+      "id": "75049e8f-363f-4be9-9819-d8ad5151c37c",
+      "name_zh": "草莓",
+      "name_en": "Strawberries",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "seeds"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178793",
+      "medical_validated": true
+    },
+    {
+      "id": "74ca2b0f-5a71-4b48-858b-c1988a22213e",
+      "name_zh": "藍莓",
+      "name_en": "Blueberries",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178796",
+      "medical_validated": true
+    },
+    {
+      "id": "ee3fced1-5ec8-4598-8412-cce69d5edc01",
+      "name_zh": "葡萄乾",
+      "name_en": "Raisins",
+      "category": "fruit",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sugar"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178799",
+      "medical_validated": true
+    },
+    {
+      "id": "6c808ed2-e4f9-43ec-af76-ca0fada99350",
+      "name_zh": "核桃",
+      "name_en": "Walnuts",
+      "category": "nuts",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_fat"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "nuts"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178802",
+      "medical_validated": true
+    },
+    {
+      "id": "e69b22f8-86b3-4799-8f2c-c1bad062dbea",
+      "name_zh": "杏仁",
+      "name_en": "Almonds",
+      "category": "nuts",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_fat"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "nuts"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178805",
+      "medical_validated": true
+    },
+    {
+      "id": "fb1ea3e6-2c10-4da8-b874-23bd165f2c39",
+      "name_zh": "白粥",
+      "name_en": "White Rice Porridge",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178809",
+      "medical_validated": true
+    },
+    {
+      "id": "b2cdcd81-bf0f-4f50-abb3-f295d272a7a7",
+      "name_zh": "小米粥",
+      "name_en": "Millet Porridge",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178812",
+      "medical_validated": true
+    },
+    {
+      "id": "2db843ef-50ee-47b1-9673-3f21fbb3c8a5",
+      "name_zh": "燕麥粥",
+      "name_en": "Oatmeal",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_fiber"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178816",
+      "medical_validated": true
+    },
+    {
+      "id": "27fb8713-eaf6-49ad-9946-0c21050e8209",
+      "name_zh": "糙米",
+      "name_en": "Brown Rice",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_fiber"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178820",
+      "medical_validated": true
+    },
+    {
+      "id": "b50b5a5c-8e35-4aa2-b9e6-4a971c22db7a",
+      "name_zh": "紫米",
+      "name_en": "Purple Rice",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_fiber"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178823",
+      "medical_validated": true
+    },
+    {
+      "id": "66dd17b3-e935-43f7-bc55-f61d4f151f8e",
+      "name_zh": "白麵條",
+      "name_en": "White Noodles",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "gluten"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178826",
+      "medical_validated": true
+    },
+    {
+      "id": "649f0961-d6af-428f-a9e1-f63f0a1286f6",
+      "name_zh": "全麥麵條",
+      "name_en": "Whole Wheat Noodles",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_fiber",
+          "gluten"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "high"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178829",
+      "medical_validated": true
+    },
+    {
+      "id": "fea36f46-f49e-4c3a-b12f-7a4db4468813",
+      "name_zh": "拉麵",
+      "name_en": "Ramen",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_sodium",
+          "gluten"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178833",
+      "medical_validated": true
+    },
+    {
+      "id": "ce2dd3c4-5115-49b9-ba2e-55eb979d62d0",
+      "name_zh": "烏龍麵",
+      "name_en": "Udon",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "gluten"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178836",
+      "medical_validated": true
+    },
+    {
+      "id": "97aecab6-f39c-411d-94b0-7dcf6349c9a9",
+      "name_zh": "蕎麥麵",
+      "name_en": "Soba Noodles",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178839",
+      "medical_validated": true
+    },
+    {
+      "id": "a33f649d-026e-4208-8b53-4a0cf3869cbd",
+      "name_zh": "白吐司",
+      "name_en": "White Toast",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "gluten"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178842",
+      "medical_validated": true
+    },
+    {
+      "id": "1e4c1bbc-7f2d-4aa5-939a-24813939c371",
+      "name_zh": "全麥吐司",
+      "name_en": "Whole Wheat Bread",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_fiber",
+          "gluten"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178947",
+      "medical_validated": true
+    },
+    {
+      "id": "5ad03a0f-2881-4fbf-8d4e-f9caf6e20ebb",
+      "name_zh": "法國麵包",
+      "name_en": "French Bread",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "gluten"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178951",
+      "medical_validated": true
+    },
+    {
+      "id": "25e80f75-9622-4928-8d8c-2e24f7d992e0",
+      "name_zh": "貝果",
+      "name_en": "Bagel",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "gluten"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178954",
+      "medical_validated": true
+    },
+    {
+      "id": "5e35c3c8-f237-47cd-bb50-af6857b65945",
+      "name_zh": "玉米",
+      "name_en": "Corn",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_fiber"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178958",
+      "medical_validated": true
+    },
+    {
+      "id": "8cc49da4-79f1-46c1-ab8b-657887be2ebf",
+      "name_zh": "地瓜",
+      "name_en": "Sweet Potato",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_fiber"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178961",
+      "medical_validated": true
+    },
+    {
+      "id": "59fe48fe-ed07-40ac-aa36-4234c8ee4182",
+      "name_zh": "芋頭",
+      "name_en": "Taro",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178964",
+      "medical_validated": true
+    },
+    {
+      "id": "fa960bf5-f097-433e-be8b-dc16d50bd6d4",
+      "name_zh": "薏仁",
+      "name_en": "Job's Tears",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178968",
+      "medical_validated": true
+    },
+    {
+      "id": "6edf60c1-91cd-4d85-b864-6451ed12dcc7",
+      "name_zh": "蓮藕粉",
+      "name_en": "Lotus Root Starch",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178971",
+      "medical_validated": true
+    },
+    {
+      "id": "5c8411d5-d5c2-4e04-93c8-4348e44975ec",
+      "name_zh": "粄條",
+      "name_en": "Flat Rice Noodles",
+      "category": "grain",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178974",
+      "medical_validated": true
+    },
+    {
+      "id": "31044b6b-5769-4628-9229-5618d1a7953a",
+      "name_zh": "烏龍茶",
+      "name_en": "Oolong Tea",
+      "category": "beverage",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178978",
+      "medical_validated": true
+    },
+    {
+      "id": "a00b3bdf-7e1d-4c90-932e-ee4da1a07f24",
+      "name_zh": "綠茶",
+      "name_en": "Green Tea",
+      "category": "beverage",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178982",
+      "medical_validated": true
+    },
+    {
+      "id": "ebc54f82-cd11-4e1a-bf16-272a11323cf3",
+      "name_zh": "蜂蜜水",
+      "name_en": "Honey Water",
+      "category": "beverage",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_sugar"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178985",
+      "medical_validated": true
+    },
+    {
+      "id": "d9e2afe1-45f2-42f1-ad1b-4785a46bc2af",
+      "name_zh": "檸檬水",
+      "name_en": "Lemon Water",
+      "category": "beverage",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "citric_acid"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178988",
+      "medical_validated": true
+    },
+    {
+      "id": "c8e02fd9-291b-4cc3-a020-84bdec800728",
+      "name_zh": "椰子水",
+      "name_en": "Coconut Water",
+      "category": "beverage",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178992",
+      "medical_validated": true
+    },
+    {
+      "id": "9ed8c371-7b32-46c4-bd5e-623e2c282568",
+      "name_zh": "鮮奶",
+      "name_en": "Fresh Milk",
+      "category": "beverage",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "dairy"
+        ],
+        "fodmap_level": "medium"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.178999",
+      "medical_validated": true
+    },
+    {
+      "id": "fa2dd027-6b9e-4e1b-b26d-59280e96e92b",
+      "name_zh": "優格",
+      "name_en": "Yogurt",
+      "category": "beverage",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "probiotics"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "dairy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.179003",
+      "medical_validated": true
+    },
+    {
+      "id": "ce106c48-8532-4c93-972c-8d6b0853e9f6",
+      "name_zh": "起司",
+      "name_en": "Cheese",
+      "category": "dairy",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "high_fat"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "dairy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.179007",
+      "medical_validated": true
+    },
+    {
+      "id": "e7b18200-6162-4f77-9786-e52d0901ebde",
+      "name_zh": "餅乾",
+      "name_en": "Crackers",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "processed"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "gluten"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.179010",
+      "medical_validated": true
+    },
+    {
+      "id": "c89ff46d-f083-43e0-813a-a88e4ed7c658",
+      "name_zh": "洋芋片",
+      "name_en": "Potato Chips",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 1,
+        "ibd_risk_factors": [
+          "deep_fried",
+          "high_sodium"
+        ],
+        "chemo_safety": "avoid",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.179014",
+      "medical_validated": true
+    },
+    {
+      "id": "f74286fa-4a6c-4d29-b79a-6dde4edbf24d",
+      "name_zh": "蝦餅",
+      "name_en": "Shrimp Crackers",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 2,
+        "ibd_risk_factors": [
+          "processed"
+        ],
+        "chemo_safety": "caution",
+        "major_allergens": [
+          "shellfish"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.179017",
+      "medical_validated": true
+    },
+    {
+      "id": "bc0245ea-72df-4089-9b6a-ffd33b804ce7",
+      "name_zh": "海苔",
+      "name_en": "Seaweed",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.179020",
+      "medical_validated": true
+    },
+    {
+      "id": "ba7ee908-e345-4c36-a825-3b8c11eb7669",
+      "name_zh": "堅果",
+      "name_en": "Mixed Nuts",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_fat"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "nuts"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.179024",
+      "medical_validated": true
+    },
+    {
+      "id": "a9b746d8-ee4b-43c0-8420-853f85ea2694",
+      "name_zh": "仙貝",
+      "name_en": "Rice Crackers",
+      "category": "snack",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.179027",
+      "medical_validated": true
+    },
+    {
+      "id": "a294249c-77be-4ddd-905d-12c8ffee4bd7",
+      "name_zh": "麻糬",
+      "name_en": "Mochi",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "glutinous"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.179031",
+      "medical_validated": true
+    },
+    {
+      "id": "2cd4b26d-ab28-4356-bb0a-9bae2747a4ed",
+      "name_zh": "布丁",
+      "name_en": "Pudding",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_sugar"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "eggs",
+          "dairy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.179035",
+      "medical_validated": true
+    },
+    {
+      "id": "d6065148-d15f-47b9-8274-c79ac6b02d96",
+      "name_zh": "果凍",
+      "name_en": "Jelly",
+      "category": "dessert",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "artificial"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.179038",
+      "medical_validated": true
+    },
+    {
+      "id": "6883312d-e73e-4856-b057-52fd4a75f7fa",
+      "name_zh": "雞湯",
+      "name_en": "Chicken Soup",
+      "category": "soup",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.179042",
+      "medical_validated": true
+    },
+    {
+      "id": "d6798126-9120-4f51-80ee-b4ef13d99e46",
+      "name_zh": "蔬菜湯",
+      "name_en": "Vegetable Soup",
+      "category": "soup",
+      "medical_scores": {
+        "ibd_score": 4,
+        "ibd_risk_factors": [],
+        "chemo_safety": "safe",
+        "major_allergens": [],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.179045",
+      "medical_validated": true
+    },
+    {
+      "id": "1ef518c9-6106-4dff-926f-a5368c93ab57",
+      "name_zh": "味噌湯",
+      "name_en": "Miso Soup",
+      "category": "soup",
+      "medical_scores": {
+        "ibd_score": 3,
+        "ibd_risk_factors": [
+          "high_sodium"
+        ],
+        "chemo_safety": "safe",
+        "major_allergens": [
+          "soy"
+        ],
+        "fodmap_level": "low"
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [],
+      "alternatives": [],
+      "created": "2025-09-14T21:45:06.179048",
+      "medical_validated": true
+    }
+  ]
+}

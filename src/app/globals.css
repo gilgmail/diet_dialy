@@ -1,0 +1,386 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Enhanced focus styles for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    :root {
+      --border: 0 0% 0%;
+      --input: 0 0% 0%;
+    }
+
+    .dark {
+      --border: 0 0% 100%;
+      --input: 0 0% 100%;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Print styles for medical reports */
+  @media print {
+    body {
+      @apply text-black bg-white;
+    }
+
+    .no-print {
+      display: none !important;
+    }
+
+    .print-break-before {
+      break-before: page;
+    }
+
+    .print-break-after {
+      break-after: page;
+    }
+  }
+}
+
+@layer components {
+  /* Medical app specific components */
+  .medical-container {
+    @apply container mx-auto px-4 py-6 max-w-4xl;
+  }
+
+  .medical-card {
+    @apply rounded-lg border bg-card text-card-foreground shadow-sm p-6;
+  }
+
+  .medical-button {
+    @apply inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .medical-input {
+    @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .severity-mild {
+    @apply text-green-700 bg-green-50 border-green-200;
+  }
+
+  .severity-moderate {
+    @apply text-amber-700 bg-amber-50 border-amber-200;
+  }
+
+  .severity-severe {
+    @apply text-red-700 bg-red-50 border-red-200;
+  }
+
+  .condition-ibd {
+    @apply text-blue-700 bg-blue-50 border-l-4 border-l-blue-500;
+  }
+
+  .condition-chemotherapy {
+    @apply text-purple-700 bg-purple-50 border-l-4 border-l-purple-500;
+  }
+
+  .condition-allergy {
+    @apply text-red-700 bg-red-50 border-l-4 border-l-red-500;
+  }
+
+  .condition-ibs {
+    @apply text-green-700 bg-green-50 border-l-4 border-l-green-500;
+  }
+
+  /* Loading states */
+  .loading-skeleton {
+    @apply animate-pulse bg-muted rounded;
+  }
+
+  .loading-shimmer {
+    @apply relative overflow-hidden bg-muted;
+  }
+
+  .loading-shimmer::before {
+    @apply absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent;
+    content: '';
+    animation: shimmer 2s infinite;
+  }
+
+  /* Mobile-first responsive utilities */
+  .mobile-safe-area {
+    padding-top: env(safe-area-inset-top);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .mobile-header-height {
+    height: calc(4rem + env(safe-area-inset-top));
+  }
+
+  .mobile-content-height {
+    height: calc(100vh - 4rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    height: calc(100dvh - 4rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+
+  /* Touch-friendly button sizes */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* PWA specific styles */
+  .pwa-install-banner {
+    @apply fixed bottom-0 left-0 right-0 bg-primary text-primary-foreground p-4 shadow-lg transform translate-y-full transition-transform duration-300;
+  }
+
+  .pwa-install-banner.show {
+    @apply transform translate-y-0;
+  }
+
+  /* Medical chart styles */
+  .chart-grid {
+    @apply stroke-border/50;
+  }
+
+  .chart-axis {
+    @apply text-xs fill-muted-foreground;
+  }
+
+  .chart-line {
+    @apply stroke-primary stroke-2 fill-none;
+  }
+
+  .chart-area {
+    @apply fill-primary/20;
+  }
+
+  .chart-point {
+    @apply fill-primary;
+  }
+
+  /* Medication reminder styles */
+  .medication-reminder {
+    @apply relative overflow-hidden;
+  }
+
+  .medication-reminder::before {
+    @apply absolute left-0 top-0 bottom-0 w-1 bg-medical-primary;
+    content: '';
+  }
+
+  .medication-reminder.overdue::before {
+    @apply bg-medical-danger;
+  }
+
+  /* Food risk level indicators */
+  .risk-low {
+    @apply text-green-600 bg-green-50 border-green-200;
+  }
+
+  .risk-medium {
+    @apply text-amber-600 bg-amber-50 border-amber-200;
+  }
+
+  .risk-high {
+    @apply text-red-600 bg-red-50 border-red-200;
+  }
+}
+
+@layer utilities {
+  /* Screen reader utilities */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .not-sr-only {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+
+  /* Focus utilities */
+  .focus-visible-only:not(:focus-visible) {
+    @apply sr-only;
+  }
+
+  /* Safe area utilities */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  /* Scrollbar styling */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Animations */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes bounce-subtle {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -4px, 0);
+  }
+  70% {
+    transform: translate3d(0, -2px, 0);
+  }
+  90% {
+    transform: translate3d(0, -1px, 0);
+  }
+}
+
+/* Custom medical app animations */
+.animate-pulse-slow {
+  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s infinite;
+}
+
+/* Touch device optimizations */
+@media (hover: none) {
+  .hover\:bg-accent:hover {
+    background-color: inherit;
+  }
+}
+
+/* Large text support for accessibility */
+@media (prefers-font-size: large) {
+  html {
+    font-size: 120%;
+  }
+}
+
+/* Dark theme medical adjustments */
+@media (prefers-color-scheme: dark) {
+  .medical-card {
+    @apply border-gray-800;
+  }
+
+  .severity-mild {
+    @apply text-green-300 bg-green-900/20 border-green-800;
+  }
+
+  .severity-moderate {
+    @apply text-amber-300 bg-amber-900/20 border-amber-800;
+  }
+
+  .severity-severe {
+    @apply text-red-300 bg-red-900/20 border-red-800;
+  }
+}
