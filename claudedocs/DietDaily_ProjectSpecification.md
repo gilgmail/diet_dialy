@@ -1,315 +1,315 @@
-# Diet Daily - Project Specification Document
+# Diet Daily - 專案規格文件
 
-## 🎯 Product Vision
-**Mobile food diary app with photo recognition, personalized health scoring (1-10), and food alternatives for allergy management, starting with Taiwan/Hong Kong cuisine.**
-
----
-
-## 📱 Product Overview
-
-### Core Problem
-- Users with allergies and health conditions need personalized food tracking
-- Manual food logging is time-consuming and error-prone
-- Existing apps lack Taiwan/Hong Kong cuisine recognition
-- Users need proactive suggestions for healthier alternatives
-
-### Solution
-- Camera-first photo recognition for instant food identification
-- 3-level allergy severity system with personalized scoring
-- Smart alternative suggestions based on local availability
-- 21-day wellness tracking with daily score correlation
+## 🎯 產品願景
+**具備照片辨識、個人化健康評分（1-10分）和食物替代品建議的行動食物日記應用程式，專為過敏管理設計，首先針對台灣/香港料理。**
 
 ---
 
-## 🔧 Technical Specifications
+## 📱 產品概覽
 
-### Platform Strategy
-- **Primary**: iOS (React Native)
-- **Target iOS**: 15+ for modern camera APIs and health integration
-- **Future**: Android expansion after iOS validation
+### 核心問題
+- 過敏和健康狀況使用者需要個人化食物追蹤
+- 手動食物記錄耗時且容易出錯
+- 現有應用程式缺乏台灣/香港料理辨識
+- 使用者需要主動的健康替代品建議
 
-### Core APIs & Services
-- **Food Recognition**: Clarifai Food API (740+ food tags, 38% accuracy)
-- **Backup API**: Calorie Mama API (63% accuracy, highest tested)
-- **Data Storage**: Google Sheets API + Google Drive API
-- **Authentication**: Google Sign-In
+### 解決方案
+- 相機優先照片辨識實現即時食物識別
+- 三級過敏嚴重度系統與個人化評分
+- 基於本地可用性的智慧替代品建議
+- 21天健康追蹤與每日評分關聯性
 
-### Architecture
+---
+
+## 🔧 技術規格
+
+### 平台策略
+- **主要平台**：iOS（React Native）
+- **目標 iOS 版本**：15+ 支援現代相機 API 和健康整合
+- **未來規劃**：iOS 驗證後擴展至 Android
+
+### 核心 API 與服務
+- **食物辨識**：Clarifai Food API（740+ 食物標籤，38% 準確度）
+- **備用 API**：Calorie Mama API（63% 準確度，測試中最高）
+- **資料儲存**：Google Sheets API + Google Drive API
+- **認證**：Google 登入
+
+### 架構
 ```
-iOS App (React Native)
-├── Camera Module (offline capable)
-├── Clarifai API Integration
-├── Google APIs (Sheets + Drive)
-├── Local SQLite Cache
-└── Health Kit Integration
+iOS 應用程式（React Native）
+├── 相機模組（支援離線）
+├── Clarifai API 整合
+├── Google API（Sheets + Drive）
+├── 本地 SQLite 快取
+└── Health Kit 整合
 ```
 
 ---
 
-## 👤 User Experience Design
+## 👤 使用者體驗設計
 
-### Primary User Flow
-1. **Camera Launch** → Take photo (offline capable)
-2. **Recognition** → Basic food type + cooking method identification
-3. **Manual Adjustment** → Simple input when confidence is low
-4. **Scoring** → 1-10 scale based on allergy severity + daily balance
-5. **Alternatives** → Smart suggestions triggered by allergy level
+### 主要使用者流程
+1. **相機啟動** → 拍照（支援離線）
+2. **辨識** → 基本食物類型 + 料理方法識別
+3. **手動調整** → 信心度低時的簡單輸入
+4. **評分** → 基於過敏嚴重度 + 每日平衡的 1-10 分制
+5. **替代品** → 由過敏等級觸發的智慧建議
 
-### Daily Usage Pattern
-- **Frequency**: 3-6 times per day
-- **Speed Requirement**: <1 minute from photo to result
-- **Offline Support**: Essential for consistent usage
+### 日常使用模式
+- **頻率**：每日 3-6 次
+- **速度要求**：從照片到結果 <1 分鐘
+- **離線支援**：對持續使用至關重要
 
-### 3-Level Allergy System
-- **🚫 完美禁止 (Perfect Ban)**: Score 1-2, red alert + immediate alternatives
-- **⚠️ 建議禁止 (Recommended Ban)**: Score 3-5, yellow warning + suggestions
-- **✅ 少量可 (Small Amount OK)**: Score 6-8, green with moderation notes
+### 三級過敏系統
+- **🚫 完美禁止**：評分 1-2，紅色警報 + 立即替代品
+- **⚠️ 建議禁止**：評分 3-5，黃色警告 + 建議
+- **✅ 少量可**：評分 6-8，綠色附節制說明
 
 ---
 
-## 📊 Data Architecture
+## 📊 資料架構
 
-### Google Drive Folder Structure
+### Google Drive 資料夾結構
 ```
 /Diet Daily/
 ├── /Photos/
 │   ├── /2025-01/
 │   ├── /2025-02/
-│   └── [monthly folders]
+│   └── [月份資料夾]
 ├── /Exports/
 └── /Backups/
 ```
 
-### Google Sheets Database Design
+### Google Sheets 資料庫設計
 
-#### Sheet 1: "User Profile"
-| Column | Data | Description |
-|--------|------|-------------|
-| A | user_id | Unique identifier |
-| B | allergies | Comma-separated allergy list |
-| C | severity_levels | Mapping of allergies to severity (1-3) |
-| D | created_date | Profile creation timestamp |
-| E | updated_date | Last profile update |
+#### 工作表 1："使用者個人檔案"
+| 欄位 | 資料 | 說明 |
+|------|------|------|
+| A | user_id | 唯一識別碼 |
+| B | allergies | 逗號分隔的過敏清單 |
+| C | severity_levels | 過敏對應嚴重度（1-3）|
+| D | created_date | 個人檔案建立時間戳 |
+| E | updated_date | 最後個人檔案更新 |
 
-#### Sheet 2: "Daily Entries"
-| Column | Data | Description |
-|--------|------|-------------|
-| A | date | Entry date (YYYY-MM-DD) |
-| B | meal_time | breakfast/lunch/dinner/snack |
-| C | photo_filename | Reference to Drive photo |
-| D | recognized_foods | AI-identified food items |
-| E | manual_adjustments | User corrections |
-| F | allergy_score | Individual meal allergy score (1-10) |
-| G | nutrition_score | Individual meal nutrition score (1-10) |
-| H | daily_total_score | Cumulative daily score |
-| I | alternatives_shown | Suggested alternatives |
-| J | feelings_note | Optional wellness note |
+#### 工作表 2："每日記錄"
+| 欄位 | 資料 | 說明 |
+|------|------|------|
+| A | date | 記錄日期（YYYY-MM-DD）|
+| B | meal_time | 早餐/午餐/晚餐/點心 |
+| C | photo_filename | Drive 照片參考 |
+| D | recognized_foods | AI 識別的食物項目 |
+| E | manual_adjustments | 使用者修正 |
+| F | allergy_score | 單餐過敏評分（1-10）|
+| G | nutrition_score | 單餐營養評分（1-10）|
+| H | daily_total_score | 累計每日評分 |
+| I | alternatives_shown | 建議的替代品 |
+| J | feelings_note | 可選的健康筆記 |
 
-#### Sheet 3: "Food Database"
-| Column | Data | Description |
-|--------|------|-------------|
-| A | food_name | Standardized food name |
-| B | category | Food category (protein/carb/etc) |
-| C | allergy_triggers | Known allergens |
-| D | season | Seasonal availability |
-| E | local_availability | Taiwan/HK grocery stores |
-| F | alternatives | Suggested substitutes |
-| G | nutrition_data | Basic nutritional info |
-| H | cooking_methods | Preparation styles |
+#### 工作表 3："食物資料庫"
+| 欄位 | 資料 | 說明 |
+|------|------|------|
+| A | food_name | 標準化食物名稱 |
+| B | category | 食物類別（蛋白質/碳水化合物等）|
+| C | allergy_triggers | 已知過敏原 |
+| D | season | 季節性可用性 |
+| E | local_availability | 台灣/香港超市 |
+| F | alternatives | 建議替代品 |
+| G | nutrition_data | 基本營養資訊 |
+| H | cooking_methods | 準備方式 |
 
-#### Sheet 4: "21-Day Progress"
-| Column | Data | Description |
-|--------|------|-------------|
-| A | day_number | Progress day (1-21) |
-| B | date | Calendar date |
-| C | average_daily_score | Daily score average |
-| D | wellness_feeling | User-reported feeling (1-10) |
-| E | notes | Daily reflection notes |
-| F | photo_count | Number of photos taken |
-| G | manual_corrections | Corrections needed |
-| H | alternatives_tried | Alternatives actually tried |
-
----
-
-## 🧪 Pilot Program Strategy
-
-### Target Demographics
-- **Size**: 50-100 iOS users
-- **Location**: Taiwan and Hong Kong
-- **Age**: 25-45 years old
-- **Profile**: Users with allergies, diabetes, or general wellness focus
-- **Duration**: 30 days (covers 21-day tracking cycle)
-
-### Success Metrics
-- **Recognition Accuracy**: >60% correct food identification
-- **User Retention**: >70% complete 21-day tracking cycle
-- **Manual Corrections**: <30% of entries need user adjustment
-- **Alternative Adoption**: >40% of users try suggested alternatives
-- **App Performance**: <1 minute photo-to-result consistently
-
-### Test Focus Areas
-1. **Taiwan/HK Food Recognition**: Accuracy vs Clarifai general model
-2. **Manual Override Frequency**: When/why users correct AI
-3. **Alternative Suggestion Relevance**: Local grocery store integration
-4. **Daily Usage Compliance**: Actual vs expected 3-6 times usage
+#### 工作表 4："21天進度"
+| 欄位 | 資料 | 說明 |
+|------|------|------|
+| A | day_number | 進度天數（1-21）|
+| B | date | 日曆日期 |
+| C | average_daily_score | 每日平均評分 |
+| D | wellness_feeling | 使用者報告感受（1-10）|
+| E | notes | 每日反思筆記 |
+| F | photo_count | 拍照數量 |
+| G | manual_corrections | 需要的修正次數 |
+| H | alternatives_tried | 實際嘗試的替代品 |
 
 ---
 
-## 🚀 Development Phases
+## 🧪 先導計畫策略
 
-### Phase 1: MVP (Months 1-3)
-**Core Features:**
-- iOS camera integration with offline capability
-- Clarifai API food recognition
-- Basic 3-level allergy scoring system
-- Google Sheets + Drive data storage
-- Manual food entry override
-- Basic alternative suggestions
+### 目標受眾
+- **規模**：50-100 位 iOS 使用者
+- **地點**：台灣和香港
+- **年齡**：25-45 歲
+- **個人檔案**：有過敏、糖尿病或一般健康關注的使用者
+- **持續時間**：30天（涵蓋 21天追蹤週期）
 
-**Deliverables:**
-- TestFlight beta app
-- Pilot program launch
-- User feedback collection system
+### 成功指標
+- **辨識準確度**：>60% 正確食物識別
+- **使用者留存**：>70% 完成 21天追蹤週期
+- **手動修正**：<30% 記錄需要使用者調整
+- **替代品採用**：>40% 使用者嘗試建議替代品
+- **應用程式效能**：持續 <1 分鐘從照片到結果
 
-### Phase 2: Enhancement (Months 4-6)
-**Advanced Features:**
-- Custom Taiwan/HK food recognition training
-- Enhanced alternative suggestion algorithm
-- Seasonal availability integration
-- Local grocery store API connections
-- Daily wellness correlation analytics
-
-**Deliverables:**
-- App Store submission
-- Enhanced accuracy based on pilot feedback
-- Local grocery store partnerships
-
-### Phase 3: Scale (Months 7-12)
-**Expansion Features:**
-- Android version
-- Healthcare provider integration
-- Social features (optional)
-- Advanced analytics dashboard
-- Multi-language support (Traditional Chinese)
-
-**Deliverables:**
-- Cross-platform availability
-- B2B healthcare partnerships
-- Regional expansion strategy
+### 測試重點領域
+1. **台灣/香港食物辨識**：準確度 vs Clarifai 通用模型
+2. **手動覆蓋頻率**：何時/為何使用者修正 AI
+3. **替代品建議相關性**：本地超市整合
+4. **每日使用依從性**：實際 vs 預期 3-6 次使用
 
 ---
 
-## 💰 Technical Cost Estimates
+## 🚀 開發階段
 
-### API Usage (Monthly for 1000 active users)
-- **Clarifai Food API**: ~$50-100 (assuming 5 photos/day/user)
-- **Google Sheets API**: Free tier (100 requests/100 seconds/user)
-- **Google Drive API**: Free tier (sufficient for photo storage)
+### 第一階段：MVP（第 1-3 個月）
+**核心功能：**
+- iOS 相機整合與離線功能
+- Clarifai API 食物辨識
+- 基本三級過敏評分系統
+- Google Sheets + Drive 資料儲存
+- 手動食物輸入覆蓋
+- 基本替代品建議
 
-### Development Resources
-- **iOS Developer**: 3-6 months full-time
-- **Backend Integration**: 1-2 months
-- **UI/UX Design**: 2-3 months
-- **Testing & QA**: 1-2 months
+**交付成果：**
+- TestFlight 測試版應用程式
+- 先導計畫啟動
+- 使用者回饋收集系統
 
-### Infrastructure
-- **Minimal server costs**: Primary storage via user's Google Drive
-- **App Store fees**: $99/year developer account
-- **TestFlight**: Free for beta testing
+### 第二階段：強化（第 4-6 個月）
+**進階功能：**
+- 客製化台灣/香港食物辨識訓練
+- 增強替代品建議演算法
+- 季節性可用性整合
+- 本地超市 API 連接
+- 每日健康關聯性分析
 
----
+**交付成果：**
+- App Store 提交
+- 基於先導回饋的準確度提升
+- 本地超市合作夥伴關係
 
-## ⚠️ Risk Assessment & Mitigation
+### 第三階段：擴張（第 7-12 個月）
+**擴展功能：**
+- Android 版本
+- 醫療提供者整合
+- 社交功能（可選）
+- 進階分析儀表板
+- 多語言支援（繁體中文）
 
-### Technical Risks
-**Risk**: Clarifai API inaccuracy for Taiwan/HK cuisine
-**Mitigation**: Implement backup API (Calorie Mama) + custom training data collection during pilot
-
-**Risk**: Google Drive integration complexity
-**Mitigation**: Start with simple Sheets API, expand to Drive gradually
-
-**Risk**: Offline functionality challenges
-**Mitigation**: SQLite local storage with sync mechanism
-
-### Business Risks
-**Risk**: User adoption challenges
-**Mitigation**: Focus on specific allergy communities first, strong pilot program
-
-**Risk**: Competition from established apps
-**Mitigation**: Taiwan/HK cuisine specialization + allergy focus differentiation
-
-### Privacy Risks
-**Risk**: Health data sensitivity
-**Mitigation**: User-controlled Google Drive storage + clear privacy policy
-
----
-
-## 📈 Success Metrics & KPIs
-
-### User Engagement
-- **Daily Active Users**: >70% of registered users
-- **21-Day Completion Rate**: >60% of new users
-- **Photo Recognition Usage**: >80% use camera vs manual entry
-- **Alternative Adoption**: >30% try suggested alternatives
-
-### Technical Performance
-- **Recognition Speed**: <60 seconds average photo-to-result
-- **Accuracy**: >60% correct initial recognition
-- **App Crashes**: <1% session crash rate
-- **Offline Functionality**: 100% photo capture success rate
-
-### Business Metrics
-- **User Retention**: 70% week 1, 40% month 1, 20% month 3
-- **App Store Rating**: >4.0 stars
-- **Organic Growth**: >30% users from word-of-mouth
-- **Healthcare Integration**: 3+ provider partnerships by month 12
+**交付成果：**
+- 跨平台可用性
+- B2B 醫療合作夥伴關係
+- 區域擴展策略
 
 ---
 
-## 🌟 Competitive Advantages
+## 💰 技術成本估算
 
-### Unique Value Propositions
-1. **Taiwan/HK Cuisine Specialization**: First app optimized for regional food recognition
-2. **Allergy-Centric Design**: 3-level severity system vs generic tracking
-3. **Local Integration**: Grocery store alternatives + seasonal availability
-4. **User Data Control**: Google Drive storage vs centralized databases
-5. **21-Day Wellness Correlation**: Emotional health tracking integrated
+### API 使用（每月 1000 活躍使用者）
+- **Clarifai Food API**：約 $50-100（假設每位使用者每日 5 張照片）
+- **Google Sheets API**：免費版（每位使用者每 100 秒 100 次請求）
+- **Google Drive API**：免費版（照片儲存足夠）
 
-### Market Positioning
-- **Primary**: Allergy management tool with food recognition
-- **Secondary**: General wellness tracking for Asian cuisine
-- **Tertiary**: Healthcare provider integration for dietary monitoring
+### 開發資源
+- **iOS 開發者**：3-6 個月全職
+- **後端整合**：1-2 個月
+- **UI/UX 設計**：2-3 個月
+- **測試與 QA**：1-2 個月
 
----
-
-## 📞 Next Steps & Action Items
-
-### Immediate Actions (Week 1-2)
-1. Set up iOS development environment
-2. Register Google Cloud APIs (Sheets + Drive + Sign-In)
-3. Set up Clarifai API account and testing
-4. Create basic app wireframes and user flows
-
-### Short-term Goals (Month 1)
-1. Build MVP iOS app with core features
-2. Implement Google authentication and data storage
-3. Test Clarifai API with Taiwan/HK food photos
-4. Recruit pilot program participants
-
-### Medium-term Objectives (Months 2-3)
-1. Launch pilot program with 50-100 users
-2. Collect and analyze usage data and feedback
-3. Iterate on food recognition accuracy
-4. Prepare for App Store submission
-
-### Long-term Vision (Months 4-12)
-1. Scale to broader Taiwan/HK market
-2. Develop custom food recognition models
-3. Integrate with local healthcare providers
-4. Expand to other Asian markets
+### 基礎設施
+- **最低伺服器成本**：主要儲存透過使用者的 Google Drive
+- **App Store 費用**：每年 $99 開發者帳戶
+- **TestFlight**：測試版測試免費
 
 ---
 
-*Document Version: 1.0*
-*Last Updated: 2025-01-14*
-*Status: Ready for Development*
+## ⚠️ 風險評估與緩解
+
+### 技術風險
+**風險**：Clarifai API 對台灣/香港料理辨識不準確
+**緩解**：實施備用 API（Calorie Mama）+ 先導期間收集客製化訓練資料
+
+**風險**：Google Drive 整合複雜性
+**緩解**：從簡單 Sheets API 開始，逐步擴展至 Drive
+
+**風險**：離線功能挑戰
+**緩解**：SQLite 本地儲存與同步機制
+
+### 商業風險
+**風險**：使用者採用挑戰
+**緩解**：首先專注特定過敏社群，強力先導計畫
+
+**風險**：來自既有應用程式的競爭
+**緩解**：台灣/香港料理專業化 + 過敏焦點差異化
+
+### 隱私風險
+**風險**：健康資料敏感性
+**緩解**：使用者控制的 Google Drive 儲存 + 明確隱私政策
+
+---
+
+## 📈 成功指標與 KPI
+
+### 使用者參與度
+- **每日活躍使用者**：>70% 註冊使用者
+- **21天完成率**：>60% 新使用者
+- **照片辨識使用**：>80% 使用相機 vs 手動輸入
+- **替代品採用**：>30% 嘗試建議替代品
+
+### 技術效能
+- **辨識速度**：平均 <60 秒從照片到結果
+- **準確度**：>60% 正確初始辨識
+- **應用程式當機**：<1% 會話當機率
+- **離線功能**：100% 照片拍攝成功率
+
+### 商業指標
+- **使用者留存**：第 1 週 70%，第 1 個月 40%，第 3 個月 20%
+- **App Store 評分**：>4.0 星
+- **自然成長**：>30% 使用者來自口碑推薦
+- **醫療整合**：第 12 個月前 3+ 提供者合作夥伴關係
+
+---
+
+## 🌟 競爭優勢
+
+### 獨特價值主張
+1. **台灣/香港料理專業化**：首個針對區域食物辨識優化的應用程式
+2. **過敏中心設計**：三級嚴重度系統 vs 通用追蹤
+3. **本地整合**：超市替代品 + 季節性可用性
+4. **使用者資料控制**：Google Drive 儲存 vs 集中式資料庫
+5. **21天健康關聯性**：整合情緒健康追蹤
+
+### 市場定位
+- **主要**：具備食物辨識的過敏管理工具
+- **次要**：亞洲料理的一般健康追蹤
+- **第三**：飲食監控的醫療提供者整合
+
+---
+
+## 📞 下一步與行動項目
+
+### 立即行動（第 1-2 週）
+1. 設置 iOS 開發環境
+2. 註冊 Google Cloud API（Sheets + Drive + 登入）
+3. 設置 Clarifai API 帳戶和測試
+4. 建立基本應用程式線框圖和使用者流程
+
+### 短期目標（第 1 個月）
+1. 建構具備核心功能的 MVP iOS 應用程式
+2. 實施 Google 認證和資料儲存
+3. 使用台灣/香港食物照片測試 Clarifai API
+4. 招募先導計畫參與者
+
+### 中期目標（第 2-3 個月）
+1. 啟動 50-100 使用者先導計畫
+2. 收集和分析使用資料與回饋
+3. 迭代食物辨識準確度
+4. 準備 App Store 提交
+
+### 長期願景（第 4-12 個月）
+1. 擴展至更廣泛的台灣/香港市場
+2. 開發客製化食物辨識模型
+3. 與本地醫療提供者整合
+4. 擴展至其他亞洲市場
+
+---
+
+*文件版本：1.0*
+*最後更新：2025-01-14*
+*狀態：準備開發*
