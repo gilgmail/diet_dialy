@@ -3,24 +3,30 @@
 import React, { useState } from 'react';
 import { MedicalCondition, ExtendedMedicalProfile } from '@/types/medical';
 import { medicalScoringEngine, MedicalScore } from '@/lib/medical/scoring-engine';
-import MedicalConditionSelector from '@/components/medical/MedicalConditionSelector';
+import MedicalProfileSelector from '@/components/medical/MedicalProfileSelector';
 import MedicalScoreCard from '@/components/medical/MedicalScoreCard';
 
+interface MedicalProfile {
+  conditions: MedicalCondition[];
+  ibdPhase?: 'active_flare' | 'remission';
+  allergies: string[];
+}
+
 export default function HomePage(): JSX.Element {
-  const [selectedCondition, setSelectedCondition] = useState<MedicalCondition | undefined>();
+  const [medicalProfile, setMedicalProfile] = useState<MedicalProfile>({ conditions: [], allergies: [] });
   const [demoFood, setDemoFood] = useState<string>('牛肉麵');
 
   // Demo food items from our database
   const demoFoods = [
-    { name: '牛肉麵', category: 'main_dish', risk_factors: ['高鈉', '麩質'], chemo_safety: 'safe', allergens: ['麩質'], fodmap: 'high' },
+    { name: '牛肉麵', category: 'main_dish', risk_factors: ['高鈉', '麩質', '紅肉'], chemo_safety: 'caution', allergens: ['麩質'], fodmap: 'high' },
     { name: '白粥', category: 'grain', risk_factors: [], chemo_safety: 'safe', allergens: [], fodmap: 'low' },
-    { name: '辣椒', category: 'condiment', risk_factors: ['辛辣'], chemo_safety: 'avoid', allergens: [], fodmap: 'low' },
-    { name: '生魚片', category: 'protein', risk_factors: ['生食'], chemo_safety: 'avoid', allergens: [], fodmap: 'low' },
+    { name: '辣椒', category: 'condiment', risk_factors: ['辛辣食物'], chemo_safety: 'avoid', allergens: [], fodmap: 'low' },
+    { name: '生魚片', category: 'protein', risk_factors: ['生食', '高脂肪食物'], chemo_safety: 'avoid', allergens: [], fodmap: 'low' },
     { name: '蒸蛋', category: 'protein', risk_factors: [], chemo_safety: 'safe', allergens: ['雞蛋'], fodmap: 'low' }
   ];
 
   const getMedicalScore = (): MedicalScore | null => {
-    if (!selectedCondition) return null;
+    if (medicalProfile.conditions.length === 0) return null;
 
     const food = demoFoods.find(f => f.name === demoFood);
     if (!food) return null;
@@ -47,14 +53,14 @@ export default function HomePage(): JSX.Element {
     const mockProfile: ExtendedMedicalProfile = {
       id: '1',
       userId: '1',
-      primary_condition: selectedCondition,
-      current_phase: 'remission',
-      known_allergies: [],
+      primary_condition: medicalProfile.conditions[0], // 使用第一個選中的狀況作為主要狀況
+      current_phase: medicalProfile.ibdPhase || 'remission',
+      known_allergies: medicalProfile.allergies,
       personal_triggers: [],
       current_side_effects: [],
       lactose_intolerant: false,
       fiber_sensitive: false,
-      allergies: [],
+      allergies: medicalProfile.allergies,
       medications: [],
       dietaryRestrictions: [],
       createdAt: new Date(),
@@ -87,14 +93,14 @@ export default function HomePage(): JSX.Element {
       {/* Main Content */}
       <main className="max-w-md mx-auto px-4 py-6 space-y-6">
 
-        {/* Medical Condition Selector */}
-        <MedicalConditionSelector
-          selectedCondition={selectedCondition}
-          onConditionSelect={setSelectedCondition}
+        {/* Medical Profile Selector */}
+        <MedicalProfileSelector
+          profile={medicalProfile}
+          onProfileChange={setMedicalProfile}
         />
 
         {/* Demo Food Selector */}
-        {selectedCondition && (
+        {medicalProfile.conditions.length > 0 && (
           <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               試試看食物評分 🍽️
@@ -133,7 +139,7 @@ export default function HomePage(): JSX.Element {
         )}
 
         {/* Features Preview */}
-        {!selectedCondition && (
+        {medicalProfile.conditions.length === 0 && (
           <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               Diet Daily 功能 ✨

@@ -34,81 +34,109 @@ export interface ScoringResult {
  */
 class IBDScorer {
   scoreFood(food: FoodItem, profile: MedicalProfile): MedicalScore {
-    let baseScore = 4; // Start with perfect score
+    const currentPhase = profile.current_phase || 'remission';
+    let baseScore = 3;
     const riskFactors: string[] = [];
     const recommendations: string[] = [];
     let urgency: 'low' | 'medium' | 'high' | 'critical' = 'low';
 
-    // Critical triggers (immediate score = 1)
-    const criticalTriggers = [
-      '高不溶性纖維', '辛辣食物', '酒精', '人工甜味劑',
-      '加工肉類', '高脂肪食物', '碳酸飲料'
-    ];
+    // 急性期 (Active Flare) - 低渣飲食為主
+    if (currentPhase === 'active_flare') {
+      recommendations.push('目前為急性期，建議採用低渣飲食');
 
-    for (const trigger of criticalTriggers) {
-      if (food.medical_scores.ibd_risk_factors.includes(trigger)) {
-        return {
-          score: 1,
-          level: '差',
-          emoji: '😞',
-          riskFactors: [`${trigger} - IBD急性期絕對禁忌`],
-          recommendations: [
-            '立即停止食用',
-            '改選溫和易消化食物',
-            '如有症狀惡化請聯絡醫師'
-          ],
-          alternatives: this.getIBDSafeAlternatives(food.category),
-          medicalReason: `${trigger}可能引發IBD急性發作，建議避免`,
-          urgency: 'critical'
-        };
+      // 急性期絕對禁止
+      const acuteForbidden = [
+        '生食', '高不溶性纖維', '辛辣食物', '酒精',
+        '高脂肪食物', '碳酸飲料', '咖啡因', '生蔬菜',
+        '全穀類', '堅果種子', '豆類', '油炸食物', '紅肉'
+      ];
+
+      for (const forbidden of acuteForbidden) {
+        if (food.medical_scores.ibd_risk_factors.includes(forbidden)) {
+          return {
+            score: 1,
+            level: '差',
+            emoji: '😞',
+            riskFactors: [`急性期禁忌：${forbidden}`],
+            recommendations: [
+              '急性期應採低渣飲食',
+              '選擇易消化、少纖維食物',
+              '建議：白粥、去皮雞湯、蒸蛋',
+              '如症狀持續請聯絡醫師'
+            ],
+            alternatives: this.getIBDFlareAlternatives(food.category),
+            medicalReason: `急性期腸道發炎，${forbidden}會加重症狀`,
+            urgency: 'critical'
+          };
+        }
+      }
+
+      // 急性期推薦食物
+      const flareRecommended = ['白粥', '蒸蛋', '去皮雞湯', '蒸魚', '香蕉', '白土司'];
+      if (flareRecommended.some(good => food.name_zh.includes(good))) {
+        baseScore = 4;
+        recommendations.push('適合急性期的低渣食物，有助腸道修復');
+      } else {
+        baseScore = 2; // 急性期對未知食物保守評分
+        recommendations.push('急性期建議以醫師推薦的低渣飲食為主');
       }
     }
 
-    // Moderate risk factors
-    const moderateRisks = {
-      '乳製品': { penalty: -2, condition: profile.lactose_intolerant },
-      '生蔬菜': { penalty: -2, condition: profile.current_phase === 'active_flare' },
-      '全穀類': { penalty: -1, condition: profile.fiber_sensitive },
-      '堅果種子': { penalty: -2, condition: profile.current_phase === 'active_flare' }
-    };
+    // 緩解期 (Remission) - 可正常飲食但避免特定食物
+    else {
+      recommendations.push('目前為緩解期，可適度正常飲食');
 
-    for (const [risk, config] of Object.entries(moderateRisks)) {
-      if (config.condition && food.medical_scores.ibd_risk_factors.includes(risk)) {
-        baseScore += config.penalty;
-        riskFactors.push(`${risk} - ${this.getIBDRiskExplanation(risk)}`);
+      // 緩解期仍需避免的高風險食物
+      const remissionAvoid = [
+        '油炸食物', '加工食品', '辛辣食物', '酒精',
+        '碳酸飲料', '人工甜味劑'
+      ];
 
-        if (config.penalty <= -2) {
+      for (const avoid of remissionAvoid) {
+        if (food.medical_scores.ibd_risk_factors.includes(avoid)) {
+          baseScore = 1;
+          riskFactors.push(`緩解期仍需避免：${avoid}`);
+          recommendations.push('即使緩解期也建議避免此類食物');
           urgency = 'high';
         }
       }
+
+      // 緩解期需適量的食物
+      const remissionCaution = ['紅肉', '乳製品', '高脂肪食物', '生食'];
+      for (const caution of remissionCaution) {
+        if (food.medical_scores.ibd_risk_factors.includes(caution)) {
+          baseScore -= 1;
+          riskFactors.push(`適量攝取：${caution}`);
+          recommendations.push('緩解期可適量食用，但需注意身體反應');
+          urgency = 'medium';
+        }
+      }
+
+      // 緩解期有益食物和烹調方式
+      const remissionGood = ['蒸', '煮', '燉', '清蒸', '水煮'];
+      if (remissionGood.some(method => food.name_zh.includes(method))) {
+        baseScore += 1;
+        recommendations.push('溫和烹調方式，適合IBD患者長期食用');
+      }
+
+      // 緩解期推薦食物
+      const remissionRecommended = ['魚', '雞肉', '蒸蛋', '白飯', '麵條', '白粥', '粥'];
+      if (remissionRecommended.some(good => food.name_zh.includes(good))) {
+        baseScore += 0.5;
+        recommendations.push('IBD友善食物，營養豐富且易消化');
+      }
     }
 
-    // Personal triggers (highest weight after critical)
+    // 個人觸發因子（適用於所有階段）
     if (profile.personal_triggers) {
       for (const trigger of profile.personal_triggers) {
-        if (food.name_zh.includes(trigger) || food.name_en.toLowerCase().includes(trigger.toLowerCase())) {
+        if (food.name_zh.includes(trigger)) {
           baseScore -= 3;
-          riskFactors.push(`個人觸發因子: ${trigger}`);
+          riskFactors.push(`個人觸發因子：${trigger}`);
+          recommendations.push('根據個人病史，建議避免此食物');
           urgency = 'high';
         }
       }
-    }
-
-    // Current phase adjustment
-    if (profile.current_phase === 'active_flare') {
-      if (food.medical_scores.ibd_risk_factors.length > 0) {
-        baseScore -= 1;
-        recommendations.push('急性期建議選擇更溫和的食物');
-      }
-    }
-
-    // Beneficial foods bonus
-    const beneficialFoods = ['白粥', '蒸蛋', '去皮雞肉', '蒸魚', '香蕉'];
-    if (beneficialFoods.some(beneficial =>
-      food.name_zh.includes(beneficial) || food.name_en.toLowerCase().includes(beneficial.toLowerCase())
-    )) {
-      baseScore += 0.5;
-      recommendations.push('這是IBD友善食物，有助腸道健康');
     }
 
     const finalScore = Math.max(1, Math.min(4, Math.round(baseScore))) as 1 | 2 | 3 | 4;
@@ -143,6 +171,18 @@ class IBDScorer {
       'fruit': ['香蕉', '蒸蘋果', '木瓜']
     };
     return alternatives[category] || ['溫和易消化食物'];
+  }
+
+  private getIBDFlareAlternatives(category: string): string[] {
+    // 急性期專用的低渣飲食替代品
+    const flareAlternatives: Record<string, string[]> = {
+      'protein': ['蒸蛋', '去皮雞湯', '清蒸魚片'],
+      'main_dish': ['白粥', '蒸蛋', '去皮雞湯'],
+      'grain': ['白粥', '白吐司（去皮）', '蒸蛋糕'],
+      'condiment': ['少許鹽', '薑汁（少量）'],
+      'default': ['白粥', '蒸蛋', '香蕉']
+    };
+    return flareAlternatives[category] ?? flareAlternatives['default']!;
   }
 
   private getIBDRecommendations(): string[] {
@@ -389,7 +429,7 @@ class AllergyScorer {
       recommendations,
       alternatives: finalScore <= 2 ? this.getAllergySafeAlternatives(food.category, profile.known_allergies || []) : [],
       medicalReason: this.getAllergyMedicalReason(finalScore, allergyCheck.severity),
-      urgency: allergyCheck.severity === 'critical' ? 'critical' : finalScore <= 2 ? 'high' : 'low'
+      urgency: finalScore <= 2 ? 'high' as const : 'low' as const
     };
   }
 
@@ -498,19 +538,23 @@ export class MedicalScoringEngine {
 
     // Primary condition scoring
     switch (profile.primary_condition) {
+      case 'ibd':
       case 'IBD':
       case 'Crohns':
       case 'UC':
         medicalScore = this.ibdScorer.scoreFood(food, profile);
         break;
+      case 'chemotherapy':
       case '化療':
       case 'Chemotherapy':
         medicalScore = this.chemoScorer.scoreFood(food, profile);
         break;
+      case 'allergy':
       case '過敏':
       case 'Food_Allergies':
         medicalScore = this.allergyScorer.scoreFood(food, profile);
         break;
+      case 'ibs':
       case 'IBS':
         medicalScore = this.scoreForIBS(food, profile);
         break;
