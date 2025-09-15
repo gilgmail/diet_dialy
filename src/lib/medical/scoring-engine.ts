@@ -44,15 +44,16 @@ class IBDScorer {
     if (currentPhase === 'active_flare') {
       recommendations.push('目前為急性期，建議採用低渣飲食');
 
-      // 急性期絕對禁止
+      // 急性期絕對禁止 (支援中英文風險因子)
       const acuteForbidden = [
-        '生食', '高不溶性纖維', '辛辣食物', '酒精',
-        '高脂肪食物', '碳酸飲料', '咖啡因', '生蔬菜',
-        '全穀類', '堅果種子', '豆類', '油炸食物', '紅肉'
+        '生食', 'raw food', '高不溶性纖維', 'high fiber', '辛辣食物', 'spicy food',
+        '酒精', 'alcohol', '高脂肪食物', 'high fat', '碳酸飲料', 'carbonated drinks',
+        '咖啡因', 'caffeine', '生蔬菜', 'raw vegetables', '全穀類', 'whole grains',
+        '堅果種子', 'nuts seeds', '豆類', 'legumes', '油炸食物', 'fried food', '紅肉', 'red meat'
       ];
 
       for (const forbidden of acuteForbidden) {
-        if (food.medical_scores.ibd_risk_factors.includes(forbidden)) {
+        if (food.medical_scores.ibd_risk_factors?.includes(forbidden)) {
           return {
             score: 1,
             level: '差',
@@ -86,14 +87,16 @@ class IBDScorer {
     else {
       recommendations.push('目前為緩解期，可適度正常飲食');
 
-      // 緩解期仍需避免的高風險食物
+      // 緩解期仍需避免的高風險食物 (支援中英文風險因子)
       const remissionAvoid = [
-        '油炸食物', '加工食品', '辛辣食物', '酒精',
-        '碳酸飲料', '人工甜味劑'
+        '油炸食物', 'fried food', '加工食品', 'processed food',
+        '辛辣食物', 'spicy food', '酒精', 'alcohol',
+        '碳酸飲料', 'carbonated drinks', '人工甜味劑', 'artificial sweeteners',
+        '高糖', 'high sugar'
       ];
 
       for (const avoid of remissionAvoid) {
-        if (food.medical_scores.ibd_risk_factors.includes(avoid)) {
+        if (food.medical_scores.ibd_risk_factors?.includes(avoid)) {
           baseScore = 1;
           riskFactors.push(`緩解期仍需避免：${avoid}`);
           recommendations.push('即使緩解期也建議避免此類食物');
@@ -101,10 +104,13 @@ class IBDScorer {
         }
       }
 
-      // 緩解期需適量的食物
-      const remissionCaution = ['紅肉', '乳製品', '高脂肪食物', '生食'];
+      // 緩解期需適量的食物 (支援中英文風險因子)
+      const remissionCaution = [
+        '紅肉', 'red meat', '乳製品', 'dairy',
+        '高脂肪食物', 'high fat', '生食', 'raw food'
+      ];
       for (const caution of remissionCaution) {
-        if (food.medical_scores.ibd_risk_factors.includes(caution)) {
+        if (food.medical_scores.ibd_risk_factors?.includes(caution)) {
           baseScore -= 1;
           riskFactors.push(`適量攝取：${caution}`);
           recommendations.push('緩解期可適量食用，但需注意身體反應');
@@ -281,7 +287,7 @@ class ChemoScorer {
     }
 
     for (const risk of criticalRisks) {
-      if (food.name_zh.includes(risk) || food.medical_scores.ibd_risk_factors.includes(risk)) {
+      if (food.name_zh.includes(risk) || food.medical_scores.ibd_risk_factors?.includes(risk)) {
         critical = true;
         risks.push(`${risk} - 感染風險`);
       }
@@ -443,7 +449,7 @@ class AllergyScorer {
     let riskLevel = 0;
 
     for (const allergy of knownAllergies) {
-      if (food.medical_scores.major_allergens.includes(allergy)) {
+      if (food.medical_scores.major_allergens?.includes(allergy)) {
         severity = 'critical';
         riskLevel = 4;
         risks.push(`含有過敏原: ${allergy}`);

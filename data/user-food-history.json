@@ -1,0 +1,403 @@
+{
+  "entries": [
+    {
+      "id": "eda03e86-cc41-4be8-9f9b-4a0764e1f351",
+      "userId": "demo-user",
+      "foodId": "310f0da8-8290-452c-abde-628e1ae0a97d",
+      "foodData": {
+        "id": "310f0da8-8290-452c-abde-628e1ae0a97d",
+        "name_zh": "糖醋里肌",
+        "name_en": "Sweet and Sour Pork",
+        "category": "protein",
+        "medical_scores": {
+          "ibd_score": 2,
+          "ibd_risk_factors": [
+            "high sugar",
+            "fried food"
+          ],
+          "chemo_safety": "caution",
+          "major_allergens": [],
+          "fodmap_level": "low"
+        },
+        "availability": {
+          "taiwan": true,
+          "hong_kong": true,
+          "seasonal": null
+        },
+        "cooking_methods": [
+          "生"
+        ],
+        "alternatives": [],
+        "created": "2025-09-14T21:45:06.178635",
+        "medical_validated": true
+      },
+      "consumedAt": "2025-09-15T07:44:05.815Z",
+      "portion": {
+        "amount": 1,
+        "unit": "medium"
+      },
+      "medicalScore": {
+        "score": 3,
+        "level": "好",
+        "emoji": "😊",
+        "riskFactors": [],
+        "recommendations": [
+          "目前為緩解期，可適度正常飲食"
+        ],
+        "alternatives": [],
+        "medicalReason": "一般情況下安全，但需注意份量",
+        "urgency": "low"
+      },
+      "notes": "透過拍照識別",
+      "photoUrl": "mock-photo-url",
+      "recognitionConfidence": 0.9463509785567246,
+      "tags": [
+        "demo"
+      ],
+      "createdAt": "2025-09-15T07:44:05.815Z",
+      "updatedAt": "2025-09-15T07:44:05.815Z"
+    },
+    {
+      "id": "28691c2e-ca1b-42c8-ace5-77cc97d7d04c",
+      "userId": "demo-user",
+      "foodId": "fb1ea3e6-2c10-4da8-b874-23bd165f2c39",
+      "foodData": {
+        "id": "fb1ea3e6-2c10-4da8-b874-23bd165f2c39",
+        "name_zh": "白粥",
+        "name_en": "White Rice Porridge",
+        "category": "grain",
+        "medical_scores": {
+          "ibd_score": 4,
+          "ibd_risk_factors": [],
+          "chemo_safety": "safe",
+          "major_allergens": [],
+          "fodmap_level": "low"
+        },
+        "availability": {
+          "taiwan": true,
+          "hong_kong": true,
+          "seasonal": null
+        },
+        "cooking_methods": [
+          "煮"
+        ],
+        "alternatives": [],
+        "created": "2025-09-14T21:45:06.178809",
+        "medical_validated": true
+      },
+      "consumedAt": "2025-09-15T14:10:55.187Z",
+      "medicalScore": {
+        "score": 4,
+        "level": "完美",
+        "emoji": "😍",
+        "riskFactors": [],
+        "recommendations": [
+          "目前為緩解期，可適度正常飲食",
+          "IBD友善食物，營養豐富且易消化"
+        ],
+        "alternatives": [],
+        "medicalReason": "IBD友善食物，有助腸道健康",
+        "urgency": "low"
+      },
+      "tags": [],
+      "createdAt": "2025-09-15T14:10:55.187Z",
+      "updatedAt": "2025-09-15T14:10:55.187Z"
+    },
+    {
+      "id": "8400cf5a-cc9b-430f-ac88-4343134c6458",
+      "userId": "demo-user",
+      "foodId": "074f91bd-c0b4-49f4-b459-264720544e3d",
+      "foodData": {
+        "id": "074f91bd-c0b4-49f4-b459-264720544e3d",
+        "name_zh": "清蒸魚",
+        "name_en": "Steamed Fish",
+        "category": "protein",
+        "medical_scores": {
+          "ibd_score": 4,
+          "ibd_risk_factors": [],
+          "chemo_safety": "safe",
+          "major_allergens": [],
+          "fodmap_level": "low"
+        },
+        "availability": {
+          "taiwan": true,
+          "hong_kong": true,
+          "seasonal": null
+        },
+        "cooking_methods": [
+          "煎",
+          "蒸",
+          "烤",
+          "煮"
+        ],
+        "alternatives": [],
+        "created": "2025-09-14T21:45:06.178501",
+        "medical_validated": true
+      },
+      "consumedAt": "2025-09-15T14:23:30.644Z",
+      "medicalScore": {
+        "score": 4,
+        "level": "完美",
+        "emoji": "😍",
+        "riskFactors": [],
+        "recommendations": [
+          "目前為緩解期，可適度正常飲食",
+          "溫和烹調方式，適合IBD患者長期食用",
+          "IBD友善食物，營養豐富且易消化"
+        ],
+        "alternatives": [],
+        "medicalReason": "IBD友善食物，有助腸道健康",
+        "urgency": "low"
+      },
+      "tags": [],
+      "createdAt": "2025-09-15T14:23:30.644Z",
+      "updatedAt": "2025-09-15T14:23:30.644Z"
+    },
+    {
+      "id": "179e3ccf-b2ba-4264-8803-897a463505d2",
+      "userId": "demo-user",
+      "foodId": "074f91bd-c0b4-49f4-b459-264720544e3d",
+      "foodData": {
+        "id": "074f91bd-c0b4-49f4-b459-264720544e3d",
+        "name_zh": "清蒸魚",
+        "name_en": "Steamed Fish",
+        "category": "protein",
+        "medical_scores": {
+          "ibd_score": 4,
+          "ibd_risk_factors": [],
+          "chemo_safety": "safe",
+          "major_allergens": [],
+          "fodmap_level": "low"
+        },
+        "availability": {
+          "taiwan": true,
+          "hong_kong": true,
+          "seasonal": null
+        },
+        "cooking_methods": [
+          "煎",
+          "蒸",
+          "烤",
+          "煮"
+        ],
+        "alternatives": [],
+        "created": "2025-09-14T21:45:06.178501",
+        "medical_validated": true
+      },
+      "consumedAt": "2025-09-15T14:51:22.211Z",
+      "medicalScore": {
+        "score": 4,
+        "level": "完美",
+        "emoji": "😍",
+        "riskFactors": [],
+        "recommendations": [
+          "目前為緩解期，可適度正常飲食",
+          "溫和烹調方式，適合IBD患者長期食用",
+          "IBD友善食物，營養豐富且易消化"
+        ],
+        "alternatives": [],
+        "medicalReason": "IBD友善食物，有助腸道健康",
+        "urgency": "low"
+      },
+      "tags": [],
+      "createdAt": "2025-09-15T14:51:22.211Z",
+      "updatedAt": "2025-09-15T14:51:22.211Z"
+    },
+    {
+      "id": "91a7dda9-937e-4c19-b5b9-309cc90f002d",
+      "userId": "demo-user",
+      "foodId": "b876c60c-21c5-452c-8ab8-0d18d4be9dba",
+      "foodData": {
+        "id": "b876c60c-21c5-452c-8ab8-0d18d4be9dba",
+        "name_zh": "雞排",
+        "name_en": "Fried Chicken Cutlet",
+        "category": "protein",
+        "medical_scores": {
+          "ibd_score": 1,
+          "ibd_risk_factors": [
+            "fried food",
+            "high fat"
+          ],
+          "chemo_safety": "caution",
+          "major_allergens": [],
+          "fodmap_level": "low"
+        },
+        "availability": {
+          "taiwan": true,
+          "hong_kong": true,
+          "seasonal": null
+        },
+        "cooking_methods": [
+          "煎",
+          "炒",
+          "烤",
+          "蒸"
+        ],
+        "alternatives": [],
+        "created": "2025-09-14T21:45:06.178252",
+        "medical_validated": true
+      },
+      "consumedAt": "2025-09-15T18:05:52.013Z",
+      "medicalScore": {
+        "score": 3,
+        "level": "好",
+        "emoji": "😊",
+        "riskFactors": [],
+        "recommendations": [
+          "目前為緩解期，可適度正常飲食"
+        ],
+        "alternatives": [],
+        "medicalReason": "一般情況下安全，但需注意份量",
+        "urgency": "low"
+      },
+      "tags": [],
+      "createdAt": "2025-09-15T18:05:52.013Z",
+      "updatedAt": "2025-09-15T18:05:52.013Z"
+    },
+    {
+      "id": "ece76114-688c-4fdc-a3d9-afeb7c84e885",
+      "userId": "demo-user",
+      "foodId": "b876c60c-21c5-452c-8ab8-0d18d4be9dba",
+      "foodData": {
+        "id": "b876c60c-21c5-452c-8ab8-0d18d4be9dba",
+        "name_zh": "雞排",
+        "name_en": "Fried Chicken Cutlet",
+        "category": "protein",
+        "medical_scores": {
+          "ibd_score": 1,
+          "ibd_risk_factors": [
+            "fried food",
+            "high fat"
+          ],
+          "chemo_safety": "caution",
+          "major_allergens": [],
+          "fodmap_level": "low"
+        },
+        "availability": {
+          "taiwan": true,
+          "hong_kong": true,
+          "seasonal": null
+        },
+        "cooking_methods": [
+          "煎",
+          "炒",
+          "烤",
+          "蒸"
+        ],
+        "alternatives": [],
+        "created": "2025-09-14T21:45:06.178252",
+        "medical_validated": true
+      },
+      "consumedAt": "2025-09-15T18:22:31.897Z",
+      "portion": {
+        "amount": 100,
+        "unit": "custom",
+        "customAmount": 100,
+        "customUnit": "g"
+      },
+      "medicalScore": {
+        "score": 1,
+        "level": "差",
+        "emoji": "😞",
+        "riskFactors": [
+          "緩解期仍需避免：fried food",
+          "適量攝取：high fat"
+        ],
+        "recommendations": [
+          "選擇溫和易消化的食物",
+          "避免高纖維和刺激性食物",
+          "少量多餐，充分咀嚼",
+          "注意個人觸發食物"
+        ],
+        "alternatives": [
+          "蒸蛋",
+          "去皮雞肉",
+          "清蒸魚",
+          "豆腐"
+        ],
+        "medicalReason": " 含有IBD高風險因子，可能引發急性症狀",
+        "urgency": "medium"
+      },
+      "tags": [],
+      "createdAt": "2025-09-15T18:22:31.897Z",
+      "updatedAt": "2025-09-15T18:22:31.897Z"
+    },
+    {
+      "id": "4657ae82-aed6-4fcf-8fcc-dff3c254bb84",
+      "userId": "demo-user",
+      "foodId": "b876c60c-21c5-452c-8ab8-0d18d4be9dba",
+      "foodData": {
+        "id": "b876c60c-21c5-452c-8ab8-0d18d4be9dba",
+        "name_zh": "雞排",
+        "name_en": "Fried Chicken Cutlet",
+        "category": "protein",
+        "medical_scores": {
+          "ibd_score": 1,
+          "ibd_risk_factors": [
+            "fried food",
+            "high fat"
+          ],
+          "chemo_safety": "caution",
+          "major_allergens": [],
+          "fodmap_level": "low"
+        },
+        "availability": {
+          "taiwan": true,
+          "hong_kong": true,
+          "seasonal": null
+        },
+        "cooking_methods": [
+          "煎",
+          "炒",
+          "烤",
+          "蒸"
+        ],
+        "alternatives": [],
+        "created": "2025-09-14T21:45:06.178252",
+        "medical_validated": true
+      },
+      "consumedAt": "2025-09-15T18:22:43.400Z",
+      "portion": {
+        "amount": 100,
+        "unit": "custom",
+        "customAmount": 100,
+        "customUnit": "g"
+      },
+      "medicalScore": {
+        "score": 1,
+        "level": "差",
+        "emoji": "😞",
+        "riskFactors": [
+          "緩解期仍需避免：fried food",
+          "適量攝取：high fat"
+        ],
+        "recommendations": [
+          "選擇溫和易消化的食物",
+          "避免高纖維和刺激性食物",
+          "少量多餐，充分咀嚼",
+          "注意個人觸發食物"
+        ],
+        "alternatives": [
+          "蒸蛋",
+          "去皮雞肉",
+          "清蒸魚",
+          "豆腐"
+        ],
+        "medicalReason": " 含有IBD高風險因子，可能引發急性症狀",
+        "urgency": "medium"
+      },
+      "tags": [],
+      "createdAt": "2025-09-15T18:22:43.400Z",
+      "updatedAt": "2025-09-15T18:22:43.400Z"
+    }
+  ],
+  "metadata": {
+    "userId": "demo-user",
+    "totalEntries": 7,
+    "dateRange": {
+      "earliest": "2025-09-15T07:44:05.815Z",
+      "latest": "2025-09-15T18:22:43.400Z"
+    },
+    "lastUpdated": "2025-09-15T18:22:43.400Z"
+  }
+}
