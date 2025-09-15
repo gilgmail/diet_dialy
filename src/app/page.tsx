@@ -78,14 +78,22 @@ export default function HomePage(): JSX.Element {
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-md mx-auto px-4 py-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">DD</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">DD</span>
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900">Diet Daily</h1>
+                <p className="text-xs text-gray-600">智能飲食健康追蹤</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900">Diet Daily</h1>
-              <p className="text-xs text-gray-600">智能飲食健康追蹤</p>
-            </div>
+            <a
+              href="/database"
+              className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
+            >
+              📊 資料庫
+            </a>
           </div>
         </div>
       </header>

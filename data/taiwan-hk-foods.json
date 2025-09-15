@@ -19,22 +19,32 @@
       "Johns Hopkins Chemotherapy Nutrition",
       "Stanford Allergy Guidelines",
       "International Foundation for Gastrointestinal Disorders (IBS)"
-    ]
+    ],
+    "updated": "2025-09-15T03:26:53.189Z",
+    "cooking_methods_updated": true,
+    "risk_factors_updated": true,
+    "risk_factor_mapping_updated": true
   },
   "categories": {
-    "taiwan_staples": 50,
-    "hongkong_classics": 50,
-    "common_proteins": 25,
-    "vegetables_fruits": 35,
-    "grains_starches": 20,
-    "snacks_beverages": 20
+    "main_dish": 24,
+    "snack": 15,
+    "protein": 40,
+    "soup": 8,
+    "beverage": 12,
+    "grain": 28,
+    "dessert": 19,
+    "vegetable": 29,
+    "condiment": 8,
+    "fruit": 23,
+    "nuts": 2,
+    "dairy": 1
   },
   "medical_scoring": {
     "ibd_scores": {
-      "4": "完美 - IBD 友善食物",
-      "3": "好 - 通常安全",
+      "1": "差 - 可能引發症狀",
       "2": "普通 - 需要注意",
-      "1": "差 - 可能引發症狀"
+      "3": "好 - 通常安全",
+      "4": "完美 - IBD 友善食物"
     },
     "chemo_safety": {
       "safe": "化療期間安全",
@@ -56,7 +66,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sodium",
+          "high sodium",
           "gluten"
         ],
         "chemo_safety": "safe",
@@ -70,7 +80,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "燉"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178220",
       "medical_validated": true
@@ -83,7 +96,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_fat"
+          "high fat"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -94,7 +107,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "滷",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178235",
       "medical_validated": true
@@ -108,7 +124,7 @@
         "ibd_score": 2,
         "ibd_risk_factors": [
           "gluten",
-          "high_fat"
+          "high fat"
         ],
         "chemo_safety": "caution",
         "major_allergens": [
@@ -121,7 +137,11 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "炒",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178240",
       "medical_validated": true
@@ -148,7 +168,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178245",
       "medical_validated": true
@@ -161,7 +183,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "fermented"
+          "fermented food"
         ],
         "chemo_safety": "avoid",
         "major_allergens": [
@@ -174,7 +196,13 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮",
+        "燉"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178249",
       "medical_validated": true
@@ -187,8 +215,8 @@
       "medical_scores": {
         "ibd_score": 1,
         "ibd_risk_factors": [
-          "deep_fried",
-          "high_fat"
+          "fried food",
+          "high fat"
         ],
         "chemo_safety": "caution",
         "major_allergens": [],
@@ -199,7 +227,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178252",
       "medical_validated": true
@@ -213,7 +246,7 @@
         "ibd_score": 2,
         "ibd_risk_factors": [
           "gluten",
-          "high_fat"
+          "high fat"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -226,7 +259,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178258",
       "medical_validated": true
@@ -250,7 +285,11 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "炒",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178262",
       "medical_validated": true
@@ -263,8 +302,8 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "starch",
-          "high_fat"
+          "high starch",
+          "high fat"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -275,7 +314,11 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "炒",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178265",
       "medical_validated": true
@@ -288,7 +331,7 @@
       "medical_scores": {
         "ibd_score": 1,
         "ibd_risk_factors": [
-          "deep_fried"
+          "fried food"
         ],
         "chemo_safety": "caution",
         "major_allergens": [],
@@ -299,7 +342,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178269",
       "medical_validated": true
@@ -321,7 +369,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "燉"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178273",
       "medical_validated": true
@@ -345,7 +396,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "燉"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178276",
       "medical_validated": true
@@ -367,7 +421,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "燉"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178280",
       "medical_validated": true
@@ -382,7 +439,7 @@
         "ibd_risk_factors": [],
         "chemo_safety": "safe",
         "major_allergens": [
-          "dairy"
+          "milk"
         ],
         "fodmap_level": "medium"
       },
@@ -391,7 +448,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "燉"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178283",
       "medical_validated": true
@@ -404,8 +464,8 @@
       "medical_scores": {
         "ibd_score": 1,
         "ibd_risk_factors": [
-          "spicy",
-          "acidic"
+          "spicy food",
+          "acidic food"
         ],
         "chemo_safety": "avoid",
         "major_allergens": [],
@@ -416,7 +476,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "燉"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178287",
       "medical_validated": true
@@ -440,7 +503,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178290",
       "medical_validated": true
@@ -467,7 +532,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178293",
       "medical_validated": true
@@ -480,7 +547,7 @@
       "medical_scores": {
         "ibd_score": 1,
         "ibd_risk_factors": [
-          "deep_fried",
+          "fried food",
           "gluten"
         ],
         "chemo_safety": "avoid",
@@ -494,7 +561,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178297",
       "medical_validated": true
@@ -519,7 +588,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178300",
       "medical_validated": true
@@ -541,7 +615,11 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "炒",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178304",
       "medical_validated": true
@@ -554,12 +632,12 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sugar",
+          "high sugar",
           "dairy"
         ],
         "chemo_safety": "caution",
         "major_allergens": [
-          "dairy"
+          "milk"
         ],
         "fodmap_level": "high"
       },
@@ -568,7 +646,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "泡"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178307",
       "medical_validated": true
@@ -581,7 +661,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_sugar"
+          "high sugar"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -592,7 +672,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "泡"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178311",
       "medical_validated": true
@@ -614,7 +696,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "泡"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178314",
       "medical_validated": true
@@ -636,7 +720,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178318",
       "medical_validated": true
@@ -658,7 +745,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178321",
       "medical_validated": true
@@ -680,7 +770,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178324",
       "medical_validated": true
@@ -702,7 +797,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178328",
       "medical_validated": true
@@ -724,7 +824,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178331",
       "medical_validated": true
@@ -746,7 +851,11 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178335",
       "medical_validated": true
@@ -768,7 +877,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178338",
       "medical_validated": true
@@ -790,7 +904,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "蒸",
+        "烤",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178342",
       "medical_validated": true
@@ -812,7 +931,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "蒸",
+        "烤",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178345",
       "medical_validated": true
@@ -834,7 +958,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "蒸",
+        "烤",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178348",
       "medical_validated": true
@@ -858,7 +987,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178352",
       "medical_validated": true
@@ -882,7 +1016,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178355",
       "medical_validated": true
@@ -895,7 +1034,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_fiber"
+          "high fiber"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -906,7 +1045,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178359",
       "medical_validated": true
@@ -919,7 +1061,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_fiber"
+          "high fiber"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -930,7 +1072,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178363",
       "medical_validated": true
@@ -943,7 +1088,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "starch"
+          "high starch"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -954,7 +1099,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178366",
       "medical_validated": true
@@ -967,8 +1115,8 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sugar",
-          "glutinous"
+          "high sugar",
+          "gluten"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -979,7 +1127,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178371",
       "medical_validated": true
@@ -992,8 +1143,8 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sugar",
-          "high_fat"
+          "high sugar",
+          "high fat"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -1007,7 +1158,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178374",
       "medical_validated": true
@@ -1020,7 +1173,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sodium"
+          "high sodium"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -1031,7 +1184,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178378",
       "medical_validated": true
@@ -1044,8 +1199,8 @@
       "medical_scores": {
         "ibd_score": 1,
         "ibd_risk_factors": [
-          "fermented",
-          "spicy"
+          "fermented food",
+          "spicy food"
         ],
         "chemo_safety": "avoid",
         "major_allergens": [
@@ -1058,7 +1213,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178382",
       "medical_validated": true
@@ -1071,8 +1228,8 @@
       "medical_scores": {
         "ibd_score": 1,
         "ibd_risk_factors": [
-          "spicy",
-          "high_sugar"
+          "spicy food",
+          "high sugar"
         ],
         "chemo_safety": "caution",
         "major_allergens": [],
@@ -1083,7 +1240,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178385",
       "medical_validated": true
@@ -1096,7 +1255,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_fat"
+          "high fat"
         ],
         "chemo_safety": "avoid",
         "major_allergens": [
@@ -1109,7 +1268,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178389",
       "medical_validated": true
@@ -1131,7 +1292,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178392",
       "medical_validated": true
@@ -1153,7 +1316,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178396",
       "medical_validated": true
@@ -1175,7 +1340,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178399",
       "medical_validated": true
@@ -1197,7 +1364,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178403",
       "medical_validated": true
@@ -1210,7 +1379,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_fiber"
+          "high fiber"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -1221,7 +1390,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178406",
       "medical_validated": true
@@ -1243,7 +1414,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178410",
       "medical_validated": true
@@ -1256,7 +1430,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_fiber"
+          "high fiber"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -1267,7 +1441,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178413",
       "medical_validated": true
@@ -1289,7 +1466,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178417",
       "medical_validated": true
@@ -1311,7 +1491,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178420",
       "medical_validated": true
@@ -1333,7 +1516,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178424",
       "medical_validated": true
@@ -1346,11 +1532,11 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_caffeine"
+          "caffeine"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
-          "dairy"
+          "milk"
         ],
         "fodmap_level": "low"
       },
@@ -1359,7 +1545,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "泡"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178428",
       "medical_validated": true
@@ -1372,8 +1560,8 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sugar",
-          "high_fat"
+          "high sugar",
+          "high fat"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -1387,7 +1575,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "炸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178431",
       "medical_validated": true
@@ -1400,7 +1591,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sugar"
+          "high sugar"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -1414,7 +1605,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178435",
       "medical_validated": true
@@ -1427,8 +1623,8 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sodium",
-          "preservatives"
+          "high sodium",
+          "processed food"
         ],
         "chemo_safety": "caution",
         "major_allergens": [],
@@ -1439,7 +1635,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178438",
       "medical_validated": true
@@ -1452,8 +1653,8 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sugar",
-          "high_sodium"
+          "high sugar",
+          "high sodium"
         ],
         "chemo_safety": "caution",
         "major_allergens": [],
@@ -1464,7 +1665,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178442",
       "medical_validated": true
@@ -1488,7 +1694,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178445",
       "medical_validated": true
@@ -1510,7 +1721,11 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "炒",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178449",
       "medical_validated": true
@@ -1534,7 +1749,11 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "炒",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178452",
       "medical_validated": true
@@ -1556,7 +1775,11 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "炒",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178455",
       "medical_validated": true
@@ -1569,13 +1792,13 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sugar",
-          "high_fat"
+          "high sugar",
+          "high fat"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
           "eggs",
-          "dairy"
+          "milk"
         ],
         "fodmap_level": "low"
       },
@@ -1584,7 +1807,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178459",
       "medical_validated": true
@@ -1606,7 +1832,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178462",
       "medical_validated": true
@@ -1619,7 +1848,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "processed"
+          "processed food"
         ],
         "chemo_safety": "caution",
         "major_allergens": [],
@@ -1630,7 +1859,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "蒸",
+        "烤",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178465",
       "medical_validated": true
@@ -1654,7 +1888,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178468",
       "medical_validated": true
@@ -1667,7 +1903,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_fat"
+          "high fat"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -1678,7 +1914,11 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "炒",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178471",
       "medical_validated": true
@@ -1691,8 +1931,8 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sodium",
-          "processed"
+          "high sodium",
+          "processed food"
         ],
         "chemo_safety": "caution",
         "major_allergens": [
@@ -1705,7 +1945,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178475",
       "medical_validated": true
@@ -1718,11 +1960,11 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_sugar"
+          "high sugar"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
-          "dairy"
+          "milk"
         ],
         "fodmap_level": "medium"
       },
@@ -1731,7 +1973,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178481",
       "medical_validated": true
@@ -1746,7 +1991,7 @@
         "ibd_risk_factors": [],
         "chemo_safety": "safe",
         "major_allergens": [
-          "dairy"
+          "milk"
         ],
         "fodmap_level": "low"
       },
@@ -1755,7 +2000,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178485",
       "medical_validated": true
@@ -1777,7 +2025,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178488",
       "medical_validated": true
@@ -1801,7 +2052,13 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮",
+        "燉"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178491",
       "medical_validated": true
@@ -1825,7 +2082,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178494",
       "medical_validated": true
@@ -1849,7 +2109,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178498",
       "medical_validated": true
@@ -1871,7 +2136,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "蒸",
+        "烤",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178501",
       "medical_validated": true
@@ -1884,7 +2154,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "deep_fried"
+          "fried food"
         ],
         "chemo_safety": "caution",
         "major_allergens": [],
@@ -1895,7 +2165,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "蒸",
+        "烤",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178504",
       "medical_validated": true
@@ -1917,7 +2192,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178507",
       "medical_validated": true
@@ -1941,7 +2221,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178510",
       "medical_validated": true
@@ -1963,7 +2248,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178514",
       "medical_validated": true
@@ -1985,7 +2275,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178517",
       "medical_validated": true
@@ -2007,7 +2299,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178520",
       "medical_validated": true
@@ -2029,7 +2326,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178523",
       "medical_validated": true
@@ -2051,7 +2353,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178526",
       "medical_validated": true
@@ -2064,7 +2371,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_sodium"
+          "high sodium"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -2077,7 +2384,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178530",
       "medical_validated": true
@@ -2090,7 +2400,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_sodium"
+          "high sodium"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -2103,7 +2413,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178533",
       "medical_validated": true
@@ -2116,7 +2429,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "glutinous"
+          "gluten"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -2127,7 +2440,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178536",
       "medical_validated": true
@@ -2151,7 +2467,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178539",
       "medical_validated": true
@@ -2164,7 +2485,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_sodium"
+          "high sodium"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -2177,7 +2498,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178542",
       "medical_validated": true
@@ -2201,7 +2524,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178546",
       "medical_validated": true
@@ -2223,7 +2548,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178549",
       "medical_validated": true
@@ -2245,7 +2573,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178552",
       "medical_validated": true
@@ -2258,8 +2589,8 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "spicy",
-          "processed"
+          "spicy food",
+          "processed food"
         ],
         "chemo_safety": "caution",
         "major_allergens": [],
@@ -2270,7 +2601,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "蒸",
+        "烤",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178555",
       "medical_validated": true
@@ -2283,7 +2619,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "fermented"
+          "fermented food"
         ],
         "chemo_safety": "avoid",
         "major_allergens": [
@@ -2296,7 +2632,13 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮",
+        "燉"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178558",
       "medical_validated": true
@@ -2309,7 +2651,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sugar"
+          "high sugar"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -2323,7 +2665,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178562",
       "medical_validated": true
@@ -2336,8 +2683,8 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sugar",
-          "high_fat"
+          "high sugar",
+          "high fat"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -2351,7 +2698,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178565",
       "medical_validated": true
@@ -2375,7 +2724,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178568",
       "medical_validated": true
@@ -2397,7 +2751,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178571",
       "medical_validated": true
@@ -2419,7 +2775,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178574",
       "medical_validated": true
@@ -2434,7 +2793,7 @@
         "ibd_risk_factors": [],
         "chemo_safety": "safe",
         "major_allergens": [
-          "nuts"
+          "tree nuts"
         ],
         "fodmap_level": "low"
       },
@@ -2443,7 +2802,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178577",
       "medical_validated": true
@@ -2456,8 +2818,8 @@
       "medical_scores": {
         "ibd_score": 1,
         "ibd_risk_factors": [
-          "spicy",
-          "high_sodium"
+          "spicy food",
+          "high sodium"
         ],
         "chemo_safety": "avoid",
         "major_allergens": [
@@ -2470,7 +2832,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178581",
       "medical_validated": true
@@ -2483,7 +2847,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sodium"
+          "high sodium"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -2496,7 +2860,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178584",
       "medical_validated": true
@@ -2509,7 +2875,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sodium"
+          "high sodium"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -2522,7 +2888,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178588",
       "medical_validated": true
@@ -2535,7 +2903,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sodium"
+          "high sodium"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -2548,7 +2916,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178592",
       "medical_validated": true
@@ -2561,7 +2931,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sulfur"
+          "high sulfur"
         ],
         "chemo_safety": "avoid",
         "major_allergens": [],
@@ -2572,7 +2942,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178595",
       "medical_validated": true
@@ -2594,7 +2966,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178598",
       "medical_validated": true
@@ -2616,7 +2990,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178601",
       "medical_validated": true
@@ -2638,7 +3014,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178605",
       "medical_validated": true
@@ -2660,7 +3038,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178608",
       "medical_validated": true
@@ -2682,7 +3062,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178612",
       "medical_validated": true
@@ -2695,7 +3080,7 @@
       "medical_scores": {
         "ibd_score": 1,
         "ibd_risk_factors": [
-          "spicy"
+          "spicy food"
         ],
         "chemo_safety": "avoid",
         "major_allergens": [],
@@ -2706,7 +3091,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178615",
       "medical_validated": true
@@ -2719,7 +3109,7 @@
       "medical_scores": {
         "ibd_score": 1,
         "ibd_risk_factors": [
-          "spicy"
+          "spicy food"
         ],
         "chemo_safety": "avoid",
         "major_allergens": [
@@ -2732,7 +3122,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178618",
       "medical_validated": true
@@ -2756,7 +3151,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178621",
       "medical_validated": true
@@ -2769,7 +3169,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_fat"
+          "high fat"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -2782,7 +3182,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178624",
       "medical_validated": true
@@ -2804,7 +3209,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178628",
       "medical_validated": true
@@ -2817,7 +3227,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_fat"
+          "high fat"
         ],
         "chemo_safety": "caution",
         "major_allergens": [],
@@ -2828,7 +3238,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178631",
       "medical_validated": true
@@ -2841,8 +3256,8 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sugar",
-          "deep_fried"
+          "high sugar",
+          "fried food"
         ],
         "chemo_safety": "caution",
         "major_allergens": [],
@@ -2853,7 +3268,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178635",
       "medical_validated": true
@@ -2875,7 +3292,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178638",
       "medical_validated": true
@@ -2888,8 +3310,8 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sugar",
-          "preservatives"
+          "high sugar",
+          "processed food"
         ],
         "chemo_safety": "caution",
         "major_allergens": [],
@@ -2900,7 +3322,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178642",
       "medical_validated": true
@@ -2922,7 +3349,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178645",
       "medical_validated": true
@@ -2935,8 +3367,8 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sugar",
-          "deep_fried"
+          "high sugar",
+          "fried food"
         ],
         "chemo_safety": "caution",
         "major_allergens": [],
@@ -2947,7 +3379,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "蒸",
+        "烤",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178650",
       "medical_validated": true
@@ -2960,7 +3397,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_sodium"
+          "high sodium"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -2971,7 +3408,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "蒸",
+        "烤",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178653",
       "medical_validated": true
@@ -2993,7 +3435,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "蒸",
+        "烤",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178656",
       "medical_validated": true
@@ -3006,7 +3453,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "raw"
+          "raw food"
         ],
         "chemo_safety": "avoid",
         "major_allergens": [],
@@ -3017,7 +3464,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "蒸",
+        "烤",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178659",
       "medical_validated": true
@@ -3041,7 +3493,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178663",
       "medical_validated": true
@@ -3054,7 +3511,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "deep_fried"
+          "fried food"
         ],
         "chemo_safety": "caution",
         "major_allergens": [
@@ -3067,7 +3524,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178666",
       "medical_validated": true
@@ -3091,7 +3553,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178669",
       "medical_validated": true
@@ -3115,7 +3580,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178672",
       "medical_validated": true
@@ -3128,7 +3598,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "raw"
+          "raw food"
         ],
         "chemo_safety": "avoid",
         "major_allergens": [
@@ -3141,7 +3611,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178675",
       "medical_validated": true
@@ -3154,7 +3629,7 @@
       "medical_scores": {
         "ibd_score": 1,
         "ibd_risk_factors": [
-          "spicy"
+          "spicy food"
         ],
         "chemo_safety": "avoid",
         "major_allergens": [
@@ -3167,7 +3642,13 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮",
+        "燉"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178678",
       "medical_validated": true
@@ -3191,7 +3672,13 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮",
+        "燉"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178682",
       "medical_validated": true
@@ -3215,7 +3702,13 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮",
+        "燉"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178685",
       "medical_validated": true
@@ -3228,7 +3721,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "processed"
+          "processed food"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -3241,7 +3734,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178688",
       "medical_validated": true
@@ -3265,7 +3763,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178693",
       "medical_validated": true
@@ -3278,7 +3781,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "oxalates"
+          "high oxalates"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -3289,7 +3792,11 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "燙",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178697",
       "medical_validated": true
@@ -3311,7 +3818,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178700",
       "medical_validated": true
@@ -3333,7 +3845,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178704",
       "medical_validated": true
@@ -3346,7 +3863,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_fiber"
+          "high fiber"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -3357,7 +3874,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178707",
       "medical_validated": true
@@ -3370,7 +3892,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_fiber"
+          "high fiber"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -3381,7 +3903,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178710",
       "medical_validated": true
@@ -3403,7 +3930,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178713",
       "medical_validated": true
@@ -3425,7 +3957,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178717",
       "medical_validated": true
@@ -3447,7 +3984,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "烤",
+        "炒",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178720",
       "medical_validated": true
@@ -3460,7 +4002,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_fiber"
+          "high fiber"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -3471,7 +4013,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178723",
       "medical_validated": true
@@ -3493,7 +4040,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178726",
       "medical_validated": true
@@ -3515,7 +4067,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178729",
       "medical_validated": true
@@ -3528,7 +4085,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "bitter"
+          "bitter food"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -3539,7 +4096,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178732",
       "medical_validated": true
@@ -3561,7 +4123,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178735",
       "medical_validated": true
@@ -3583,7 +4150,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178739",
       "medical_validated": true
@@ -3605,7 +4177,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178742",
       "medical_validated": true
@@ -3627,7 +4204,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178745",
       "medical_validated": true
@@ -3649,7 +4231,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178748",
       "medical_validated": true
@@ -3671,7 +4258,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178751",
       "medical_validated": true
@@ -3693,7 +4285,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178754",
       "medical_validated": true
@@ -3715,7 +4312,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "炒",
+        "煮",
+        "燙",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178758",
       "medical_validated": true
@@ -3737,7 +4339,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生",
+        "烤"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178761",
       "medical_validated": true
@@ -3759,7 +4364,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178764",
       "medical_validated": true
@@ -3772,7 +4379,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_sugar"
+          "high sugar"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -3783,7 +4390,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178767",
       "medical_validated": true
@@ -3796,7 +4405,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "citric_acid"
+          "acidic food"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -3807,7 +4416,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178770",
       "medical_validated": true
@@ -3829,7 +4440,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178774",
       "medical_validated": true
@@ -3842,8 +4455,8 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "acidic",
-          "enzyme"
+          "acidic food",
+          "enzyme rich food"
         ],
         "chemo_safety": "caution",
         "major_allergens": [],
@@ -3854,7 +4467,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178777",
       "medical_validated": true
@@ -3876,7 +4491,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178780",
       "medical_validated": true
@@ -3898,7 +4515,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178783",
       "medical_validated": true
@@ -3920,7 +4539,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178786",
       "medical_validated": true
@@ -3933,7 +4554,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "acidic"
+          "acidic food"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -3944,7 +4565,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178789",
       "medical_validated": true
@@ -3957,7 +4580,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "seeds"
+          "nuts & seeds"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -3968,7 +4591,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178793",
       "medical_validated": true
@@ -3990,7 +4615,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178796",
       "medical_validated": true
@@ -4003,7 +4630,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sugar"
+          "high sugar"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -4014,7 +4641,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178799",
       "medical_validated": true
@@ -4027,11 +4656,11 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_fat"
+          "high fat"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
-          "nuts"
+          "tree nuts"
         ],
         "fodmap_level": "low"
       },
@@ -4040,7 +4669,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生",
+        "烤"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178802",
       "medical_validated": true
@@ -4053,11 +4685,11 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_fat"
+          "high fat"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
-          "nuts"
+          "tree nuts"
         ],
         "fodmap_level": "low"
       },
@@ -4066,7 +4698,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生",
+        "烤"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178805",
       "medical_validated": true
@@ -4088,7 +4723,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178809",
       "medical_validated": true
@@ -4110,7 +4747,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178812",
       "medical_validated": true
@@ -4123,7 +4763,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_fiber"
+          "high fiber"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -4134,7 +4774,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178816",
       "medical_validated": true
@@ -4147,7 +4789,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_fiber"
+          "high fiber"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -4158,7 +4800,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178820",
       "medical_validated": true
@@ -4171,7 +4816,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_fiber"
+          "high fiber"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -4182,7 +4827,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178823",
       "medical_validated": true
@@ -4208,7 +4856,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178826",
       "medical_validated": true
@@ -4221,7 +4871,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_fiber",
+          "high fiber",
           "gluten"
         ],
         "chemo_safety": "safe",
@@ -4235,7 +4885,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178829",
       "medical_validated": true
@@ -4248,7 +4900,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_sodium",
+          "high sodium",
           "gluten"
         ],
         "chemo_safety": "caution",
@@ -4262,7 +4914,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178833",
       "medical_validated": true
@@ -4288,7 +4942,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178836",
       "medical_validated": true
@@ -4310,7 +4966,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178839",
       "medical_validated": true
@@ -4336,7 +4994,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178842",
       "medical_validated": true
@@ -4349,7 +5009,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_fiber",
+          "high fiber",
           "gluten"
         ],
         "chemo_safety": "safe",
@@ -4363,7 +5023,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178947",
       "medical_validated": true
@@ -4389,7 +5051,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178951",
       "medical_validated": true
@@ -4415,7 +5079,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178954",
       "medical_validated": true
@@ -4428,7 +5095,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_fiber"
+          "high fiber"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -4439,7 +5106,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178958",
       "medical_validated": true
@@ -4452,7 +5122,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_fiber"
+          "high fiber"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -4463,7 +5133,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178961",
       "medical_validated": true
@@ -4485,7 +5158,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178964",
       "medical_validated": true
@@ -4507,7 +5183,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178968",
       "medical_validated": true
@@ -4529,7 +5208,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178971",
       "medical_validated": true
@@ -4551,7 +5233,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178974",
       "medical_validated": true
@@ -4573,7 +5257,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "泡"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178978",
       "medical_validated": true
@@ -4595,7 +5281,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "泡"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178982",
       "medical_validated": true
@@ -4608,7 +5296,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_sugar"
+          "high sugar"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -4619,7 +5307,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178985",
       "medical_validated": true
@@ -4632,7 +5322,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "citric_acid"
+          "acidic food"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -4643,7 +5333,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178988",
       "medical_validated": true
@@ -4665,7 +5357,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178992",
       "medical_validated": true
@@ -4680,7 +5374,7 @@
         "ibd_risk_factors": [],
         "chemo_safety": "safe",
         "major_allergens": [
-          "dairy"
+          "milk"
         ],
         "fodmap_level": "medium"
       },
@@ -4689,7 +5383,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.178999",
       "medical_validated": true
@@ -4706,7 +5402,7 @@
         ],
         "chemo_safety": "safe",
         "major_allergens": [
-          "dairy"
+          "milk"
         ],
         "fodmap_level": "low"
       },
@@ -4715,7 +5411,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179003",
       "medical_validated": true
@@ -4728,11 +5426,11 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "high_fat"
+          "high fat"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
-          "dairy"
+          "milk"
         ],
         "fodmap_level": "low"
       },
@@ -4741,7 +5439,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179007",
       "medical_validated": true
@@ -4754,7 +5454,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "processed"
+          "processed food"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -4767,7 +5467,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179010",
       "medical_validated": true
@@ -4780,8 +5482,8 @@
       "medical_scores": {
         "ibd_score": 1,
         "ibd_risk_factors": [
-          "deep_fried",
-          "high_sodium"
+          "fried food",
+          "high sodium"
         ],
         "chemo_safety": "avoid",
         "major_allergens": [],
@@ -4792,7 +5494,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179014",
       "medical_validated": true
@@ -4805,7 +5509,7 @@
       "medical_scores": {
         "ibd_score": 2,
         "ibd_risk_factors": [
-          "processed"
+          "processed food"
         ],
         "chemo_safety": "caution",
         "major_allergens": [
@@ -4818,7 +5522,12 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "蒸",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179017",
       "medical_validated": true
@@ -4840,7 +5549,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "炸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179020",
       "medical_validated": true
@@ -4853,11 +5565,11 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_fat"
+          "high fat"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
-          "nuts"
+          "tree nuts"
         ],
         "fodmap_level": "low"
       },
@@ -4866,7 +5578,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "生"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179024",
       "medical_validated": true
@@ -4888,7 +5602,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "炸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179027",
       "medical_validated": true
@@ -4901,7 +5618,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "glutinous"
+          "gluten"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -4912,7 +5629,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "烤",
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179031",
       "medical_validated": true
@@ -4925,12 +5645,12 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_sugar"
+          "high sugar"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
           "eggs",
-          "dairy"
+          "milk"
         ],
         "fodmap_level": "low"
       },
@@ -4939,7 +5659,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "蒸"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179035",
       "medical_validated": true
@@ -4952,7 +5674,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "artificial"
+          "artificial sweeteners"
         ],
         "chemo_safety": "safe",
         "major_allergens": [],
@@ -4963,7 +5685,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "冷凝"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179038",
       "medical_validated": true
@@ -4985,7 +5709,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "燉",
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179042",
       "medical_validated": true
@@ -5007,7 +5734,10 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮",
+        "燉"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179045",
       "medical_validated": true
@@ -5020,7 +5750,7 @@
       "medical_scores": {
         "ibd_score": 3,
         "ibd_risk_factors": [
-          "high_sodium"
+          "high sodium"
         ],
         "chemo_safety": "safe",
         "major_allergens": [
@@ -5033,7 +5763,9 @@
         "hong_kong": true,
         "seasonal": null
       },
-      "cooking_methods": [],
+      "cooking_methods": [
+        "煮"
+      ],
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179048",
       "medical_validated": true
