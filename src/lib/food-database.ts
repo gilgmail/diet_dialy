@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 
 const DATABASE_PATH = path.join(process.cwd(), 'data', 'taiwan-hk-foods.json');
+const ADDITIONAL_FOODS_PATH = path.join(process.cwd(), 'data', 'additional-foods.json');
 
 export class FoodDatabaseManager {
   private static instance: FoodDatabaseManager;
@@ -20,15 +21,60 @@ export class FoodDatabaseManager {
     return FoodDatabaseManager.instance;
   }
 
-  // Load database from file
+  // Load database from file and merge with additional foods
   async loadDatabase(): Promise<FoodDatabase> {
     if (this.database) {
       return this.database;
     }
 
     try {
-      const data = await fs.promises.readFile(DATABASE_PATH, 'utf-8');
-      this.database = JSON.parse(data);
+      // Load main database
+      const mainData = await fs.promises.readFile(DATABASE_PATH, 'utf-8');
+      const mainDatabase = JSON.parse(mainData);
+
+      // Load additional foods
+      let additionalFoods: any[] = [];
+      try {
+        const additionalData = await fs.promises.readFile(ADDITIONAL_FOODS_PATH, 'utf-8');
+        const additionalDatabase = JSON.parse(additionalData);
+        additionalFoods = additionalDatabase.additional_foods || [];
+      } catch (error) {
+        console.log('Additional foods database not found, using main database only');
+      }
+
+      // Convert additional foods to DatabaseFoodItem format
+      const convertedAdditionalFoods = additionalFoods.map(food => ({
+        id: food.id,
+        name_zh: food.name_zh,
+        name_en: food.name_en,
+        category: food.category,
+        calories_per_100g: food.calories_per_100g,
+        protein_per_100g: food.protein_per_100g,
+        carbs_per_100g: food.carbs_per_100g,
+        fat_per_100g: food.fat_per_100g,
+        fiber_per_100g: food.fiber_per_100g,
+        medical_scores: food.medical_scores,
+        availability: {
+          taiwan: true,
+          hong_kong: true,
+          seasonal: null
+        },
+        cooking_methods: ['煮', '蒸', '炒'],
+        alternatives: [],
+        created: new Date().toISOString(),
+        medical_validated: true // Additional foods are pre-validated
+      }));
+
+      // Merge databases
+      this.database = {
+        ...mainDatabase,
+        foods: [...mainDatabase.foods, ...convertedAdditionalFoods],
+        metadata: {
+          ...mainDatabase.metadata,
+          total_items: mainDatabase.foods.length + convertedAdditionalFoods.length
+        }
+      };
+
       return this.database!;
     } catch (error) {
       console.error('Failed to load food database:', error);

@@ -3,7 +3,7 @@
     "name": "Taiwan Hong Kong Medical Food Database",
     "version": "1.0.0",
     "created": "2025-09-14T21:45:06.179050",
-    "total_items": 209,
+    "total_items": 281,
     "medical_focus": [
       "IBD",
       "化療",
@@ -28,16 +28,16 @@
   "categories": {
     "main_dish": 24,
     "snack": 15,
-    "protein": 40,
+    "protein": 60,
     "soup": 8,
     "beverage": 12,
-    "grain": 28,
+    "grain": 36,
     "dessert": 19,
-    "vegetable": 29,
-    "condiment": 8,
-    "fruit": 23,
+    "vegetable": 63,
+    "condiment": 12,
+    "fruit": 27,
     "nuts": 2,
-    "dairy": 1
+    "dairy": 3
   },
   "medical_scoring": {
     "ibd_scores": {
@@ -5769,6 +5769,3312 @@
       "alternatives": [],
       "created": "2025-09-14T21:45:06.179048",
       "medical_validated": true
+    },
+    {
+      "id": "af_001",
+      "name_zh": "白米飯",
+      "name_en": "Steamed White Rice",
+      "category": "grain",
+      "calories_per_100g": 130,
+      "protein_per_100g": 2.7,
+      "carbs_per_100g": 28,
+      "fat_per_100g": 0.3,
+      "fiber_per_100g": 0.4,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "易消化的基礎主食"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "化療期間理想的能量來源"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "適合IBS患者的基礎主食"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_002",
+      "name_zh": "雞胸肉",
+      "name_en": "Chicken Breast",
+      "category": "protein",
+      "calories_per_100g": 165,
+      "protein_per_100g": 31,
+      "carbs_per_100g": 0,
+      "fat_per_100g": 3.6,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "優質蛋白質，易消化"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "高蛋白，有助恢復"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意雞肉過敏"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "低刺激性蛋白質"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_003",
+      "name_zh": "番茄",
+      "name_en": "Tomato",
+      "category": "vegetable",
+      "calories_per_100g": 18,
+      "protein_per_100g": 0.9,
+      "carbs_per_100g": 3.9,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 1.2,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "medium",
+          "advice": "可能刺激腸道，適量攝取"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "富含茄紅素，抗氧化"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "茄科植物，注意過敏"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "可能引發IBS症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_004",
+      "name_zh": "香蕉",
+      "name_en": "Banana",
+      "category": "fruit",
+      "calories_per_100g": 89,
+      "protein_per_100g": 1.1,
+      "carbs_per_100g": 23,
+      "fat_per_100g": 0.3,
+      "fiber_per_100g": 2.6,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "易消化，富含鉀"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "提供能量，舒緩腸胃"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意乳膠-水果綜合症"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "低FODMAP水果"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_005",
+      "name_zh": "燕麥",
+      "name_en": "Oatmeal",
+      "category": "grain",
+      "calories_per_100g": 389,
+      "protein_per_100g": 16.9,
+      "carbs_per_100g": 66,
+      "fat_per_100g": 6.9,
+      "fiber_per_100g": 10.6,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "高纖維，可能刺激腸道"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "營養豐富，但纖維較高"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意燕麥過敏"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "高FODMAP，可能引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_006",
+      "name_zh": "雞蛋",
+      "name_en": "Egg",
+      "category": "protein",
+      "calories_per_100g": 155,
+      "protein_per_100g": 13,
+      "carbs_per_100g": 1.1,
+      "fat_per_100g": 11,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "優質蛋白質，易消化"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "完全蛋白質，營養豐富"
+        },
+        "Food_Allergies": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "常見過敏原"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "通常不引發IBS症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_007",
+      "name_zh": "胡蘿蔔",
+      "name_en": "Carrot",
+      "category": "vegetable",
+      "calories_per_100g": 41,
+      "protein_per_100g": 0.9,
+      "carbs_per_100g": 10,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 2.8,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "易消化，富含β-胡蘿蔔素"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含維生素A，抗氧化"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "煮熟後較易消化"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_008",
+      "name_zh": "菠菜",
+      "name_en": "Spinach",
+      "category": "vegetable",
+      "calories_per_100g": 23,
+      "protein_per_100g": 2.9,
+      "carbs_per_100g": 3.6,
+      "fat_per_100g": 0.4,
+      "fiber_per_100g": 2.2,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "富含營養，但草酸較高"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含葉酸和鐵質"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "適量攝取，煮熟較佳"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_009",
+      "name_zh": "鮭魚",
+      "name_en": "Salmon",
+      "category": "protein",
+      "calories_per_100g": 208,
+      "protein_per_100g": 25,
+      "carbs_per_100g": 0,
+      "fat_per_100g": 12,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含omega-3，抗發炎"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "優質蛋白質和omega-3"
+        },
+        "Food_Allergies": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "魚類過敏風險"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "易消化的蛋白質"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_010",
+      "name_zh": "牛奶",
+      "name_en": "Milk",
+      "category": "dairy",
+      "calories_per_100g": 42,
+      "protein_per_100g": 3.4,
+      "carbs_per_100g": 5,
+      "fat_per_100g": 1,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "可能加重發炎反應"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "提供蛋白質，但需注意耐受性"
+        },
+        "Food_Allergies": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "常見過敏原"
+        },
+        "IBS": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "高FODMAP，常引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_011",
+      "name_zh": "地瓜",
+      "name_en": "Sweet Potato",
+      "category": "vegetable",
+      "calories_per_100g": 86,
+      "protein_per_100g": 1.6,
+      "carbs_per_100g": 20,
+      "fat_per_100g": 0.1,
+      "fiber_per_100g": 3,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "易消化，富含β-胡蘿蔔素"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "提供能量和維生素A"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "適量攝取，煮熟較佳"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_012",
+      "name_zh": "蘋果",
+      "name_en": "Apple",
+      "category": "fruit",
+      "calories_per_100g": 52,
+      "protein_per_100g": 0.3,
+      "carbs_per_100g": 14,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 2.4,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "去皮食用較易消化"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含維生素C和纖維"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意樺樹花粉症候群"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "高FODMAP，限量攝取"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_013",
+      "name_zh": "豆腐",
+      "name_en": "Tofu",
+      "category": "protein",
+      "calories_per_100g": 76,
+      "protein_per_100g": 8,
+      "carbs_per_100g": 1.9,
+      "fat_per_100g": 4.8,
+      "fiber_per_100g": 0.3,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "植物性蛋白質，易消化"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和的蛋白質來源"
+        },
+        "Food_Allergies": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "大豆過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "適量攝取，較其他豆類溫和"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_014",
+      "name_zh": "糙米",
+      "name_en": "Brown Rice",
+      "category": "grain",
+      "calories_per_100g": 111,
+      "protein_per_100g": 2.6,
+      "carbs_per_100g": 23,
+      "fat_per_100g": 0.9,
+      "fiber_per_100g": 1.8,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "medium",
+          "advice": "高纖維，可能刺激腸道"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "營養價值較白米高"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "高纖維，可能引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_015",
+      "name_zh": "花椰菜",
+      "name_en": "Broccoli",
+      "category": "vegetable",
+      "calories_per_100g": 34,
+      "protein_per_100g": 2.8,
+      "carbs_per_100g": 7,
+      "fat_per_100g": 0.4,
+      "fiber_per_100g": 2.6,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "十字花科，可能引起脹氣"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含維生素C和抗氧化物"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "高FODMAP，常引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_016",
+      "name_zh": "豬肉絲",
+      "name_en": "Pork Strips",
+      "category": "protein",
+      "calories_per_100g": 242,
+      "protein_per_100g": 25,
+      "carbs_per_100g": 0,
+      "fat_per_100g": 15,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "適量攝取，避免過度加工"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "提供蛋白質，但脂肪較高"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "脂肪較高，適量攝取"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_017",
+      "name_zh": "牛肉片",
+      "name_en": "Beef Slices",
+      "category": "protein",
+      "calories_per_100g": 250,
+      "protein_per_100g": 26,
+      "carbs_per_100g": 0,
+      "fat_per_100g": 15,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "紅肉可能加重發炎，謹慎食用"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "提供鐵質和蛋白質"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意牛肉過敏"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "脂肪較高，可能引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_018",
+      "name_zh": "雞腿肉",
+      "name_en": "Chicken Thigh",
+      "category": "protein",
+      "calories_per_100g": 209,
+      "protein_per_100g": 26,
+      "carbs_per_100g": 0,
+      "fat_per_100g": 11,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "去皮食用較佳"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "優質蛋白質來源"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意雞肉過敏"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "去皮減少脂肪"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_019",
+      "name_zh": "鯛魚片",
+      "name_en": "Sea Bream Fillet",
+      "category": "protein",
+      "calories_per_100g": 128,
+      "protein_per_100g": 25,
+      "carbs_per_100g": 0,
+      "fat_per_100g": 3,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "優質蛋白質，低脂肪"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "易消化的蛋白質"
+        },
+        "Food_Allergies": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "魚類過敏風險"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "低脂優質蛋白質"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_020",
+      "name_zh": "鱈魚",
+      "name_en": "Cod Fish",
+      "category": "protein",
+      "calories_per_100g": 82,
+      "protein_per_100g": 18,
+      "carbs_per_100g": 0,
+      "fat_per_100g": 0.7,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "極低脂肪，易消化"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和的蛋白質來源"
+        },
+        "Food_Allergies": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "魚類過敏風險"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "低脂易消化"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_021",
+      "name_zh": "高麗菜",
+      "name_en": "Cabbage",
+      "category": "vegetable",
+      "calories_per_100g": 25,
+      "protein_per_100g": 1.3,
+      "carbs_per_100g": 6,
+      "fat_per_100g": 0.1,
+      "fiber_per_100g": 2.5,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "十字花科，可能引起脹氣"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含維生素C"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "高FODMAP，容易引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_022",
+      "name_zh": "小白菜",
+      "name_en": "Baby Bok Choy",
+      "category": "vegetable",
+      "calories_per_100g": 13,
+      "protein_per_100g": 1.5,
+      "carbs_per_100g": 2.2,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 1,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "易消化的綠葉蔬菜"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含葉酸和維生素"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和的蔬菜選擇"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_023",
+      "name_zh": "韭菜",
+      "name_en": "Chinese Chives",
+      "category": "vegetable",
+      "calories_per_100g": 22,
+      "protein_per_100g": 2.1,
+      "carbs_per_100g": 4.6,
+      "fat_per_100g": 0.3,
+      "fiber_per_100g": 2.8,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "刺激性較強，可能引起不適"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "適量攝取，富含維生素"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "高FODMAP，容易引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_024",
+      "name_zh": "青椒",
+      "name_en": "Green Bell Pepper",
+      "category": "vegetable",
+      "calories_per_100g": 20,
+      "protein_per_100g": 0.9,
+      "carbs_per_100g": 4.6,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 1.7,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "medium",
+          "advice": "茄科植物，可能刺激腸道"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含維生素C"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "茄科植物，注意過敏"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "可能引發IBS症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_025",
+      "name_zh": "洋蔥",
+      "name_en": "Onion",
+      "category": "vegetable",
+      "calories_per_100g": 40,
+      "protein_per_100g": 1.1,
+      "carbs_per_100g": 9.3,
+      "fat_per_100g": 0.1,
+      "fiber_per_100g": 1.7,
+      "medical_scores": {
+        "IBD": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "刺激性強，避免食用"
+        },
+        "Chemotherapy": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "可能引起腸胃不適"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意洋蔥過敏"
+        },
+        "IBS": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "高FODMAP，強烈不建議"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_026",
+      "name_zh": "大蒜",
+      "name_en": "Garlic",
+      "category": "condiment",
+      "calories_per_100g": 149,
+      "protein_per_100g": 6.4,
+      "carbs_per_100g": 33,
+      "fat_per_100g": 0.5,
+      "fiber_per_100g": 2.1,
+      "medical_scores": {
+        "IBD": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "刺激性極強，避免食用"
+        },
+        "Chemotherapy": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "可能引起腸胃刺激"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意大蒜過敏"
+        },
+        "IBS": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "高FODMAP，強烈不建議"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_027",
+      "name_zh": "薑",
+      "name_en": "Ginger",
+      "category": "condiment",
+      "calories_per_100g": 80,
+      "protein_per_100g": 1.8,
+      "carbs_per_100g": 18,
+      "fat_per_100g": 0.8,
+      "fiber_per_100g": 2,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "少量可能有助消化"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "有助緩解噁心"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "少量使用，有助消化"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_028",
+      "name_zh": "冬瓜",
+      "name_en": "Winter Melon",
+      "category": "vegetable",
+      "calories_per_100g": 13,
+      "protein_per_100g": 0.4,
+      "carbs_per_100g": 3,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 0.9,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和易消化，水分豐富"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "清淡易消化"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和的蔬菜選擇"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_029",
+      "name_zh": "絲瓜",
+      "name_en": "Luffa",
+      "category": "vegetable",
+      "calories_per_100g": 20,
+      "protein_per_100g": 1.2,
+      "carbs_per_100g": 4.3,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 1.1,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "清淡易消化的瓜類"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和的蔬菜選擇"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和易消化"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_030",
+      "name_zh": "苦瓜",
+      "name_en": "Bitter Gourd",
+      "category": "vegetable",
+      "calories_per_100g": 17,
+      "protein_per_100g": 1,
+      "carbs_per_100g": 3.7,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 2.8,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "medium",
+          "advice": "苦味較重，可能刺激腸道"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "清熱解毒，但味道較苦"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "苦味可能引起不適"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_031",
+      "name_zh": "白蘿蔔",
+      "name_en": "White Radish (Daikon)",
+      "category": "vegetable",
+      "calories_per_100g": 18,
+      "protein_per_100g": 0.6,
+      "carbs_per_100g": 4.1,
+      "fat_per_100g": 0.1,
+      "fiber_per_100g": 1.6,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "煮熟食用較佳"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "有助消化，清淡"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "煮熟較不易引起脹氣"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_032",
+      "name_zh": "芹菜",
+      "name_en": "Celery",
+      "category": "vegetable",
+      "calories_per_100g": 16,
+      "protein_per_100g": 0.7,
+      "carbs_per_100g": 3,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 1.6,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "纖維較粗，去絲食用"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "富含維生素，但纖維較粗"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意芹菜過敏"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "纖維粗糙，可能引起不適"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_033",
+      "name_zh": "蓮藕",
+      "name_en": "Lotus Root",
+      "category": "vegetable",
+      "calories_per_100g": 74,
+      "protein_per_100g": 2.6,
+      "carbs_per_100g": 17,
+      "fat_per_100g": 0.1,
+      "fiber_per_100g": 4.9,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "煮軟食用，纖維較高"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "提供能量，但纖維較高"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "高纖維，可能引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_034",
+      "name_zh": "玉米",
+      "name_en": "Corn",
+      "category": "grain",
+      "calories_per_100g": 86,
+      "protein_per_100g": 3.3,
+      "carbs_per_100g": 19,
+      "fat_per_100g": 1.4,
+      "fiber_per_100g": 2.4,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "纖維較粗，難消化"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "提供能量，但較難消化"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意玉米過敏"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "纖維粗糙，容易引起脹氣"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_035",
+      "name_zh": "南瓜",
+      "name_en": "Pumpkin",
+      "category": "vegetable",
+      "calories_per_100g": 26,
+      "protein_per_100g": 1,
+      "carbs_per_100g": 6.5,
+      "fat_per_100g": 0.1,
+      "fiber_per_100g": 0.5,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "易消化，富含β-胡蘿蔔素"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和營養，易消化"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和易消化的選擇"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": true
+    },
+    {
+      "id": "67645f2f-171a-45eb-9f55-9d1b9c2af544",
+      "name_zh": "測試魚",
+      "name_en": "Test Fish",
+      "category": "protein",
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "適量攝取"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "營養均衡"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意個人過敏史"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "適量攝取"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "烤",
+        "蒸",
+        "煮"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:00.131Z",
+      "medical_validated": false
+    },
+    {
+      "id": "af_001",
+      "name_zh": "白米飯",
+      "name_en": "Steamed White Rice",
+      "category": "grain",
+      "calories_per_100g": 130,
+      "protein_per_100g": 2.7,
+      "carbs_per_100g": 28,
+      "fat_per_100g": 0.3,
+      "fiber_per_100g": 0.4,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "易消化的基礎主食"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "化療期間理想的能量來源"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "適合IBS患者的基礎主食"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.807Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_002",
+      "name_zh": "雞胸肉",
+      "name_en": "Chicken Breast",
+      "category": "protein",
+      "calories_per_100g": 165,
+      "protein_per_100g": 31,
+      "carbs_per_100g": 0,
+      "fat_per_100g": 3.6,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "優質蛋白質，易消化"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "高蛋白，有助恢復"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意雞肉過敏"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "低刺激性蛋白質"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_003",
+      "name_zh": "番茄",
+      "name_en": "Tomato",
+      "category": "vegetable",
+      "calories_per_100g": 18,
+      "protein_per_100g": 0.9,
+      "carbs_per_100g": 3.9,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 1.2,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "medium",
+          "advice": "可能刺激腸道，適量攝取"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "富含茄紅素，抗氧化"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "茄科植物，注意過敏"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "可能引發IBS症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_004",
+      "name_zh": "香蕉",
+      "name_en": "Banana",
+      "category": "fruit",
+      "calories_per_100g": 89,
+      "protein_per_100g": 1.1,
+      "carbs_per_100g": 23,
+      "fat_per_100g": 0.3,
+      "fiber_per_100g": 2.6,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "易消化，富含鉀"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "提供能量，舒緩腸胃"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意乳膠-水果綜合症"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "低FODMAP水果"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_005",
+      "name_zh": "燕麥",
+      "name_en": "Oatmeal",
+      "category": "grain",
+      "calories_per_100g": 389,
+      "protein_per_100g": 16.9,
+      "carbs_per_100g": 66,
+      "fat_per_100g": 6.9,
+      "fiber_per_100g": 10.6,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "高纖維，可能刺激腸道"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "營養豐富，但纖維較高"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意燕麥過敏"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "高FODMAP，可能引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_006",
+      "name_zh": "雞蛋",
+      "name_en": "Egg",
+      "category": "protein",
+      "calories_per_100g": 155,
+      "protein_per_100g": 13,
+      "carbs_per_100g": 1.1,
+      "fat_per_100g": 11,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "優質蛋白質，易消化"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "完全蛋白質，營養豐富"
+        },
+        "Food_Allergies": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "常見過敏原"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "通常不引發IBS症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_007",
+      "name_zh": "胡蘿蔔",
+      "name_en": "Carrot",
+      "category": "vegetable",
+      "calories_per_100g": 41,
+      "protein_per_100g": 0.9,
+      "carbs_per_100g": 10,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 2.8,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "易消化，富含β-胡蘿蔔素"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含維生素A，抗氧化"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "煮熟後較易消化"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_008",
+      "name_zh": "菠菜",
+      "name_en": "Spinach",
+      "category": "vegetable",
+      "calories_per_100g": 23,
+      "protein_per_100g": 2.9,
+      "carbs_per_100g": 3.6,
+      "fat_per_100g": 0.4,
+      "fiber_per_100g": 2.2,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "富含營養，但草酸較高"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含葉酸和鐵質"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "適量攝取，煮熟較佳"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_009",
+      "name_zh": "鮭魚",
+      "name_en": "Salmon",
+      "category": "protein",
+      "calories_per_100g": 208,
+      "protein_per_100g": 25,
+      "carbs_per_100g": 0,
+      "fat_per_100g": 12,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含omega-3，抗發炎"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "優質蛋白質和omega-3"
+        },
+        "Food_Allergies": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "魚類過敏風險"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "易消化的蛋白質"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_010",
+      "name_zh": "牛奶",
+      "name_en": "Milk",
+      "category": "dairy",
+      "calories_per_100g": 42,
+      "protein_per_100g": 3.4,
+      "carbs_per_100g": 5,
+      "fat_per_100g": 1,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "可能加重發炎反應"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "提供蛋白質，但需注意耐受性"
+        },
+        "Food_Allergies": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "常見過敏原"
+        },
+        "IBS": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "高FODMAP，常引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_011",
+      "name_zh": "地瓜",
+      "name_en": "Sweet Potato",
+      "category": "vegetable",
+      "calories_per_100g": 86,
+      "protein_per_100g": 1.6,
+      "carbs_per_100g": 20,
+      "fat_per_100g": 0.1,
+      "fiber_per_100g": 3,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "易消化，富含β-胡蘿蔔素"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "提供能量和維生素A"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "適量攝取，煮熟較佳"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_012",
+      "name_zh": "蘋果",
+      "name_en": "Apple",
+      "category": "fruit",
+      "calories_per_100g": 52,
+      "protein_per_100g": 0.3,
+      "carbs_per_100g": 14,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 2.4,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "去皮食用較易消化"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含維生素C和纖維"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意樺樹花粉症候群"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "高FODMAP，限量攝取"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_013",
+      "name_zh": "豆腐",
+      "name_en": "Tofu",
+      "category": "protein",
+      "calories_per_100g": 76,
+      "protein_per_100g": 8,
+      "carbs_per_100g": 1.9,
+      "fat_per_100g": 4.8,
+      "fiber_per_100g": 0.3,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "植物性蛋白質，易消化"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和的蛋白質來源"
+        },
+        "Food_Allergies": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "大豆過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "適量攝取，較其他豆類溫和"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_014",
+      "name_zh": "糙米",
+      "name_en": "Brown Rice",
+      "category": "grain",
+      "calories_per_100g": 111,
+      "protein_per_100g": 2.6,
+      "carbs_per_100g": 23,
+      "fat_per_100g": 0.9,
+      "fiber_per_100g": 1.8,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "medium",
+          "advice": "高纖維，可能刺激腸道"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "營養價值較白米高"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "高纖維，可能引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_015",
+      "name_zh": "花椰菜",
+      "name_en": "Broccoli",
+      "category": "vegetable",
+      "calories_per_100g": 34,
+      "protein_per_100g": 2.8,
+      "carbs_per_100g": 7,
+      "fat_per_100g": 0.4,
+      "fiber_per_100g": 2.6,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "十字花科，可能引起脹氣"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含維生素C和抗氧化物"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "高FODMAP，常引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_016",
+      "name_zh": "豬肉絲",
+      "name_en": "Pork Strips",
+      "category": "protein",
+      "calories_per_100g": 242,
+      "protein_per_100g": 25,
+      "carbs_per_100g": 0,
+      "fat_per_100g": 15,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "適量攝取，避免過度加工"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "提供蛋白質，但脂肪較高"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "脂肪較高，適量攝取"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_017",
+      "name_zh": "牛肉片",
+      "name_en": "Beef Slices",
+      "category": "protein",
+      "calories_per_100g": 250,
+      "protein_per_100g": 26,
+      "carbs_per_100g": 0,
+      "fat_per_100g": 15,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "紅肉可能加重發炎，謹慎食用"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "提供鐵質和蛋白質"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意牛肉過敏"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "脂肪較高，可能引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_018",
+      "name_zh": "雞腿肉",
+      "name_en": "Chicken Thigh",
+      "category": "protein",
+      "calories_per_100g": 209,
+      "protein_per_100g": 26,
+      "carbs_per_100g": 0,
+      "fat_per_100g": 11,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "去皮食用較佳"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "優質蛋白質來源"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意雞肉過敏"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "去皮減少脂肪"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_019",
+      "name_zh": "鯛魚片",
+      "name_en": "Sea Bream Fillet",
+      "category": "protein",
+      "calories_per_100g": 128,
+      "protein_per_100g": 25,
+      "carbs_per_100g": 0,
+      "fat_per_100g": 3,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "優質蛋白質，低脂肪"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "易消化的蛋白質"
+        },
+        "Food_Allergies": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "魚類過敏風險"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "低脂優質蛋白質"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_020",
+      "name_zh": "鱈魚",
+      "name_en": "Cod Fish",
+      "category": "protein",
+      "calories_per_100g": 82,
+      "protein_per_100g": 18,
+      "carbs_per_100g": 0,
+      "fat_per_100g": 0.7,
+      "fiber_per_100g": 0,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "極低脂肪，易消化"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和的蛋白質來源"
+        },
+        "Food_Allergies": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "魚類過敏風險"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "低脂易消化"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_021",
+      "name_zh": "高麗菜",
+      "name_en": "Cabbage",
+      "category": "vegetable",
+      "calories_per_100g": 25,
+      "protein_per_100g": 1.3,
+      "carbs_per_100g": 6,
+      "fat_per_100g": 0.1,
+      "fiber_per_100g": 2.5,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "十字花科，可能引起脹氣"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含維生素C"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "高FODMAP，容易引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_022",
+      "name_zh": "小白菜",
+      "name_en": "Baby Bok Choy",
+      "category": "vegetable",
+      "calories_per_100g": 13,
+      "protein_per_100g": 1.5,
+      "carbs_per_100g": 2.2,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 1,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "易消化的綠葉蔬菜"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含葉酸和維生素"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和的蔬菜選擇"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_023",
+      "name_zh": "韭菜",
+      "name_en": "Chinese Chives",
+      "category": "vegetable",
+      "calories_per_100g": 22,
+      "protein_per_100g": 2.1,
+      "carbs_per_100g": 4.6,
+      "fat_per_100g": 0.3,
+      "fiber_per_100g": 2.8,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "刺激性較強，可能引起不適"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "適量攝取，富含維生素"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "高FODMAP，容易引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_024",
+      "name_zh": "青椒",
+      "name_en": "Green Bell Pepper",
+      "category": "vegetable",
+      "calories_per_100g": 20,
+      "protein_per_100g": 0.9,
+      "carbs_per_100g": 4.6,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 1.7,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "medium",
+          "advice": "茄科植物，可能刺激腸道"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "富含維生素C"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "茄科植物，注意過敏"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "可能引發IBS症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_025",
+      "name_zh": "洋蔥",
+      "name_en": "Onion",
+      "category": "vegetable",
+      "calories_per_100g": 40,
+      "protein_per_100g": 1.1,
+      "carbs_per_100g": 9.3,
+      "fat_per_100g": 0.1,
+      "fiber_per_100g": 1.7,
+      "medical_scores": {
+        "IBD": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "刺激性強，避免食用"
+        },
+        "Chemotherapy": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "可能引起腸胃不適"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意洋蔥過敏"
+        },
+        "IBS": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "高FODMAP，強烈不建議"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_026",
+      "name_zh": "大蒜",
+      "name_en": "Garlic",
+      "category": "condiment",
+      "calories_per_100g": 149,
+      "protein_per_100g": 6.4,
+      "carbs_per_100g": 33,
+      "fat_per_100g": 0.5,
+      "fiber_per_100g": 2.1,
+      "medical_scores": {
+        "IBD": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "刺激性極強，避免食用"
+        },
+        "Chemotherapy": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "可能引起腸胃刺激"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意大蒜過敏"
+        },
+        "IBS": {
+          "score": 1,
+          "urgency": "high",
+          "advice": "高FODMAP，強烈不建議"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_027",
+      "name_zh": "薑",
+      "name_en": "Ginger",
+      "category": "condiment",
+      "calories_per_100g": 80,
+      "protein_per_100g": 1.8,
+      "carbs_per_100g": 18,
+      "fat_per_100g": 0.8,
+      "fiber_per_100g": 2,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "少量可能有助消化"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "有助緩解噁心"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "少量使用，有助消化"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_028",
+      "name_zh": "冬瓜",
+      "name_en": "Winter Melon",
+      "category": "vegetable",
+      "calories_per_100g": 13,
+      "protein_per_100g": 0.4,
+      "carbs_per_100g": 3,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 0.9,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和易消化，水分豐富"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "清淡易消化"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和的蔬菜選擇"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_029",
+      "name_zh": "絲瓜",
+      "name_en": "Luffa",
+      "category": "vegetable",
+      "calories_per_100g": 20,
+      "protein_per_100g": 1.2,
+      "carbs_per_100g": 4.3,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 1.1,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "清淡易消化的瓜類"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和的蔬菜選擇"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和易消化"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_030",
+      "name_zh": "苦瓜",
+      "name_en": "Bitter Gourd",
+      "category": "vegetable",
+      "calories_per_100g": 17,
+      "protein_per_100g": 1,
+      "carbs_per_100g": 3.7,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 2.8,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "medium",
+          "advice": "苦味較重，可能刺激腸道"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "清熱解毒，但味道較苦"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "苦味可能引起不適"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_031",
+      "name_zh": "白蘿蔔",
+      "name_en": "White Radish (Daikon)",
+      "category": "vegetable",
+      "calories_per_100g": 18,
+      "protein_per_100g": 0.6,
+      "carbs_per_100g": 4.1,
+      "fat_per_100g": 0.1,
+      "fiber_per_100g": 1.6,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "煮熟食用較佳"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "有助消化，清淡"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "煮熟較不易引起脹氣"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_032",
+      "name_zh": "芹菜",
+      "name_en": "Celery",
+      "category": "vegetable",
+      "calories_per_100g": 16,
+      "protein_per_100g": 0.7,
+      "carbs_per_100g": 3,
+      "fat_per_100g": 0.2,
+      "fiber_per_100g": 1.6,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "纖維較粗，去絲食用"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "富含維生素，但纖維較粗"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意芹菜過敏"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "纖維粗糙，可能引起不適"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_033",
+      "name_zh": "蓮藕",
+      "name_en": "Lotus Root",
+      "category": "vegetable",
+      "calories_per_100g": 74,
+      "protein_per_100g": 2.6,
+      "carbs_per_100g": 17,
+      "fat_per_100g": 0.1,
+      "fiber_per_100g": 4.9,
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "煮軟食用，纖維較高"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "提供能量，但纖維較高"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "高纖維，可能引發症狀"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_034",
+      "name_zh": "玉米",
+      "name_en": "Corn",
+      "category": "grain",
+      "calories_per_100g": 86,
+      "protein_per_100g": 3.3,
+      "carbs_per_100g": 19,
+      "fat_per_100g": 1.4,
+      "fiber_per_100g": 2.4,
+      "medical_scores": {
+        "IBD": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "纖維較粗，難消化"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "提供能量，但較難消化"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意玉米過敏"
+        },
+        "IBS": {
+          "score": 2,
+          "urgency": "high",
+          "advice": "纖維粗糙，容易引起脹氣"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "af_035",
+      "name_zh": "南瓜",
+      "name_en": "Pumpkin",
+      "category": "vegetable",
+      "calories_per_100g": 26,
+      "protein_per_100g": 1,
+      "carbs_per_100g": 6.5,
+      "fat_per_100g": 0.1,
+      "fiber_per_100g": 0.5,
+      "medical_scores": {
+        "IBD": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "易消化，富含β-胡蘿蔔素"
+        },
+        "Chemotherapy": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和營養，易消化"
+        },
+        "Food_Allergies": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "一般無過敏風險"
+        },
+        "IBS": {
+          "score": 4,
+          "urgency": "low",
+          "advice": "溫和易消化的選擇"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煮",
+        "蒸",
+        "炒"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:15.808Z",
+      "medical_validated": true
+    },
+    {
+      "id": "889c480c-efef-4713-b0b9-9c607001db86",
+      "name_zh": "煎肉",
+      "name_en": "煎肉",
+      "category": "protein",
+      "medical_scores": {
+        "IBD": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "適量攝取"
+        },
+        "Chemotherapy": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "營養均衡"
+        },
+        "Food_Allergies": {
+          "score": 3,
+          "urgency": "medium",
+          "advice": "注意個人過敏史"
+        },
+        "IBS": {
+          "score": 3,
+          "urgency": "low",
+          "advice": "適量攝取"
+        }
+      },
+      "availability": {
+        "taiwan": true,
+        "hong_kong": true,
+        "seasonal": null
+      },
+      "cooking_methods": [
+        "煎",
+        "炒",
+        "烤",
+        "蒸",
+        "煮"
+      ],
+      "alternatives": [],
+      "created": "2025-09-15T14:46:58.507Z",
+      "medical_validated": false
     }
   ]
 }

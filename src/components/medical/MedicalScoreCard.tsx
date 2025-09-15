@@ -56,8 +56,8 @@ export default function MedicalScoreCard({
   foodName,
   className = ''
 }: MedicalScoreCardProps): JSX.Element {
-  const config = scoreConfig[score.score];
-  const urgencyInfo = urgencyConfig[score.urgency];
+  const config = scoreConfig[score.score] || scoreConfig[3]; // Default to "好" if undefined
+  const urgencyInfo = urgencyConfig[score.urgency] || urgencyConfig.low; // Default to "low" if undefined
 
   return (
     <div className={`rounded-lg border-2 p-6 ${config.bgColor} ${config.borderColor} ${className}`}>
