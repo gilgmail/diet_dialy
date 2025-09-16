@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { MedicalReport, MedicalReportRequest, REPORT_TEMPLATES } from '@/types/medical-report';
 
 export default function ReportsPage(): JSX.Element {
@@ -10,9 +11,9 @@ export default function ReportsPage(): JSX.Element {
   const [currentReport, setCurrentReport] = useState<MedicalReport | null>(null);
   const [reportRequest, setReportRequest] = useState<MedicalReportRequest>({
     userId: 'demo-user',
-    reportType: 'weekly',
-    startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    reportType: 'custom',
+    startDate: '2025-09-15', // Date with actual data
+    endDate: '2025-09-16',   // Date with actual data
     includeSymptoms: true,
     analysisDepth: 'standard'
   });
@@ -36,12 +37,19 @@ export default function ReportsPage(): JSX.Element {
   const generateReport = async () => {
     setIsGenerating(true);
     try {
+      // Convert dates to full ISO format for backend
+      const formattedRequest = {
+        ...reportRequest,
+        startDate: `${reportRequest.startDate}T00:00:00.000Z`,
+        endDate: `${reportRequest.endDate}T23:59:59.999Z`
+      };
+
       const response = await fetch('/api/reports', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(reportRequest),
+        body: JSON.stringify(formattedRequest),
       });
 
       const data = await response.json();
@@ -93,12 +101,15 @@ export default function ReportsPage(): JSX.Element {
                 <p className="text-xs text-gray-600">專業醫療分析與建議</p>
               </div>
             </div>
-            <a
+            <Link
               href="/"
-              className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
+              className="flex items-center px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-md transition-colors text-sm"
             >
-              🏠 首頁
-            </a>
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              回首頁
+            </Link>
           </div>
         </div>
       </header>

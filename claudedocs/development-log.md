@@ -128,6 +128,68 @@ Diet Daily 是一個針對醫療患者（IBD、化療、過敏、IBS）的智能
 
 ---
 
+### 📅 2025-09-16 - Week 3 關鍵修復
+
+#### 🚨 解決的關鍵問題
+
+##### 1. 資料庫連接問題修復
+- **問題**: 網頁無法進資料庫，醫療資料在伺服器重啟後遺失
+- **解決方案**: 實施檔案型持久化存儲系統
+- **影響檔案**: `/src/app/api/medical/profile/route.ts`
+- **技術細節**:
+  - 新增 `saveMedicalProfiles()` 和 `loadMedicalProfiles()` 函數
+  - 使用 Node.js fs 模組實現 JSON 檔案存儲
+  - 資料存儲路徑: `data/medical-profiles.json`
+
+##### 2. 醫療報告生成修復
+- **問題**: 報告生成失敗，顯示「指定期間內沒有食物記錄」錯誤
+- **根本原因**:
+  - 前端/後端日期格式不匹配
+  - 醫療評分欄位名稱不一致 (`score` vs `overall_score`)
+- **解決方案**:
+  - 修復日期格式轉換 (`/src/app/reports/page.tsx`)
+  - 實施評分欄位兼容性檢查 (`/src/lib/medical-report-generator.ts`)
+- **結果**: ✅ 報告生成功能完全恢復
+
+##### 3. 食物資料庫 UI 錯誤修復
+- **問題**: TypeError: Cannot read properties of undefined (reading 'toString')
+- **影響**: 食物列表組件無法正常顯示
+- **修復項目**:
+  - IBD 評分顯示空值檢查 (`getIBDScoreDisplay`)
+  - 風險因子數組未定義檢查 (`ibd_risk_factors`)
+  - 過敏原數組未定義檢查 (`major_allergens`)
+- **檔案**: `/src/components/food/FoodList.tsx`
+- **結果**: ✅ 食物資料庫界面穩定運行
+
+#### 🎨 用戶體驗提升
+
+##### 導航系統統一化
+- **新增**: 所有頁面一致的「回首頁」按鈕
+- **技術實現**:
+  - 使用 Next.js Link 組件優化路由
+  - 統一的 SVG 圖標和 hover 效果
+  - 響應式設計配色方案
+- **修改檔案**:
+  - `/src/app/database/page.tsx` - 新增回首頁按鈕
+  - `/src/app/reports/page.tsx` - 升級現有按鈕為統一樣式
+
+#### 🧪 品質保證
+
+##### 測試結果
+- ✅ 手動測試完成: 所有功能正常運作
+- ✅ 伺服器穩定性: http://localhost:3001 無錯誤運行
+- ✅ API 端點: 全部返回 200 狀態碼
+- ✅ 資料持久化: 伺服器重啟後資料保持完整
+
+##### 技術改進成果
+- **資料持久化**: 解決記憶體存儲的臨時性問題
+- **錯誤處理**: 實施全面的空值安全檢查
+- **類型安全**: 改善 TypeScript 類型定義的準確性
+- **用戶界面**: 消除所有 TypeError 異常
+- **導航體驗**: 實現一致的跨頁面導航模式
+
+---
+
 ## 技術棧
 
 ### 前端
@@ -150,4 +212,4 @@ Diet Daily 是一個針對醫療患者（IBD、化療、過敏、IBS）的智能
 
 ---
 
-*最後更新: 2025-09-15*
+*最後更新: 2025-09-16*

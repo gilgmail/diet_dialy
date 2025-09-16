@@ -33,14 +33,39 @@ export class MedicalReportGenerator {
 
     const profile = medicalProfile || defaultProfile;
 
-    // Get food history for the period
-    const historyEntries = await foodHistoryDatabase.queryHistory({
-      userId: request.userId,
-      dateFrom: request.startDate,
-      dateTo: request.endDate,
-      includeSymptoms: request.includeSymptoms || false,
-      limit: 1000 // Get all entries for the period
-    });
+    // Get food history for the period - direct file read for reliability
+    let historyEntries: FoodHistoryEntry[] = [];
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const historyPath = path.join(process.cwd(), 'data', 'user-food-history.json');
+
+      if (fs.existsSync(historyPath)) {
+        const data = JSON.parse(fs.readFileSync(historyPath, 'utf-8'));
+        const allEntries = data.entries || [];
+
+        // Filter by user and date range
+        historyEntries = allEntries.filter((entry: FoodHistoryEntry) => {
+          if (entry.userId !== request.userId) return false;
+
+          const entryDate = new Date(entry.consumedAt);
+          const startDate = new Date(request.startDate);
+          const endDate = new Date(request.endDate);
+
+          return entryDate >= startDate && entryDate <= endDate;
+        });
+      }
+    } catch (error) {
+      console.error('Error reading food history:', error);
+      // Fallback to original database method
+      historyEntries = await foodHistoryDatabase.queryHistory({
+        userId: request.userId,
+        dateFrom: request.startDate,
+        dateTo: request.endDate,
+        includeSymptoms: request.includeSymptoms || false,
+        limit: 1000
+      });
+    }
 
     if (historyEntries.length === 0) {
       throw new Error('指定期間內沒有食物記錄');
@@ -134,12 +159,12 @@ export class MedicalReportGenerator {
     const uniqueFoods = new Set(historyEntries.map(entry => entry.foodId)).size;
 
     const averageMedicalScore = historyEntries.reduce(
-      (sum, entry) => sum + entry.medicalScore.overall_score,
+      (sum, entry) => sum + (entry.medicalScore.score || (entry.medicalScore.score || entry.medicalScore.overall_score || 0) || 0),
       0
     ) / totalFoods;
 
-    // Calculate risk factor exposure (foods with score < 60)
-    const highRiskFoods = historyEntries.filter(entry => entry.medicalScore.overall_score < 60);
+    // Calculate risk factor exposure (foods with score < 3)
+    const highRiskFoods = historyEntries.filter(entry => (entry.medicalScore.score || (entry.medicalScore.score || entry.medicalScore.overall_score || 0) || 0) < 3);
     const riskFactorExposure = (highRiskFoods.length / totalFoods) * 100;
 
     // Calculate symptom frequency
@@ -148,8 +173,8 @@ export class MedicalReportGenerator {
     );
     const symptomFrequency = (entriesWithSymptoms.length / totalFoods) * 100;
 
-    // Calculate compliance score (foods with score >= 75)
-    const compliantFoods = historyEntries.filter(entry => entry.medicalScore.overall_score >= 75);
+    // Calculate compliance score (foods with score >= 4)
+    const compliantFoods = historyEntries.filter(entry => (entry.medicalScore.score || (entry.medicalScore.score || entry.medicalScore.overall_score || 0) || 0) >= 4);
     const complianceScore = (compliantFoods.length / totalFoods) * 100;
 
     return {
@@ -169,7 +194,7 @@ export class MedicalReportGenerator {
   ) {
     // Top risk foods (score < 50)
     const riskFoods = historyEntries
-      .filter(entry => entry.medicalScore.overall_score < 50)
+      .filter(entry => (entry.medicalScore.score || entry.medicalScore.overall_score || 0) < 50)
       .reduce((acc, entry) => {
         const existing = acc.find(item => item.foodName === entry.foodData.name_zh);
         if (existing) {
@@ -178,7 +203,7 @@ export class MedicalReportGenerator {
           acc.push({
             foodName: entry.foodData.name_zh,
             frequency: 1,
-            riskScore: entry.medicalScore.overall_score,
+            riskScore: (entry.medicalScore.score || entry.medicalScore.overall_score || 0),
             mainConcerns: entry.foodData.medical_scores.ibd_risk_factors.slice(0, 3)
           });
         }
@@ -189,7 +214,7 @@ export class MedicalReportGenerator {
 
     // Safe foods (score >= 75)
     const safeFoods = historyEntries
-      .filter(entry => entry.medicalScore.overall_score >= 75)
+      .filter(entry => (entry.medicalScore.score || entry.medicalScore.overall_score || 0) >= 75)
       .reduce((acc, entry) => {
         const existing = acc.find(item => item.foodName === entry.foodData.name_zh);
         if (existing) {
@@ -198,7 +223,7 @@ export class MedicalReportGenerator {
           acc.push({
             foodName: entry.foodData.name_zh,
             frequency: 1,
-            medicalScore: entry.medicalScore.overall_score,
+            medicalScore: (entry.medicalScore.score || entry.medicalScore.overall_score || 0),
             benefits: this.generateBenefits(entry.foodData, medicalProfile)
           });
         }
@@ -361,16 +386,16 @@ export class MedicalReportGenerator {
     const positivePatterns: string[] = [];
     const nextSteps: string[] = [];
 
-    const avgScore = historyEntries.reduce((sum, entry) => sum + entry.medicalScore.overall_score, 0) / historyEntries.length;
+    const avgScore = historyEntries.reduce((sum, entry) => sum + (entry.medicalScore.score || entry.medicalScore.overall_score || 0), 0) / historyEntries.length;
 
     // Key findings
-    if (avgScore < 50) {
+    if (avgScore < 2.5) {
       keyFindings.push('整體飲食醫療評分偏低，存在較多風險因子');
-    } else if (avgScore >= 75) {
+    } else if (avgScore >= 3.5) {
       keyFindings.push('飲食選擇整體良好，符合醫療建議');
     }
 
-    const riskFoodCount = historyEntries.filter(entry => entry.medicalScore.overall_score < 60).length;
+    const riskFoodCount = historyEntries.filter(entry => (entry.medicalScore.score || entry.medicalScore.overall_score || 0) < 60).length;
     if (riskFoodCount > historyEntries.length * 0.3) {
       keyFindings.push(`${Math.round((riskFoodCount/historyEntries.length)*100)}% 的食物屬於高風險類別`);
     }
@@ -383,7 +408,7 @@ export class MedicalReportGenerator {
     }
 
     // Warning signals
-    const highRiskFoods = historyEntries.filter(entry => entry.medicalScore.overall_score < 40);
+    const highRiskFoods = historyEntries.filter(entry => (entry.medicalScore.score || entry.medicalScore.overall_score || 0) < 40);
     if (highRiskFoods.length > 0) {
       warningSignals.push(`發現 ${highRiskFoods.length} 項極高風險食物，建議立即調整`);
     }
@@ -394,7 +419,7 @@ export class MedicalReportGenerator {
     }
 
     // Positive patterns
-    const safeFoods = historyEntries.filter(entry => entry.medicalScore.overall_score >= 75);
+    const safeFoods = historyEntries.filter(entry => (entry.medicalScore.score || entry.medicalScore.overall_score || 0) >= 75);
     if (safeFoods.length > historyEntries.length * 0.5) {
       positivePatterns.push('超過50%的食物選擇符合醫療建議');
     }
@@ -406,7 +431,7 @@ export class MedicalReportGenerator {
     // Next steps
     nextSteps.push('繼續使用Diet Daily記錄飲食');
     nextSteps.push('將此報告與醫生分享討論');
-    if (avgScore < 60) {
+    if (avgScore < 3) {
       nextSteps.push('重點改善高風險食物的選擇');
     }
 
@@ -429,7 +454,7 @@ export class MedicalReportGenerator {
     const lifestyleRecommendations: string[] = [];
 
     // Generate concerns based on data
-    const highRiskFoods = historyEntries.filter(entry => entry.medicalScore.overall_score < 40);
+    const highRiskFoods = historyEntries.filter(entry => (entry.medicalScore.score || entry.medicalScore.overall_score || 0) < 40);
     if (highRiskFoods.length > 0) {
       concernsToDiscuss.push({
         topic: '高風險食物攝取',

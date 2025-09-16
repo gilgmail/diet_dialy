@@ -26,6 +26,11 @@ export interface ScoringResult {
     message: string;
     action: string;
   };
+  multiConditionData?: {
+    individual_scores: Record<string, MedicalScore>;
+    priority_alerts: string[];
+    cross_condition_interactions: string[];
+  };
 }
 
 /**
@@ -527,6 +532,299 @@ class AllergyScorer {
 }
 
 /**
+ * IBS (腸躁症) Scoring Algorithm
+ * Based on FODMAP guidelines and IBS subtypes
+ */
+class IBSScorer {
+  scoreFood(food: FoodItem, profile: MedicalProfile): MedicalScore {
+    const ibsSubtype = profile.ibs_subtype || 'ibs_m';
+    let baseScore = 4;
+    const riskFactors: string[] = [];
+    const recommendations: string[] = [];
+    let urgency: 'low' | 'medium' | 'high' | 'critical' = 'low';
+
+    // FODMAP level assessment
+    const fodmapLevel = food.medical_scores.fodmap_level;
+
+    if (fodmapLevel === 'high') {
+      baseScore = 1;
+      riskFactors.push('高FODMAP食物，可能引發IBS症狀');
+      recommendations.push('避免或極少量攝取');
+      recommendations.push('考慮低FODMAP替代食物');
+      urgency = 'high';
+    } else if (fodmapLevel === 'medium') {
+      baseScore = 2;
+      riskFactors.push('中等FODMAP食物，需注意份量');
+      recommendations.push('小份量試食，觀察身體反應');
+      urgency = 'medium';
+    }
+
+    // IBS subtype specific adjustments
+    switch (ibsSubtype) {
+      case 'ibs_d': // diarrhea predominant
+        if (food.name_zh.includes('油') || food.name_zh.includes('辣')) {
+          baseScore -= 1;
+          riskFactors.push('油膩或辛辣食物可能加重腹瀉');
+        }
+        if (food.name_zh.includes('纖維') || food.medical_scores.ibd_risk_factors?.includes('high fiber')) {
+          baseScore -= 1;
+          riskFactors.push('高纖維食物可能刺激腸道');
+        }
+        break;
+
+      case 'ibs_c': // constipation predominant
+        if (food.medical_scores.ibd_risk_factors?.includes('high fiber')) {
+          baseScore += 0.5;
+          recommendations.push('適量纖維有助改善便秘');
+        }
+        if (food.name_zh.includes('白米') || food.name_zh.includes('白麵')) {
+          baseScore -= 0.5;
+          riskFactors.push('精製澱粉可能加重便秘');
+        }
+        break;
+    }
+
+    // Personal FODMAP tolerance
+    if (profile.fodmap_tolerance) {
+      const personalTolerance = this.checkPersonalFODMAPTolerance(food, profile.fodmap_tolerance);
+      baseScore += personalTolerance.adjustment;
+      if (personalTolerance.notes) {
+        recommendations.push(personalTolerance.notes);
+      }
+    }
+
+    const finalScore = Math.max(1, Math.min(4, Math.round(baseScore))) as 1 | 2 | 3 | 4;
+
+    return {
+      score: finalScore,
+      level: this.getScoreLabel(finalScore),
+      emoji: this.getScoreEmoji(finalScore),
+      riskFactors,
+      recommendations: finalScore <= 2 ? [...recommendations, ...this.getIBSRecommendations(ibsSubtype)] : recommendations,
+      alternatives: finalScore <= 2 ? this.getIBSSafeAlternatives(ibsSubtype) : [],
+      medicalReason: this.getIBSMedicalReason(finalScore, fodmapLevel),
+      urgency
+    };
+  }
+
+  private checkPersonalFODMAPTolerance(food: FoodItem, tolerance: Record<string, 'low' | 'medium' | 'high'>): {
+    adjustment: number,
+    notes?: string
+  } {
+    // Check if food contains specific FODMAP types user has tolerance data for
+    const fodmapTypes = ['fructan', 'lactose', 'fructose', 'polyols', 'galactans'];
+
+    for (const type of fodmapTypes) {
+      if (food.name_zh.includes(type) && tolerance[type]) {
+        switch (tolerance[type]) {
+          case 'high':
+            return { adjustment: 1, notes: `您對${type}耐受性較好` };
+          case 'medium':
+            return { adjustment: 0, notes: `您對${type}耐受性中等，注意份量` };
+          case 'low':
+            return { adjustment: -1, notes: `您對${type}敏感，建議避免` };
+        }
+      }
+    }
+
+    return { adjustment: 0 };
+  }
+
+  private getIBSRecommendations(subtype: string): string[] {
+    const common = [
+      '選擇低FODMAP認證食物',
+      '少量多餐，充分咀嚼',
+      '記錄食物與症狀的關係',
+      '適度運動有助腸道健康'
+    ];
+
+    const subtypeSpecific: Record<string, string[]> = {
+      'ibs_d': ['避免油膩和辛辣食物', '注意水分補充'],
+      'ibs_c': ['增加適量纖維攝取', '確保充足水分'],
+      'ibs_m': ['保持規律飲食時間', '避免極端飲食變化']
+    };
+
+    return [...common, ...(subtypeSpecific[subtype] || [])];
+  }
+
+  private getIBSSafeAlternatives(subtype: string): string[] {
+    const lowFodmapOptions = ['白米', '香蕉', '胡蘿蔔', '雞肉', '蛋', '馬鈴薯'];
+
+    const subtypeSpecific: Record<string, string[]> = {
+      'ibs_d': ['白粥', '蒸蛋', '去皮雞肉'],
+      'ibs_c': ['燕麥片', '奇亞籽', '適量堅果'],
+      'ibs_m': ['溫和調理的食物', '規律份量']
+    };
+
+    return [...lowFodmapOptions, ...(subtypeSpecific[subtype] || [])];
+  }
+
+  private getIBSMedicalReason(score: number, fodmapLevel: string): string {
+    if (score === 1) return `${fodmapLevel}FODMAP食物，可能引發IBS症狀如腹痛、脹氣、排便改變`;
+    if (score === 2) return `中等FODMAP食物，需控制份量避免症狀`;
+    if (score === 3) return 'IBS友善食物，通常安全但仍需注意個人反應';
+    return '低FODMAP食物，IBS患者的理想選擇';
+  }
+
+  private getScoreLabel(score: number): '差' | '普通' | '好' | '完美' {
+    const labels = { 1: '差', 2: '普通', 3: '好', 4: '完美' } as const;
+    return labels[score as keyof typeof labels];
+  }
+
+  private getScoreEmoji(score: number): '😞' | '😐' | '😊' | '😍' {
+    const emojis = { 1: '😞', 2: '😐', 3: '😊', 4: '😍' } as const;
+    return emojis[score as keyof typeof emojis];
+  }
+}
+
+/**
+ * Multi-Condition Medical Scoring Engine
+ * 支援多種醫療條件同時評估
+ */
+class MultiConditionScorer {
+  private ibdScorer = new IBDScorer();
+  private chemoScorer = new ChemoScorer();
+  private allergyScorer = new AllergyScorer();
+  private ibsScorer = new IBSScorer();
+
+  /**
+   * 評估多種醫療條件
+   */
+  scoreForMultipleConditions(food: FoodItem, profile: MedicalProfile): {
+    combined_score: MedicalScore,
+    individual_scores: Record<string, MedicalScore>,
+    priority_alerts: string[],
+    cross_condition_interactions: string[]
+  } {
+    const conditions = [profile.primary_condition, ...(profile.secondary_conditions || [])];
+    const individualScores: Record<string, MedicalScore> = {};
+    const priorityAlerts: string[] = [];
+    const crossConditionInteractions: string[] = [];
+
+    // 為每個條件計算分數
+    for (const condition of conditions) {
+      let score: MedicalScore;
+
+      switch (condition.toLowerCase()) {
+        case 'ibd':
+        case 'crohns':
+        case 'uc':
+          score = this.ibdScorer.scoreFood(food, profile);
+          break;
+        case 'chemotherapy':
+        case '化療':
+          score = this.chemoScorer.scoreFood(food, profile);
+          break;
+        case 'allergy':
+        case '過敏':
+          score = this.allergyScorer.scoreFood(food, profile);
+          break;
+        case 'ibs':
+          score = this.ibsScorer.scoreFood(food, profile);
+          break;
+        default:
+          continue;
+      }
+
+      individualScores[condition] = score;
+
+      // 收集高優先級警報
+      if (score.urgency === 'critical' || (score.urgency === 'high' && score.score === 1)) {
+        priorityAlerts.push(`${condition}: ${score.medicalReason}`);
+      }
+    }
+
+    // 分析跨條件交互作用
+    const interactions = this.analyzeCrossConditionInteractions(individualScores, profile);
+    crossConditionInteractions.push(...interactions);
+
+    // 計算綜合評分
+    const combinedScore = this.calculateCombinedScore(individualScores, profile);
+
+    return {
+      combined_score: combinedScore,
+      individual_scores: individualScores,
+      priority_alerts: priorityAlerts,
+      cross_condition_interactions: crossConditionInteractions
+    };
+  }
+
+  private analyzeCrossConditionInteractions(scores: Record<string, MedicalScore>, profile: MedicalProfile): string[] {
+    const interactions: string[] = [];
+
+    // IBD + 化療交互作用
+    if (scores['ibd'] && scores['chemotherapy']) {
+      if (scores['ibd'].score <= 2 && scores['chemotherapy'].score <= 2) {
+        interactions.push('IBD和化療雙重限制：建議選擇溫和、易消化且安全的食物');
+      }
+    }
+
+    // 過敏 + 其他條件
+    if (scores['allergy'] && scores['allergy'].score === 1) {
+      const otherConditions = Object.keys(scores).filter(k => k !== 'allergy');
+      if (otherConditions.length > 0) {
+        interactions.push('過敏風險優先：即使其他條件評分較高，過敏安全仍是首要考量');
+      }
+    }
+
+    // IBS + IBD 組合
+    if (scores['ibs'] && scores['ibd']) {
+      interactions.push('IBS-IBD組合：需要平衡FODMAP限制與IBD飲食建議');
+    }
+
+    return interactions;
+  }
+
+  private calculateCombinedScore(scores: Record<string, MedicalScore>, profile: MedicalProfile): MedicalScore {
+    const scoreValues = Object.values(scores);
+    if (scoreValues.length === 0) {
+      throw new Error('No valid medical scores available');
+    }
+
+    // 過敏和緊急風險優先
+    const criticalScore = scoreValues.find(s => s.urgency === 'critical');
+    if (criticalScore) {
+      return {
+        ...criticalScore,
+        medicalReason: '存在緊急醫療風險，建議避免此食物',
+        recommendations: ['立即停止食用', '如有不適請聯繫醫療團隊']
+      };
+    }
+
+    // 取最低分數（最保守評估）
+    const minScore = Math.min(...scoreValues.map(s => s.score)) as 1 | 2 | 3 | 4;
+    const minScoreDetails = scoreValues.find(s => s.score === minScore)!;
+
+    // 合併風險因子和建議
+    const allRiskFactors = [...new Set(scoreValues.flatMap(s => s.riskFactors))];
+    const allRecommendations = [...new Set(scoreValues.flatMap(s => s.recommendations))];
+    const allAlternatives = [...new Set(scoreValues.flatMap(s => s.alternatives))];
+
+    return {
+      score: minScore,
+      level: minScoreDetails.level,
+      emoji: minScoreDetails.emoji,
+      riskFactors: allRiskFactors,
+      recommendations: allRecommendations,
+      alternatives: allAlternatives,
+      medicalReason: `多醫療條件評估：${minScoreDetails.medicalReason}`,
+      urgency: Math.max(...scoreValues.map(s => this.getUrgencyLevel(s.urgency))) === 3 ? 'critical' :
+               Math.max(...scoreValues.map(s => this.getUrgencyLevel(s.urgency))) === 2 ? 'high' :
+               Math.max(...scoreValues.map(s => this.getUrgencyLevel(s.urgency))) === 1 ? 'medium' : 'low'
+    };
+  }
+
+  private getUrgencyLevel(urgency: string): number {
+    switch (urgency) {
+      case 'critical': return 3;
+      case 'high': return 2;
+      case 'medium': return 1;
+      default: return 0;
+    }
+  }
+}
+
+/**
  * Main Medical Scoring Engine
  * Coordinates all condition-specific scorers
  */
@@ -534,11 +832,53 @@ export class MedicalScoringEngine {
   private ibdScorer = new IBDScorer();
   private chemoScorer = new ChemoScorer();
   private allergyScorer = new AllergyScorer();
+  private ibsScorer = new IBSScorer();
+  private multiConditionScorer = new MultiConditionScorer();
 
   /**
-   * Score food based on user's medical condition
+   * Score food based on user's medical condition(s)
    */
   scoreFood(food: FoodItem, profile: MedicalProfile): ScoringResult {
+    // Check if user has multiple conditions
+    const hasMultipleConditions = profile.secondary_conditions && profile.secondary_conditions.length > 0;
+
+    if (hasMultipleConditions) {
+      return this.scoreForMultipleConditions(food, profile);
+    } else {
+      return this.scoreForSingleCondition(food, profile);
+    }
+  }
+
+  /**
+   * Score for multiple medical conditions
+   */
+  private scoreForMultipleConditions(food: FoodItem, profile: MedicalProfile): ScoringResult {
+    const multiResult = this.multiConditionScorer.scoreForMultipleConditions(food, profile);
+    const allergyWarnings: string[] = [];
+
+    // Extract allergy warnings from individual scores
+    if (multiResult.individual_scores['allergy']) {
+      allergyWarnings.push(...multiResult.individual_scores['allergy'].riskFactors);
+    }
+
+    const emergencyAlert = this.generateEmergencyAlert(multiResult.combined_score, profile);
+
+    return {
+      medicalScore: multiResult.combined_score,
+      allergyWarnings,
+      emergencyAlert,
+      multiConditionData: {
+        individual_scores: multiResult.individual_scores,
+        priority_alerts: multiResult.priority_alerts,
+        cross_condition_interactions: multiResult.cross_condition_interactions
+      }
+    };
+  }
+
+  /**
+   * Score for single medical condition
+   */
+  private scoreForSingleCondition(food: FoodItem, profile: MedicalProfile): ScoringResult {
     let medicalScore: MedicalScore;
     const allergyWarnings: string[] = [];
 
@@ -562,7 +902,7 @@ export class MedicalScoringEngine {
         break;
       case 'ibs':
       case 'IBS':
-        medicalScore = this.scoreForIBS(food, profile);
+        medicalScore = this.ibsScorer.scoreFood(food, profile);
         break;
       default:
         medicalScore = this.getDefaultScore(food);
@@ -588,37 +928,6 @@ export class MedicalScoringEngine {
     };
   }
 
-  private scoreForIBS(food: FoodItem, profile: MedicalProfile): MedicalScore {
-    // IBS scoring based on FODMAP levels
-    let score = 4;
-    const riskFactors: string[] = [];
-
-    if (food.medical_scores.fodmap_level === 'high') {
-      score = 1;
-      riskFactors.push('高FODMAP食物，可能引發IBS症狀');
-    } else if (food.medical_scores.fodmap_level === 'medium') {
-      score = 2;
-      riskFactors.push('中等FODMAP食物，建議適量');
-    }
-
-    return {
-      score: score as 1 | 2 | 3 | 4,
-      level: score === 1 ? '差' : score === 2 ? '普通' : score === 3 ? '好' : '完美',
-      emoji: score === 1 ? '😞' : score === 2 ? '😐' : score === 3 ? '😊' : '😍',
-      riskFactors,
-      recommendations: score <= 2 ? ['選擇低FODMAP食物', '少量試食觀察反應'] : [],
-      alternatives: score <= 2 ? ['白米', '香蕉', '胡蘿蔔', '雞肉'] : [],
-      medicalReason: this.getIBSMedicalReason(score),
-      urgency: score === 1 ? 'high' : 'low'
-    };
-  }
-
-  private getIBSMedicalReason(score: number): string {
-    if (score === 1) return '高FODMAP食物，可能引發腹瀉、脹氣等IBS症狀';
-    if (score === 2) return '中等FODMAP食物，需控制份量';
-    if (score === 3) return 'IBS友善食物，通常安全';
-    return '低FODMAP食物，IBS患者的理想選擇';
-  }
 
   private getDefaultScore(food: FoodItem): MedicalScore {
     // Default scoring for users without specific conditions

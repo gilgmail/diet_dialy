@@ -47,7 +47,8 @@ export default function FoodList({ foods, onEdit, onDelete, onValidate, loading 
     }
   });
 
-  const getIBDScoreDisplay = (score: 1 | 2 | 3 | 4) => {
+  const getIBDScoreDisplay = (score: 1 | 2 | 3 | 4 | undefined | null) => {
+    if (!score) return '未知';
     const option = IBD_SCORE_OPTIONS.find(opt => opt.value === score);
     return option ? `${option.emoji} ${score}` : score.toString();
   };
@@ -202,7 +203,7 @@ export default function FoodList({ foods, onEdit, onDelete, onValidate, loading 
             </div>
 
             {/* Risk Factors */}
-            {food.medical_scores.ibd_risk_factors.length > 0 && (
+            {food.medical_scores.ibd_risk_factors && food.medical_scores.ibd_risk_factors.length > 0 && (
               <div className="mb-3">
                 <p className="text-xs text-gray-600 mb-1">風險因子:</p>
                 <div className="flex flex-wrap gap-1">
@@ -224,7 +225,7 @@ export default function FoodList({ foods, onEdit, onDelete, onValidate, loading 
             )}
 
             {/* Allergens */}
-            {food.medical_scores.major_allergens.length > 0 && (
+            {food.medical_scores.major_allergens && food.medical_scores.major_allergens.length > 0 && (
               <div className="mb-3">
                 <p className="text-xs text-gray-600 mb-1">過敏原:</p>
                 <div className="flex flex-wrap gap-1">

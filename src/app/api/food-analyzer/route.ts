@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DatabaseFoodItem } from '@/types/food';
+import { medicalScoringEngine } from '@/lib/medical/scoring-engine';
+import type { ExtendedMedicalProfile, FoodItem } from '@/types/medical';
 
 interface FoodAnalyzerRequest {
   foodName: string;
   category: string;
   language?: 'zh-TW' | 'en';
+  medicalProfile?: ExtendedMedicalProfile;
+  userId?: string;
 }
 
 interface NutritionData {
@@ -22,6 +26,16 @@ interface MedicalAnalysis {
   IBS: { score: number; urgency: string; advice: string };
 }
 
+interface FoodAnalyzerResponse {
+  success: boolean;
+  analyzedFood: DatabaseFoodItem | null;
+  medicalAnalysis?: any;
+  method: 'AI_ANALYSIS' | 'INTELLIGENT_ESTIMATION';
+  hasMultiConditions?: boolean;
+  note: string;
+  error?: string;
+}
+
 // POST /api/food-analyzer - AI食材分析
 export async function POST(request: NextRequest) {
   try {
@@ -36,8 +50,10 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🧠 AI食材分析開始:', { foodName, category });
+    const { medicalProfile, userId = 'demo-user' } = body;
 
     let analyzedFood: DatabaseFoodItem | null = null;
+    let medicalAnalysis: any = null;
 
     // 1. 嘗試使用真實AI服務
     try {
@@ -50,10 +66,51 @@ export async function POST(request: NextRequest) {
       console.log('✅ 智能估算完成:', analyzedFood.name_zh);
     }
 
+    // 3. 如果有醫療資料，進行醫療評分
+    if (medicalProfile && analyzedFood) {
+      try {
+        console.log('🏥 進行醫療評分分析...');
+
+        // 轉換為醫療評分系統的食物格式
+        const foodForScoring: FoodItem = {
+          id: analyzedFood.id,
+          name_zh: analyzedFood.name_zh,
+          name_en: analyzedFood.name_en,
+          category: analyzedFood.category,
+          medical_scores: {
+            ibd_score: analyzedFood.medical_scores?.IBD?.score || 3,
+            ibd_risk_factors: extractRiskFactors(analyzedFood, 'ibd'),
+            chemo_safety: extractChemoSafety(analyzedFood),
+            chemo_nutrition_type: extractChemoNutrition(analyzedFood),
+            fodmap_level: extractFODMAPLevel(analyzedFood),
+            major_allergens: extractAllergens(analyzedFood),
+            cross_contamination_risk: [],
+            texture: extractTexture(analyzedFood),
+            preparation_safety: extractPreparationSafety(analyzedFood)
+          }
+        };
+
+        const scoringResult = medicalScoringEngine.scoreFood(foodForScoring, medicalProfile);
+        medicalAnalysis = scoringResult;
+
+        console.log('✅ 醫療評分完成:', {
+          score: scoringResult.medicalScore.score,
+          level: scoringResult.medicalScore.level,
+          urgency: scoringResult.medicalScore.urgency
+        });
+
+      } catch (medicalError) {
+        console.warn('❌ 醫療評分失敗:', medicalError);
+        medicalAnalysis = null;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       analyzedFood,
+      medicalAnalysis,
       method: analyzedFood ? 'AI_ANALYSIS' : 'INTELLIGENT_ESTIMATION',
+      hasMultiConditions: medicalProfile?.secondary_conditions?.length > 0,
       note: '分析結果僅供參考，建議諮詢營養師或醫生'
     });
 
@@ -387,4 +444,144 @@ function getDefaultMedicalScores(): MedicalAnalysis {
     Food_Allergies: { score: 3, urgency: 'medium', advice: '請注意個人過敏史' },
     IBS: { score: 3, urgency: 'low', advice: '用戶自建食材，建議諮詢醫生' }
   };
+}
+
+// 提取風險因子
+function extractRiskFactors(food: DatabaseFoodItem, condition: string): string[] {
+  const riskFactors: string[] = [];
+  const foodName = food.name_zh.toLowerCase();
+
+  // 基於食物名稱提取風險因子
+  if (foodName.includes('炸') || foodName.includes('油')) {
+    riskFactors.push('fried food', 'high fat');
+  }
+  if (foodName.includes('辣') || foodName.includes('蒜')) {
+    riskFactors.push('spicy food');
+  }
+  if (foodName.includes('糖') || foodName.includes('甜')) {
+    riskFactors.push('high sugar');
+  }
+  if (food.category === 'dairy') {
+    riskFactors.push('dairy');
+  }
+  if (food.fiber_per_100g > 5) {
+    riskFactors.push('high fiber');
+  }
+
+  return riskFactors;
+}
+
+// 提取化療安全性
+function extractChemoSafety(food: DatabaseFoodItem): 'safe' | 'caution' | 'avoid' {
+  const foodName = food.name_zh.toLowerCase();
+
+  // 生食或高風險食物
+  if (foodName.includes('生') || foodName.includes('刺身') || foodName.includes('壽司')) {
+    return 'avoid';
+  }
+
+  // 需要注意的食物
+  if (foodName.includes('軟') || food.category === 'dairy') {
+    return 'caution';
+  }
+
+  return 'safe';
+}
+
+// 提取化療營養類型
+function extractChemoNutrition(food: DatabaseFoodItem): 'high_protein' | 'high_calorie' | 'anti_nausea' | 'soft_texture' | 'neutral' {
+  const foodName = food.name_zh.toLowerCase();
+
+  if (food.protein_per_100g > 15) {
+    return 'high_protein';
+  }
+  if (food.calories_per_100g > 300) {
+    return 'high_calorie';
+  }
+  if (foodName.includes('薑') || foodName.includes('檸檬')) {
+    return 'anti_nausea';
+  }
+  if (foodName.includes('粥') || foodName.includes('蒸蛋')) {
+    return 'soft_texture';
+  }
+
+  return 'neutral';
+}
+
+// 提取 FODMAP 等級
+function extractFODMAPLevel(food: DatabaseFoodItem): 'low' | 'medium' | 'high' {
+  const foodName = food.name_zh.toLowerCase();
+
+  // 高 FODMAP 食物
+  if (foodName.includes('蒜') || foodName.includes('洋蔥') || foodName.includes('蘋果') ||
+      foodName.includes('豆') || food.category === 'dairy') {
+    return 'high';
+  }
+
+  // 中等 FODMAP 食物
+  if (foodName.includes('麵') || foodName.includes('玉米') ||
+      food.fiber_per_100g > 3) {
+    return 'medium';
+  }
+
+  // 低 FODMAP 食物
+  return 'low';
+}
+
+// 提取主要過敏原
+function extractAllergens(food: DatabaseFoodItem): string[] {
+  const allergens: string[] = [];
+  const foodName = food.name_zh.toLowerCase();
+
+  if (foodName.includes('蛋') || food.category === 'protein' && foodName.includes('雞蛋')) {
+    allergens.push('雞蛋');
+  }
+  if (food.category === 'dairy' || foodName.includes('奶') || foodName.includes('乳')) {
+    allergens.push('牛奶');
+  }
+  if (foodName.includes('花生') || foodName.includes('堅果')) {
+    allergens.push('花生', '堅果');
+  }
+  if (foodName.includes('麵') || foodName.includes('小麥')) {
+    allergens.push('小麥');
+  }
+  if (foodName.includes('大豆') || foodName.includes('豆腐')) {
+    allergens.push('大豆');
+  }
+  if (foodName.includes('魚') || foodName.includes('蝦') || foodName.includes('蟹')) {
+    allergens.push('海鮮');
+  }
+
+  return allergens;
+}
+
+// 提取食物質地
+function extractTexture(food: DatabaseFoodItem): 'soft' | 'medium' | 'hard' | 'liquid' {
+  const foodName = food.name_zh.toLowerCase();
+
+  if (foodName.includes('粥') || foodName.includes('湯') || foodName.includes('汁')) {
+    return 'liquid';
+  }
+  if (foodName.includes('蒸') || foodName.includes('燉') || foodName.includes('蛋')) {
+    return 'soft';
+  }
+  if (foodName.includes('炸') || foodName.includes('烤') || foodName.includes('堅果')) {
+    return 'hard';
+  }
+
+  return 'medium';
+}
+
+// 提取準備安全性
+function extractPreparationSafety(food: DatabaseFoodItem): 'raw_safe' | 'cooked_only' | 'sterile_required' {
+  const foodName = food.name_zh.toLowerCase();
+
+  if (foodName.includes('生') || foodName.includes('沙拉')) {
+    return 'sterile_required';
+  }
+  if (food.category === 'protein' || foodName.includes('肉') || foodName.includes('蛋')) {
+    return 'cooked_only';
+  }
+
+  return 'raw_safe';
 }
