@@ -87,7 +87,7 @@ export class SymptomTracker {
   /**
    * 分析症狀趨勢
    */
-  analyzeSymptoms(days: number = 30): SymptomAnalysis {
+  async analyzeSymptoms(days: number = 30): Promise<SymptomAnalysis> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
@@ -95,9 +95,11 @@ export class SymptomTracker {
       entry => entry.recordedAt >= cutoffDate
     );
 
+    const foodCorrelations = await this.analyzeFoodHistoryCorrelations();
+
     return {
       weekly_trends: this.calculateWeeklyTrends(recentEntries),
-      food_correlations: this.findFoodCorrelations(recentEntries),
+      food_correlations: foodCorrelations,
       severity_patterns: this.analyzeSeverityPatterns(recentEntries),
       recommendations: this.generateRecommendations(recentEntries),
       alert_conditions: this.checkAlertConditions(recentEntries)
@@ -141,46 +143,110 @@ export class SymptomTracker {
   }
 
   /**
-   * 尋找食物與症狀的關聯性
+   * 尋找食物與症狀的關聯性（整合食物歷史資料）
    */
-  private findFoodCorrelations(entries: SymptomEntry[]): FoodSymptomCorrelation[] {
-    const correlations: Map<string, {
-      symptoms: SymptomType[],
-      occurrences: number,
-      totalOnsetTime: number
-    }> = new Map();
+  private async findFoodCorrelations(entries: SymptomEntry[]): Promise<FoodSymptomCorrelation[]> {
+    return this.analyzeFoodHistoryCorrelations();
+  }
 
-    for (const entry of entries) {
-      for (const symptom of entry.symptoms) {
-        if (symptom.related_food_ids) {
-          for (const foodId of symptom.related_food_ids) {
-            const existing = correlations.get(foodId) || {
-              symptoms: [],
-              occurrences: 0,
-              totalOnsetTime: 0
-            };
+  /**
+   * 分析食物歷史與症狀的關聯性
+   */
+  private async analyzeFoodHistoryCorrelations(): Promise<FoodSymptomCorrelation[]> {
+    try {
+      // 使用動態導入避免循環依賴
+      const { FoodHistoryDatabaseManager } = await import('@/lib/food-history-database');
+      const historyManager = FoodHistoryDatabaseManager.getInstance();
+      const historyDb = await historyManager.loadDatabase();
 
-            if (!existing.symptoms.includes(symptom.type)) {
-              existing.symptoms.push(symptom.type);
+      const correlations: Map<string, {
+        foodName: string,
+        symptoms: SymptomType[],
+        occurrences: number,
+        totalOnsetTime: number,
+        severitySum: number
+      }> = new Map();
+
+      // 分析食物歷史中的症狀資料
+      for (const historyEntry of historyDb.entries) {
+        if (historyEntry.symptoms?.after && historyEntry.symptoms.after.length > 0) {
+          const foodId = historyEntry.foodId;
+          const foodName = historyEntry.foodData?.name_zh || historyEntry.foodData?.name_en || `食物-${foodId}`;
+          const timeAfter = historyEntry.symptoms.timeAfter || 120; // 預設 2 小時
+          const severity = historyEntry.symptoms.severity || 3;
+
+          const existing = correlations.get(foodId) || {
+            foodName,
+            symptoms: [],
+            occurrences: 0,
+            totalOnsetTime: 0,
+            severitySum: 0
+          };
+
+          // 將症狀字串轉換為 SymptomType
+          for (const symptomStr of historyEntry.symptoms.after) {
+            const symptomType = this.mapStringToSymptomType(symptomStr);
+            if (symptomType && !existing.symptoms.includes(symptomType)) {
+              existing.symptoms.push(symptomType);
             }
-            existing.occurrences++;
-            existing.totalOnsetTime += 2; // 假設平均 2 小時發作時間
-
-            correlations.set(foodId, existing);
           }
+
+          existing.occurrences++;
+          existing.totalOnsetTime += timeAfter;
+          existing.severitySum += severity;
+
+          correlations.set(foodId, existing);
         }
       }
-    }
 
-    return Array.from(correlations.entries()).map(([foodId, data]) => ({
-      food_id: foodId,
-      food_name: `食物-${foodId}`, // 實際應該從食物資料庫查詢
-      symptom_types: data.symptoms,
-      correlation_strength: Math.min(data.occurrences / 10, 1), // 簡化的關聯強度計算
-      confidence_level: data.occurrences >= 3 ? 'high' : data.occurrences >= 2 ? 'medium' : 'low',
-      occurrences: data.occurrences,
-      time_to_onset: data.totalOnsetTime / data.occurrences
-    }));
+      // 轉換為最終格式
+      return Array.from(correlations.entries()).map(([foodId, data]) => ({
+        food_id: foodId,
+        food_name: data.foodName,
+        symptom_types: data.symptoms,
+        correlation_strength: Math.min(data.occurrences / 5, 1), // 5次或以上認為強關聯
+        confidence_level: (data.occurrences >= 3 ? 'high' : data.occurrences >= 2 ? 'medium' : 'low') as 'low' | 'medium' | 'high',
+        occurrences: data.occurrences,
+        time_to_onset: data.totalOnsetTime / data.occurrences
+      })).sort((a, b) => b.correlation_strength - a.correlation_strength);
+    } catch (error) {
+      console.error('分析食物關聯性時發生錯誤:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 將症狀字串對應到 SymptomType
+   */
+  private mapStringToSymptomType(symptomStr: string): SymptomType | null {
+    const symptomMap: Record<string, SymptomType> = {
+      '噁心': 'nausea',
+      '嘔吐': 'vomiting',
+      '腹痛': 'abdominal_pain',
+      '腹瀉': 'diarrhea',
+      '便秘': 'constipation',
+      '脹氣': 'bloating',
+      '胃食道逆流': 'heartburn',
+      '食慾不振': 'loss_of_appetite',
+      '疲勞': 'fatigue',
+      '頭痛': 'headache',
+      '皮疹': 'rash',
+      '搔癢': 'itching',
+      '呼吸困難': 'difficulty_breathing',
+      '關節疼痛': 'joint_pain',
+      '肌肉疼痛': 'muscle_pain',
+      '情緒變化': 'mood_changes',
+      '失眠': 'insomnia',
+      '其他': 'other'
+    };
+
+    const normalized = symptomStr.trim().toLowerCase();
+    for (const [key, value] of Object.entries(symptomMap)) {
+      if (normalized.includes(key.toLowerCase()) || key.toLowerCase().includes(normalized)) {
+        return value;
+      }
+    }
+    return null;
   }
 
   /**
@@ -319,7 +385,7 @@ export class SymptomTracker {
         if (!groups[symptom.type]) {
           groups[symptom.type] = [];
         }
-        groups[symptom.type].push(symptom);
+        groups[symptom.type]?.push(symptom);
       }
     }
 

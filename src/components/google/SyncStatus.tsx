@@ -63,30 +63,30 @@ export function SyncStatus({
 
   const getStatusText = () => {
     if (!isAuthenticated) {
-      return 'Not connected';
+      return '未連接';
     }
-    
+
     if (!syncStatus.isOnline) {
-      return 'Offline';
+      return '離線';
     }
-    
+
     if (syncStatus.syncInProgress || isManualSyncing) {
-      return 'Syncing...';
+      return '同步中...';
     }
-    
+
     if (syncStatus.error) {
-      return 'Sync error';
+      return '同步錯誤';
     }
-    
+
     if (syncStatus.pendingChanges > 0) {
-      return `${syncStatus.pendingChanges} pending`;
+      return `${syncStatus.pendingChanges} 項待同步`;
     }
-    
+
     if (syncStatus.lastSync) {
-      return `Synced ${formatDistanceToNow(syncStatus.lastSync, { addSuffix: true })}`;
+      return `已同步 ${formatDistanceToNow(syncStatus.lastSync, { addSuffix: true })}`;
     }
-    
-    return 'Not synced';
+
+    return '未同步';
   };
 
   const getStatusColor = () => {
@@ -125,7 +125,7 @@ export function SyncStatus({
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-medium text-gray-900 flex items-center space-x-2">
           <Database className="w-4 h-4" />
-          <span>Data Sync Status</span>
+          <span>數據同步狀態</span>
         </h3>
         
         <Button
@@ -136,7 +136,7 @@ export function SyncStatus({
           className="flex items-center space-x-1"
         >
           <RefreshCw className={`w-3 h-3 ${(syncStatus.syncInProgress || isManualSyncing) ? 'animate-spin' : ''}`} />
-          <span>Sync</span>
+          <span>同步</span>
         </Button>
       </div>
       
@@ -164,7 +164,7 @@ export function SyncStatus({
             <CloudOff className="w-3 h-3 text-red-500" />
           )}
           <span>
-            {syncStatus.isOnline ? 'Online' : 'Offline'}
+            {syncStatus.isOnline ? '在線' : '離線'}
           </span>
         </div>
         
@@ -172,9 +172,9 @@ export function SyncStatus({
           <Clock className="w-3 h-3" />
           <span>
             {syncStatus.lastSync ? (
-              `Last: ${syncStatus.lastSync.toLocaleTimeString()}`
+              `上次: ${syncStatus.lastSync.toLocaleTimeString()}`
             ) : (
-              'Never synced'
+              '從未同步'
             )}
           </span>
         </div>
@@ -186,10 +186,10 @@ export function SyncStatus({
           <div className="flex items-center space-x-2 text-orange-700">
             <AlertCircle className="w-3 h-3" />
             <span>
-              {syncStatus.pendingChanges} items waiting to sync. 
-              {syncStatus.isOnline ? 
-                'Will sync automatically.' : 
-                'Will sync when back online.'
+              {syncStatus.pendingChanges} 項目等待同步。
+              {syncStatus.isOnline ?
+                '將自動同步。' :
+                '恢復網路連接後將同步。'
               }
             </span>
           </div>
@@ -201,8 +201,8 @@ export function SyncStatus({
         <div className="flex items-start space-x-2">
           <Database className="w-3 h-3 mt-0.5" />
           <span>
-            Your medical data is stored securely in your Google account. 
-            We never store your health information on our servers.
+            您的醫療數據安全存儲在您的Google帳戶中。
+            我們絕不會在我們的伺服器上存儲您的健康信息。
           </span>
         </div>
       </div>

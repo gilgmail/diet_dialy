@@ -15,6 +15,12 @@ export default function MainNavigation(): JSX.Element {
       description: '概覽與快速功能'
     },
     {
+      href: '/food-diary',
+      label: '食物日記',
+      icon: '🍽️',
+      description: '每日飲食記錄'
+    },
+    {
       href: '/database',
       label: '食物資料庫',
       icon: '🗄️',
@@ -31,6 +37,12 @@ export default function MainNavigation(): JSX.Element {
       label: '醫療報告',
       icon: '📊',
       description: '專業分析'
+    },
+    {
+      href: '/admin/food-verification',
+      label: '管理員驗證',
+      icon: '🛡️',
+      description: '食物審核管理'
     }
   ];
 

@@ -126,6 +126,85 @@ const withPWA = require('next-pwa')({
           maxAgeSeconds: 24 * 60 * 60 // 24 hours
         }
       }
+    },
+    // Diet Daily API 快取策略
+    {
+      urlPattern: /^.*\/api\/foods.*$/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'food-database-api',
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 7 * 24 * 60 * 60 // 7 days - 食物資料庫變化較少
+        },
+        cacheKeyWillBeUsed: async ({ request }) => {
+          // 移除查詢參數中的時間戳，提高快取命中率
+          const url = new URL(request.url);
+          url.searchParams.delete('_t');
+          return url.toString();
+        }
+      }
+    },
+    {
+      urlPattern: /^.*\/api\/history.*$/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'food-history-api',
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 60 * 60 // 1 hour - 歷史資料需要較新
+        },
+        networkTimeoutSeconds: 3
+      }
+    },
+    {
+      urlPattern: /^.*\/api\/medical\/profile.*$/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'medical-profile-api',
+        expiration: {
+          maxEntries: 10,
+          maxAgeSeconds: 24 * 60 * 60 // 24 hours
+        },
+        networkTimeoutSeconds: 3
+      }
+    },
+    {
+      urlPattern: /^.*\/api\/medical\/symptoms.*$/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'symptoms-api',
+        expiration: {
+          maxEntries: 30,
+          maxAgeSeconds: 2 * 60 * 60 // 2 hours - 症狀資料需要及時更新
+        },
+        networkTimeoutSeconds: 3
+      }
+    },
+    {
+      urlPattern: /^.*\/api\/reports.*$/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'reports-api',
+        expiration: {
+          maxEntries: 20,
+          maxAgeSeconds: 6 * 60 * 60 // 6 hours
+        },
+        networkTimeoutSeconds: 5
+      }
+    },
+    // 離線頁面處理
+    {
+      urlPattern: ({ request }) => request.destination === 'document',
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'offline-pages',
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 24 * 60 * 60
+        },
+        networkTimeoutSeconds: 3
+      }
     }
   ]
 });
@@ -174,7 +253,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self'; object-src 'none'; child-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https:; connect-src 'self' https://sheets.googleapis.com https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; media-src 'self'; object-src 'none'; child-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
           }
         ]
       }

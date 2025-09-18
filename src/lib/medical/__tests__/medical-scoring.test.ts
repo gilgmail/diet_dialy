@@ -88,9 +88,9 @@ describe('Medical Scoring System - Week 3', () => {
 
       expect(result).toBeDefined();
       expect(result.medicalScore).toBeDefined();
-      expect(typeof result.medicalScore.overall_score).toBe('number');
-      expect(result.medicalScore.overall_score).toBeGreaterThanOrEqual(1);
-      expect(result.medicalScore.overall_score).toBeLessThanOrEqual(10);
+      expect(typeof result.medicalScore.score).toBe('number');
+      expect(result.medicalScore.score).toBeGreaterThanOrEqual(1);
+      expect(result.medicalScore.score).toBeLessThanOrEqual(4);
     });
 
     test('should handle multiple conditions', () => {
@@ -102,9 +102,9 @@ describe('Medical Scoring System - Week 3', () => {
       const result = medicalScoringEngine.scoreFood(mockFood, multiConditionProfile);
 
       expect(result).toBeDefined();
-      expect(result.medicalScore.overall_score).toBeGreaterThan(1);
-      expect(result.reasons).toBeDefined();
-      expect(Array.isArray(result.reasons)).toBe(true);
+      expect(result.medicalScore.score).toBeGreaterThan(1);
+      expect(result.allergyWarnings).toBeDefined();
+      expect(Array.isArray(result.allergyWarnings)).toBe(true);
     });
   });
 
@@ -126,13 +126,14 @@ describe('Medical Scoring System - Week 3', () => {
       expect(symptomId.length).toBeGreaterThan(0);
     });
 
-    test('should analyze symptoms', () => {
-      const analysis = symptomTracker.analyzeSymptoms(30);
+    test('should analyze symptoms', async () => {
+      const analysis = await symptomTracker.analyzeSymptoms(30);
 
       expect(analysis).toBeDefined();
-      expect(analysis.total_symptoms).toBeDefined();
-      expect(typeof analysis.total_symptoms).toBe('number');
-      expect(analysis.severity_distribution).toBeDefined();
+      expect(analysis.weekly_trends).toBeDefined();
+      expect(Array.isArray(analysis.weekly_trends)).toBe(true);
+      expect(analysis.food_correlations).toBeDefined();
+      expect(Array.isArray(analysis.food_correlations)).toBe(true);
     });
 
     test('should get symptom statistics', () => {

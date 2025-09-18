@@ -37,6 +37,12 @@ export type SymptomType =
   | 'urgency'
   | 'allergy_symptoms'
   | 'immune_suppression'
+  | 'loss_of_appetite'
+  | 'rash'
+  | 'itching'
+  | 'difficulty_breathing'
+  | 'muscle_pain'
+  | 'insomnia'
   | 'other';
 
 // Symptom tracking related types

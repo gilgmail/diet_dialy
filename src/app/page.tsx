@@ -93,7 +93,21 @@ export default function HomePage(): JSX.Element {
           </div>
 
           {/* Feature Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
+            {/* Food Diary - NEW */}
+            <Link href="/food-diary" className="group">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all group-hover:scale-105">
+                <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-white text-2xl">🍽️</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">食物日記</h3>
+                <p className="text-sm text-gray-600 mb-3">每日飲食記錄，自訂評分與管理員驗證</p>
+                <div className="flex items-center text-red-500 text-sm font-medium">
+                  開始記錄 →
+                </div>
+              </div>
+            </Link>
+
             {/* Smart Photo Recognition */}
             <Link href="/history" className="group">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all group-hover:scale-105">
@@ -146,6 +160,20 @@ export default function HomePage(): JSX.Element {
                 <p className="text-sm text-gray-600 mb-3">209種台港美食，完整醫療評分</p>
                 <div className="flex items-center text-orange-500 text-sm font-medium">
                   瀏覽資料庫 →
+                </div>
+              </div>
+            </Link>
+
+            {/* Admin Verification */}
+            <Link href="/admin/food-verification" className="group">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all group-hover:scale-105">
+                <div className="w-12 h-12 bg-indigo-500 rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-white text-2xl">🛡️</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">管理員驗證</h3>
+                <p className="text-sm text-gray-600 mb-3">審核用戶自訂食物，豐富資料庫</p>
+                <div className="flex items-center text-indigo-500 text-sm font-medium">
+                  進入管理 →
                 </div>
               </div>
             </Link>

@@ -2,7 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { MedicalReport, MedicalReportRequest, REPORT_TEMPLATES } from '@/types/medical-report';
+
+// 動態導入 PDF 導出組件以避免 SSR 問題
+const PDFExportButton = dynamic(
+  () => import('@/components/medical/PDFExportButton'),
+  { ssr: false }
+);
 
 export default function ReportsPage(): JSX.Element {
   const [activeTab, setActiveTab] = useState<'generate' | 'history'>('generate');
@@ -386,18 +393,42 @@ export default function ReportsPage(): JSX.Element {
                   <h2 className="text-xl font-semibold text-gray-900">
                     完整醫療報告
                   </h2>
-                  <button
-                    onClick={() => setCurrentReport(null)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                  <div className="flex items-center space-x-3">
+                    <PDFExportButton
+                      reportData={{
+                        userId: currentReport.userId,
+                        period: currentReport.period.description,
+                        overview: {
+                          totalFoods: currentReport.summary.totalFoods,
+                          averageScore: currentReport.summary.averageMedicalScore,
+                          highRiskFoods: 0, // Can be calculated from data
+                          recommendations: currentReport.medicalInsights.recommendations.length
+                        },
+                        medicalAnalysis: {
+                          condition: currentReport.metadata.primaryCondition || 'IBD',
+                          riskFactors: currentReport.medicalInsights.warningSignals
+                        },
+                        symptomTrends: [], // Will be populated when symptoms data is available
+                        foodCorrelations: [], // Will be populated when correlation data is available
+                        recommendations: currentReport.medicalInsights.recommendations
+                      }}
+                      reportElement="#report-content"
+                      filename={`medical-report-${currentReport.reportType}`}
+                      className="text-sm"
+                    />
+                    <button
+                      onClick={() => setCurrentReport(null)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Report Content */}
-                <div className="space-y-6">
+                <div id="report-content" className="space-y-6">
                   {/* Report Header */}
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h3 className="font-medium text-gray-900 mb-2">{currentReport.period.description}</h3>

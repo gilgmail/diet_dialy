@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import type {
   Symptom,
   SymptomType,
@@ -8,6 +9,22 @@ import type {
   SymptomAnalysis
 } from '@/types/medical';
 import { symptomTracker } from '@/lib/medical/symptom-tracker';
+
+// 動態導入圖表組件以避免 SSR 問題
+const SymptomTrendsChart = dynamic(
+  () => import('./charts/SymptomTrendsChart'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p className="text-gray-600">載入圖表中...</p>
+        </div>
+      </div>
+    )
+  }
+);
 
 interface SymptomTrackerProps {
   onSymptomRecorded?: (symptomId: string) => void;
@@ -80,9 +97,9 @@ export default function SymptomTracker({ onSymptomRecorded }: SymptomTrackerProp
     loadStats();
   }, []);
 
-  const loadAnalysis = () => {
+  const loadAnalysis = async () => {
     try {
-      const analysisResult = symptomTracker.analyzeSymptoms(30);
+      const analysisResult = await symptomTracker.analyzeSymptoms(30);
       setAnalysis(analysisResult);
     } catch (error) {
       console.error('Failed to load symptom analysis:', error);
@@ -534,13 +551,20 @@ export default function SymptomTracker({ onSymptomRecorded }: SymptomTrackerProp
 
       {/* Trends Tab */}
       {activeTab === 'trends' && (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">📈</div>
-          <h3 className="text-lg font-semibold mb-2">症狀趨勢圖表</h3>
-          <p className="text-gray-600 mb-4">此功能將在後續版本中實現</p>
-          <p className="text-sm text-gray-500">
-            將包括時間軸圖表、嚴重度變化、症狀頻率分析等視覺化功能
-          </p>
+        <div className="space-y-6">
+          {analysis ? (
+            <SymptomTrendsChart
+              weeklyTrends={analysis.weekly_trends}
+              foodCorrelations={analysis.food_correlations}
+              severityPatterns={analysis.severity_patterns}
+            />
+          ) : (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold mb-2">載入趨勢分析中...</h3>
+              <p className="text-gray-600">正在分析您的症狀資料和食物關聯性</p>
+            </div>
+          )}
         </div>
       )}
     </div>

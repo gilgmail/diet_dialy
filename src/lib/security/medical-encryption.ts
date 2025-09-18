@@ -57,6 +57,11 @@ class MedicalEncryption {
       // Convert data to string
       const dataString = typeof data === 'string' ? data : JSON.stringify(data);
 
+      // Validate key
+      if (!key) {
+        throw new Error('Invalid encryption key');
+      }
+
       // Encrypt data
       const encrypted = CryptoJS.AES.encrypt(dataString, key, {
         iv: iv,
@@ -82,6 +87,11 @@ class MedicalEncryption {
     try {
       // Extract salt and key from userKey
       const [salt, key] = userKey.split(':');
+
+      // Validate key
+      if (!key) {
+        throw new Error('Invalid decryption key');
+      }
 
       // Reconstruct IV
       const iv = CryptoJS.enc.Hex.parse(encryptedData.iv);

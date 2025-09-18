@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { GoogleAuthButton } from '@/components/google/GoogleAuthButton';
 import { MedicalDataSetup } from '@/components/google/MedicalDataSetup';
 import { SyncStatus } from '@/components/google/SyncStatus';
+import { MedicalConditionSelector } from '@/components/medical/MedicalConditionSelector';
 import { useMedicalData } from '@/lib/google';
 import type { MedicalProfile } from '@/types/medical';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,34 +45,52 @@ export default function SetupPage() {
   };
 
   const handleSetupComplete = () => {
-    setCurrentStep(3);
+    setCurrentStep(4);
   };
 
   const handleSetupError = (error: string) => {
     setSetupError(error);
   };
 
+  const handleMedicalProfileComplete = (profile: Partial<MedicalProfile>) => {
+    // 更新用戶配置文件
+    setUserProfile(prev => ({
+      ...prev!,
+      ...profile,
+      userId: user?.id || 'demo-user',
+      id: user?.id || 'demo-user'
+    }));
+    setCurrentStep(3); // 前往醫療數據初始化步驟
+  };
+
   const steps = [
     {
       number: 1,
-      title: 'Connect Google Account',
-      description: 'Securely authenticate with Google for data storage',
+      title: '連接Google帳戶',
+      description: '安全地連接Google進行數據存儲認證',
       icon: Shield,
       completed: isAuthenticated
     },
     {
       number: 2,
-      title: 'Initialize Medical Data',
-      description: 'Set up secure storage for your health information',
-      icon: Database,
+      title: '設置醫療狀況',
+      description: '選擇您的醫療狀況和過敏信息',
+      icon: Users,
       completed: currentStep > 2
     },
     {
       number: 3,
-      title: 'Ready to Use',
-      description: 'Start tracking your medical data',
+      title: '初始化醫療數據',
+      description: '為您的健康信息設置安全存儲',
+      icon: Database,
+      completed: currentStep > 3
+    },
+    {
+      number: 4,
+      title: '準備使用',
+      description: '開始追蹤您的醫療數據',
       icon: CheckCircle,
-      completed: currentStep >= 3
+      completed: currentStep >= 4
     }
   ];
 
@@ -92,11 +111,10 @@ export default function SetupPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            Set Up Your Medical Data Storage
+            設置您的醫療數據存儲
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Securely store your health information in your own Google account with 
-            end-to-end encryption.
+            通過端到端加密將您的健康資訊安全存儲在您自己的Google帳戶中。
           </p>
         </div>
 
@@ -156,41 +174,48 @@ export default function SetupPage() {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Shield className="w-5 h-5" />
-                  <span>Secure Authentication</span>
+                  <span>安全認證</span>
                 </CardTitle>
                 <CardDescription>
-                  Connect your Google account to create secure, encrypted storage for your medical data.
+                  連接您的Google帳戶，為您的醫療數據創建安全、加密的存儲。
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <GoogleAuthButton 
+                <GoogleAuthButton
                   onAuthSuccess={handleAuthSuccess}
                   onAuthError={handleAuthError}
                   size="lg"
                 />
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   <div className="text-center p-4">
                     <Shield className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-                    <h3 className="font-medium text-gray-900">Secure</h3>
-                    <p className="text-xs text-gray-600">End-to-end encryption</p>
+                    <h3 className="font-medium text-gray-900">安全</h3>
+                    <p className="text-xs text-gray-600">端到端加密</p>
                   </div>
                   <div className="text-center p-4">
                     <Users className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-                    <h3 className="font-medium text-gray-900">Private</h3>
-                    <p className="text-xs text-gray-600">You own your data</p>
+                    <h3 className="font-medium text-gray-900">私密</h3>
+                    <p className="text-xs text-gray-600">您擁有數據</p>
                   </div>
                   <div className="text-center p-4">
                     <Database className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-                    <h3 className="font-medium text-gray-900">Accessible</h3>
-                    <p className="text-xs text-gray-600">Available anywhere</p>
+                    <h3 className="font-medium text-gray-900">便捷</h3>
+                    <p className="text-xs text-gray-600">隨時隨地訪問</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {currentStep === 2 && userProfile && (
+          {currentStep === 2 && (
+            <MedicalConditionSelector
+              onProfileComplete={handleMedicalProfileComplete}
+              initialProfile={userProfile || undefined}
+            />
+          )}
+
+          {currentStep === 3 && userProfile && (
             <MedicalDataSetup
               userProfile={userProfile}
               onSetupComplete={handleSetupComplete}
@@ -198,49 +223,49 @@ export default function SetupPage() {
             />
           )}
 
-          {currentStep === 3 && (
+          {currentStep === 4 && (
             <Card className="max-w-2xl w-full">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2 text-green-700">
                   <CheckCircle className="w-5 h-5" />
-                  <span>Setup Complete!</span>
+                  <span>設置完成！</span>
                 </CardTitle>
                 <CardDescription>
-                  Your secure medical data storage is ready to use.
+                  您的安全醫療數據存儲已準備就緒。
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Sync Status */}
                 <SyncStatus showDetails={true} />
-                
+
                 {/* Next Steps */}
                 <div className="text-center space-y-4">
-                  <h3 className="font-medium text-gray-900">What&apos;s Next?</h3>
+                  <h3 className="font-medium text-gray-900">接下來做什麼？</h3>
                   <div className="grid grid-cols-1 gap-3 text-sm">
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Start logging your daily symptoms</span>
+                      <span>開始記錄您的每日症狀</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Track your food intake and reactions</span>
+                      <span>追蹤您的食物攝入和反應</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Monitor medication effectiveness</span>
+                      <span>監控藥物有效性</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Generate reports for your healthcare provider</span>
+                      <span>為您的醫療保健提供者生成報告</span>
                     </div>
                   </div>
-                  
+
                   <Button
                     onClick={() => router.push('/dashboard' as any)}
                     size="lg"
                     className="w-full sm:w-auto"
                   >
-                    Go to Dashboard
+                    前往控制板
                   </Button>
                 </div>
               </CardContent>

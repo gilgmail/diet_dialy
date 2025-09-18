@@ -1,7 +1,14 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
+import dynamic from 'next/dynamic';
 import './globals.css';
+
+// 動態導入離線指示器以避免 SSR 問題
+const OfflineIndicator = dynamic(
+  () => import('@/components/common/OfflineIndicator'),
+  { ssr: false }
+);
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -150,6 +157,9 @@ export default function RootLayout({ children }: RootLayoutProps): JSX.Element {
           inter.variable
         )}
       >
+        {/* Offline Indicator */}
+        <OfflineIndicator />
+
         {/* Skip to main content link for accessibility */}
         <a
           href="#main-content"

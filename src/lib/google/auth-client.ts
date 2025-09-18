@@ -141,7 +141,14 @@ class GoogleAuthClientService {
    * Check if current tokens are valid and not expired
    */
   isAuthenticated(): boolean {
+    console.log('🔍 檢查認證狀態:', {
+      hasTokens: !!this.tokens?.access_token,
+      hasUserInfo: !!this.userInfo,
+      userEmail: this.userInfo?.email
+    });
+
     if (!this.tokens?.access_token || !this.userInfo) {
+      console.log('❌ 認證失敗: 缺少 token 或用戶資訊');
       return false;
     }
 
@@ -150,12 +157,21 @@ class GoogleAuthClientService {
     const now = Date.now();
     const timeUntilExpiry = tokenExpiryTime - now;
 
+    console.log('🕒 Token 過期檢查:', {
+      expiryTime: new Date(tokenExpiryTime).toLocaleString(),
+      now: new Date(now).toLocaleString(),
+      timeUntilExpiry: Math.round(timeUntilExpiry / 1000 / 60) + ' 分鐘',
+      isValid: timeUntilExpiry > 0
+    });
+
     // If token expires within threshold, attempt refresh
     if (timeUntilExpiry < SECURITY_CONFIG.REFRESH_THRESHOLD && timeUntilExpiry > 0) {
       this.refreshAccessToken();
     }
 
-    return timeUntilExpiry > 0;
+    const isValid = timeUntilExpiry > 0;
+    console.log(`${isValid ? '✅' : '❌'} 認證狀態:`, isValid);
+    return isValid;
   }
 
   /**
@@ -212,6 +228,19 @@ class GoogleAuthClientService {
    */
   getAccessToken(): string | null {
     return this.tokens?.access_token || null;
+  }
+
+  /**
+   * Manually set authentication data (for OAuth callback processing)
+   */
+  async setAuthData(tokens: GoogleTokens, userInfo: GoogleUserInfo): Promise<void> {
+    // 添加時間戳記錄 token 發放時間
+    this.tokens = {
+      ...tokens,
+      issued_at: Date.now() // 記錄發放時間
+    };
+    this.userInfo = userInfo;
+    await this.saveTokensToStorage();
   }
 
   /**
@@ -298,9 +327,9 @@ class GoogleAuthClientService {
   private getTokenExpiryTime(): number {
     if (!this.tokens?.expires_in) return 0;
 
-    // Calculate expiry time based on when tokens were stored
-    const tokenIssueTime = Date.now() - (this.tokens.expires_in * 1000);
-    return tokenIssueTime + (this.tokens.expires_in * 1000);
+    // 使用記錄的發放時間，如果沒有記錄則假設是現在發放的
+    const issuedAt = (this.tokens as any).issued_at || Date.now();
+    return issuedAt + (this.tokens.expires_in * 1000);
   }
 
   private generateSecureState(): string {
@@ -387,12 +416,18 @@ export function useGoogleAuth() {
     return success;
   };
 
+  const updateAuthState = () => {
+    const state = googleAuthClientService.getAuthState();
+    setAuthState({ ...state, isLoading: false });
+  };
+
   return {
     ...authState,
     signIn,
     completeAuth,
     signOut,
     refreshAuth,
+    updateAuthState,
     authenticatedRequest: googleAuthClientService.authenticatedRequest.bind(googleAuthClientService)
   };
 }

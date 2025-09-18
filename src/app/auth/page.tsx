@@ -45,13 +45,13 @@ export default function AuthPage() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <Heart className="h-8 w-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">Diet Daily</span>
+            <span className="text-2xl font-bold text-gray-900">飲食日記</span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Secure Medical Data Storage
+            安全醫療數據存儲
           </h1>
           <p className="text-gray-600">
-            Connect your Google account to create encrypted storage for your health information.
+            連接您的Google帳戶，為您的健康資訊創建加密存儲。
           </p>
         </div>
 
@@ -60,10 +60,10 @@ export default function AuthPage() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Shield className="w-5 h-5" />
-              <span>Secure Authentication</span>
+              <span>安全認證</span>
             </CardTitle>
             <CardDescription>
-              Your medical data will be stored in your own Google account with end-to-end encryption.
+              您的醫療數據將通過端到端加密存儲在您自己的Google帳戶中。
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -80,24 +80,24 @@ export default function AuthPage() {
         <div className="mt-8 space-y-4">
           <div className="flex items-center space-x-3 text-sm text-gray-600">
             <Shield className="w-4 h-4 text-green-600" />
-            <span>End-to-end encryption for all medical data</span>
+            <span>所有醫療數據端到端加密</span>
           </div>
           <div className="flex items-center space-x-3 text-sm text-gray-600">
             <Database className="w-4 h-4 text-green-600" />
-            <span>Data stored in your Google account, not our servers</span>
+            <span>數據存儲在您的Google帳戶中，而非我們的服務器</span>
           </div>
           <div className="flex items-center space-x-3 text-sm text-gray-600">
             <Heart className="w-4 h-4 text-green-600" />
-            <span>HIPAA-aware design for medical data protection</span>
+            <span>符合HIPAA標準的醫療數據保護設計</span>
           </div>
         </div>
 
         {/* Medical Disclaimer */}
         <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-          <p className="font-medium mb-1">Medical Disclaimer:</p>
+          <p className="font-medium mb-1">醫療免責聲明：</p>
           <p>
-            Diet Daily is a health management tool, not a substitute for professional medical care. 
-            Always consult with qualified healthcare providers for medical decisions.
+            飲食日記是健康管理工具，不能替代專業醫療護理。
+            醫療決定請諮詢合格的醫療保健提供者。
           </p>
         </div>
       </div>
