@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import jsPDF from 'jspdf';
 
 interface HealthDataPoint {
@@ -68,9 +68,10 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
     { title: '飲食記錄分析', enabled: true },
     { title: '症狀詳細記錄', enabled: true },
     { title: '食物症狀關聯性', enabled: true },
-    { title: 'Medical recommendations', enabled: true },
-    { title: '附錄：Raw data', enabled: false }
+    { title: '醫療建議', enabled: true },
+    { title: '附錄：原始數據', enabled: false }
   ]);
+  const reportContentRef = useRef<HTMLDivElement>(null);
 
   // 過濾報告期間的數據 - 加強錯誤處理
   const getFilteredData = () => {
@@ -183,90 +184,135 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
     };
   };
 
-  // 生成Medical recommendations
+  // 生成醫療建議
   const generateRecommendations = (stats: any) => {
     const recommendations: string[] = [];
 
     if (parseFloat(stats.avgSeverity) > 2.5) {
-      recommendations.push('High symptom severity detected. Recommend discussing treatment plan adjustments with healthcare professionals.');
+      recommendations.push('檢測到高症狀嚴重度。建議與醫療專業人員討論治療計劃調整。');
     }
 
     if (parseFloat(stats.avgActivity) > 2.0) {
-      recommendations.push('Activity significantly affected. Recommend moderately adjusting daily activity intensity.');
+      recommendations.push('活動受到顯著影響。建議適度調整日常活動強度。');
     }
 
     if (parseFloat(stats.avgSleep) < 2.0) {
-      recommendations.push('Poor sleep quality. Recommend improving sleep environment and establishing regular sleep patterns.');
+      recommendations.push('睡眠品質不佳。建議改善睡眠環境並建立規律的睡眠模式。');
     }
 
     if (stats.uniqueHighRiskFoods.length > 5) {
-      recommendations.push('Multiple high-risk foods identified. Recommend creating a personalized dietary avoidance list.');
+      recommendations.push('識別出多種高風險食物。建議建立個人化的飲食避免清單。');
     }
 
-    if (stats.trendDirection === '惡化' || stats.trendDirection === 'Worsening') {
-      recommendations.push('Symptoms showing worsening trend. Recommend consulting healthcare professionals as soon as possible.');
-    } else if (stats.trendDirection === '改善' || stats.trendDirection === 'Improving') {
-      recommendations.push('Symptoms showing improvement trend. Recommend maintaining current management strategies.');
+    if (stats.trendDirection === '惡化') {
+      recommendations.push('症狀呈現惡化趨勢。建議盡快諮詢醫療專業人員。');
+    } else if (stats.trendDirection === '改善') {
+      recommendations.push('症狀呈現改善趨勢。建議維持目前的管理策略。');
     }
 
     if (recommendations.length === 0) {
-      recommendations.push('Continue monitoring symptom changes and maintain good self-care habits.');
+      recommendations.push('請繼續監測症狀變化並維持良好的自我照護習慣。');
     }
 
     return recommendations;
   };
 
-  // 清理中文字符以避免PDF亂碼
-  const sanitizeForPDF = (text: string): string => {
-    if (!text) return '';
+  // 新的中文PDF生成方法 - 使用html2canvas將HTML內容轉為圖片
+  const generateChinesePDF = async () => {
+    if (!reportContentRef.current) return;
 
-    // 常見中文詞彙映射
-    const commonTranslations: { [key: string]: string } = {
-      '頭痛': 'Headache',
-      '腹痛': 'Abdominal pain',
-      '噁心': 'Nausea',
-      '疲勞': 'Fatigue',
-      '失眠': 'Insomnia',
-      '發燒': 'Fever',
-      '咳嗽': 'Cough',
-      '米飯': 'Rice',
-      '麵包': 'Bread',
-      '牛奶': 'Milk',
-      '雞蛋': 'Egg',
-      '蔬菜': 'Vegetables',
-      '水果': 'Fruits',
-      '肉類': 'Meat',
-      '魚': 'Fish',
-      '雞肉': 'Chicken',
-      '豬肉': 'Pork',
-      '牛肉': 'Beef'
-    };
+    setIsGenerating(true);
 
-    let result = text;
+    try {
+      // 動態導入 html2canvas
+      const html2canvas = (await import('html2canvas')).default;
 
-    // 首先嘗試翻譯常見詞彙
-    Object.entries(commonTranslations).forEach(([chinese, english]) => {
-      result = result.replace(new RegExp(chinese, 'g'), english);
-    });
-
-    // 如果還有中文字符，用更描述性的標記替換
-    if (/[\u4e00-\u9fff]/.test(result)) {
-      const chineseCount = (result.match(/[\u4e00-\u9fff]/g) || []).length;
-      if (chineseCount > 0) {
-        result = result.replace(/[\u4e00-\u9fff]/g, '') + ` [${chineseCount} Chinese chars]`;
+      // 獲取過濾後的數據
+      const data = getFilteredData();
+      if (!data || data.healthData.length === 0) {
+        alert('無足夠數據生成報告，請確保選定期間內有健康記錄');
+        return;
       }
+
+      // 創建PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      // 將HTML內容轉換為圖片
+      const canvas = await html2canvas(reportContentRef.current, {
+        scale: 2, // 高解析度
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: reportContentRef.current.scrollWidth,
+        height: reportContentRef.current.scrollHeight
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = pageWidth - 20; // 留邊距
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // 如果內容太長，分頁處理
+      if (imgHeight > pageHeight - 20) {
+        let yPosition = 0;
+        const maxHeightPerPage = pageHeight - 20;
+
+        while (yPosition < imgHeight) {
+          if (yPosition > 0) {
+            pdf.addPage();
+          }
+
+          // 計算當前頁面要顯示的部分
+          const sourceY = (yPosition / imgHeight) * canvas.height;
+          const sourceHeight = Math.min(
+            (maxHeightPerPage / imgHeight) * canvas.height,
+            canvas.height - sourceY
+          );
+
+          // 創建當前頁面的canvas
+          const pageCanvas = document.createElement('canvas');
+          const pageCtx = pageCanvas.getContext('2d');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sourceHeight;
+
+          if (pageCtx) {
+            pageCtx.drawImage(
+              canvas,
+              0, sourceY, canvas.width, sourceHeight,
+              0, 0, canvas.width, sourceHeight
+            );
+
+            const pageImgData = pageCanvas.toDataURL('image/png');
+            const currentPageHeight = Math.min(maxHeightPerPage, imgHeight - yPosition);
+
+            pdf.addImage(pageImgData, 'PNG', 10, 10, imgWidth, currentPageHeight);
+          }
+
+          yPosition += maxHeightPerPage;
+        }
+      } else {
+        // 單頁顯示
+        pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      }
+
+      // 生成文件名
+      const now = new Date();
+      const timestamp = now.toISOString().split('T')[0];
+      const periodText = reportPeriod === '7d' ? '7天' : reportPeriod === '30d' ? '30天' : '90天';
+      const filename = `健康報告_${periodText}_${timestamp}.pdf`;
+
+      // 下載PDF
+      pdf.save(filename);
+
+      alert('中文PDF報告已成功生成並下載！');
+
+    } catch (error) {
+      console.error('生成中文PDF時發生錯誤:', error);
+      alert('生成PDF報告時發生錯誤，請稍後再試');
+    } finally {
+      setIsGenerating(false);
     }
-
-    // 移除其他非ASCII字符並清理空格
-    return result
-      .replace(/[^\x00-\x7F]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  };
-
-  // 為數組中的每個項目清理中文字符
-  const sanitizeArray = (arr: string[]): string[] => {
-    return arr.map(item => sanitizeForPDF(item));
   };
 
   // 生成PDF報告
@@ -278,7 +324,7 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
       const stats = calculateStats(filteredData);
 
       if (!stats) {
-        alert('Insufficient data in selected period to generate report');
+        alert('選定期間內數據不足，無法生成報告');
         setIsGenerating(false);
         return;
       }
@@ -553,41 +599,41 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
             <button
               onClick={() => {
                 try {
-                  console.log('=== Starting Report Preview ===');
+                  console.log('=== 開始報告預覽 ===');
 
                   // 步驟1: 獲取過濾數據
-                  console.log('Step 1: Getting raw data...');
-                  console.log('Raw health data:', healthData);
-                  console.log('Raw symptom records:', symptomRecords);
-                  console.log('Raw food entries:', foodEntries);
+                  console.log('步驟1: 獲取原始數據...');
+                  console.log('原始健康數據:', healthData);
+                  console.log('原始症狀記錄:', symptomRecords);
+                  console.log('原始飲食記錄:', foodEntries);
 
                   const data = getFilteredData();
-                  console.log('Step 2: Filtered data:', data);
+                  console.log('步驟2: 過濾後數據:', data);
 
                   if (!data || typeof data !== 'object') {
-                    alert('Failed to get data, please reload the page');
+                    alert('獲取數據失敗，請重新載入頁面');
                     return;
                   }
 
                   if (!data.healthData || data.healthData.length === 0) {
-                    alert('No health data available for preview in selected period');
+                    alert('選定期間內無健康數據可供預覽');
                     return;
                   }
 
                   // Step 3: Calculating statistics
-                  console.log('Step 3: Calculating statistics...');
+                  console.log('步驟3: 計算統計數據...');
                   const stats = calculateStats(data);
-                  console.log('Calculated statistics:', stats);
+                  console.log('計算出的統計數據:', stats);
 
                   if (!stats) {
-                    alert('Cannot calculate statistics, data may be incomplete or incorrectly formatted');
+                    alert('無法計算統計數據，數據可能不完整或格式不正確');
                     return;
                   }
 
                   // 步驟4: 生成建議
-                  console.log('Step 4: Generating medical recommendations...');
+                  console.log('步驟4: 生成醫療建議...');
                   const recommendations = generateRecommendations(stats);
-                  console.log('Generated medical recommendations:', recommendations);
+                  console.log('生成的醫療建議:', recommendations);
 
                   // 步驟5: 安全地構建預覽信息
                   const safeValue = (value: any, defaultValue: any = 'Unknown') => {
@@ -643,9 +689,9 @@ Preview successful! Report data integrity is good.
                   `;
 
                   console.log('========== 報告預覽詳細數據 ==========');
-                  console.log('Statistics:', stats);
-                  console.log('Medical recommendations:', recommendations);
-                  console.log('Raw data:', data);
+                  console.log('統計數據:', stats);
+                  console.log('醫療建議:', recommendations);
+                  console.log('原始數據:', data);
                   console.log('=======================================');
 
                   alert(previewInfo);
@@ -677,7 +723,7 @@ Preview successful! Report data integrity is good.
               預覽報告
             </button>
             <button
-              onClick={generatePDF}
+              onClick={generateChinesePDF}
               disabled={isGenerating || getFilteredData().healthData.length === 0}
               className={`px-6 py-2 rounded-md text-sm font-medium ${
                 isGenerating || getFilteredData().healthData.length === 0
@@ -685,7 +731,7 @@ Preview successful! Report data integrity is good.
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
-              {isGenerating ? '生成中...' : '生成 PDF 報告'}
+              {isGenerating ? '生成中...' : '生成中文 PDF 報告'}
             </button>
           </div>
 
@@ -700,6 +746,80 @@ Preview successful! Report data integrity is good.
             </ul>
           </div>
         </div>
+      </div>
+
+      {/* 隱藏的中文報告內容，用於PDF生成 */}
+      <div ref={reportContentRef} style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '210mm', padding: '20mm', fontFamily: 'Arial, sans-serif', fontSize: '12px', color: '#000' }}>
+        {(() => {
+          const data = getFilteredData();
+          const stats = calculateStats(data);
+          if (!stats) return null;
+
+          const recommendations = generateRecommendations(stats);
+          return (
+            <div>
+              <h1 style={{ textAlign: 'center', fontSize: '18px', marginBottom: '20px', color: '#2563eb' }}>
+                健康追蹤報告 ({reportPeriod === '7d' ? '7天' : reportPeriod === '30d' ? '30天' : '90天'})
+              </h1>
+
+              {patientInfo && (
+                <div style={{ marginBottom: '20px' }}>
+                  <h2 style={{ fontSize: '16px', marginBottom: '10px', borderBottom: '1px solid #ccc' }}>基本資訊</h2>
+                  {patientInfo.name && <p><strong>姓名:</strong> {patientInfo.name}</p>}
+                  {patientInfo.age && <p><strong>年齡:</strong> {patientInfo.age} 歲</p>}
+                  {patientInfo.conditions && patientInfo.conditions.length > 0 && (
+                    <p><strong>現有疾病:</strong> {patientInfo.conditions.join(', ')}</p>
+                  )}
+                  {patientInfo.medications && patientInfo.medications.length > 0 && (
+                    <p><strong>目前用藥:</strong> {patientInfo.medications.join(', ')}</p>)}
+                </div>
+              )}
+
+              <div style={{ marginBottom: '20px' }}>
+                <h2 style={{ fontSize: '16px', marginBottom: '10px', borderBottom: '1px solid #ccc' }}>健康指標概覽</h2>
+                <p><strong>平均症狀嚴重度:</strong> {stats.avgSeverity}/5</p>
+                <p><strong>活動影響程度:</strong> {stats.avgActivity}/5</p>
+                <p><strong>情緒影響程度:</strong> {stats.avgMood}/5</p>
+                <p><strong>睡眠品質:</strong> {stats.avgSleep}/5</p>
+                <p><strong>總健康記錄數:</strong> {stats.totalHealthRecords} 筆</p>
+                <p><strong>症狀記錄數:</strong> {stats.totalSymptomRecords} 筆</p>
+                <p><strong>飲食記錄數:</strong> {stats.totalFoodEntries} 筆</p>
+                <p><strong>症狀趨勢:</strong> {stats.trendDirection}</p>
+              </div>
+
+              {stats.topSymptoms.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                  <h2 style={{ fontSize: '16px', marginBottom: '10px', borderBottom: '1px solid #ccc' }}>主要症狀分析</h2>
+                  {stats.topSymptoms.map(([symptom, count]: [string, number], index: number) => (
+                    <p key={index}>{index + 1}. {symptom} ({count} 次)</p>
+                  ))}
+                </div>
+              )}
+
+              {stats.uniqueHighRiskFoods.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                  <h2 style={{ fontSize: '16px', marginBottom: '10px', borderBottom: '1px solid #ccc' }}>高風險食物清單</h2>
+                  {stats.uniqueHighRiskFoods.slice(0, 8).map((food: string, index: number) => (
+                    <p key={index}>{index + 1}. {food}</p>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ marginBottom: '20px' }}>
+                <h2 style={{ fontSize: '16px', marginBottom: '10px', borderBottom: '1px solid #ccc' }}>醫療建議</h2>
+                {recommendations.map((rec: string, index: number) => (
+                  <p key={index} style={{ marginBottom: '8px' }}>• {rec}</p>
+                ))}
+              </div>
+
+              <div style={{ marginTop: '30px', fontSize: '10px', color: '#666', textAlign: 'center' }}>
+                <p>此報告由 Diet Daily 健康追蹤系統生成</p>
+                <p>生成時間: {new Date().toLocaleString('zh-TW')}</p>
+                <p>免責聲明: 此報告僅供參考，不可替代專業醫療建議</p>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
