@@ -132,8 +132,6 @@ export default function RootLayout({ children }: RootLayoutProps): JSX.Element {
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
         {/* Preconnect to improve performance */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
 
         {/* Favicon and app icons */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -185,7 +183,7 @@ export default function RootLayout({ children }: RootLayoutProps): JSX.Element {
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+              if ('serviceWorker' in navigator && location.hostname !== 'localhost') {
                 navigator.serviceWorker.register('/sw.js')
                   .then((registration) => {
                     console.log('SW registered: ', registration);
@@ -204,13 +202,16 @@ export default function RootLayout({ children }: RootLayoutProps): JSX.Element {
             __html: `
               let deferredPrompt;
               window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
+                // 不阻止預設行為，讓瀏覽器顯示安裝橫幅
+                // e.preventDefault();
                 deferredPrompt = e;
-                // Show install button or banner
-                const installBanner = document.getElementById('install-banner');
-                if (installBanner) {
-                  installBanner.style.display = 'block';
-                }
+                console.log('PWA install prompt available');
+              });
+
+              // 處理用戶安裝選擇
+              window.addEventListener('appinstalled', (e) => {
+                console.log('PWA was installed');
+                deferredPrompt = null;
               });
             `
           }}

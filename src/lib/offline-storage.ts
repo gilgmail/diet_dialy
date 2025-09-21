@@ -1,205 +1,248 @@
+'use client';
+
+import { FoodEntry } from './google/sheets-service';
+
 /**
- * Diet Daily - 離線儲存管理系統
- * 處理離線模式下的資料同步和儲存
+ * 離線食物記錄暫存管理器
+ * 提供本地存儲、同步狀態管理和批量上傳功能
  */
 
-export interface OfflineAction {
-  id: string;
-  type: 'CREATE' | 'UPDATE' | 'DELETE';
-  entity: 'food_history' | 'medical_profile' | 'symptoms';
-  data: any;
-  timestamp: number;
-  synced: boolean;
-}
-
-export interface OfflineData {
-  food_history: any[];
-  medical_profiles: any[];
-  symptoms: any[];
-  last_sync: number;
+export interface PendingFoodEntry extends Omit<FoodEntry, 'id' | 'timestamp'> {
+  tempId: string;
+  createdAt: string;
+  syncStatus: 'pending' | 'syncing' | 'synced' | 'error';
+  errorMessage?: string;
 }
 
 class OfflineStorageManager {
-  private readonly STORAGE_KEY = 'diet_daily_offline';
-  private readonly ACTIONS_KEY = 'diet_daily_offline_actions';
+  private readonly PENDING_ENTRIES_KEY = 'diet_daily_pending_entries';
+  private readonly SYNC_METADATA_KEY = 'diet_daily_sync_metadata';
 
   /**
-   * 儲存離線動作以供後續同步
+   * 添加食物記錄到離線暫存
    */
-  async storeOfflineAction(action: Omit<OfflineAction, 'id' | 'timestamp' | 'synced'>): Promise<string> {
-    const actionWithId: OfflineAction = {
-      ...action,
-      id: `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: Date.now(),
-      synced: false
+  addPendingEntry(entry: Omit<FoodEntry, 'id' | 'timestamp'>): PendingFoodEntry {
+    const pendingEntry: PendingFoodEntry = {
+      ...entry,
+      tempId: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date().toISOString(),
+      syncStatus: 'pending'
     };
 
-    try {
-      const existingActions = await this.getOfflineActions();
-      existingActions.push(actionWithId);
+    const pendingEntries = this.getPendingEntries();
+    pendingEntries.push(pendingEntry);
 
-      localStorage.setItem(this.ACTIONS_KEY, JSON.stringify(existingActions));
+    localStorage.setItem(this.PENDING_ENTRIES_KEY, JSON.stringify(pendingEntries));
 
-      console.log('📱 離線動作已儲存:', actionWithId);
-      return actionWithId.id;
-    } catch (error) {
-      console.error('儲存離線動作失敗:', error);
-      throw error;
-    }
+    console.log('📝 添加食物記錄到離線暫存:', pendingEntry.tempId);
+    return pendingEntry;
   }
 
   /**
-   * 取得所有待同步的離線動作
+   * 獲取所有暫存的食物記錄
    */
-  async getOfflineActions(): Promise<OfflineAction[]> {
+  getPendingEntries(): PendingFoodEntry[] {
     try {
-      const stored = localStorage.getItem(this.ACTIONS_KEY);
+      const stored = localStorage.getItem(this.PENDING_ENTRIES_KEY);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
-      console.error('讀取離線動作失敗:', error);
+      console.error('❌ 讀取暫存記錄失敗:', error);
       return [];
     }
   }
 
   /**
-   * 標記動作為已同步
+   * 獲取待同步的記錄數量
    */
-  async markActionSynced(actionId: string): Promise<void> {
-    try {
-      const actions = await this.getOfflineActions();
-      const updatedActions = actions.map(action =>
-        action.id === actionId ? { ...action, synced: true } : action
-      );
-
-      localStorage.setItem(this.ACTIONS_KEY, JSON.stringify(updatedActions));
-    } catch (error) {
-      console.error('標記同步狀態失敗:', error);
-    }
+  getPendingCount(): number {
+    const pending = this.getPendingEntries();
+    return pending.filter(entry => entry.syncStatus === 'pending').length;
   }
 
   /**
-   * 清除已同步的動作
+   * 獲取同步失敗的記錄數量
    */
-  async clearSyncedActions(): Promise<void> {
-    try {
-      const actions = await this.getOfflineActions();
-      const unsyncedActions = actions.filter(action => !action.synced);
-
-      localStorage.setItem(this.ACTIONS_KEY, JSON.stringify(unsyncedActions));
-
-      console.log(`🧹 清除了 ${actions.length - unsyncedActions.length} 個已同步動作`);
-    } catch (error) {
-      console.error('清除同步動作失敗:', error);
-    }
+  getErrorCount(): number {
+    const pending = this.getPendingEntries();
+    return pending.filter(entry => entry.syncStatus === 'error').length;
   }
 
   /**
-   * 儲存資料到本地儲存
+   * 更新記錄的同步狀態
    */
-  async storeData(entity: string, data: any): Promise<void> {
-    try {
-      const offlineData = await this.getOfflineData();
+  updateSyncStatus(tempId: string, status: PendingFoodEntry['syncStatus'], errorMessage?: string): void {
+    const pendingEntries = this.getPendingEntries();
+    const entryIndex = pendingEntries.findIndex(entry => entry.tempId === tempId);
 
-      if (entity in offlineData) {
-        offlineData[entity as keyof OfflineData] = data;
+    if (entryIndex !== -1) {
+      const entry = pendingEntries[entryIndex];
+      if (entry) {
+        entry.syncStatus = status;
+        if (errorMessage) {
+          entry.errorMessage = errorMessage;
+        }
       }
 
-      offlineData.last_sync = Date.now();
-
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(offlineData));
-
-      console.log(`💾 ${entity} 資料已儲存到本地`);
-    } catch (error) {
-      console.error('儲存本地資料失敗:', error);
+      localStorage.setItem(this.PENDING_ENTRIES_KEY, JSON.stringify(pendingEntries));
+      console.log(`🔄 更新同步狀態: ${tempId} → ${status}`);
     }
   }
 
   /**
-   * 從本地儲存讀取資料
+   * 移除已成功同步的記錄
    */
-  async getData(entity: string): Promise<any[]> {
-    try {
-      const offlineData = await this.getOfflineData();
-      return (offlineData as any)[entity] || [];
-    } catch (error) {
-      console.error('讀取本地資料失敗:', error);
-      return [];
+  removeSyncedEntries(): number {
+    const pendingEntries = this.getPendingEntries();
+    const beforeCount = pendingEntries.length;
+
+    const unsyncedEntries = pendingEntries.filter(entry => entry.syncStatus !== 'synced');
+    localStorage.setItem(this.PENDING_ENTRIES_KEY, JSON.stringify(unsyncedEntries));
+
+    const removedCount = beforeCount - unsyncedEntries.length;
+    if (removedCount > 0) {
+      console.log(`🧹 清除 ${removedCount} 筆已同步記錄`);
     }
+
+    return removedCount;
   }
 
   /**
-   * 取得完整的離線資料
+   * 清除所有暫存記錄（慎用）
    */
-  async getOfflineData(): Promise<OfflineData> {
+  clearAllPendingEntries(): void {
+    localStorage.removeItem(this.PENDING_ENTRIES_KEY);
+    console.log('🗑️ 清除所有暫存記錄');
+  }
+
+  /**
+   * 獲取同步元數據
+   */
+  getSyncMetadata() {
     try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
+      const stored = localStorage.getItem(this.SYNC_METADATA_KEY);
       return stored ? JSON.parse(stored) : {
-        food_history: [],
-        medical_profiles: [],
-        symptoms: [],
-        last_sync: 0
+        lastSyncTime: null,
+        lastSyncStatus: 'none',
+        totalSynced: 0,
+        totalErrors: 0
       };
     } catch (error) {
-      console.error('讀取離線資料失敗:', error);
+      console.error('❌ 讀取同步元數據失敗:', error);
       return {
-        food_history: [],
-        medical_profiles: [],
-        symptoms: [],
-        last_sync: 0
+        lastSyncTime: null,
+        lastSyncStatus: 'none',
+        totalSynced: 0,
+        totalErrors: 0
       };
     }
   }
 
   /**
-   * 檢查是否有待同步的資料
+   * 更新同步元數據
    */
-  async hasPendingSync(): Promise<boolean> {
-    try {
-      const actions = await this.getOfflineActions();
-      return actions.some(action => !action.synced);
-    } catch (error) {
-      console.error('檢查同步狀態失敗:', error);
-      return false;
-    }
+  updateSyncMetadata(updates: Partial<{
+    lastSyncTime: string;
+    lastSyncStatus: 'success' | 'partial' | 'error' | 'none';
+    totalSynced: number;
+    totalErrors: number;
+  }>): void {
+    const current = this.getSyncMetadata();
+    const updated = { ...current, ...updates };
+
+    localStorage.setItem(this.SYNC_METADATA_KEY, JSON.stringify(updated));
   }
 
   /**
-   * 同步離線資料到伺服器
+   * 獲取今日暫存記錄（用於統計）
    */
-  async syncToServer(): Promise<{ success: number; failed: number }> {
-    if (!navigator.onLine) {
-      console.log('🔌 目前離線，跳過同步');
+  getTodayPendingEntries(): PendingFoodEntry[] {
+    const today = new Date().toISOString().split('T')[0];
+    const pending = this.getPendingEntries();
+
+    return pending.filter(entry => entry.date === today);
+  }
+
+  /**
+   * 獲取綜合統計（包含暫存記錄）
+   */
+  getCombinedStats(syncedStats: { todayEntries: number; weekEntries: number; monthEntries: number }) {
+    const pending = this.getPendingEntries();
+    const today = new Date().toISOString().split('T')[0];
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const todayPending = pending.filter(entry => entry.date === today).length;
+    const weekPending = pending.filter(entry => entry.date >= (weekAgo || today)).length;
+    const monthPending = pending.filter(entry => entry.date >= (monthAgo || today)).length;
+
+    return {
+      todayEntries: (syncedStats.todayEntries || 0) + todayPending,
+      weekEntries: (syncedStats.weekEntries || 0) + weekPending,
+      monthEntries: (syncedStats.monthEntries || 0) + monthPending,
+      pendingCount: this.getPendingCount(),
+      errorCount: this.getErrorCount()
+    };
+  }
+
+  /**
+   * 批量同步到Google Sheets
+   */
+  async syncPendingEntries(sheetsService: any): Promise<{ success: number; failed: number }> {
+    const pendingEntries = this.getPendingEntries().filter(entry =>
+      entry.syncStatus === 'pending' || entry.syncStatus === 'error'
+    );
+
+    if (pendingEntries.length === 0) {
+      console.log('✅ 沒有待同步的記錄');
       return { success: 0, failed: 0 };
     }
 
-    const actions = await this.getOfflineActions();
-    const unsyncedActions = actions.filter(action => !action.synced);
-
-    if (unsyncedActions.length === 0) {
-      console.log('✅ 沒有待同步的資料');
-      return { success: 0, failed: 0 };
-    }
-
-    console.log(`🔄 開始同步 ${unsyncedActions.length} 個離線動作`);
+    console.log(`🔄 開始同步 ${pendingEntries.length} 筆暫存記錄`);
 
     let successCount = 0;
     let failedCount = 0;
 
-    for (const action of unsyncedActions) {
+    for (const entry of pendingEntries) {
       try {
-        await this.syncSingleAction(action);
-        await this.markActionSynced(action.id);
-        successCount++;
+        // 標記為正在同步
+        this.updateSyncStatus(entry.tempId, 'syncing');
 
-        console.log(`✅ 同步成功: ${action.type} ${action.entity}`);
+        // 呼叫 medical service 記錄食物
+        const success = await sheetsService.recordFoodEntry({
+          date: entry.date,
+          time: entry.time,
+          foodName: entry.foodName,
+          category: entry.category,
+          medicalScore: entry.medicalScore,
+          notes: entry.notes,
+          userId: entry.userId
+        });
+
+        if (success) {
+          this.updateSyncStatus(entry.tempId, 'synced');
+          successCount++;
+          console.log(`✅ 同步成功: ${entry.foodName}`);
+        } else {
+          throw new Error('同步失敗：未知錯誤');
+        }
       } catch (error) {
-        console.error(`❌ 同步失敗: ${action.type} ${action.entity}`, error);
+        this.updateSyncStatus(entry.tempId, 'error', error instanceof Error ? error.message : '同步失敗');
         failedCount++;
+        console.error(`❌ 同步失敗: ${entry.foodName}`, error);
       }
     }
 
-    // 清除已同步的動作
-    await this.clearSyncedActions();
+    // 注意：在新的統一資料架構中，我們不移除已同步的記錄
+    // 而是依賴 unified-data-service.ts 中的去重機制來處理本地和遠端資料的合併
+    // this.removeSyncedEntries();
+
+    // 更新同步元數據
+    this.updateSyncMetadata({
+      lastSyncTime: new Date().toISOString(),
+      lastSyncStatus: failedCount === 0 ? 'success' : successCount > 0 ? 'partial' : 'error',
+      totalSynced: successCount,
+      totalErrors: failedCount
+    });
 
     console.log(`🎯 同步完成: ${successCount} 成功, ${failedCount} 失敗`);
 
@@ -207,123 +250,103 @@ class OfflineStorageManager {
   }
 
   /**
-   * 同步單一動作到伺服器
+   * 比較本地記錄與 Google Sheets 記錄，更新同步狀態
    */
-  private async syncSingleAction(action: OfflineAction): Promise<void> {
-    const { type, entity, data } = action;
+  async compareSyncStatus(sheetsService: any): Promise<void> {
+    try {
+      console.log('🔍 開始比較本地記錄與 Google Sheets 同步狀態...');
 
-    let method = 'POST';
-    let url = '';
+      // 獲取今日本地暫存記錄
+      const todayEntries = this.getTodayPendingEntries();
 
-    switch (entity) {
-      case 'food_history':
-        url = '/api/history';
-        if (type === 'UPDATE') method = 'PUT';
-        else if (type === 'DELETE') method = 'DELETE';
-        break;
-      case 'medical_profile':
-        url = '/api/medical/profile';
-        if (type === 'UPDATE') method = 'PUT';
-        break;
-      case 'symptoms':
-        url = '/api/medical/symptoms';
-        if (type === 'UPDATE') method = 'PUT';
-        break;
-      default:
-        throw new Error(`不支援的實體類型: ${entity}`);
-    }
+      if (todayEntries.length === 0) {
+        console.log('📝 今日沒有暫存記錄需要檢查');
+        return;
+      }
 
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data)
-    });
+      // 獲取 Google Sheets 中今日的記錄
+      const today = new Date().toISOString().split('T')[0];
+      const sheetsEntries = await sheetsService.getFoodEntriesByDateRange(today, today);
 
-    if (!response.ok) {
-      throw new Error(`同步請求失敗: ${response.status} ${response.statusText}`);
+      console.log(`📊 比較數據: 本地 ${todayEntries.length} 筆, Sheets ${sheetsEntries.length} 筆`);
+
+      // 比較並更新狀態
+      for (const localEntry of todayEntries) {
+        const matchingSheetEntry = sheetsEntries.find((sheetEntry: any) =>
+          sheetEntry.foodName === localEntry.foodName &&
+          sheetEntry.time === localEntry.time &&
+          sheetEntry.date === localEntry.date
+        );
+
+        if (matchingSheetEntry) {
+          // 找到匹配記錄，標記為已同步
+          this.updateSyncStatus(localEntry.tempId, 'synced');
+          console.log(`✅ 記錄已存在於 Sheets: ${localEntry.foodName}`);
+        } else {
+          // 沒找到匹配記錄，保持待同步狀態
+          if (localEntry.syncStatus === 'synced') {
+            this.updateSyncStatus(localEntry.tempId, 'pending');
+            console.log(`⚠️ 記錄不在 Sheets 中，重置為待同步: ${localEntry.foodName}`);
+          }
+        }
+      }
+
+      console.log('✅ 同步狀態比較完成');
+    } catch (error) {
+      console.error('❌ 同步狀態比較失敗:', error);
     }
   }
 
   /**
-   * 清空所有離線資料
+   * 自動同步配置管理
    */
-  async clearAllData(): Promise<void> {
+  getAutoSyncSetting(): boolean {
     try {
-      localStorage.removeItem(this.STORAGE_KEY);
-      localStorage.removeItem(this.ACTIONS_KEY);
-      console.log('🗑️ 所有離線資料已清空');
+      const setting = localStorage.getItem('diet_daily_auto_sync');
+      return setting === 'true';
     } catch (error) {
-      console.error('清空離線資料失敗:', error);
+      return false;
+    }
+  }
+
+  setAutoSyncSetting(enabled: boolean): void {
+    try {
+      localStorage.setItem('diet_daily_auto_sync', enabled.toString());
+      console.log(`⚙️ 自動同步設定: ${enabled ? '啟用' : '停用'}`);
+    } catch (error) {
+      console.error('❌ 自動同步設定儲存失敗:', error);
     }
   }
 
   /**
-   * 取得儲存空間使用情況
+   * 執行自動同步（如果啟用）
    */
-  getStorageInfo(): { used: number; available: number; percentage: number } {
-    try {
-      const used = JSON.stringify(localStorage).length;
-      const available = 5 * 1024 * 1024; // 假設 5MB 限制
-      const percentage = (used / available) * 100;
+  async performAutoSync(sheetsService: any): Promise<boolean> {
+    if (!this.getAutoSyncSetting()) {
+      console.log('⚙️ 自動同步已停用');
+      return false;
+    }
 
-      return {
-        used: Math.round(used / 1024), // KB
-        available: Math.round(available / 1024), // KB
-        percentage: Math.round(percentage * 100) / 100
-      };
+    const pendingCount = this.getPendingCount();
+    if (pendingCount === 0) {
+      console.log('✅ 沒有待同步的記錄');
+      return true;
+    }
+
+    try {
+      console.log(`🔄 執行自動同步 ${pendingCount} 筆記錄...`);
+      const result = await this.syncPendingEntries(sheetsService);
+
+      const { success, failed } = result;
+      console.log(`🎯 自動同步結果: ${success} 成功, ${failed} 失敗`);
+
+      return failed === 0;
     } catch (error) {
-      console.error('取得儲存資訊失敗:', error);
-      return { used: 0, available: 5120, percentage: 0 };
+      console.error('❌ 自動同步失敗:', error);
+      return false;
     }
   }
 }
 
-// 匯出單例實例
-export const offlineStorage = new OfflineStorageManager();
-
-/**
- * Hook for using offline storage in React components
- */
-export function useOfflineStorage() {
-  const isOnline = typeof window !== 'undefined' ? navigator.onLine : true;
-
-  const storeAction = async (action: Omit<OfflineAction, 'id' | 'timestamp' | 'synced'>) => {
-    if (isOnline) {
-      // 如果在線，直接執行 API 請求
-      return await performOnlineAction(action);
-    } else {
-      // 如果離線，儲存到本地等待同步
-      return await offlineStorage.storeOfflineAction(action);
-    }
-  };
-
-  const syncData = async () => {
-    if (isOnline) {
-      return await offlineStorage.syncToServer();
-    }
-    return { success: 0, failed: 0 };
-  };
-
-  return {
-    isOnline,
-    storeAction,
-    syncData,
-    hasPendingSync: () => offlineStorage.hasPendingSync(),
-    getStorageInfo: () => offlineStorage.getStorageInfo()
-  };
-}
-
-/**
- * 執行線上動作
- */
-async function performOnlineAction(action: Omit<OfflineAction, 'id' | 'timestamp' | 'synced'>): Promise<string> {
-  // 這裡實作直接的 API 請求
-  // 這個函數會在線上模式時直接執行動作，離線時則儲存待同步
-
-  console.log('🌐 執行線上動作:', action);
-  // 實際的 API 請求邏輯會在這裡實作
-
-  return 'online_action_' + Date.now();
-}
+// 單例導出
+export const offlineStorageManager = new OfflineStorageManager();

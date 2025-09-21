@@ -137,12 +137,7 @@ const withPWA = require('next-pwa')({
           maxEntries: 100,
           maxAgeSeconds: 7 * 24 * 60 * 60 // 7 days - 食物資料庫變化較少
         },
-        cacheKeyWillBeUsed: async ({ request }) => {
-          // 移除查詢參數中的時間戳，提高快取命中率
-          const url = new URL(request.url);
-          url.searchParams.delete('_t');
-          return url.toString();
-        }
+        // Simple cache key strategy
       }
     },
     {
@@ -253,7 +248,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https:; connect-src 'self' https://sheets.googleapis.com https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; media-src 'self'; object-src 'none'; child-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' https:; connect-src 'self' https://lbjeyvvierxcnrytuvto.supabase.co https://sheets.googleapis.com https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; media-src 'self'; object-src 'none'; child-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
           }
         ]
       }

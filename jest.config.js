@@ -11,6 +11,8 @@ const customJestConfig = {
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // Mock UUID as a static string for tests
+    '^uuid$': '<rootDir>/src/__tests__/__mocks__/uuid.js',
   },
   transformIgnorePatterns: [
     'node_modules/(?!(uuid|recharts|d3-.*|jspdf|html2canvas)/)',
@@ -24,6 +26,7 @@ const customJestConfig = {
     '!src/**/*.d.ts',
     '!src/**/types/**',
     '!src/**/__tests__/**',
+    '!src/**/__mocks__/**',
   ],
   coverageReporters: ['text', 'lcov', 'html'],
   coverageDirectory: 'coverage',
@@ -31,6 +34,10 @@ const customJestConfig = {
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
   ],
+  // Add jest environment options for better test handling
+  testEnvironmentOptions: {
+    url: 'http://localhost:3000',
+  },
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

@@ -1,0 +1,461 @@
+{
+  "timestamp": "2025-09-20T08:58:07.557Z",
+  "summary": {
+    "authentication": null,
+    "apiCallCount": 0,
+    "errorCount": 21,
+    "syncAttempts": 0
+  },
+  "detailedFindings": {
+    "authenticationState": null,
+    "networkRequests": [
+      {
+        "url": "http://localhost:3000/",
+        "method": "GET",
+        "headers": {
+          "upgrade-insecure-requests": "1",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0",
+          "sec-ch-ua-platform": "\"macOS\""
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:05.418Z"
+      },
+      {
+        "url": "http://localhost:3000/_next/static/media/e4af272ccee01ff0-s.p.woff2",
+        "method": "GET",
+        "headers": {
+          "origin": "http://localhost:3000",
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:05.697Z"
+      },
+      {
+        "url": "http://localhost:3000/_next/static/css/app/layout.css?v=1758358685505",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:05.697Z"
+      },
+      {
+        "url": "http://localhost:3000/_next/static/chunks/webpack.js?v=1758358685505",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:05.697Z"
+      },
+      {
+        "url": "http://localhost:3000/_next/static/chunks/main-app.js?v=1758358685505",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:05.697Z"
+      },
+      {
+        "url": "http://localhost:3000/_next/static/chunks/app-pages-internals.js",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:05.697Z"
+      },
+      {
+        "url": "http://localhost:3000/_next/static/chunks/app/page.js",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:05.697Z"
+      },
+      {
+        "url": "http://localhost:3000/_next/static/chunks/app/layout.js",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:05.697Z"
+      },
+      {
+        "url": "http://localhost:3000/favicon.svg",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:06.059Z"
+      },
+      {
+        "url": "http://localhost:3000/food-diary",
+        "method": "GET",
+        "headers": {
+          "referer": "http://localhost:3000/",
+          "upgrade-insecure-requests": "1",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0",
+          "sec-ch-ua-platform": "\"macOS\""
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:06.842Z"
+      },
+      {
+        "url": "http://localhost:3000/_next/static/media/e4af272ccee01ff0-s.p.woff2",
+        "method": "GET",
+        "headers": {
+          "origin": "http://localhost:3000",
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/food-diary",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:06.932Z"
+      },
+      {
+        "url": "http://localhost:3000/_next/static/css/app/layout.css?v=1758358686858",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/food-diary",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:06.932Z"
+      },
+      {
+        "url": "http://localhost:3000/_next/static/chunks/webpack.js?v=1758358686858",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/food-diary",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:06.933Z"
+      },
+      {
+        "url": "http://localhost:3000/_next/static/chunks/main-app.js?v=1758358686858",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/food-diary",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:06.933Z"
+      },
+      {
+        "url": "http://localhost:3000/_next/static/chunks/app-pages-internals.js",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/food-diary",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:06.933Z"
+      },
+      {
+        "url": "http://localhost:3000/_next/static/chunks/app/food-diary/page.js",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/food-diary",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:06.933Z"
+      },
+      {
+        "url": "http://localhost:3000/_next/static/chunks/app/layout.js",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/food-diary",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:06.933Z"
+      },
+      {
+        "url": "http://localhost:3000/favicon.svg",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua-platform": "\"macOS\"",
+          "referer": "http://localhost:3000/food-diary",
+          "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+          "sec-ch-ua": "\"Not=A?Brand\";v=\"24\", \"Chromium\";v=\"140\"",
+          "sec-ch-ua-mobile": "?0"
+        },
+        "postData": null,
+        "timestamp": "2025-09-20T08:58:07.047Z"
+      }
+    ],
+    "consoleErrors": [
+      {
+        "text": "Refused to apply style from 'http://localhost:3000/_next/static/css/app/layout.css?v=1758358685505' because its MIME type ('text/html') is not a supported stylesheet MIME type, and strict MIME checking is enabled.",
+        "location": {
+          "url": "http://localhost:3000/",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:05.981Z"
+      },
+      {
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "location": {
+          "url": "http://localhost:3000/_next/static/media/e4af272ccee01ff0-s.p.woff2",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:06.032Z"
+      },
+      {
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "location": {
+          "url": "http://localhost:3000/_next/static/chunks/main-app.js?v=1758358685505",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:06.034Z"
+      },
+      {
+        "text": "Refused to execute script from 'http://localhost:3000/_next/static/chunks/main-app.js?v=1758358685505' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled.",
+        "location": {
+          "url": "http://localhost:3000/",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:06.034Z"
+      },
+      {
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "location": {
+          "url": "http://localhost:3000/_next/static/chunks/app/page.js",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:06.034Z"
+      },
+      {
+        "text": "Refused to execute script from 'http://localhost:3000/_next/static/chunks/app/page.js' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled.",
+        "location": {
+          "url": "http://localhost:3000/",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:06.034Z"
+      },
+      {
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "location": {
+          "url": "http://localhost:3000/_next/static/chunks/app-pages-internals.js",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:06.035Z"
+      },
+      {
+        "text": "Refused to execute script from 'http://localhost:3000/_next/static/chunks/app-pages-internals.js' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled.",
+        "location": {
+          "url": "http://localhost:3000/",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:06.035Z"
+      },
+      {
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "location": {
+          "url": "http://localhost:3000/_next/static/chunks/app/layout.js",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:06.035Z"
+      },
+      {
+        "text": "Refused to execute script from 'http://localhost:3000/_next/static/chunks/app/layout.js' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled.",
+        "location": {
+          "url": "http://localhost:3000/",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:06.035Z"
+      },
+      {
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "location": {
+          "url": "http://localhost:3000/favicon.ico",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:06.064Z"
+      },
+      {
+        "text": "Refused to apply style from 'http://localhost:3000/_next/static/css/app/layout.css?v=1758358686858' because its MIME type ('text/html') is not a supported stylesheet MIME type, and strict MIME checking is enabled.",
+        "location": {
+          "url": "http://localhost:3000/food-diary",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:06.969Z"
+      },
+      {
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "location": {
+          "url": "http://localhost:3000/_next/static/media/e4af272ccee01ff0-s.p.woff2",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:07.002Z"
+      },
+      {
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "location": {
+          "url": "http://localhost:3000/_next/static/chunks/main-app.js?v=1758358686858",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:07.044Z"
+      },
+      {
+        "text": "Refused to execute script from 'http://localhost:3000/_next/static/chunks/main-app.js?v=1758358686858' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled.",
+        "location": {
+          "url": "http://localhost:3000/food-diary",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:07.044Z"
+      },
+      {
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "location": {
+          "url": "http://localhost:3000/_next/static/chunks/app-pages-internals.js",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:07.045Z"
+      },
+      {
+        "text": "Refused to execute script from 'http://localhost:3000/_next/static/chunks/app-pages-internals.js' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled.",
+        "location": {
+          "url": "http://localhost:3000/food-diary",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:07.045Z"
+      },
+      {
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "location": {
+          "url": "http://localhost:3000/_next/static/chunks/app/food-diary/page.js",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:07.046Z"
+      },
+      {
+        "text": "Refused to execute script from 'http://localhost:3000/_next/static/chunks/app/food-diary/page.js' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled.",
+        "location": {
+          "url": "http://localhost:3000/food-diary",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:07.046Z"
+      },
+      {
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "location": {
+          "url": "http://localhost:3000/_next/static/chunks/app/layout.js",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:07.046Z"
+      },
+      {
+        "text": "Refused to execute script from 'http://localhost:3000/_next/static/chunks/app/layout.js' because its MIME type ('text/html') is not executable, and strict MIME type checking is enabled.",
+        "location": {
+          "url": "http://localhost:3000/food-diary",
+          "lineNumber": 0,
+          "columnNumber": 0
+        },
+        "timestamp": "2025-09-20T08:58:07.046Z"
+      }
+    ],
+    "localStorageData": {
+      "initial": {}
+    },
+    "syncAttemptResults": [],
+    "googleSheetsApiCalls": [],
+    "rootCauseAnalysis": [
+      {
+        "category": "script_error",
+        "description": "page.evaluate: SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"立即同步\")' is not a valid selector.\n    at eval (eval at evaluate (:291:30), <anonymous>:4:35)\n    at UtilityScript.evaluate (<anonymous>:293:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)",
+        "severity": "high"
+      }
+    ]
+  },
+  "recommendations": [
+    {
+      "category": "script_error",
+      "description": "page.evaluate: SyntaxError: Failed to execute 'querySelector' on 'Document': 'button:has-text(\"立即同步\")' is not a valid selector.\n    at eval (eval at evaluate (:291:30), <anonymous>:4:35)\n    at UtilityScript.evaluate (<anonymous>:293:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)",
+      "severity": "high"
+    }
+  ]
+}

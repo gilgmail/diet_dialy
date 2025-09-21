@@ -3,9 +3,7 @@
 import {
   MedicalReport,
   MedicalReportRequest,
-  REPORT_TEMPLATES,
-  MEDICAL_DISCLAIMERS,
-  RISK_LEVELS
+  MEDICAL_DISCLAIMERS
 } from '@/types/medical-report';
 import { FoodHistoryEntry } from '@/types/history';
 import { ExtendedMedicalProfile } from '@/types/medical';

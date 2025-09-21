@@ -1,260 +1,308 @@
-/**
- * 簡單的 Google Sheets API 測試頁面
- * 用於測試剛從 OAuth 獲得的新鮮 access token
- */
-
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useMedicalData } from '@/lib/google';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { RefreshCw, FileSpreadsheet, Plus, Loader2 } from 'lucide-react';
 
 export default function SheetsTestPage() {
-  const [result, setResult] = useState<any>(null);
+  const {
+    isAuthenticated,
+    user,
+    signIn,
+    medicalService,
+    recordFoodEntry,
+    getAllFoodEntries,
+    getFoodStatistics,
+    getMedicalSpreadsheetUrl
+  } = useMedicalData();
+
   const [isLoading, setIsLoading] = useState(false);
-  const [accessToken, setAccessToken] = useState('');
+  const [foodEntries, setFoodEntries] = useState<any[]>([]);
+  const [statistics, setStatistics] = useState<any>(null);
+  const [testResult, setTestResult] = useState<string>('');
 
-  // 從各種來源提取 access token
-  const extractTokenFromStorage = () => {
-    if (typeof window !== 'undefined') {
-      // 1. 嘗試從 URL 參數提取 (OAuth 回調後)
-      const params = new URLSearchParams(window.location.search);
-      const authData = params.get('auth_data');
-      if (authData) {
-        try {
-          const data = JSON.parse(authData);
-          if (data.access_token) {
-            setAccessToken(data.access_token);
-            // 同時保存到 localStorage 以便下次使用
-            localStorage.setItem('google_access_token', data.access_token);
-            localStorage.setItem('google_user_info', JSON.stringify(data.user));
-            console.log('✅ 從 URL 提取到 token 並已保存到 localStorage');
-
-            // 清理 URL 參數
-            window.history.replaceState({}, '', window.location.pathname);
-            return data.access_token;
-          }
-        } catch (error) {
-          console.error('解析 auth_data 失敗:', error);
-        }
-      }
-
-      // 2. 嘗試從 localStorage 提取
-      try {
-        const storedToken = localStorage.getItem('google_access_token');
-        if (storedToken) {
-          setAccessToken(storedToken);
-          console.log('✅ 從 localStorage 提取到 token');
-          return storedToken;
-        }
-      } catch (error) {
-        console.error('讀取 localStorage 失敗:', error);
-      }
-
-      // 3. 嘗試從加密儲存提取 (從認證服務)
-      try {
-        import('@/lib/google/auth-client').then(({ googleAuthClientService }) => {
-          const authState = googleAuthClientService.getAuthState();
-          if (authState.isAuthenticated && authState.tokens?.access_token) {
-            setAccessToken(authState.tokens.access_token);
-            console.log('✅ 從認證服務提取到 token');
-            return authState.tokens.access_token;
-          }
-        });
-      } catch (error) {
-        console.error('從認證服務提取失敗:', error);
-      }
+  // Initialize service when authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      initializeService();
     }
-    return null;
-  };
+  }, [isAuthenticated, user]);
 
-  // 檢查 token 狀態
-  const checkTokenStatus = async () => {
-    if (!accessToken.trim()) {
-      alert('❌ 沒有 access token');
-      return;
-    }
-
+  const initializeService = async () => {
     try {
-      const response = await fetch('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + accessToken);
-      const data = await response.json();
+      setIsLoading(true);
+      setTestResult('🧹 清理舊有工作表...');
 
-      if (response.ok) {
-        const expiresIn = data.expires_in || 0;
-        const scope = data.scope || '';
-        alert(`✅ Token 有效\n過期時間: ${Math.round(expiresIn/60)} 分鐘\n權限範圍: ${scope.includes('spreadsheets') ? '✅' : '❌'} Sheets`);
+      // Clear any existing broken spreadsheet data
+      localStorage.removeItem(`diet_daily_sheet_${user!.id}`);
+
+      setTestResult('🚀 開始初始化服務...');
+      const success = await medicalService.initialize(user!.id);
+      if (success) {
+        setTestResult('✅ 服務初始化成功');
+        await loadData();
       } else {
-        alert(`❌ Token 無效: ${data.error || 'Unknown error'}`);
+        setTestResult('❌ 服務初始化失敗');
       }
     } catch (error) {
-      alert(`❌ 檢查失敗: ${error.message}`);
-    }
-  };
-
-  // 測試 Google Sheets API
-  const testSheetsAPI = async (token?: string) => {
-    const tokenToUse = token || accessToken;
-    if (!tokenToUse) {
-      alert('請輸入 access token 或從 OAuth 回調中提取');
-      return;
-    }
-
-    setIsLoading(true);
-    setResult(null);
-
-    try {
-      const response = await fetch('/api/sheets-test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ access_token: tokenToUse })
-      });
-
-      const data = await response.json();
-      setResult(data);
-
-      if (data.success) {
-        console.log('✅ Sheets API 測試成功:', data);
-      } else {
-        console.error('❌ Sheets API 測試失敗:', data);
-      }
-    } catch (error) {
-      console.error('❌ 測試請求失敗:', error);
-      setResult({
-        success: false,
-        error: '測試請求失敗: ' + (error instanceof Error ? error.message : '未知錯誤')
-      });
+      console.error('初始化失敗:', error);
+      setTestResult('❌ 初始化錯誤: ' + (error as Error).message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 組件載入時嘗試從各種來源提取 token
-  useEffect(() => {
-    extractTokenFromStorage();
-  }, []);
+  const loadData = async () => {
+    try {
+      const entries = await getAllFoodEntries();
+      const stats = await getFoodStatistics();
+      setFoodEntries(entries);
+      setStatistics(stats);
+      setTestResult(prev => prev + '\n✅ 資料讀取成功');
+    } catch (error) {
+      console.error('載入資料失敗:', error);
+      setTestResult(prev => prev + '\n❌ 載入資料失敗: ' + (error as Error).message);
+    }
+  };
 
-  return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Google Sheets API 測試</h1>
-        <p className="text-gray-600">
-          直接測試 Google Sheets API 權限和創建功能
-        </p>
-      </div>
+  const addTestEntry = async () => {
+    try {
+      setIsLoading(true);
+      const testEntry = {
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString('zh-TW', { hour12: false }),
+        foodName: '測試食品 - ' + new Date().toLocaleTimeString(),
+        category: '測試',
+        medicalScore: 7,
+        notes: '這是一筆測試記錄',
+        userId: user!.id
+      };
 
-      {/* Access Token 輸入區域 */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Access Token 測試</CardTitle>
-          <CardDescription>
-            輸入從 OAuth 獲得的 access token 來測試 Google Sheets API
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Access Token:</label>
-            <textarea
-              value={accessToken}
-              onChange={(e) => setAccessToken(e.target.value)}
-              placeholder="貼上 Google access token..."
-              className="w-full h-24 p-2 border rounded-md text-xs font-mono"
-            />
-          </div>
+      const success = await recordFoodEntry(testEntry);
+      if (success) {
+        setTestResult(prev => prev + '\n✅ 新增記錄成功');
+        await loadData();
+      } else {
+        setTestResult(prev => prev + '\n❌ 新增記錄失敗');
+      }
+    } catch (error) {
+      console.error('新增記錄失敗:', error);
+      setTestResult(prev => prev + '\n❌ 新增記錄錯誤: ' + (error as Error).message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-          <div className="flex gap-2 flex-wrap">
-            <Button onClick={extractTokenFromStorage} variant="outline">
-              提取已儲存的 Token
-            </Button>
-            <Button
-              onClick={checkTokenStatus}
-              variant="outline"
-              disabled={!accessToken.trim()}
-            >
-              檢查 Token 狀態
-            </Button>
-            <Button
-              onClick={() => {
-                // 跳轉到 Google OAuth，但讓 callback 重定向到 sheets-test
-                const authUrl = new URL('/api/auth/google', window.location.origin);
-                // 在 state 中加入 sheets-test 標記
-                const state = 'sheets-test-' + Math.random().toString(36).substr(2, 9);
-                authUrl.searchParams.set('state', state);
-                window.location.href = authUrl.toString();
-              }}
-              variant="secondary"
-            >
-              從 Google 重新認證
-            </Button>
-            <Button
-              onClick={() => testSheetsAPI()}
-              disabled={isLoading || !accessToken.trim()}
-            >
-              {isLoading ? '測試中...' : '測試 Google Sheets API'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+  const triggerMigration = async () => {
+    try {
+      setIsLoading(true);
+      setTestResult(prev => prev + '\n🔍 開始搜尋其他飲食記錄檔案...');
 
-      {/* 測試結果 */}
-      {result && (
-        <Card>
-          <CardHeader>
-            <CardTitle className={result.success ? 'text-green-600' : 'text-red-600'}>
-              {result.success ? '✅ 測試成功' : '❌ 測試失敗'}
-            </CardTitle>
+      // Clear current spreadsheet data to force re-initialization with migration
+      localStorage.removeItem(`diet_daily_sheet_${user!.id}`);
+
+      setTestResult(prev => prev + '\n🔄 重新初始化服務以觸發檔案整合...');
+      const success = await medicalService.initialize(user!.id);
+
+      if (success) {
+        setTestResult(prev => prev + '\n✅ 檔案整合完成！');
+        await loadData();
+      } else {
+        setTestResult(prev => prev + '\n❌ 檔案整合失敗');
+      }
+    } catch (error) {
+      console.error('檔案整合失敗:', error);
+      setTestResult(prev => prev + '\n❌ 檔案整合錯誤: ' + (error as Error).message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignIn = async () => {
+    try {
+      await signIn();
+    } catch (error) {
+      console.error('登入失敗:', error);
+      setTestResult('❌ 登入失敗: ' + (error as Error).message);
+    }
+  };
+
+  const spreadsheetUrl = getMedicalSpreadsheetUrl();
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Google Sheets 測試</CardTitle>
+            <p className="text-gray-600">請先登入以測試 Google Sheets 功能</p>
           </CardHeader>
           <CardContent>
-            {result.success ? (
-              <div className="space-y-2">
-                <p className="text-green-700">{result.message}</p>
-                {result.spreadsheetId && (
-                  <p className="text-sm text-gray-600">
-                    試算表 ID: <code className="bg-gray-100 px-1 rounded">{result.spreadsheetId}</code>
-                  </p>
-                )}
-                <p className="text-xs text-gray-500">
-                  測試時間: {result.timestamp}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-red-700">
-                  錯誤: {result.error}
-                </p>
-                {result.status && (
-                  <p className="text-sm text-gray-600">
-                    HTTP 狀態: {result.status}
-                  </p>
-                )}
-              </div>
-            )}
-
-            <details className="mt-4">
-              <summary className="text-sm cursor-pointer text-gray-600">
-                查看完整響應
-              </summary>
-              <pre className="mt-2 p-3 bg-gray-100 rounded text-xs overflow-auto">
-                {JSON.stringify(result, null, 2)}
-              </pre>
-            </details>
+            <Button onClick={handleSignIn} className="w-full">
+              使用 Google 帳號登入
+            </Button>
           </CardContent>
         </Card>
-      )}
+      </div>
+    );
+  }
 
-      {/* 使用說明 */}
-      <Card className="mt-6 bg-blue-50">
-        <CardContent className="pt-6">
-          <h4 className="font-medium text-blue-900 mb-2">測試步驟</h4>
-          <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-            <li>到 <a href="/google-sync" className="underline">Google Sync 頁面</a> 完成 OAuth 認證</li>
-            <li>認證完成後，從瀏覽器開發者工具的網路標籤複製新的 access token</li>
-            <li>回到此頁面，貼上 token 並點擊「測試 Google Sheets API」</li>
-            <li>查看測試結果，確認 API 權限是否正常</li>
-          </ol>
-        </CardContent>
-      </Card>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-4">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-6 w-6" />
+              Google Sheets 長時間連線測試
+            </CardTitle>
+            <div className="flex items-center gap-4">
+              <Badge variant="secondary">用戶: {user?.email}</Badge>
+              <Badge variant={isAuthenticated ? "default" : "destructive"}>
+                {isAuthenticated ? "已連線" : "未連線"}
+              </Badge>
+            </div>
+          </CardHeader>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Controls */}
+          <Card>
+            <CardHeader>
+              <CardTitle>測試控制</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Button
+                  onClick={addTestEntry}
+                  disabled={isLoading}
+                  className="flex-1"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  新增測試記錄
+                </Button>
+                <Button
+                  onClick={loadData}
+                  disabled={isLoading}
+                  variant="outline"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <Button
+                onClick={triggerMigration}
+                disabled={isLoading}
+                variant="secondary"
+                className="w-full"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                整合其他飲食記錄檔案
+              </Button>
+
+              {spreadsheetUrl && (
+                <Button
+                  onClick={() => window.open(spreadsheetUrl, '_blank')}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  開啟 Google 工作表
+                </Button>
+              )}
+
+              <div className="bg-gray-100 p-3 rounded text-sm">
+                <strong>測試結果:</strong>
+                <pre className="whitespace-pre-wrap mt-2">{testResult}</pre>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Statistics */}
+          <Card>
+            <CardHeader>
+              <CardTitle>統計資料</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {statistics ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {statistics.totalEntries}
+                    </div>
+                    <div className="text-sm text-gray-600">總記錄數</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {statistics.todayEntries}
+                    </div>
+                    <div className="text-sm text-gray-600">今日記錄</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {statistics.weekEntries}
+                    </div>
+                    <div className="text-sm text-gray-600">本週記錄</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {statistics.averageMedicalScore.toFixed(1)}
+                    </div>
+                    <div className="text-sm text-gray-600">平均分數</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-gray-500">載入中...</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Food Entries */}
+        <Card>
+          <CardHeader>
+            <CardTitle>最近的食物記錄</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {foodEntries.length > 0 ? (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {foodEntries.slice(0, 10).map((entry, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                    <div>
+                      <div className="font-medium">{entry.foodName}</div>
+                      <div className="text-sm text-gray-600">
+                        {entry.date} {entry.time} • {entry.category}
+                      </div>
+                      {entry.notes && (
+                        <div className="text-sm text-gray-500 mt-1">{entry.notes}</div>
+                      )}
+                    </div>
+                    {entry.medicalScore && (
+                      <Badge variant="outline">
+                        分數: {entry.medicalScore}
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-gray-500">尚無記錄</div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

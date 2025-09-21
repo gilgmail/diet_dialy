@@ -1,6 +1,5 @@
 // Medical Report Types for Diet Daily Week 2
 
-import { FoodHistoryEntry, FoodHistoryStats } from './history';
 import { ExtendedMedicalProfile } from './medical';
 
 export interface MedicalReport {

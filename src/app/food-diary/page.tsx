@@ -1,655 +1,381 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import {
-  Plus,
-  Search,
-  Calendar,
-  Clock,
-  Star,
-  AlertTriangle,
-  CheckCircle,
-  Home,
-  Utensils,
-  Camera,
-  Heart
-} from 'lucide-react';
-import { useMedicalData } from '@/lib/google';
-import { SyncStatus } from '@/components/google/SyncStatus';
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
+import { foodEntriesService } from '@/lib/supabase/food-entries'
+import { foodsService } from '@/lib/supabase/foods'
+import type { FoodEntry, FoodEntryInsert } from '@/types/supabase'
 
-interface FoodEntry {
-  id: string;
-  foodName: string;
-  customFood?: boolean;
-  userScore?: number;
-  portion: string;
-  time: string;
-  notes?: string;
-  photoUrl?: string;
-  symptoms?: string[];
-  verified?: boolean;
+interface FoodSearchResult {
+  id: string
+  name: string
+  category: string
+  calories?: number
+  medical_score?: number
 }
 
-interface DailyLog {
-  date: string;
-  entries: FoodEntry[];
-  totalScore: number;
-  averageScore: number;
-}
+export default function FoodDiaryPage() {
+  const { user, isAuthenticated, isLoading } = useSupabaseAuth()
 
-export default function FoodDiaryPage(): JSX.Element {
-  const { isAuthenticated, user, recordFoodEntry, syncStatus } = useMedicalData();
-  const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
-  const [dailyLog, setDailyLog] = useState<DailyLog>({
-    date: currentDate,
-    entries: [],
-    totalScore: 0,
-    averageScore: 0
-  });
+  // 狀態管理
+  const [todayEntries, setTodayEntries] = useState<FoodEntry[]>([])
+  const [foodSearch, setFoodSearch] = useState('')
+  const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([])
+  const [selectedFood, setSelectedFood] = useState<FoodSearchResult | null>(null)
+  const [quantity, setQuantity] = useState('')
+  const [unit, setUnit] = useState('g')
+  const [notes, setNotes] = useState('')
+  const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [message, setMessage] = useState('')
 
-  const [showAddFood, setShowAddFood] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [newFoodEntry, setNewFoodEntry] = useState({
-    foodName: '',
-    customFood: false,
-    userScore: 5,
-    portion: '',
-    time: new Date().toTimeString().slice(0, 5),
-    notes: '',
-    symptoms: [] as string[],
-    // Enhanced scoring criteria
-    scoringCriteria: {
-      digestibility: 5,
-      allergyRisk: 5,
-      nutritionalValue: 5,
-      personalTolerance: 5
-    },
-    medicalRating: 'neutral' as 'safe' | 'caution' | 'avoid' | 'neutral'
-  });
+  // 載入今日記錄
+  useEffect(() => {
+    if (user) {
+      loadTodayEntries()
+    }
+  }, [user])
 
-  // 模擬食物數據庫搜尋
-  const searchFoods = (term: string) => {
-    const commonFoods = [
-      { id: '1', name: '白米飯', score: 7, category: '穀物' },
-      { id: '2', name: '雞胸肉', score: 8, category: '蛋白質' },
-      { id: '3', name: '青花菜', score: 9, category: '蔬菜' },
-      { id: '4', name: '香蕉', score: 6, category: '水果' },
-      { id: '5', name: '牛奶', score: 4, category: '乳製品' },
-      { id: '6', name: '麵包', score: 5, category: '穀物' },
-      { id: '7', name: '鮭魚', score: 9, category: '蛋白質' },
-      { id: '8', name: '菠菜', score: 8, category: '蔬菜' }
-    ];
+  // 搜尋食物資料庫
+  useEffect(() => {
+    if (foodSearch.length > 1) {
+      searchFoods()
+    } else {
+      setSearchResults([])
+    }
+  }, [foodSearch])
 
-    return commonFoods.filter(food =>
-      food.name.toLowerCase().includes(term.toLowerCase())
-    );
-  };
+  const loadTodayEntries = async () => {
+    if (!user) return
 
-  const handleAddFood = async (food?: any) => {
-    if (food) {
-      // 從資料庫選擇的食物
-      setNewFoodEntry(prev => ({
-        ...prev,
-        foodName: food.name,
-        customFood: false,
-        userScore: food.score
-      }));
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const entries = await foodEntriesService.getUserFoodEntriesByDate(user.id, today)
+      setTodayEntries(entries)
+    } catch (error) {
+      console.error('載入今日記錄失敗:', error)
+    }
+  }
+
+  const searchFoods = async () => {
+    try {
+      const results = await foodsService.searchApprovedFoods(foodSearch)
+      setSearchResults(results.map(food => ({
+        id: food.id,
+        name: food.name,
+        category: food.category,
+        calories: food.calories || undefined,
+        medical_score: food.medical_score || undefined
+      })))
+    } catch (error) {
+      console.error('搜尋食物失敗:', error)
+      setSearchResults([])
+    }
+  }
+
+  const handleAddEntry = async () => {
+    if (!user || !selectedFood || !quantity) {
+      setMessage('請填寫完整資訊')
+      return
     }
 
-    const calculatedScore = calculateOverallScore(newFoodEntry.scoringCriteria);
+    setIsSubmitting(true)
 
-    const entry: FoodEntry = {
-      id: `${Date.now()}-${Math.random()}`,
-      foodName: newFoodEntry.foodName,
-      customFood: newFoodEntry.customFood,
-      userScore: calculatedScore,
-      portion: newFoodEntry.portion,
-      time: newFoodEntry.time,
-      notes: newFoodEntry.notes,
-      symptoms: newFoodEntry.symptoms,
-      verified: !newFoodEntry.customFood
-    };
-
-    // 同步到Google Sheets (如果已認證)
-    if (isAuthenticated && recordFoodEntry) {
-      try {
-        const googleFoodEntry = {
-          consumedAt: new Date(`${currentDate}T${newFoodEntry.time}`),
-          foodId: food?.id || `custom-${Date.now()}`,
-          foodData: {
-            name_zh: newFoodEntry.foodName,
-            name_en: newFoodEntry.foodName,
-            category: food?.category || '自定義'
-          },
-          portion: {
-            amount: parseFloat(newFoodEntry.portion) || 1,
-            unit: '份',
-            customUnit: newFoodEntry.portion
-          },
-          medicalScore: {
-            score: calculatedScore,
-            level: getMedicalRating(calculatedScore),
-            scoringCriteria: newFoodEntry.scoringCriteria
-          },
-          allergyWarnings: newFoodEntry.symptoms,
-          symptoms: {
-            before: [],
-            after: [],
-            severity: null
-          },
-          notes: newFoodEntry.notes,
-          location: ''
-        };
-
-        await recordFoodEntry(googleFoodEntry);
-      } catch (error) {
-        console.error('無法同步到Google Sheets:', error);
-        // 繼續本地儲存，即使同步失敗
+    try {
+      const entryData: FoodEntryInsert = {
+        user_id: user.id,
+        food_id: selectedFood.id,
+        food_name: selectedFood.name,
+        quantity: parseFloat(quantity),
+        unit: unit,
+        meal_type: mealType,
+        consumed_at: new Date().toISOString(),
+        notes: notes || undefined,
+        calories: selectedFood.calories ? (selectedFood.calories * parseFloat(quantity) / 100) : undefined,
+        medical_score: selectedFood.medical_score
       }
+
+      await foodEntriesService.createFoodEntry(entryData)
+
+      // 重新載入記錄
+      await loadTodayEntries()
+
+      // 重置表單
+      setSelectedFood(null)
+      setQuantity('')
+      setNotes('')
+      setFoodSearch('')
+      setMessage('✅ 食物記錄已新增！')
+
+      setTimeout(() => setMessage(''), 3000)
+    } catch (error) {
+      console.error('新增記錄失敗:', error)
+      setMessage('❌ 新增記錄失敗，請重試')
+      setTimeout(() => setMessage(''), 3000)
+    } finally {
+      setIsSubmitting(false)
     }
+  }
 
-    setDailyLog(prev => {
-      const newEntries = [...prev.entries, entry];
-      const totalScore = newEntries.reduce((sum, e) => sum + (e.userScore || 0), 0);
-      const averageScore = newEntries.length > 0 ? totalScore / newEntries.length : 0;
+  const getMedicalScoreColor = (score?: number) => {
+    if (!score) return 'bg-gray-100 text-gray-600'
+    if (score >= 8) return 'bg-green-100 text-green-800'
+    if (score >= 6) return 'bg-yellow-100 text-yellow-800'
+    return 'bg-red-100 text-red-800'
+  }
 
-      return {
-        ...prev,
-        entries: newEntries,
-        totalScore,
-        averageScore
-      };
-    });
+  const getMedicalScoreText = (score?: number) => {
+    if (!score) return '未評分'
+    if (score >= 8) return '推薦'
+    if (score >= 6) return '適中'
+    return '謹慎'
+  }
 
-    // 重置表單
-    setNewFoodEntry({
-      foodName: '',
-      customFood: false,
-      userScore: 5,
-      portion: '',
-      time: new Date().toTimeString().slice(0, 5),
-      notes: '',
-      symptoms: [],
-      scoringCriteria: {
-        digestibility: 5,
-        allergyRisk: 5,
-        nutritionalValue: 5,
-        personalTolerance: 5
-      },
-      medicalRating: 'neutral' as 'safe' | 'caution' | 'avoid' | 'neutral'
-    });
-    setShowAddFood(false);
-    setSearchTerm('');
-  };
-
-  const handleCustomFood = () => {
-    setNewFoodEntry(prev => ({
-      ...prev,
-      customFood: true
-    }));
-  };
-
-  const searchResults = searchTerm.length > 0 ? searchFoods(searchTerm) : [];
-
-  // 計算綜合評分
-  const calculateOverallScore = (criteria: any) => {
-    const { digestibility, allergyRisk, nutritionalValue, personalTolerance } = criteria;
-    return Math.round((digestibility + allergyRisk + nutritionalValue + personalTolerance) / 4 * 10) / 10;
-  };
-
-  // 根據評分決定醫療評級
-  const getMedicalRating = (score: number) => {
-    if (score >= 8) return 'safe';
-    if (score >= 6) return 'caution';
-    if (score >= 4) return 'avoid';
-    return 'avoid';
-  };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 8) return 'text-green-600 bg-green-100';
-    if (score >= 6) return 'text-yellow-600 bg-yellow-100';
-    if (score >= 4) return 'text-orange-600 bg-orange-100';
-    return 'text-red-600 bg-red-100';
-  };
-
-  const getRatingColor = (rating: string) => {
-    switch (rating) {
-      case 'safe': return 'text-green-600 bg-green-100';
-      case 'caution': return 'text-yellow-600 bg-yellow-100';
-      case 'avoid': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
-
-  const getRatingText = (rating: string) => {
-    switch (rating) {
-      case 'safe': return '安全';
-      case 'caution': return '謹慎';
-      case 'avoid': return '避免';
-      default: return '中性';
-    }
-  };
+  if (isLoading && !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">載入中...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="max-w-md w-full mx-4">
-          <CardHeader>
-            <CardTitle className="text-center">需要登入</CardTitle>
-            <CardDescription className="text-center">
-              請先登入以使用食物日記功能
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Link href="/auth">
-              <Button>前往登入</Button>
-            </Link>
-          </CardContent>
-        </Card>
+        <div className="text-center">
+          <span className="text-4xl mb-4 block">🔒</span>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">請先登入</h2>
+          <p className="text-gray-600 mb-4">需要登入才能使用食物日記功能</p>
+          <Link href="/settings" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+            前往登入
+          </Link>
+        </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/dashboard"
-                className="flex items-center px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-md transition-colors"
-              >
-                <Home className="w-5 h-5 mr-2" />
-                控制板
-              </Link>
-              <div className="flex items-center space-x-2">
-                <Utensils className="w-6 h-6 text-blue-600" />
-                <h1 className="text-2xl font-bold text-gray-900">食物日記</h1>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              {/* Sync Status for authenticated users */}
-              {isAuthenticated && (
-                <SyncStatus showDetails={false} className="mr-4" />
-              )}
-              <input
-                type="date"
-                value={currentDate}
-                onChange={(e) => setCurrentDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md"
-              />
-              <Button onClick={() => setShowAddFood(true)} className="flex items-center space-x-2">
-                <Plus className="w-4 h-4" />
-                <span>添加食物</span>
-              </Button>
-            </div>
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <div className="flex items-center space-x-4">
+            <Link href="/" className="text-gray-500 hover:text-gray-700">
+              ← 返回首頁
+            </Link>
+            <h1 className="text-2xl font-bold text-gray-900">🍽️ 食物日記</h1>
           </div>
         </div>
-      </header>
+      </div>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Daily Summary */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Calendar className="w-5 h-5" />
-                <span>{new Date(currentDate).toLocaleDateString('zh-TW', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  weekday: 'long'
-                })}</span>
-              </div>
-              {/* Google Sheets sync info */}
-              {isAuthenticated && syncStatus && (
-                <div className="flex items-center space-x-2 text-sm">
-                  {syncStatus.pendingChanges > 0 ? (
-                    <span className="text-orange-600">
-                      📤 {syncStatus.pendingChanges} 項待同步
-                    </span>
-                  ) : (
-                    <span className="text-green-600">
-                      ✅ 已同步到Google Sheets
-                    </span>
-                  )}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* 左側：新增記錄 */}
+          <div className="space-y-6">
+            {/* 新增食物記錄 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">📝 新增食物記錄</h2>
+
+              {message && (
+                <div className="mb-4 p-3 rounded-lg bg-blue-50 text-blue-800 text-sm">
+                  {message}
                 </div>
               )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{dailyLog.entries.length}</div>
-                <div className="text-sm text-gray-600">已記錄食物</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {dailyLog.averageScore.toFixed(1)}
-                </div>
-                <div className="text-sm text-gray-600">平均評分</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">
-                  {dailyLog.entries.filter(e => !e.verified).length}
-                </div>
-                <div className="text-sm text-gray-600">待管理員驗證</div>
-              </div>
-            </div>
 
-            {/* Detailed sync status for authenticated users */}
-            {isAuthenticated && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <SyncStatus showDetails={true} />
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              {/* 搜尋食物 */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">搜尋食物</label>
+                <input
+                  type="text"
+                  value={foodSearch}
+                  onChange={(e) => setFoodSearch(e.target.value)}
+                  placeholder="輸入食物名稱..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
 
-        {/* Add Food Modal */}
-        {showAddFood && (
-          <Card className="mb-6 border-2 border-blue-200">
-            <CardHeader>
-              <CardTitle>添加食物記錄</CardTitle>
-              <CardDescription>
-                搜尋現有食物或自定義新食物
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Search Food */}
-              <div>
-                <Label>搜尋食物</Label>
-                <div className="flex space-x-2">
-                  <Input
-                    placeholder="搜尋食物名稱..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button variant="outline" onClick={handleCustomFood}>
-                    自定義食物
-                  </Button>
-                </div>
+                {/* 搜尋結果 */}
+                {searchResults.length > 0 && (
+                  <div className="mt-2 border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
+                    {searchResults.map((food) => (
+                      <button
+                        key={food.id}
+                        onClick={() => {
+                          setSelectedFood(food)
+                          setFoodSearch(food.name)
+                          setSearchResults([])
+                        }}
+                        className="w-full px-3 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{food.name}</p>
+                            <p className="text-sm text-gray-500">{food.category}</p>
+                          </div>
+                          {food.medical_score && (
+                            <span className={`px-2 py-1 rounded-full text-xs ${getMedicalScoreColor(food.medical_score)}`}>
+                              {getMedicalScoreText(food.medical_score)}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Search Results */}
-              {searchResults.length > 0 && (
-                <div className="space-y-2">
-                  <Label>搜尋結果</Label>
-                  {searchResults.map(food => (
-                    <div
-                      key={food.id}
-                      className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                      onClick={() => handleAddFood(food)}
-                    >
-                      <div>
-                        <span className="font-medium">{food.name}</span>
-                        <span className="text-sm text-gray-500 ml-2">({food.category})</span>
-                      </div>
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(food.score)}`}>
-                        評分: {food.score}
-                      </div>
+              {/* 選中的食物 */}
+              {selectedFood && (
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-blue-900">{selectedFood.name}</p>
+                      <p className="text-sm text-blue-700">{selectedFood.category}</p>
                     </div>
+                    <button
+                      onClick={() => setSelectedFood(null)}
+                      className="text-blue-500 hover:text-blue-700"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 份量和單位 */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">份量</label>
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    placeholder="100"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">單位</label>
+                  <select
+                    value={unit}
+                    onChange={(e) => setUnit(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="g">公克 (g)</option>
+                    <option value="ml">毫升 (ml)</option>
+                    <option value="份">份</option>
+                    <option value="個">個</option>
+                    <option value="碗">碗</option>
+                    <option value="杯">杯</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 餐次 */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">餐次</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { value: 'breakfast', label: '早餐' },
+                    { value: 'lunch', label: '午餐' },
+                    { value: 'dinner', label: '晚餐' },
+                    { value: 'snack', label: '點心' }
+                  ].map((meal) => (
+                    <button
+                      key={meal.value}
+                      onClick={() => setMealType(meal.value as any)}
+                      className={`px-3 py-2 rounded-lg text-sm transition-all ${
+                        mealType === meal.value
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {meal.label}
+                    </button>
                   ))}
                 </div>
-              )}
+              </div>
 
-              {/* Custom Food Form */}
-              {(newFoodEntry.customFood || searchTerm.length > 0) && (
-                <div className="space-y-4 border-t pt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>食物名稱</Label>
-                      <Input
-                        value={newFoodEntry.foodName}
-                        onChange={(e) => setNewFoodEntry(prev => ({ ...prev, foodName: e.target.value }))}
-                        placeholder="輸入食物名稱"
-                      />
-                    </div>
-                    <div>
-                      <Label>份量</Label>
-                      <Input
-                        value={newFoodEntry.portion}
-                        onChange={(e) => setNewFoodEntry(prev => ({ ...prev, portion: e.target.value }))}
-                        placeholder="例如：1碗、200g"
-                      />
-                    </div>
-                  </div>
+              {/* 備註 */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">備註 (選填)</label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="記錄心情、症狀或其他備註..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>時間</Label>
-                      <Input
-                        type="time"
-                        value={newFoodEntry.time}
-                        onChange={(e) => setNewFoodEntry(prev => ({ ...prev, time: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label>綜合評分</Label>
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-3 py-2 rounded-md text-sm font-medium ${getScoreColor(calculateOverallScore(newFoodEntry.scoringCriteria))}`}>
-                          {calculateOverallScore(newFoodEntry.scoringCriteria).toFixed(1)}/10
-                        </span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRatingColor(getMedicalRating(calculateOverallScore(newFoodEntry.scoringCriteria)))}`}>
-                          {getRatingText(getMedicalRating(calculateOverallScore(newFoodEntry.scoringCriteria)))}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+              {/* 新增按鈕 */}
+              <button
+                onClick={handleAddEntry}
+                disabled={!selectedFood || !quantity || isSubmitting}
+                className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white py-3 rounded-lg font-medium"
+              >
+                {isSubmitting ? '新增中...' : '➕ 新增記錄'}
+              </button>
+            </div>
+          </div>
 
-                  {/* Enhanced Scoring Criteria */}
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-                    <h4 className="font-semibold text-gray-900 mb-3">詳細評分標準</h4>
+          {/* 右側：今日記錄 */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">📅 今日記錄</h2>
 
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <Label className="text-sm">消化性 (1-10)</Label>
-                          <span className="text-sm font-medium">{newFoodEntry.scoringCriteria.digestibility}</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="1"
-                          max="10"
-                          value={newFoodEntry.scoringCriteria.digestibility}
-                          onChange={(e) => setNewFoodEntry(prev => ({
-                            ...prev,
-                            scoringCriteria: {
-                              ...prev.scoringCriteria,
-                              digestibility: parseInt(e.target.value)
-                            }
-                          }))}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                        />
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>難消化</span>
-                          <span>易消化</span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <Label className="text-sm">過敏風險 (1-10)</Label>
-                          <span className="text-sm font-medium">{newFoodEntry.scoringCriteria.allergyRisk}</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="1"
-                          max="10"
-                          value={newFoodEntry.scoringCriteria.allergyRisk}
-                          onChange={(e) => setNewFoodEntry(prev => ({
-                            ...prev,
-                            scoringCriteria: {
-                              ...prev.scoringCriteria,
-                              allergyRisk: parseInt(e.target.value)
-                            }
-                          }))}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                        />
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>高風險</span>
-                          <span>低風險</span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <Label className="text-sm">營養價值 (1-10)</Label>
-                          <span className="text-sm font-medium">{newFoodEntry.scoringCriteria.nutritionalValue}</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="1"
-                          max="10"
-                          value={newFoodEntry.scoringCriteria.nutritionalValue}
-                          onChange={(e) => setNewFoodEntry(prev => ({
-                            ...prev,
-                            scoringCriteria: {
-                              ...prev.scoringCriteria,
-                              nutritionalValue: parseInt(e.target.value)
-                            }
-                          }))}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                        />
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>營養少</span>
-                          <span>營養豐富</span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <Label className="text-sm">個人耐受性 (1-10)</Label>
-                          <span className="text-sm font-medium">{newFoodEntry.scoringCriteria.personalTolerance}</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="1"
-                          max="10"
-                          value={newFoodEntry.scoringCriteria.personalTolerance}
-                          onChange={(e) => setNewFoodEntry(prev => ({
-                            ...prev,
-                            scoringCriteria: {
-                              ...prev.scoringCriteria,
-                              personalTolerance: parseInt(e.target.value)
-                            }
-                          }))}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                        />
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>不耐受</span>
-                          <span>完全耐受</span>
-                        </div>
-                      </div>
+            {todayEntries.length === 0 ? (
+              <div className="text-center py-8">
+                <span className="text-4xl mb-4 block">🍽️</span>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">還沒有記錄</h3>
+                <p className="text-gray-600">開始記錄您今天的食物攝取吧！</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {todayEntries.map((entry) => (
+                  <div key={entry.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium text-gray-900">{entry.food_name}</h3>
+                      <span className="text-sm text-gray-500">
+                        {new Date(entry.consumed_at).toLocaleTimeString('zh-TW', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
                     </div>
 
-                    <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
-                      <strong>評分指南:</strong> 根據您的身體反應和醫療狀況來評分。評分會自動同步到Google Sheets供醫生參考。
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>備註 (可選)</Label>
-                    <Textarea
-                      value={newFoodEntry.notes}
-                      onChange={(e) => setNewFoodEntry(prev => ({ ...prev, notes: e.target.value }))}
-                      placeholder="任何相關備註..."
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setShowAddFood(false)}>
-                      取消
-                    </Button>
-                    <Button
-                      onClick={() => handleAddFood()}
-                      disabled={!newFoodEntry.foodName || !newFoodEntry.portion}
-                    >
-                      添加食物
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Food Entries */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">今日食物記錄</h2>
-
-          {dailyLog.entries.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <Utensils className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">還沒有食物記錄</h3>
-                <p className="text-gray-600 mb-4">開始記錄您的每日飲食吧！</p>
-                <Button onClick={() => setShowAddFood(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  添加第一個食物
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            dailyLog.entries.map(entry => (
-              <Card key={entry.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3">
-                        <h3 className="text-lg font-semibold text-gray-900">{entry.foodName}</h3>
-                        {entry.customFood && (
-                          <Badge variant="outline" className="text-blue-600 border-blue-200">
-                            自定義
-                          </Badge>
-                        )}
-                        {!entry.verified && (
-                          <Badge variant="outline" className="text-orange-600 border-orange-200">
-                            待驗證
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="mt-2 flex items-center space-x-4 text-sm text-gray-600">
-                        <div className="flex items-center space-x-1">
-                          <Clock className="w-4 h-4" />
-                          <span>{entry.time}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Utensils className="w-4 h-4" />
-                          <span>{entry.portion}</span>
-                        </div>
-                      </div>
-
-                      {entry.notes && (
-                        <p className="mt-2 text-sm text-gray-600">{entry.notes}</p>
+                    <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                      <span>📏 {entry.quantity}{entry.unit}</span>
+                      <span>🍽️ {
+                        entry.meal_type === 'breakfast' ? '早餐' :
+                        entry.meal_type === 'lunch' ? '午餐' :
+                        entry.meal_type === 'dinner' ? '晚餐' : '點心'
+                      }</span>
+                      {entry.calories && (
+                        <span>🔥 {Math.round(entry.calories)} 卡</span>
                       )}
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      <div className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(entry.userScore || 0)}`}>
-                        <Star className="w-4 h-4 inline mr-1" />
-                        {entry.userScore}/10
+                    {entry.medical_score && (
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className={`px-2 py-1 rounded-full text-xs ${getMedicalScoreColor(entry.medical_score)}`}>
+                          醫療評分：{entry.medical_score}/10
+                        </span>
                       </div>
-                    </div>
+                    )}
+
+                    {entry.notes && (
+                      <p className="text-sm text-gray-600 italic">📝 {entry.notes}</p>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
-  );
+  )
 }
