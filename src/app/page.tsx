@@ -112,14 +112,14 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* Admin Verification */}
-          <Link href="/admin/verification" className="group">
+          {/* Admin Panel */}
+          <Link href="/admin" className="group">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all group-hover:scale-105">
               <div className="w-12 h-12 bg-indigo-500 rounded-lg flex items-center justify-center mb-4">
                 <span className="text-white text-2xl">🛡️</span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">管理員驗證</h3>
-              <p className="text-sm text-gray-600 mb-3">僅管理員可訪問，驗證待審核食物</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">管理員控制台</h3>
+              <p className="text-sm text-gray-600 mb-3">僅管理員可訪問，管理食物資料庫與系統設定</p>
               <div className="flex items-center text-indigo-500 text-sm font-medium">
                 進入管理 →
               </div>
