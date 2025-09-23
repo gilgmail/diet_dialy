@@ -518,6 +518,155 @@ export class SupabaseFoodsService {
     return { created, updated, errors }
   }
 
+  // 更新食物評分和備註
+  async updateFoodScores(
+    foodId: string,
+    scores: any, // condition_scores object
+    notes: string,
+    updatedBy: string
+  ): Promise<Food | null> {
+    try {
+      const { data, error } = await supabase
+        .from('diet_daily_foods')
+        .update({
+          condition_scores: scores,
+          verification_notes: notes,
+          verified_by: updatedBy,
+          verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', foodId)
+        .select()
+
+      if (error) {
+        console.error('Update food scores error:', error)
+        throw error
+      }
+
+      // 檢查是否有更新結果
+      if (!data || data.length === 0) {
+        console.warn('No data returned from update, fetching food separately')
+
+        // 如果 update 沒有返回數據，單獨查詢
+        const { data: foodData, error: fetchError } = await supabase
+          .from('diet_daily_foods')
+          .select('*')
+          .eq('id', foodId)
+          .single()
+
+        if (fetchError) {
+          throw fetchError
+        }
+
+        return foodData
+      }
+
+      return data[0]
+    } catch (error) {
+      console.error('Update food scores error:', error)
+      throw error
+    }
+  }
+
+  // 批量更新食物評分
+  async bulkUpdateFoodScores(
+    updates: Array<{
+      foodId: string
+      scores: any
+      notes: string
+    }>,
+    updatedBy: string
+  ): Promise<Food[]> {
+    const updatedFoods: Food[] = []
+
+    for (const update of updates) {
+      try {
+        const result = await this.updateFoodScores(
+          update.foodId,
+          update.scores,
+          update.notes,
+          updatedBy
+        )
+        if (result) {
+          updatedFoods.push(result)
+        }
+      } catch (error) {
+        console.error(`Failed to update scores for food ${update.foodId}:`, error)
+      }
+    }
+
+    return updatedFoods
+  }
+
+  // 獲取需要評分的食物（無評分或評分不完整）
+  async getFoodsNeedingScores(): Promise<Food[]> {
+    const { data, error } = await supabase
+      .from('diet_daily_foods')
+      .select('*')
+      .eq('verification_status', 'admin_approved')
+      .or('condition_scores.is.null,condition_scores.eq.{}')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Get foods needing scores error:', error)
+      throw error
+    }
+
+    return data || []
+  }
+
+  // 獲取評分統計
+  async getScoreStatistics(): Promise<{
+    totalFoods: number
+    scoredFoods: number
+    averageScores: any
+    scoreDistribution: any
+  }> {
+    const { data: allFoods, error } = await supabase
+      .from('diet_daily_foods')
+      .select('condition_scores')
+      .eq('verification_status', 'admin_approved')
+
+    if (error) {
+      console.error('Get score statistics error:', error)
+      throw error
+    }
+
+    const totalFoods = allFoods?.length || 0
+    const scoredFoods = allFoods?.filter(food =>
+      food.condition_scores &&
+      Object.keys(food.condition_scores).length > 0
+    ).length || 0
+
+    // 計算平均評分和分佈
+    const scoreData = allFoods?.filter(food => food.condition_scores) || []
+    const conditions = ['ibd', 'ibs', 'allergies', 'cancer_chemo']
+    const averageScores: any = {}
+    const scoreDistribution: any = {}
+
+    conditions.forEach(condition => {
+      const conditionScores = scoreData
+        .map(food => food.condition_scores?.[condition]?.general_safety)
+        .filter(score => typeof score === 'number')
+
+      if (conditionScores.length > 0) {
+        averageScores[condition] = conditionScores.reduce((a, b) => a + b, 0) / conditionScores.length
+
+        scoreDistribution[condition] = [0, 1, 2, 3, 4, 5].map(score => ({
+          score,
+          count: conditionScores.filter(s => s === score).length
+        }))
+      }
+    })
+
+    return {
+      totalFoods,
+      scoredFoods,
+      averageScores,
+      scoreDistribution
+    }
+  }
+
   // 尋找現有食物 (避免重複)
   private async findExistingFood(name: string, brand?: string): Promise<Food | null> {
     let query = supabase

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
 import { foodsService } from '@/lib/supabase/foods'
 import type { Food, FoodInsert, FoodUpdate } from '@/types/supabase'
+import FoodScoreCard from '@/components/admin/FoodScoreCard'
 import Link from 'next/link'
 import {
   Database,
@@ -24,7 +25,8 @@ import {
   Download,
   Upload,
   User,
-  MapPin
+  MapPin,
+  Star
 } from 'lucide-react'
 
 type SortField = 'name' | 'category' | 'verification_status' | 'created_at'
@@ -56,6 +58,7 @@ export default function FoodDatabasePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [showNewFoodForm, setShowNewFoodForm] = useState(false)
   const [operationLoading, setOperationLoading] = useState<string | null>(null)
+  const [selectedFoodForScoring, setSelectedFoodForScoring] = useState<Food | null>(null)
   const [dbStats, setDbStats] = useState<{
     total: number
     approved: number
@@ -265,6 +268,25 @@ export default function FoodDatabasePage() {
     } catch (error) {
       console.error('刪除失敗:', error)
       setError('刪除失敗，請稍後重試')
+    } finally {
+      setOperationLoading(null)
+    }
+  }
+
+  const handleScoreUpdate = async (foodId: string, scores: any, notes: string) => {
+    try {
+      setOperationLoading('score-update')
+
+      const updatedFood = await foodsService.updateFoodScores(foodId, scores, notes, user?.id!)
+
+      if (updatedFood) {
+        // 更新本地狀態
+        setAllFoods(prev => prev.map(f => f.id === updatedFood.id ? updatedFood : f))
+        setSelectedFoodForScoring(null)
+      }
+    } catch (error) {
+      console.error('更新評分失敗:', error)
+      setError('更新評分失敗，請稍後重試')
     } finally {
       setOperationLoading(null)
     }
@@ -599,9 +621,9 @@ export default function FoodDatabasePage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
-                          {food.medical_scores ? (
+                          {food.condition_scores ? (
                             <div className="space-y-1">
-                              {Object.entries(food.medical_scores as any).slice(0, 2).map(([condition, score]: [string, any]) => (
+                              {Object.entries(food.condition_scores as any).slice(0, 2).map(([condition, score]: [string, any]) => (
                                 <div key={condition} className="flex items-center space-x-2">
                                   <span className="text-xs text-gray-600 capitalize">{condition}:</span>
                                   <span className={`text-xs px-2 py-1 rounded ${
@@ -609,13 +631,23 @@ export default function FoodDatabasePage() {
                                     score?.general_safety >= 2 ? 'bg-yellow-100 text-yellow-800' :
                                     'bg-red-100 text-red-800'
                                   }`}>
-                                    {score?.general_safety || 'N/A'}
+                                    {score?.general_safety !== undefined ? score.general_safety : 'N/A'}
                                   </span>
                                 </div>
                               ))}
+                              {Object.keys(food.condition_scores).length > 2 && (
+                                <div className="text-xs text-gray-500">
+                                  +{Object.keys(food.condition_scores).length - 2} 更多
+                                </div>
+                              )}
                             </div>
                           ) : (
-                            <span className="text-xs text-gray-400">無評分資料</span>
+                            <button
+                              onClick={() => setSelectedFoodForScoring(food)}
+                              className="text-xs text-blue-600 hover:text-blue-800 underline"
+                            >
+                              設定評分
+                            </button>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -631,6 +663,13 @@ export default function FoodDatabasePage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end space-x-2">
+                            <button
+                              onClick={() => setSelectedFoodForScoring(food)}
+                              className="text-green-600 hover:text-green-900"
+                              title="醫療評分"
+                            >
+                              <Star className="w-4 h-4" />
+                            </button>
                             <button
                               onClick={() => handleEdit(food)}
                               className="text-blue-600 hover:text-blue-900"
@@ -946,6 +985,36 @@ export default function FoodDatabasePage() {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Food Scoring Modal */}
+      {selectedFoodForScoring && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">
+                醫療評分系統 - {selectedFoodForScoring.name}
+              </h2>
+              <button
+                onClick={() => setSelectedFoodForScoring(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <FoodScoreCard
+                foodId={selectedFoodForScoring.id}
+                foodName={selectedFoodForScoring.name}
+                currentScores={selectedFoodForScoring.condition_scores}
+                currentNotes={selectedFoodForScoring.verification_notes || ''}
+                onScoreUpdate={handleScoreUpdate}
+                isEditable={true}
+              />
             </div>
           </div>
         </div>
