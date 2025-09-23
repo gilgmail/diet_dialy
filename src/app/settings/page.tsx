@@ -11,6 +11,13 @@ interface MedicalConditions {
   medications: string[]
 }
 
+interface BodyMeasurements {
+  height: number | null // cm
+  weight: number | null // kg
+  gender: 'male' | 'female' | 'other' | null
+  birthYear: number | null
+}
+
 export default function SettingsPage() {
   const { user, userProfile, isLoading, isAuthenticated, signInWithGoogle, signOut, updateProfile } = useSupabaseAuth()
   const [medicalConditions, setMedicalConditions] = useState<MedicalConditions>({
@@ -18,6 +25,12 @@ export default function SettingsPage() {
     allergies: [],
     dietaryRestrictions: [],
     medications: []
+  })
+  const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurements>({
+    height: null,
+    weight: null,
+    gender: null,
+    birthYear: null
   })
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
@@ -50,6 +63,17 @@ export default function SettingsPage() {
         dietaryRestrictions: userProfile.dietary_restrictions || [],
         medications: userProfile.medications || []
       })
+
+      // 載入身體測量資料
+      const preferences = userProfile.preferences as any
+      if (preferences?.bodyMeasurements) {
+        setBodyMeasurements({
+          height: preferences.bodyMeasurements.height || null,
+          weight: preferences.bodyMeasurements.weight || null,
+          gender: preferences.bodyMeasurements.gender || null,
+          birthYear: preferences.bodyMeasurements.birthYear || null
+        })
+      }
     }
   }, [userProfile])
 
@@ -111,12 +135,19 @@ export default function SettingsPage() {
     setSaveMessage('')
 
     try {
-      await updateProfile({
+      // 準備更新的資料
+      const updateData = {
         medical_conditions: medicalConditions.conditions,
         allergies: medicalConditions.allergies,
         dietary_restrictions: medicalConditions.dietaryRestrictions,
-        medications: medicalConditions.medications
-      })
+        medications: medicalConditions.medications,
+        preferences: {
+          ...(userProfile?.preferences as any || {}),
+          bodyMeasurements: bodyMeasurements
+        }
+      }
+
+      await updateProfile(updateData)
 
       setSaveMessage('✅ 設定已儲存成功！')
       setTimeout(() => setSaveMessage(''), 3000)
@@ -298,6 +329,113 @@ export default function SettingsPage() {
                       </div>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* 身體測量資料 */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-3">📊 身體測量資料</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* 身高 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      身高 (cm)
+                    </label>
+                    <input
+                      type="number"
+                      value={bodyMeasurements.height || ''}
+                      onChange={(e) => setBodyMeasurements(prev => ({
+                        ...prev,
+                        height: e.target.value ? parseFloat(e.target.value) : null
+                      }))}
+                      placeholder="例如: 170"
+                      min="100"
+                      max="250"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* 體重 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      體重 (kg)
+                    </label>
+                    <input
+                      type="number"
+                      value={bodyMeasurements.weight || ''}
+                      onChange={(e) => setBodyMeasurements(prev => ({
+                        ...prev,
+                        weight: e.target.value ? parseFloat(e.target.value) : null
+                      }))}
+                      placeholder="例如: 65"
+                      min="20"
+                      max="300"
+                      step="0.1"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* 性別 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      性別
+                    </label>
+                    <select
+                      value={bodyMeasurements.gender || ''}
+                      onChange={(e) => setBodyMeasurements(prev => ({
+                        ...prev,
+                        gender: e.target.value as 'male' | 'female' | 'other' | null
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">請選擇</option>
+                      <option value="male">男性</option>
+                      <option value="female">女性</option>
+                      <option value="other">其他</option>
+                    </select>
+                  </div>
+
+                  {/* 出生年份 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      出生年份
+                    </label>
+                    <input
+                      type="number"
+                      value={bodyMeasurements.birthYear || ''}
+                      onChange={(e) => setBodyMeasurements(prev => ({
+                        ...prev,
+                        birthYear: e.target.value ? parseInt(e.target.value) : null
+                      }))}
+                      placeholder="例如: 1990"
+                      min="1900"
+                      max={new Date().getFullYear()}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* BMI 計算顯示 */}
+                {bodyMeasurements.height && bodyMeasurements.weight && (
+                  <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                    <div className="text-sm text-blue-800">
+                      <strong>BMI: </strong>
+                      {(bodyMeasurements.weight / Math.pow(bodyMeasurements.height / 100, 2)).toFixed(1)}
+                      <span className="ml-2 text-blue-600">
+                        {(() => {
+                          const bmi = bodyMeasurements.weight / Math.pow(bodyMeasurements.height / 100, 2)
+                          if (bmi < 18.5) return '(過輕)'
+                          if (bmi < 24) return '(正常)'
+                          if (bmi < 27) return '(過重)'
+                          return '(肥胖)'
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-3 text-xs text-gray-500">
+                  * 這些資料有助於提供更準確的營養建議，所有資料都會安全保存
                 </div>
               </div>
 

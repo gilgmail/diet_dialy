@@ -31,7 +31,8 @@ function useSupabaseAuth(): UseSupabaseAuthReturn {
   console.log('🔍 useSupabaseAuth 狀態:', {
     user: !!user,
     userProfile: !!userProfile,
-    isLoading
+    isLoading,
+    hasAuthService: !!authService
   })
 
   // 簡化的初始化認證狀態
@@ -42,27 +43,34 @@ function useSupabaseAuth(): UseSupabaseAuthReturn {
       console.log('🚀 開始初始化認證...')
 
       try {
+        console.log('📡 呼叫 authService.getCurrentUser()...')
         const authUser = await authService.getCurrentUser()
-        console.log('👤 獲取用戶:', !!authUser)
+        console.log('👤 獲取用戶結果:', !!authUser, authUser?.id || 'no user')
 
         if (mounted && authUser) {
+          console.log('👍 設定用戶狀態...')
           setUser(authUser)
 
           // 嘗試載入用戶資料
           try {
+            console.log('📋 載入用戶資料...', authUser.id)
             const profile = await authService.getUserProfile(authUser.id)
-            console.log('📋 載入用戶資料:', !!profile)
-            setUserProfile(profile)
+            console.log('📋 載入用戶資料結果:', !!profile)
+            if (mounted) {
+              setUserProfile(profile)
+            }
           } catch (profileError) {
             console.warn('⚠️ 載入用戶資料失敗:', profileError)
             // 不阻擋載入完成
           }
+        } else {
+          console.log('👤 沒有找到認證用戶')
         }
       } catch (error) {
         console.error('❌ 初始化認證失敗:', error)
       } finally {
         if (mounted) {
-          console.log('✅ 載入完成')
+          console.log('✅ 載入完成，設定 isLoading = false')
           setIsLoading(false)
         }
       }
@@ -71,6 +79,7 @@ function useSupabaseAuth(): UseSupabaseAuthReturn {
     initializeAuth()
 
     return () => {
+      console.log('🔄 useSupabaseAuth cleanup')
       mounted = false
     }
   }, [])

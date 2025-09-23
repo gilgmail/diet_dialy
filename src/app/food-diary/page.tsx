@@ -3,9 +3,12 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
-import { foodEntriesService } from '@/lib/supabase/food-entries'
+import { unifiedFoodEntriesService, type UnifiedFoodEntry } from '@/lib/unified-food-entries'
 import { foodsService } from '@/lib/supabase/foods'
-import type { FoodEntry, FoodEntryInsert } from '@/types/supabase'
+import { CustomFoodModal } from '@/components/food-diary/CustomFoodModal'
+import { QuickAddCustomFood } from '@/components/food-diary/QuickAddCustomFood'
+import { PopularFoods } from '@/components/food-diary/PopularFoods'
+import type { FoodEntryInsert } from '@/types/supabase'
 
 interface FoodSearchResult {
   id: string
@@ -19,7 +22,7 @@ export default function FoodDiaryPage() {
   const { user, isAuthenticated, isLoading } = useSupabaseAuth()
 
   // 狀態管理
-  const [todayEntries, setTodayEntries] = useState<FoodEntry[]>([])
+  const [todayEntries, setTodayEntries] = useState<UnifiedFoodEntry[]>([])
   const [foodSearch, setFoodSearch] = useState('')
   const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([])
   const [selectedFood, setSelectedFood] = useState<FoodSearchResult | null>(null)
@@ -29,13 +32,31 @@ export default function FoodDiaryPage() {
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState('')
+  const [showCustomFoodModal, setShowCustomFoodModal] = useState(false)
+  const [showQuickAddModal, setShowQuickAddModal] = useState(false)
+  const [searchCategories, setSearchCategories] = useState<string[]>([])
+  const [selectedCategory, setSelectedCategory] = useState('')
+  const [syncStatus, setSyncStatus] = useState<any>(null)
 
-  // 載入今日記錄
+  // 載入今日記錄和分類
   useEffect(() => {
+    loadTodayEntries()
+    loadFoodCategories()
+
+    // 如果有用戶登入，設置用戶ID並嘗試同步
     if (user) {
-      loadTodayEntries()
+      unifiedFoodEntriesService.setUserIdForUnsyncedEntries(user.id)
+      syncEntries()
     }
+
+    updateSyncStatus()
   }, [user])
+
+  // 定期檢查同步狀態
+  useEffect(() => {
+    const interval = setInterval(updateSyncStatus, 5000) // 每5秒檢查一次
+    return () => clearInterval(interval)
+  }, [])
 
   // 搜尋食物資料庫
   useEffect(() => {
@@ -44,29 +65,60 @@ export default function FoodDiaryPage() {
     } else {
       setSearchResults([])
     }
-  }, [foodSearch])
+  }, [foodSearch, selectedCategory])
 
   const loadTodayEntries = async () => {
-    if (!user) return
-
     try {
-      const today = new Date().toISOString().split('T')[0]
-      const entries = await foodEntriesService.getUserFoodEntriesByDate(user.id, today)
+      const entries = await unifiedFoodEntriesService.getTodayEntries(user?.id)
       setTodayEntries(entries)
     } catch (error) {
       console.error('載入今日記錄失敗:', error)
     }
   }
 
+  const syncEntries = async () => {
+    if (!user) return
+
+    try {
+      const result = await unifiedFoodEntriesService.syncAllEntries(user.id)
+      if (result.success > 0) {
+        console.log(`Successfully synced ${result.success} entries`)
+        loadTodayEntries() // 重新載入以顯示最新狀態
+      }
+    } catch (error) {
+      console.error('同步記錄失敗:', error)
+    }
+  }
+
+  const updateSyncStatus = () => {
+    const status = unifiedFoodEntriesService.getSyncStatus()
+    setSyncStatus(status)
+  }
+
+  const loadFoodCategories = async () => {
+    try {
+      const categories = await foodsService.getFoodCategories()
+      setSearchCategories(categories)
+    } catch (error) {
+      console.error('載入食物分類失敗:', error)
+    }
+  }
+
   const searchFoods = async () => {
     try {
-      const results = await foodsService.searchApprovedFoods(foodSearch)
+      let results = await foodsService.searchApprovedFoods(foodSearch)
+
+      // 如果選擇了分類，進一步篩選
+      if (selectedCategory) {
+        results = results.filter(food => food.category === selectedCategory)
+      }
+
       setSearchResults(results.map(food => ({
         id: food.id,
         name: food.name,
         category: food.category,
         calories: food.calories || undefined,
-        medical_score: food.medical_score || undefined
+        medical_score: food.condition_scores?.ibd?.general_safety || undefined
       })))
     } catch (error) {
       console.error('搜尋食物失敗:', error)
@@ -74,9 +126,46 @@ export default function FoodDiaryPage() {
     }
   }
 
+  const handleCustomFoodCreated = (newFood: any) => {
+    setMessage('✅ 自訂食物已建立！')
+    setTimeout(() => setMessage(''), 3000)
+
+    // 將新建立的食物設為選中狀態
+    setSelectedFood({
+      id: newFood.id,
+      name: newFood.name,
+      category: newFood.category,
+      calories: newFood.calories,
+      medical_score: newFood.condition_scores?.ibd?.general_safety
+    })
+    setFoodSearch(newFood.name)
+  }
+
+  const handleQuickAddCreated = (newFood: any) => {
+    setMessage('✅ 自訂食物已快速建立！')
+    setTimeout(() => setMessage(''), 3000)
+
+    // 將新建立的食物設為選中狀態
+    setSelectedFood({
+      id: newFood.id,
+      name: newFood.name,
+      category: newFood.category,
+      calories: newFood.calories,
+      medical_score: newFood.medical_score
+    })
+    setFoodSearch(newFood.name)
+    setSearchResults([]) // 清空搜尋結果
+  }
+
+  const handlePopularFoodSelect = (food: any) => {
+    setSelectedFood(food)
+    setFoodSearch(food.name)
+    setSearchResults([])
+  }
+
   const handleAddEntry = async () => {
-    if (!user || !selectedFood || !quantity) {
-      setMessage('請填寫完整資訊')
+    if (!selectedFood) {
+      setMessage('⚠️ 請選擇食物')
       return
     }
 
@@ -84,19 +173,20 @@ export default function FoodDiaryPage() {
 
     try {
       const entryData: FoodEntryInsert = {
-        user_id: user.id,
+        user_id: user?.id, // 可以為空，稍後同步時設置
         food_id: selectedFood.id,
         food_name: selectedFood.name,
-        quantity: parseFloat(quantity),
+        amount: quantity ? parseFloat(quantity) : 100,
         unit: unit,
         meal_type: mealType,
         consumed_at: new Date().toISOString(),
         notes: notes || undefined,
-        calories: selectedFood.calories ? (selectedFood.calories * parseFloat(quantity) / 100) : undefined,
+        calories: selectedFood.calories ? (selectedFood.calories * (quantity ? parseFloat(quantity) : 100) / 100) : undefined,
         medical_score: selectedFood.medical_score
       }
 
-      await foodEntriesService.createFoodEntry(entryData)
+      // 使用統一服務新增記錄（離線優先）
+      await unifiedFoodEntriesService.addFoodEntry(entryData)
 
       // 重新載入記錄
       await loadTodayEntries()
@@ -106,7 +196,14 @@ export default function FoodDiaryPage() {
       setQuantity('')
       setNotes('')
       setFoodSearch('')
-      setMessage('✅ 食物記錄已新增！')
+      setSearchResults([])
+
+      // 顯示成功訊息
+      const syncMsg = user ? '✅ 食物記錄已新增！(正在同步...)' : '✅ 食物記錄已新增！(離線模式)'
+      setMessage(syncMsg)
+
+      // 更新同步狀態
+      updateSyncStatus()
 
       setTimeout(() => setMessage(''), 3000)
     } catch (error) {
@@ -120,16 +217,34 @@ export default function FoodDiaryPage() {
 
   const getMedicalScoreColor = (score?: number) => {
     if (!score) return 'bg-gray-100 text-gray-600'
-    if (score >= 8) return 'bg-green-100 text-green-800'
-    if (score >= 6) return 'bg-yellow-100 text-yellow-800'
+    if (score >= 4) return 'bg-green-100 text-green-800'
+    if (score >= 3) return 'bg-yellow-100 text-yellow-800'
     return 'bg-red-100 text-red-800'
   }
 
   const getMedicalScoreText = (score?: number) => {
     if (!score) return '未評分'
-    if (score >= 8) return '推薦'
-    if (score >= 6) return '適中'
+    if (score >= 4) return '推薦'
+    if (score >= 3) return '適中'
     return '謹慎'
+  }
+
+  // 獲取完整的醫療評分資訊
+  const getMedicalScoreInfo = (conditionScores: any) => {
+    if (!conditionScores) return null
+
+    const ibdScore = conditionScores.ibd?.general_safety
+    const ibsScore = conditionScores.ibs?.general_safety
+    const allergyScore = conditionScores.allergies?.allergen_free_confidence
+    const chemoScore = conditionScores.cancer_chemo?.general_safety
+
+    return {
+      ibd: ibdScore,
+      ibs: ibsScore,
+      allergy: allergyScore,
+      chemo: chemoScore,
+      overall: ibdScore || ibsScore || allergyScore || chemoScore
+    }
   }
 
   if (isLoading && !isAuthenticated) {
@@ -143,19 +258,30 @@ export default function FoodDiaryPage() {
     )
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <span className="text-4xl mb-4 block">🔒</span>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">請先登入</h2>
-          <p className="text-gray-600 mb-4">需要登入才能使用食物日記功能</p>
-          <Link href="/settings" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
-            前往登入
-          </Link>
+  // 離線模式提示 - 允許在未登入狀態下使用
+  const renderOfflineMessage = () => {
+    if (!isAuthenticated && syncStatus) {
+      return (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center space-x-2">
+            <span className="text-yellow-600">📱</span>
+            <div>
+              <h3 className="font-medium text-yellow-800">離線模式</h3>
+              <p className="text-sm text-yellow-700">
+                您可以新增食物記錄，資料會保存在本地。登入後可同步到雲端。
+              </p>
+              <Link
+                href="/settings"
+                className="text-sm text-yellow-800 underline hover:text-yellow-900"
+              >
+                點此登入以啟用雲端同步
+              </Link>
+            </div>
+          </div>
         </div>
-      </div>
-    )
+      )
+    }
+    return null
   }
 
   return (
@@ -173,6 +299,42 @@ export default function FoodDiaryPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* 離線模式提示 */}
+        {renderOfflineMessage()}
+
+        {/* 同步狀態顯示 */}
+        {syncStatus && isAuthenticated && (
+          <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <span className={`text-lg ${syncStatus.isOnline ? '🌐' : '📱'}`}>
+                  {syncStatus.isOnline ? '🌐' : '📱'}
+                </span>
+                <div>
+                  <h3 className="font-medium text-gray-900">
+                    {syncStatus.isOnline ? '在線模式' : '離線模式'}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {syncStatus.unsyncedEntries > 0
+                      ? `${syncStatus.unsyncedEntries} 個記錄待同步`
+                      : '所有記錄已同步'
+                    }
+                    {syncStatus.syncInProgress && ' | 同步中...'}
+                  </p>
+                </div>
+              </div>
+              {syncStatus.unsyncedEntries > 0 && !syncStatus.syncInProgress && (
+                <button
+                  onClick={syncEntries}
+                  className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg"
+                >
+                  立即同步
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 左側：新增記錄 */}
           <div className="space-y-6">
@@ -188,14 +350,53 @@ export default function FoodDiaryPage() {
 
               {/* 搜尋食物 */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">搜尋食物</label>
-                <input
-                  type="text"
-                  value={foodSearch}
-                  onChange={(e) => setFoodSearch(e.target.value)}
-                  placeholder="輸入食物名稱..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">搜尋食物</label>
+                  <button
+                    onClick={() => setShowCustomFoodModal(true)}
+                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    ➕ 新增自訂食物
+                  </button>
+                </div>
+
+                {/* 分類篩選 */}
+                {searchCategories.length > 0 && (
+                  <div className="mb-2">
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    >
+                      <option value="">所有分類</option>
+                      {searchCategories.map(category => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={foodSearch}
+                    onChange={(e) => setFoodSearch(e.target.value)}
+                    placeholder="輸入食物名稱..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {foodSearch.length > 0 && (
+                    <button
+                      onClick={() => {
+                        setFoodSearch('')
+                        setSearchResults([])
+                        setSelectedFood(null)
+                      }}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
 
                 {/* 搜尋結果 */}
                 {searchResults.length > 0 && (
@@ -217,12 +418,63 @@ export default function FoodDiaryPage() {
                           </div>
                           {food.medical_score && (
                             <span className={`px-2 py-1 rounded-full text-xs ${getMedicalScoreColor(food.medical_score)}`}>
-                              {getMedicalScoreText(food.medical_score)}
+                              IBD {food.medical_score}/5
                             </span>
                           )}
                         </div>
                       </button>
                     ))}
+                  </div>
+                )}
+
+                {/* 沒有搜尋結果時的選項 */}
+                {foodSearch.length > 1 && searchResults.length === 0 && (
+                  <div className="mt-2 border border-gray-200 rounded-lg p-3">
+                    <p className="text-sm text-gray-600 mb-2">找不到「{foodSearch}」，您可以：</p>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => setShowQuickAddModal(true)}
+                        className="w-full px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-left flex items-center space-x-2"
+                      >
+                        <span>➕</span>
+                        <span>快速新增自訂食物「{foodSearch}」</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          const customFood = {
+                            id: `custom_${Date.now()}`,
+                            name: foodSearch,
+                            category: '自訂食物',
+                            calories: undefined,
+                            medical_score: undefined
+                          }
+                          setSelectedFood(customFood)
+                          setSearchResults([])
+                        }}
+                        className="w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-left flex items-center space-x-2"
+                      >
+                        <span>⚡</span>
+                        <span>臨時使用「{foodSearch}」（不儲存）</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 快速選擇常見食物 - 幫助測試 */}
+                {searchCategories.length === 0 && foodSearch.length === 0 && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-500 mb-2">💡 快速選擇常見食物：</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['牛肉麵', '珍珠奶茶', '蚵仔煎', '鳳梨酥'].map(foodName => (
+                        <button
+                          key={foodName}
+                          onClick={() => setFoodSearch(foodName)}
+                          className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg text-left"
+                        >
+                          {foodName}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -231,13 +483,25 @@ export default function FoodDiaryPage() {
               {selectedFood && (
                 <div className="mb-4 p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-blue-900">{selectedFood.name}</p>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <p className="font-medium text-blue-900">{selectedFood.name}</p>
+                        {selectedFood.id.startsWith('custom_') && (
+                          <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
+                            自訂
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-blue-700">{selectedFood.category}</p>
+                      {selectedFood.id.startsWith('custom_') && (
+                        <p className="text-xs text-orange-600 mt-1">
+                          💡 此為自訂食物，提交後可由管理員或AI評估醫療建議
+                        </p>
+                      )}
                     </div>
                     <button
                       onClick={() => setSelectedFood(null)}
-                      className="text-blue-500 hover:text-blue-700"
+                      className="text-blue-500 hover:text-blue-700 ml-2"
                     >
                       ✕
                     </button>
@@ -248,12 +512,14 @@ export default function FoodDiaryPage() {
               {/* 份量和單位 */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">份量</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">份量 (可選，默認100g)</label>
                   <input
                     type="number"
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="100"
+                    placeholder="100 (可選)"
+                    min="1"
+                    step="1"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -311,15 +577,25 @@ export default function FoodDiaryPage() {
                 />
               </div>
 
+
               {/* 新增按鈕 */}
               <button
                 onClick={handleAddEntry}
-                disabled={!selectedFood || !quantity || isSubmitting}
+                disabled={!selectedFood || isSubmitting}
                 className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white py-3 rounded-lg font-medium"
               >
                 {isSubmitting ? '新增中...' : '➕ 新增記錄'}
               </button>
             </div>
+
+            {/* 常用食物 */}
+            {user && (
+              <PopularFoods
+                userId={user.id}
+                onFoodSelect={handlePopularFoodSelect}
+                className="mt-6"
+              />
+            )}
           </div>
 
           {/* 右側：今日記錄 */}
@@ -335,7 +611,16 @@ export default function FoodDiaryPage() {
             ) : (
               <div className="space-y-4">
                 {todayEntries.map((entry) => (
-                  <div key={entry.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={entry.id} className="border border-gray-200 rounded-lg p-4 relative">
+                    {/* 同步狀態指示 */}
+                    {!entry.synced && (
+                      <div className="absolute top-2 right-2">
+                        <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                          {entry.sync_attempts > 0 ? '同步中' : '待同步'}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-medium text-gray-900">{entry.food_name}</h3>
                       <span className="text-sm text-gray-500">
@@ -347,7 +632,7 @@ export default function FoodDiaryPage() {
                     </div>
 
                     <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
-                      <span>📏 {entry.quantity}{entry.unit}</span>
+                      <span>📏 {entry.amount}{entry.unit}</span>
                       <span>🍽️ {
                         entry.meal_type === 'breakfast' ? '早餐' :
                         entry.meal_type === 'lunch' ? '午餐' :
@@ -361,7 +646,7 @@ export default function FoodDiaryPage() {
                     {entry.medical_score && (
                       <div className="flex items-center space-x-2 mb-2">
                         <span className={`px-2 py-1 rounded-full text-xs ${getMedicalScoreColor(entry.medical_score)}`}>
-                          醫療評分：{entry.medical_score}/10
+                          IBD評分：{entry.medical_score}/5
                         </span>
                       </div>
                     )}
@@ -376,6 +661,25 @@ export default function FoodDiaryPage() {
           </div>
         </div>
       </div>
+
+      {/* 自訂食物模態框 */}
+      {user && (
+        <CustomFoodModal
+          isOpen={showCustomFoodModal}
+          onClose={() => setShowCustomFoodModal(false)}
+          onFoodCreated={handleCustomFoodCreated}
+          userId={user.id}
+        />
+      )}
+
+      {/* 快速新增自訂食物模態框 */}
+      <QuickAddCustomFood
+        isOpen={showQuickAddModal}
+        onClose={() => setShowQuickAddModal(false)}
+        onFoodCreated={handleQuickAddCreated}
+        userId={user?.id}
+        prefilledName={foodSearch}
+      />
     </div>
   )
 }

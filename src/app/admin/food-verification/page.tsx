@@ -8,6 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { foodsService } from '@/lib/supabase/foods';
+import type { Food } from '@/types/supabase';
 import {
   CheckCircle,
   XCircle,
@@ -23,28 +26,19 @@ import {
   Shield
 } from 'lucide-react';
 
-interface PendingFoodEntry {
-  id: string;
-  foodName: string;
-  userId: string;
-  userName: string;
-  userScore: number;
-  scoringCriteria: {
-    digestibility: number;
-    allergyRisk: number;
-    nutritionalValue: number;
-    personalTolerance: number;
-  };
-  portion: string;
-  notes: string;
-  submittedAt: Date;
-  status: 'pending' | 'approved' | 'rejected';
+interface PendingFoodEntry extends Food {
+  // Additional properties for admin review
   adminNotes?: string;
-  category?: string;
   suggestedMedicalScore?: number;
+  userScore?: number;
+  notes?: string;
+  condition_scores?: any;
+  description?: string;
+  taiwan_origin?: boolean;
 }
 
 export default function FoodVerificationPage(): JSX.Element {
+  const { user, userProfile, isLoading, isAuthenticated } = useSupabaseAuth()
   const [pendingFoods, setPendingFoods] = useState<PendingFoodEntry[]>([]);
   const [filteredFoods, setFilteredFoods] = useState<PendingFoodEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,120 +47,124 @@ export default function FoodVerificationPage(): JSX.Element {
   const [adminNotes, setAdminNotes] = useState('');
   const [suggestedCategory, setSuggestedCategory] = useState('');
   const [suggestedMedicalScore, setSuggestedMedicalScore] = useState(5);
+  const [isLoadingFoods, setIsLoadingFoods] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // 模擬待審核食物數據
+  // 載入待審核食物數據
   useEffect(() => {
-    const mockPendingFoods: PendingFoodEntry[] = [
-      {
-        id: '1',
-        foodName: '自製蒸蛋羹',
-        userId: 'user1',
-        userName: '張小明',
-        userScore: 8.5,
-        scoringCriteria: {
-          digestibility: 9,
-          allergyRisk: 7,
-          nutritionalValue: 8,
-          personalTolerance: 9
-        },
-        portion: '1小碗',
-        notes: '用有機雞蛋製作，不添加調味料，質地軟嫩易消化',
-        submittedAt: new Date('2024-01-15T10:30:00'),
-        status: 'pending',
-        category: '蛋白質'
-      },
-      {
-        id: '2',
-        foodName: '媽媽牌小米粥',
-        userId: 'user2',
-        userName: '李美華',
-        userScore: 9.2,
-        scoringCriteria: {
-          digestibility: 10,
-          allergyRisk: 9,
-          nutritionalValue: 8,
-          personalTolerance: 10
-        },
-        portion: '1大碗',
-        notes: '煮得很爛，加了一點紅棗，對IBD症狀很溫和',
-        submittedAt: new Date('2024-01-15T08:45:00'),
-        status: 'pending',
-        category: '穀物'
-      },
-      {
-        id: '3',
-        foodName: '特製低FODMAP沙拉',
-        userId: 'user3',
-        userName: '陳健康',
-        userScore: 7.8,
-        scoringCriteria: {
-          digestibility: 8,
-          allergyRisk: 8,
-          nutritionalValue: 9,
-          personalTolerance: 6
-        },
-        portion: '1份',
-        notes: '只用生菜、胡蘿蔔絲、少許橄欖油，嚴格遵循低FODMAP原則',
-        submittedAt: new Date('2024-01-14T19:20:00'),
-        status: 'pending',
-        category: '蔬菜'
+    const loadPendingFoods = async () => {
+      if (!isAuthenticated || !userProfile?.is_admin) {
+        return
       }
-    ];
 
-    setPendingFoods(mockPendingFoods);
-    setFilteredFoods(mockPendingFoods);
-  }, []);
+      try {
+        setIsLoadingFoods(true)
+        setError(null)
+        const foods = await foodsService.getPendingFoods()
+        setPendingFoods(foods)
+        setFilteredFoods(foods)
+      } catch (error) {
+        console.error('載入待審核食物失敗:', error)
+        setError('載入待審核食物失敗，請稍後重試')
+      } finally {
+        setIsLoadingFoods(false)
+      }
+    }
+
+    if (!isLoading) {
+      loadPendingFoods()
+    }
+  }, [isAuthenticated, userProfile, isLoading])
 
   // 過濾和搜索
   useEffect(() => {
     let filtered = pendingFoods;
 
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(food => food.status === statusFilter);
+      if (statusFilter === 'pending') {
+        filtered = filtered.filter(food => food.verification_status === 'pending');
+      } else if (statusFilter === 'approved') {
+        filtered = filtered.filter(food => food.verification_status === 'approved');
+      } else if (statusFilter === 'rejected') {
+        filtered = filtered.filter(food => food.verification_status === 'rejected');
+      }
     }
 
     if (searchTerm) {
       filtered = filtered.filter(food =>
-        food.foodName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        food.userName.toLowerCase().includes(searchTerm.toLowerCase())
+        food.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (food.created_by && food.created_by.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
     setFilteredFoods(filtered);
   }, [pendingFoods, statusFilter, searchTerm]);
 
-  const handleApprove = (foodId: string) => {
-    setPendingFoods(prev => prev.map(food =>
-      food.id === foodId
-        ? {
-            ...food,
-            status: 'approved' as const,
-            adminNotes,
-            category: suggestedCategory || food.category,
-            suggestedMedicalScore
-          }
-        : food
-    ));
+  const handleApprove = async (foodId: string) => {
+    if (!user?.id) return;
 
-    setSelectedFood(null);
-    setAdminNotes('');
-    setSuggestedCategory('');
-    setSuggestedMedicalScore(5);
+    try {
+      await foodsService.verifyFood(
+        foodId,
+        'approved',
+        user.id,
+        adminNotes || `分類: ${suggestedCategory}, 建議評分: ${suggestedMedicalScore}`
+      );
+
+      // Update local state
+      setPendingFoods(prev => prev.map(food =>
+        food.id === foodId
+          ? {
+              ...food,
+              verification_status: 'approved' as const,
+              verified_by: user.id,
+              verification_notes: adminNotes,
+              category: suggestedCategory || food.category,
+              verified_at: new Date().toISOString()
+            }
+          : food
+      ));
+
+      setSelectedFood(null);
+      setAdminNotes('');
+      setSuggestedCategory('');
+      setSuggestedMedicalScore(5);
+    } catch (error) {
+      console.error('審核失敗:', error);
+      setError('審核失敗，請重試');
+    }
   };
 
-  const handleReject = (foodId: string) => {
-    setPendingFoods(prev => prev.map(food =>
-      food.id === foodId
-        ? {
-            ...food,
-            status: 'rejected' as const,
-            adminNotes
-          }
-        : food
-    ));
+  const handleReject = async (foodId: string) => {
+    if (!user?.id) return;
 
-    setSelectedFood(null);
-    setAdminNotes('');
+    try {
+      await foodsService.verifyFood(
+        foodId,
+        'rejected',
+        user.id,
+        adminNotes
+      );
+
+      // Update local state
+      setPendingFoods(prev => prev.map(food =>
+        food.id === foodId
+          ? {
+              ...food,
+              verification_status: 'rejected' as const,
+              verified_by: user.id,
+              verification_notes: adminNotes,
+              verified_at: new Date().toISOString()
+            }
+          : food
+      ));
+
+      setSelectedFood(null);
+      setAdminNotes('');
+    } catch (error) {
+      console.error('拒絕失敗:', error);
+      setError('拒絕失敗，請重試');
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -176,29 +174,77 @@ export default function FoodVerificationPage(): JSX.Element {
     return 'text-red-600 bg-red-100';
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const getStatusColor = (verification_status: string) => {
+    switch (verification_status) {
       case 'approved': return 'text-green-600 bg-green-100';
       case 'rejected': return 'text-red-600 bg-red-100';
       default: return 'text-yellow-600 bg-yellow-100';
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
+  const getStatusText = (verification_status: string) => {
+    switch (verification_status) {
       case 'approved': return '已通過';
       case 'rejected': return '已拒絕';
       default: return '待審核';
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
+  const getStatusIcon = (verification_status: string) => {
+    switch (verification_status) {
       case 'approved': return <CheckCircle className="w-4 h-4" />;
       case 'rejected': return <XCircle className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
     }
   };
+
+  // Check authentication and admin permissions
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">載入中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6 text-center">
+          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">需要登入</h1>
+          <p className="text-gray-600 mb-6">請先登入才能訪問管理員控制台</p>
+          <Link
+            href="/settings"
+            className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            前往登入
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (!userProfile?.is_admin) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6 text-center">
+          <AlertTriangle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">權限不足</h1>
+          <p className="text-gray-600 mb-6">您需要管理員權限才能訪問此頁面</p>
+          <Link
+            href="/"
+            className="inline-flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+          >
+            返回首頁
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -232,7 +278,7 @@ export default function FoodVerificationPage(): JSX.Element {
                 <Clock className="w-8 h-8 text-yellow-500 mr-3" />
                 <div>
                   <div className="text-2xl font-bold text-yellow-600">
-                    {pendingFoods.filter(f => f.status === 'pending').length}
+                    {pendingFoods.filter(f => f.verification_status === 'pending').length}
                   </div>
                   <div className="text-sm text-gray-600">待審核</div>
                 </div>
@@ -246,7 +292,7 @@ export default function FoodVerificationPage(): JSX.Element {
                 <CheckCircle className="w-8 h-8 text-green-500 mr-3" />
                 <div>
                   <div className="text-2xl font-bold text-green-600">
-                    {pendingFoods.filter(f => f.status === 'approved').length}
+                    {pendingFoods.filter(f => f.verification_status === 'approved').length}
                   </div>
                   <div className="text-sm text-gray-600">已通過</div>
                 </div>
@@ -260,7 +306,7 @@ export default function FoodVerificationPage(): JSX.Element {
                 <XCircle className="w-8 h-8 text-red-500 mr-3" />
                 <div>
                   <div className="text-2xl font-bold text-red-600">
-                    {pendingFoods.filter(f => f.status === 'rejected').length}
+                    {pendingFoods.filter(f => f.verification_status === 'rejected').length}
                   </div>
                   <div className="text-sm text-gray-600">已拒絕</div>
                 </div>
@@ -316,12 +362,32 @@ export default function FoodVerificationPage(): JSX.Element {
           </CardContent>
         </Card>
 
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex">
+              <AlertTriangle className="w-5 h-5 text-red-400 mr-3" />
+              <div>
+                <h3 className="text-sm font-medium text-red-800">錯誤</h3>
+                <p className="text-sm text-red-700 mt-1">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Food List */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-900">食物清單</h2>
 
-            {filteredFoods.length === 0 ? (
+            {isLoadingFoods ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <p className="text-gray-600">載入中...</p>
+                </CardContent>
+              </Card>
+            ) : filteredFoods.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-12">
                   <Database className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -342,11 +408,11 @@ export default function FoodVerificationPage(): JSX.Element {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">{food.foodName}</h3>
-                          <Badge className={`${getStatusColor(food.status)}`}>
+                          <h3 className="text-lg font-semibold text-gray-900">{food.name}</h3>
+                          <Badge className={`${getStatusColor(food.verification_status)}`}>
                             <div className="flex items-center space-x-1">
-                              {getStatusIcon(food.status)}
-                              <span>{getStatusText(food.status)}</span>
+                              {getStatusIcon(food.verification_status)}
+                              <span>{getStatusText(food.verification_status)}</span>
                             </div>
                           </Badge>
                         </div>
@@ -354,11 +420,11 @@ export default function FoodVerificationPage(): JSX.Element {
                         <div className="space-y-1 text-sm text-gray-600">
                           <div className="flex items-center space-x-2">
                             <User className="w-4 h-4" />
-                            <span>提交者: {food.userName}</span>
+                            <span>提交者: {food.created_by || '未知用戶'}</span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Calendar className="w-4 h-4" />
-                            <span>{food.submittedAt.toLocaleDateString('zh-TW')}</span>
+                            <span>{new Date(food.created_at).toLocaleDateString('zh-TW')}</span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Star className="w-4 h-4" />
@@ -395,63 +461,67 @@ export default function FoodVerificationPage(): JSX.Element {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>{selectedFood.foodName}</span>
-                    <Badge className={`${getStatusColor(selectedFood.status)}`}>
+                    <span>{selectedFood.name}</span>
+                    <Badge className={`${getStatusColor(selectedFood.verification_status)}`}>
                       <div className="flex items-center space-x-1">
-                        {getStatusIcon(selectedFood.status)}
-                        <span>{getStatusText(selectedFood.status)}</span>
+                        {getStatusIcon(selectedFood.verification_status)}
+                        <span>{getStatusText(selectedFood.verification_status)}</span>
                       </div>
                     </Badge>
                   </CardTitle>
                   <CardDescription>
-                    由 {selectedFood.userName} 於 {selectedFood.submittedAt.toLocaleDateString('zh-TW')} 提交
+                    由 {selectedFood.created_by || '未知用戶'} 於 {new Date(selectedFood.created_at).toLocaleDateString('zh-TW')} 提交
                   </CardDescription>
                 </CardHeader>
 
                 <CardContent className="space-y-6">
-                  {/* User Scoring Breakdown */}
+                  {/* Nutritional Information */}
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-3">用戶評分詳細</h4>
+                    <h4 className="font-semibold text-gray-900 mb-3">營養資訊</h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-gray-50 rounded p-3">
-                        <div className="text-sm text-gray-600">消化性</div>
-                        <div className="text-lg font-semibold">{selectedFood.scoringCriteria.digestibility}/10</div>
+                        <div className="text-sm text-gray-600">熱量 (kcal)</div>
+                        <div className="text-lg font-semibold">{selectedFood.calories || 'N/A'}</div>
                       </div>
                       <div className="bg-gray-50 rounded p-3">
-                        <div className="text-sm text-gray-600">過敏風險</div>
-                        <div className="text-lg font-semibold">{selectedFood.scoringCriteria.allergyRisk}/10</div>
+                        <div className="text-sm text-gray-600">蛋白質 (g)</div>
+                        <div className="text-lg font-semibold">{selectedFood.protein || 'N/A'}</div>
                       </div>
                       <div className="bg-gray-50 rounded p-3">
-                        <div className="text-sm text-gray-600">營養價值</div>
-                        <div className="text-lg font-semibold">{selectedFood.scoringCriteria.nutritionalValue}/10</div>
+                        <div className="text-sm text-gray-600">碳水化合物 (g)</div>
+                        <div className="text-lg font-semibold">{selectedFood.carbohydrates || 'N/A'}</div>
                       </div>
                       <div className="bg-gray-50 rounded p-3">
-                        <div className="text-sm text-gray-600">個人耐受性</div>
-                        <div className="text-lg font-semibold">{selectedFood.scoringCriteria.personalTolerance}/10</div>
+                        <div className="text-sm text-gray-600">脂肪 (g)</div>
+                        <div className="text-lg font-semibold">{selectedFood.fat || 'N/A'}</div>
                       </div>
                     </div>
-                    <div className="mt-3 p-3 bg-blue-50 rounded">
-                      <div className="text-sm text-gray-600">綜合評分</div>
-                      <div className={`text-xl font-bold ${getScoreColor(selectedFood.userScore)}`}>
-                        {selectedFood.userScore.toFixed(1)}/10
+                    {selectedFood.condition_scores && (
+                      <div className="mt-3 p-3 bg-blue-50 rounded">
+                        <div className="text-sm text-gray-600">醫療評分</div>
+                        <div className="text-sm text-blue-800">
+                          {JSON.stringify(selectedFood.condition_scores, null, 2)}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Food Details */}
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-2">食物資訊</h4>
                     <div className="space-y-2 text-sm">
-                      <div><strong>份量:</strong> {selectedFood.portion}</div>
                       <div><strong>分類:</strong> {selectedFood.category || '未分類'}</div>
-                      {selectedFood.notes && (
-                        <div><strong>用戶備註:</strong> {selectedFood.notes}</div>
+                      <div><strong>品牌:</strong> {selectedFood.brand || 'N/A'}</div>
+                      <div><strong>來源:</strong> {selectedFood.taiwan_origin ? '台灣' : '其他'}</div>
+                      <div><strong>自訂食物:</strong> {selectedFood.is_custom ? '是' : '否'}</div>
+                      {selectedFood.description && (
+                        <div><strong>描述:</strong> {selectedFood.description}</div>
                       )}
                     </div>
                   </div>
 
                   {/* Admin Review Section */}
-                  {selectedFood.status === 'pending' && (
+                  {selectedFood.verification_status === 'pending' && (
                     <div className="border-t pt-4">
                       <h4 className="font-semibold text-gray-900 mb-3">管理員審核</h4>
 
@@ -508,12 +578,17 @@ export default function FoodVerificationPage(): JSX.Element {
                   )}
 
                   {/* Show admin notes for reviewed items */}
-                  {selectedFood.status !== 'pending' && selectedFood.adminNotes && (
+                  {selectedFood.verification_status !== 'pending' && selectedFood.verification_notes && (
                     <div className="border-t pt-4">
                       <h4 className="font-semibold text-gray-900 mb-2">管理員備註</h4>
                       <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">
-                        {selectedFood.adminNotes}
+                        {selectedFood.verification_notes}
                       </p>
+                      {selectedFood.verified_at && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          審核時間: {new Date(selectedFood.verified_at).toLocaleString('zh-TW')}
+                        </p>
+                      )}
                     </div>
                   )}
                 </CardContent>
