@@ -9,7 +9,7 @@ export class SupabaseFoodsService {
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
       .order('name')
 
     if (error) {
@@ -25,7 +25,7 @@ export class SupabaseFoodsService {
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
       .ilike('name', `%${searchTerm}%`)
       .order('name')
       .limit(20)
@@ -44,7 +44,7 @@ export class SupabaseFoodsService {
       .from('diet_daily_foods')
       .select('*')
       .eq('category', category)
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
       .order('name')
 
     if (error) {
@@ -78,7 +78,7 @@ export class SupabaseFoodsService {
 
     // 驗證狀態過濾
     if (!options?.includeUnverified) {
-      supabaseQuery = supabaseQuery.eq('verification_status', 'admin_approved')
+      supabaseQuery = supabaseQuery.eq('verification_status', 'approved')
     }
 
     // 是否包含自訂食物
@@ -188,26 +188,55 @@ export class SupabaseFoodsService {
     id: string,
     status: 'approved' | 'rejected',
     verifiedBy: string,
-    notes?: string
+    notes?: string,
+    medicalScores?: any,
+    category?: string
   ): Promise<Food | null> {
-    const { data, error } = await supabase
-      .from('diet_daily_foods')
-      .update({
-        verification_status: status,
-        verified_by: verifiedBy,
-        verification_notes: notes,
-        verified_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Verify food error:', error)
-      throw error
+    // 構建包含醫療評分的備註
+    let finalNotes = notes || '';
+    if (medicalScores) {
+      const scoresString = `醫療評分: ${JSON.stringify(medicalScores)}`;
+      finalNotes = finalNotes ? `${finalNotes} | ${scoresString}` : scoresString;
     }
 
-    return data
+    // 確保 verification_status 值完全符合約束
+    const validStatus = status === 'approved' ? 'admin_approved' : 'rejected';
+
+    const updateData: any = {
+      verification_status: validStatus,
+      verified_by: verifiedBy,
+      verification_notes: finalNotes,
+      verified_at: new Date().toISOString()
+    }
+
+    // 如果提供了分類，則更新
+    if (category && category.trim()) {
+      updateData.category = category.trim()
+    }
+
+    console.log('Updating food with data:', JSON.stringify(updateData, null, 2))
+    console.log('Food ID to update:', id)
+
+    try {
+      const { data, error } = await supabase
+        .from('diet_daily_foods')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Verify food error:', error)
+        console.error('Full error details:', JSON.stringify(error, null, 2))
+        throw error
+      }
+
+      console.log('✅ Successfully verified food with medical scores in notes:', data)
+      return data
+    } catch (err) {
+      console.error('💥 Exception in verifyFood:', err)
+      throw err
+    }
   }
 
   // 獲取食物分類
@@ -215,7 +244,7 @@ export class SupabaseFoodsService {
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('category')
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
 
     if (error) {
       console.error('Get food categories error:', error)
@@ -298,7 +327,7 @@ export class SupabaseFoodsService {
       { count: taiwanCount }
     ] = await Promise.all([
       supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }),
-      supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).eq('verification_status', 'admin_approved'),
+      supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).eq('verification_status', 'approved'),
       supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).eq('verification_status', 'pending'),
       supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).eq('verification_status', 'rejected'),
       supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).eq('is_custom', true),
@@ -434,7 +463,7 @@ export class SupabaseFoodsService {
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
       .order('created_at', { ascending: false })
       .limit(limit)
 
@@ -603,7 +632,7 @@ export class SupabaseFoodsService {
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
       .or('condition_scores.is.null,condition_scores.eq.{}')
       .order('created_at', { ascending: false })
 
@@ -625,7 +654,7 @@ export class SupabaseFoodsService {
     const { data: allFoods, error } = await supabase
       .from('diet_daily_foods')
       .select('condition_scores')
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
 
     if (error) {
       console.error('Get score statistics error:', error)

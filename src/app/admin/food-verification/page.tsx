@@ -47,6 +47,21 @@ export default function FoodVerificationPage(): JSX.Element {
   const [adminNotes, setAdminNotes] = useState('');
   const [suggestedCategory, setSuggestedCategory] = useState('');
   const [suggestedMedicalScore, setSuggestedMedicalScore] = useState(5);
+  const [medicalScores, setMedicalScores] = useState<any>({});
+
+  // 初始化醫療評分
+  const initializeMedicalScores = (food?: PendingFoodEntry) => {
+    if (food?.medical_scores) {
+      setMedicalScores(food.medical_scores);
+    } else {
+      setMedicalScores({
+        ibd: { acute_phase: 0, general_safety: 0, remission_phase: 0 },
+        ibs: { fodmap_level: "unknown", trigger_risk: "unknown", general_safety: 0 },
+        allergies: { allergen_free_confidence: 0, cross_contamination_risk: 0 },
+        cancer_chemo: { general_safety: 0, immune_support: 0, nausea_friendly: 0, nutrition_density: 0 }
+      });
+    }
+  };
   const [isLoadingFoods, setIsLoadingFoods] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -108,7 +123,9 @@ export default function FoodVerificationPage(): JSX.Element {
         foodId,
         'approved',
         user.id,
-        adminNotes || `分類: ${suggestedCategory}, 建議評分: ${suggestedMedicalScore}`
+        adminNotes || `分類: ${suggestedCategory}, 建議評分: ${suggestedMedicalScore}`,
+        medicalScores,
+        suggestedCategory
       );
 
       // Update local state
@@ -168,10 +185,10 @@ export default function FoodVerificationPage(): JSX.Element {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 8) return 'text-green-600 bg-green-100';
-    if (score >= 6) return 'text-yellow-600 bg-yellow-100';
-    if (score >= 4) return 'text-orange-600 bg-orange-100';
-    return 'text-red-600 bg-red-100';
+    if (score >= 4) return 'text-green-600 bg-green-100';    // 4-5分：綠色（良好）
+    if (score >= 3) return 'text-yellow-600 bg-yellow-100';  // 3分：黃色（普通）
+    if (score >= 2) return 'text-orange-600 bg-orange-100';  // 2分：橙色（待改善）
+    return 'text-red-600 bg-red-100';                        // 1分：紅色（不適合）
   };
 
   const getStatusColor = (verification_status: string) => {
@@ -402,7 +419,11 @@ export default function FoodVerificationPage(): JSX.Element {
                   className={`cursor-pointer transition-all ${
                     selectedFood?.id === food.id ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'
                   }`}
-                  onClick={() => setSelectedFood(food)}
+                  onClick={() => {
+                    setSelectedFood(food);
+                    setSuggestedCategory(food.category || '');
+                    initializeMedicalScores(food);
+                  }}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
@@ -428,8 +449,8 @@ export default function FoodVerificationPage(): JSX.Element {
                           </div>
                           <div className="flex items-center space-x-2">
                             <Star className="w-4 h-4" />
-                            <span className={`font-medium ${getScoreColor(food.userScore)}`}>
-                              用戶評分: {food.userScore.toFixed(1)}/10
+                            <span className={`font-medium ${food.userScore ? getScoreColor(food.userScore) : 'text-gray-500'}`}>
+                              用戶評分: {food.userScore ? food.userScore.toFixed(1) : '未評分'}/5
                             </span>
                           </div>
                         </div>
@@ -496,14 +517,100 @@ export default function FoodVerificationPage(): JSX.Element {
                         <div className="text-lg font-semibold">{selectedFood.fat || 'N/A'}</div>
                       </div>
                     </div>
-                    {selectedFood.condition_scores && (
-                      <div className="mt-3 p-3 bg-blue-50 rounded">
-                        <div className="text-sm text-gray-600">醫療評分</div>
-                        <div className="text-sm text-blue-800">
-                          {JSON.stringify(selectedFood.condition_scores, null, 2)}
+                    {/* 醫療評分編輯區域 */}
+                    <div className="mt-3 p-4 bg-blue-50 rounded-lg">
+                      <div className="text-sm font-semibold text-gray-700 mb-3">醫療評分 (可編輯)</div>
+                      <div className="space-y-4">
+                        {/* IBD 評分 */}
+                        <div className="bg-white p-3 rounded border">
+                          <h5 className="font-medium text-gray-800 mb-2">IBD 評分</h5>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <Label className="text-xs">急性期</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="5"
+                                step="0.1"
+                                value={medicalScores.ibd?.acute_phase || 0}
+                                onChange={(e) => setMedicalScores({
+                                  ...medicalScores,
+                                  ibd: { ...medicalScores.ibd, acute_phase: parseFloat(e.target.value) || 0 }
+                                })}
+                                className="h-8"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">一般安全性</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="5"
+                                step="0.1"
+                                value={medicalScores.ibd?.general_safety || 0}
+                                onChange={(e) => setMedicalScores({
+                                  ...medicalScores,
+                                  ibd: { ...medicalScores.ibd, general_safety: parseFloat(e.target.value) || 0 }
+                                })}
+                                className="h-8"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">緩解期</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="5"
+                                step="0.1"
+                                value={medicalScores.ibd?.remission_phase || 0}
+                                onChange={(e) => setMedicalScores({
+                                  ...medicalScores,
+                                  ibd: { ...medicalScores.ibd, remission_phase: parseFloat(e.target.value) || 0 }
+                                })}
+                                className="h-8"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Cancer Chemo 評分 */}
+                        <div className="bg-white p-3 rounded border">
+                          <h5 className="font-medium text-gray-800 mb-2">化療期間評分</h5>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-xs">一般安全性</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="5"
+                                step="0.1"
+                                value={medicalScores.cancer_chemo?.general_safety || 0}
+                                onChange={(e) => setMedicalScores({
+                                  ...medicalScores,
+                                  cancer_chemo: { ...medicalScores.cancer_chemo, general_safety: parseFloat(e.target.value) || 0 }
+                                })}
+                                className="h-8"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">免疫支持</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="5"
+                                step="0.1"
+                                value={medicalScores.cancer_chemo?.immune_support || 0}
+                                onChange={(e) => setMedicalScores({
+                                  ...medicalScores,
+                                  cancer_chemo: { ...medicalScores.cancer_chemo, immune_support: parseFloat(e.target.value) || 0 }
+                                })}
+                                className="h-8"
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    )}
+                    </div>
                   </div>
 
                   {/* Food Details */}
@@ -536,11 +643,11 @@ export default function FoodVerificationPage(): JSX.Element {
                         </div>
 
                         <div>
-                          <Label>建議醫療評分 (1-10)</Label>
+                          <Label>建議醫療評分 (1-5)</Label>
                           <Input
                             type="number"
                             min="1"
-                            max="10"
+                            max="5"
                             value={suggestedMedicalScore}
                             onChange={(e) => setSuggestedMedicalScore(parseFloat(e.target.value))}
                           />
