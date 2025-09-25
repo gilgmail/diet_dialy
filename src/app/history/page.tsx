@@ -333,7 +333,7 @@ export default function HistoryPage() {
                       {entry.medical_score && (
                         <div className="text-right ml-4">
                           <span className={`px-2 py-1 rounded-full text-xs ${getMedicalScoreColor(entry.medical_score)}`}>
-                            {entry.medical_score}/10
+                            {entry.medical_score}/5
                           </span>
                         </div>
                       )}
@@ -399,7 +399,7 @@ export default function HistoryPage() {
                     {entry.medical_score && (
                       <div className="text-right">
                         <span className={`px-2 py-1 rounded-full text-xs ${getMedicalScoreColor(entry.medical_score)}`}>
-                          醫療評分：{entry.medical_score}/10
+                          醫療評分：{entry.medical_score}/5
                         </span>
                         <p className="text-xs text-gray-500 mt-1">{getMedicalScoreText(entry.medical_score)}</p>
                       </div>

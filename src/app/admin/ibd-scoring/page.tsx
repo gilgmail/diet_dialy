@@ -104,12 +104,12 @@ export default function IBDScoringAdminPage() {
       // 根據評分篩選
       let filteredFoods = data
       if (scoreFilter === 'scored') {
-        filteredFoods = data.filter(food => food.condition_scores?.ibd_score !== null)
+        filteredFoods = data.filter(food => food.medical_scores?.ibd_score !== null)
       } else if (scoreFilter === 'unscored') {
-        filteredFoods = data.filter(food => !food.condition_scores?.ibd_score)
+        filteredFoods = data.filter(food => !food.medical_scores?.ibd_score)
       } else if (['0', '1', '2', '3'].includes(scoreFilter)) {
         const targetScore = parseInt(scoreFilter)
-        filteredFoods = data.filter(food => food.condition_scores?.ibd_score === targetScore)
+        filteredFoods = data.filter(food => food.medical_scores?.ibd_score === targetScore)
       }
 
       setFoods(filteredFoods)

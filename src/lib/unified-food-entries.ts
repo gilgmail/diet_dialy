@@ -1,6 +1,6 @@
 // 統一食物記錄服務 - 離線優先，自動同步
 import { localStorageService, type LocalFoodEntry } from './local-storage'
-import { foodEntriesService } from './supabase/food-entries'
+import { enhancedFoodEntriesService } from './supabase/enhanced-food-entries'
 import type { FoodEntry, FoodEntryInsert } from '@/types/supabase'
 
 export interface UnifiedFoodEntry extends LocalFoodEntry {
@@ -10,10 +10,13 @@ export interface UnifiedFoodEntry extends LocalFoodEntry {
 export class UnifiedFoodEntriesService {
   private syncInProgress = false
 
-  // 新增食物記錄 - 離線優先
+  // 新增食物記錄 - 離線優先（支持自訂食物）
   async addFoodEntry(entryData: FoodEntryInsert): Promise<UnifiedFoodEntry> {
+    // 檢查並標記自訂食物
+    const enhancedEntryData = await this.enhanceWithCustomFoodInfo(entryData)
+
     // 1. 先保存到本地
-    const localEntry = localStorageService.addLocalEntry(entryData)
+    const localEntry = localStorageService.addLocalEntry(enhancedEntryData)
 
     // 2. 嘗試同步到 Supabase (不阻塞)
     this.syncToSupabase(localEntry.id).catch(error => {
@@ -21,6 +24,30 @@ export class UnifiedFoodEntriesService {
     })
 
     return localEntry
+  }
+
+  // 增強食物記錄資訊，添加自訂食物相關資料
+  private async enhanceWithCustomFoodInfo(entryData: FoodEntryInsert): Promise<FoodEntryInsert> {
+    try {
+      // 如果 food_id 以 custom_ 開頭，或者明確標記為自訂食物
+      const isCustomFood = entryData.food_id?.startsWith('custom_') ||
+                          entryData.food_id?.startsWith('local_') ||
+                          (entryData as any).is_custom_food
+
+      if (isCustomFood) {
+        return {
+          ...entryData,
+          is_custom_food: true,
+          custom_food_source: 'user_created',
+          food_category: entryData.food_category || '自訂食物'
+        }
+      }
+
+      return entryData
+    } catch (error) {
+      console.warn('Failed to enhance custom food info:', error)
+      return entryData
+    }
   }
 
   // 獲取今日記錄 - 混合本地和遠程
@@ -33,7 +60,7 @@ export class UnifiedFoodEntriesService {
     if (userId && navigator.onLine) {
       try {
         const today = new Date().toISOString().split('T')[0]!
-        remoteEntries = await foodEntriesService.getUserFoodEntriesByDate(userId, today)
+        remoteEntries = await enhancedFoodEntriesService.getUserFoodEntriesByDate(userId, today)
       } catch (error) {
         console.warn('Failed to fetch remote entries:', error)
       }
@@ -50,7 +77,7 @@ export class UnifiedFoodEntriesService {
     let remoteEntries: FoodEntry[] = []
     if (userId && navigator.onLine) {
       try {
-        remoteEntries = await foodEntriesService.getUserFoodEntriesByDate(userId, date)
+        remoteEntries = await enhancedFoodEntriesService.getUserFoodEntriesByDate(userId, date)
       } catch (error) {
         console.warn('Failed to fetch remote entries:', error)
       }
@@ -67,7 +94,7 @@ export class UnifiedFoodEntriesService {
     // 2. 如果是同步過的記錄，也要從遠程刪除
     if (userId && navigator.onLine && !entryId.startsWith('local_')) {
       try {
-        await foodEntriesService.deleteFoodEntry(entryId)
+        await enhancedFoodEntriesService.deleteFoodEntry(entryId)
       } catch (error) {
         console.warn('Failed to delete remote entry:', error)
       }
@@ -96,8 +123,8 @@ export class UnifiedFoodEntriesService {
         return false
       }
 
-      // 創建遠程記錄
-      const remoteEntry = await foodEntriesService.createFoodEntry({
+      // 創建遠程記錄（包含自訂食物資訊）
+      const remoteEntry = await enhancedFoodEntriesService.createFoodEntry({
         user_id: entry.user_id,
         food_id: entry.food_id,
         food_name: entry.food_name,
@@ -108,6 +135,10 @@ export class UnifiedFoodEntriesService {
         notes: entry.notes,
         calories: entry.calories,
         medical_score: entry.medical_score,
+        // 添加自訂食物標記
+        is_custom_food: entry.is_custom_food || false,
+        custom_food_source: entry.custom_food_source || null,
+        food_category: entry.food_category || null,
         sync_status: 'synced'
       })
 
@@ -178,43 +209,55 @@ export class UnifiedFoodEntriesService {
     }
   }
 
-  // 合併本地和遠程記錄
+  // 合併本地和遠程記錄（改善重複檢查和顯示逻輯）
   private mergeEntries(localEntries: LocalFoodEntry[], remoteEntries: FoodEntry[]): UnifiedFoodEntry[] {
-    const merged: UnifiedFoodEntry[] = [...localEntries]
+    console.log(`Merging entries: ${localEntries.length} local + ${remoteEntries.length} remote`)
 
-    // 添加不在本地的遠程記錄
+    // 先以遠程記錄為主，確保 Supabase 上的記錄優先顯示
+    const merged: UnifiedFoodEntry[] = []
+
+    // 1. 添加所有遠程記錄（已同步的權威記錄）
     for (const remoteEntry of remoteEntries) {
-      const existsInLocal = localEntries.some(local => {
-        // 首先檢查 ID 匹配
-        if (local.id === remoteEntry.id) return true
+      merged.push({
+        ...remoteEntry,
+        synced: true,
+        sync_attempts: 0,
+        is_custom_food: remoteEntry.is_custom_food || false,
+        custom_food_source: remoteEntry.custom_food_source || undefined,
+        created_at: remoteEntry.created_at || remoteEntry.consumed_at
+      })
+    }
 
-        // 檢查是否為同一個已同步的記錄
-        if (local.synced && local.id === remoteEntry.id) return true
+    // 2. 添加本地記錄（只添加還沒有在遠程的）
+    for (const localEntry of localEntries) {
+      const existsInRemote = remoteEntries.some(remote => {
+        // 直接 ID 匹配（已同步的記錄）
+        if (localEntry.id === remote.id) return true
 
-        // 檢查是否為實質上相同的記錄（模糊匹配）
+        // 模糊匹配（相似的記錄）
         const timeMatch = Math.abs(
-          new Date(local.consumed_at).getTime() - new Date(remoteEntry.consumed_at).getTime()
-        ) < 60000 // 1分鐘內
+          new Date(localEntry.consumed_at).getTime() - new Date(remote.consumed_at).getTime()
+        ) < 300000 // 5分鐘內的誤差範圍
 
         return timeMatch &&
-               local.food_name === remoteEntry.food_name &&
-               Math.abs((local.amount || 0) - remoteEntry.amount) < 0.01
+               localEntry.food_name === remote.food_name &&
+               Math.abs((localEntry.amount || 0) - remote.amount) < 1 // 允許輕微誤差
       })
 
-      if (!existsInLocal) {
-        merged.push({
-          ...remoteEntry,
-          synced: true,
-          sync_attempts: 0,
-          created_at: remoteEntry.created_at
-        })
+      if (!existsInRemote) {
+        // 只添加未在遠程伺服器上的本地記錄
+        merged.push(localEntry)
       }
     }
 
-    // 按時間排序
-    return merged.sort((a, b) =>
-      new Date(b.consumed_at).getTime() - new Date(a.consumed_at).getTime()
-    )
+    console.log(`Merged total: ${merged.length} entries`)
+
+    // 按時間排序（最新的在前）
+    return merged.sort((a, b) => {
+      const timeA = new Date(a.consumed_at).getTime()
+      const timeB = new Date(b.consumed_at).getTime()
+      return timeB - timeA
+    })
   }
 
   // 獲取同步狀態

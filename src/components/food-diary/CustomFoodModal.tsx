@@ -63,7 +63,14 @@ export function CustomFoodModal({ isOpen, onClose, onFoodCreated, userId }: Cust
 
       const newFood = await foodsService.createCustomFood(foodData)
       if (newFood) {
-        onFoodCreated(newFood)
+        // 添加自訂食物標識符
+        const enhancedFood = {
+          ...newFood,
+          id: `custom_${newFood.id}`, // 使用 custom_ 前綴標識自訂食物
+          custom_food_source: 'user_created',
+          original_food_id: newFood.id
+        }
+        onFoodCreated(enhancedFood)
         onClose()
         // 重置表單
         setFormData({

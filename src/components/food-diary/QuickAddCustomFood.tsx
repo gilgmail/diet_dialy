@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { foodsService } from '@/lib/supabase/foods'
 import type { FoodInsert } from '@/types/supabase'
 import { Plus, X, AlertCircle, CheckCircle } from 'lucide-react'
@@ -23,13 +23,23 @@ export function QuickAddCustomFood({
   const [formData, setFormData] = useState({
     name: prefilledName,
     category: '',
-    brand: '',
-    calories: '',
-    notes: ''
+    notes: '',
+    ibdScore: '',
+    otherScore: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [step, setStep] = useState<'basic' | 'success'>('basic')
+
+  // 當prefilledName變更時，更新表單名稱
+  useEffect(() => {
+    if (prefilledName) {
+      setFormData(prev => ({
+        ...prev,
+        name: prefilledName
+      }))
+    }
+  }, [prefilledName])
 
   const categories = [
     '穀類', '蛋白質', '蔬菜', '水果', '奶類', '油脂', '零食', '飲料',
@@ -47,31 +57,55 @@ export function QuickAddCustomFood({
     setError('')
 
     try {
+      // 構建醫療評分物件 - 使用標準格式
+      const medicalScores: any = {}
+      if (formData.ibdScore) {
+        medicalScores.ibd_score = parseFloat(formData.ibdScore)
+        medicalScores.user_provided = true
+      }
+      if (formData.otherScore) {
+        medicalScores.other_condition_score = parseFloat(formData.otherScore)
+        medicalScores.user_provided = true
+      }
+      // 設置預設的安全等級
+      if (formData.ibdScore || formData.otherScore) {
+        medicalScores.safety_level = 'pending_review'  // 用戶評分需要審核
+      }
+
       const foodData: FoodInsert = {
         name: formData.name.trim(),
         category: formData.category,
-        brand: formData.brand.trim() || undefined,
-        calories: formData.calories ? parseFloat(formData.calories) : undefined,
         is_custom: true,
         created_by: userId,
         verification_status: 'pending',
-        verification_notes: formData.notes.trim() || '用戶自訂食物，待審核醫療資訊'
+        verification_notes: [
+          formData.notes.trim() || '用戶自訂食物',
+          formData.ibdScore ? `IBD評分: ${formData.ibdScore}/5` : '',
+          formData.otherScore ? `其他評分: ${formData.otherScore}/5` : '',
+          '待專業審核'
+        ].filter(Boolean).join(' | '),
       }
 
       const newFood = await foodsService.createFood(foodData)
+
+      if (!newFood) {
+        throw new Error('建立食物失敗')
+      }
 
       setStep('success')
 
       // 延遲一下再調用回調，讓用戶看到成功狀態
       setTimeout(() => {
         onFoodCreated({
-          id: newFood.id,
+          id: `custom_${newFood.id}`, // 使用 custom_ 前綴標識自訂食物
           name: newFood.name,
           category: newFood.category,
-          calories: newFood.calories,
           is_custom: true,
           verification_status: 'pending',
-          medical_scores: undefined // 還沒有醫療評分
+          medical_scores: newFood.medical_scores,
+          // 添加自訂食物標記
+          custom_food_source: 'user_created',
+          original_food_id: newFood.id
         })
         handleClose()
       }, 1500)
@@ -88,9 +122,9 @@ export function QuickAddCustomFood({
     setFormData({
       name: '',
       category: '',
-      brand: '',
-      calories: '',
-      notes: ''
+      notes: '',
+      ibdScore: '',
+      otherScore: ''
     })
     setError('')
     setStep('basic')
@@ -151,31 +185,35 @@ export function QuickAddCustomFood({
               </select>
             </div>
 
-            {/* 品牌（可選）*/}
+            {/* IBD評分（可選）*/}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                品牌（可選）
+                IBD評分（可選）
               </label>
               <input
-                type="text"
-                value={formData.brand}
-                onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                placeholder="例：某某品牌"
+                type="number"
+                value={formData.ibdScore}
+                onChange={(e) => setFormData({ ...formData, ibdScore: e.target.value })}
+                placeholder="1-5分，5為最適合IBD患者"
+                min="1"
+                max="5"
+                step="0.1"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
-            {/* 熱量（可選）*/}
+            {/* 其他醫療評分（可選）*/}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                熱量（每100g，可選）
+                其他醫療評分（可選）
               </label>
               <input
                 type="number"
-                value={formData.calories}
-                onChange={(e) => setFormData({ ...formData, calories: e.target.value })}
-                placeholder="例：150"
-                min="0"
+                value={formData.otherScore}
+                onChange={(e) => setFormData({ ...formData, otherScore: e.target.value })}
+                placeholder="1-5分，適用於其他疾病"
+                min="1"
+                max="5"
                 step="0.1"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
@@ -201,7 +239,7 @@ export function QuickAddCustomFood({
                 <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-blue-800">
                   <p className="font-medium mb-1">溫馨提醒</p>
-                  <p>醫療相關資訊（IBD評分、化療安全性等）將在後續由專業人員審核補充。</p>
+                  <p>您提供的醫療評分將由專業人員審核。評分範圍1-5分，5分為最適合。評分會影響後續的醫療建議，請謹慎填寫。</p>
                 </div>
               </div>
             </div>

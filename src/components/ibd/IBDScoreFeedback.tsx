@@ -232,11 +232,11 @@ export default function IBDScoreFeedback({
           {/* 症狀嚴重度 */}
           {feedback.symptoms_experienced && feedback.symptoms_experienced.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium">症狀嚴重度 (0-10)</Label>
+              <Label className="text-sm font-medium">症狀嚴重度 (1-5)</Label>
               <Input
                 type="number"
-                min="0"
-                max="10"
+                min="1"
+                max="5"
                 value={feedback.symptom_severity || ''}
                 onChange={(e) => setFeedback(prev => ({
                   ...prev,

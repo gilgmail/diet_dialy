@@ -7,7 +7,7 @@ import { unifiedFoodEntriesService, type UnifiedFoodEntry } from '@/lib/unified-
 import { foodsService } from '@/lib/supabase/foods'
 import { CustomFoodModal } from '@/components/food-diary/CustomFoodModal'
 import { QuickAddCustomFood } from '@/components/food-diary/QuickAddCustomFood'
-import { PopularFoods } from '@/components/food-diary/PopularFoods'
+import { EnhancedFoodInput } from '@/components/food-diary/EnhancedFoodInput'
 import type { FoodEntryInsert } from '@/types/supabase'
 
 interface FoodSearchResult {
@@ -18,25 +18,32 @@ interface FoodSearchResult {
   medical_score?: number
 }
 
+interface SelectedFood {
+  id: string
+  name: string
+  category: string
+  amount: number
+  unit: string
+  notes: string
+  customScore?: number
+  calories?: number
+  medical_score?: number
+}
+
 export default function FoodDiaryPage() {
   const { user, isAuthenticated, isLoading } = useSupabaseAuth()
 
   // 狀態管理
   const [todayEntries, setTodayEntries] = useState<UnifiedFoodEntry[]>([])
-  const [foodSearch, setFoodSearch] = useState('')
-  const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([])
-  const [selectedFood, setSelectedFood] = useState<FoodSearchResult | null>(null)
-  const [quantity, setQuantity] = useState('')
-  const [unit, setUnit] = useState('g')
-  const [notes, setNotes] = useState('')
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast')
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState('')
   const [showCustomFoodModal, setShowCustomFoodModal] = useState(false)
   const [showQuickAddModal, setShowQuickAddModal] = useState(false)
   const [searchCategories, setSearchCategories] = useState<string[]>([])
   const [selectedCategory, setSelectedCategory] = useState('')
   const [syncStatus, setSyncStatus] = useState<any>(null)
+  const [prefilledFoodName, setPrefilledFoodName] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // 載入今日記錄和分類
   useEffect(() => {
@@ -58,14 +65,6 @@ export default function FoodDiaryPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // 搜尋食物資料庫
-  useEffect(() => {
-    if (foodSearch.length > 1) {
-      searchFoods()
-    } else {
-      setSearchResults([])
-    }
-  }, [foodSearch, selectedCategory])
 
   const loadTodayEntries = async () => {
     try {
@@ -104,27 +103,6 @@ export default function FoodDiaryPage() {
     }
   }
 
-  const searchFoods = async () => {
-    try {
-      let results = await foodsService.searchApprovedFoods(foodSearch)
-
-      // 如果選擇了分類，進一步篩選
-      if (selectedCategory) {
-        results = results.filter(food => food.category === selectedCategory)
-      }
-
-      setSearchResults(results.map(food => ({
-        id: food.id,
-        name: food.name,
-        category: food.category,
-        calories: food.calories || undefined,
-        medical_score: food.condition_scores?.ibd?.general_safety || undefined
-      })))
-    } catch (error) {
-      console.error('搜尋食物失敗:', error)
-      setSearchResults([])
-    }
-  }
 
   const handleCustomFoodCreated = (newFood: any) => {
     setMessage('✅ 自訂食物已建立！')
@@ -141,78 +119,84 @@ export default function FoodDiaryPage() {
     setFoodSearch(newFood.name)
   }
 
-  const handleQuickAddCreated = (newFood: any) => {
+  const handleQuickAddCreated = async (newFood: any) => {
     setMessage('✅ 自訂食物已快速建立！')
-    setTimeout(() => setMessage(''), 3000)
 
-    // 將新建立的食物設為選中狀態
-    setSelectedFood({
-      id: newFood.id,
-      name: newFood.name,
-      category: newFood.category,
-      calories: newFood.calories,
-      medical_score: newFood.medical_score
-    })
-    setFoodSearch(newFood.name)
+    try {
+      // 自動建立食物記錄
+      const entryData: FoodEntryInsert = {
+        user_id: user?.id || '',
+        food_id: newFood.original_food_id, // 使用原始食物ID
+        food_name: newFood.name,
+        amount: 1, // 預設1份
+        unit: '份',
+        meal_type: mealType,
+        consumed_at: new Date().toISOString(),
+        calories: newFood.calories,
+        is_custom_food: true,
+        custom_food_source: 'user_created',
+        food_category: newFood.category,
+        sync_status: 'pending'
+      }
+
+      await unifiedFoodEntriesService.addFoodEntry(entryData)
+
+      setMessage('✅ 自訂食物已建立並自動加入記錄！')
+
+      // 重新載入今日記錄
+      loadTodayEntries()
+
+    } catch (error) {
+      console.error('自動建立記錄失敗:', error)
+      setMessage('✅ 自訂食物已建立，但自動加入記錄失敗')
+    }
+
+    setTimeout(() => setMessage(''), 3000)
     setSearchResults([]) // 清空搜尋結果
   }
 
-  const handlePopularFoodSelect = (food: any) => {
-    setSelectedFood(food)
-    setFoodSearch(food.name)
-    setSearchResults([])
-  }
-
-  const handleAddEntry = async () => {
-    if (!selectedFood) {
-      setMessage('⚠️ 請選擇食物')
-      return
-    }
-
+  // 處理增強輸入組件的食物選擇
+  const handleEnhancedFoodSelected = async (food: SelectedFood) => {
     setIsSubmitting(true)
-
     try {
       const entryData: FoodEntryInsert = {
-        user_id: user?.id, // 可以為空，稍後同步時設置
-        food_id: selectedFood.id,
-        food_name: selectedFood.name,
-        amount: quantity ? parseFloat(quantity) : 100,
-        unit: unit,
+        user_id: user?.id || '',
+        food_id: food.id.startsWith('custom_') ? null : food.id,
+        food_name: food.name,
+        amount: food.amount,
+        unit: food.unit,
         meal_type: mealType,
         consumed_at: new Date().toISOString(),
-        notes: notes || undefined,
-        calories: selectedFood.calories ? (selectedFood.calories * (quantity ? parseFloat(quantity) : 100) / 100) : undefined,
-        medical_score: selectedFood.medical_score
+        notes: food.notes,
+        calories: food.calories,
+        medical_score: food.customScore || food.medical_score,
+        is_custom_food: food.id.startsWith('custom_'),
+        custom_food_source: food.id.startsWith('custom_') ? 'user_created' : null,
+        food_category: food.category,
+        sync_status: 'pending'
       }
 
-      // 使用統一服務新增記錄（離線優先）
-      await unifiedFoodEntriesService.addFoodEntry(entryData)
+      const newEntry = await unifiedFoodEntriesService.addFoodEntry(entryData)
 
-      // 重新載入記錄
-      await loadTodayEntries()
-
-      // 重置表單
-      setSelectedFood(null)
-      setQuantity('')
-      setNotes('')
-      setFoodSearch('')
-      setSearchResults([])
-
-      // 顯示成功訊息
-      const syncMsg = user ? '✅ 食物記錄已新增！(正在同步...)' : '✅ 食物記錄已新增！(離線模式)'
-      setMessage(syncMsg)
-
-      // 更新同步狀態
-      updateSyncStatus()
-
+      setMessage('✅ 食物記錄已新增！')
       setTimeout(() => setMessage(''), 3000)
+
+      // 重新載入今日記錄
+      loadTodayEntries()
+
     } catch (error) {
       console.error('新增記錄失敗:', error)
-      setMessage('❌ 新增記錄失敗，請重試')
+      setMessage('❌ 新增失敗，請重試')
       setTimeout(() => setMessage(''), 3000)
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  // 處理創建自訂食物 (從EnhancedFoodInput傳遞食物名稱)
+  const handleCreateCustomFoodFromInput = (foodName: string) => {
+    setPrefilledFoodName(foodName) // 保存要預填的食物名稱
+    setShowQuickAddModal(true)
   }
 
   const getMedicalScoreColor = (score?: number) => {
@@ -348,254 +332,56 @@ export default function FoodDiaryPage() {
                 </div>
               )}
 
-              {/* 搜尋食物 */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">搜尋食物</label>
+              {/* 增強版食物輸入 */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <label className="block text-lg font-medium text-gray-900">🔍 搜尋或新增食物</label>
                   <button
                     onClick={() => setShowCustomFoodModal(true)}
                     className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                   >
-                    ➕ 新增自訂食物
+                    ➕ 詳細新增
                   </button>
                 </div>
 
-                {/* 分類篩選 */}
-                {searchCategories.length > 0 && (
-                  <div className="mb-2">
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    >
-                      <option value="">所有分類</option>
-                      {searchCategories.map(category => (
-                        <option key={category} value={category}>{category}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={foodSearch}
-                    onChange={(e) => setFoodSearch(e.target.value)}
-                    placeholder="輸入食物名稱..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {foodSearch.length > 0 && (
-                    <button
-                      onClick={() => {
-                        setFoodSearch('')
-                        setSearchResults([])
-                        setSelectedFood(null)
-                      }}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-
-                {/* 搜尋結果 */}
-                {searchResults.length > 0 && (
-                  <div className="mt-2 border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
-                    {searchResults.map((food) => (
-                      <button
-                        key={food.id}
-                        onClick={() => {
-                          setSelectedFood(food)
-                          setFoodSearch(food.name)
-                          setSearchResults([])
-                        }}
-                        className="w-full px-3 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">{food.name}</p>
-                            <p className="text-sm text-gray-500">{food.category}</p>
-                          </div>
-                          {food.medical_score && (
-                            <span className={`px-2 py-1 rounded-full text-xs ${getMedicalScoreColor(food.medical_score)}`}>
-                              IBD {food.medical_score}/5
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* 沒有搜尋結果時的選項 */}
-                {foodSearch.length > 1 && searchResults.length === 0 && (
-                  <div className="mt-2 border border-gray-200 rounded-lg p-3">
-                    <p className="text-sm text-gray-600 mb-2">找不到「{foodSearch}」，您可以：</p>
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => setShowQuickAddModal(true)}
-                        className="w-full px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-left flex items-center space-x-2"
-                      >
-                        <span>➕</span>
-                        <span>快速新增自訂食物「{foodSearch}」</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          const customFood = {
-                            id: `custom_${Date.now()}`,
-                            name: foodSearch,
-                            category: '自訂食物',
-                            calories: undefined,
-                            medical_score: undefined
-                          }
-                          setSelectedFood(customFood)
-                          setSearchResults([])
-                        }}
-                        className="w-full px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-left flex items-center space-x-2"
-                      >
-                        <span>⚡</span>
-                        <span>臨時使用「{foodSearch}」（不儲存）</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* 快速選擇常見食物 - 幫助測試 */}
-                {searchCategories.length === 0 && foodSearch.length === 0 && (
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-500 mb-2">💡 快速選擇常見食物：</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {['牛肉麵', '珍珠奶茶', '蚵仔煎', '鳳梨酥'].map(foodName => (
-                        <button
-                          key={foodName}
-                          onClick={() => setFoodSearch(foodName)}
-                          className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg text-left"
-                        >
-                          {foodName}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 選中的食物 */}
-              {selectedFood && (
-                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <p className="font-medium text-blue-900">{selectedFood.name}</p>
-                        {selectedFood.id.startsWith('custom_') && (
-                          <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
-                            自訂
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-blue-700">{selectedFood.category}</p>
-                      {selectedFood.id.startsWith('custom_') && (
-                        <p className="text-xs text-orange-600 mt-1">
-                          💡 此為自訂食物，提交後可由管理員或AI評估醫療建議
-                        </p>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => setSelectedFood(null)}
-                      className="text-blue-500 hover:text-blue-700 ml-2"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* 份量和單位 */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">份量 (可選，默認100g)</label>
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="100 (可選)"
-                    min="1"
-                    step="1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">單位</label>
-                  <select
-                    value={unit}
-                    onChange={(e) => setUnit(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="g">公克 (g)</option>
-                    <option value="ml">毫升 (ml)</option>
-                    <option value="份">份</option>
-                    <option value="個">個</option>
-                    <option value="碗">碗</option>
-                    <option value="杯">杯</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* 餐次 */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">餐次</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {[
-                    { value: 'breakfast', label: '早餐' },
-                    { value: 'lunch', label: '午餐' },
-                    { value: 'dinner', label: '晚餐' },
-                    { value: 'snack', label: '點心' }
-                  ].map((meal) => (
-                    <button
-                      key={meal.value}
-                      onClick={() => setMealType(meal.value as any)}
-                      className={`px-3 py-2 rounded-lg text-sm transition-all ${
-                        mealType === meal.value
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {meal.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 備註 */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">備註 (選填)</label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="記錄心情、症狀或其他備註..."
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <EnhancedFoodInput
+                  onFoodSelected={handleEnhancedFoodSelected}
+                  onCreateCustomFood={handleCreateCustomFoodFromInput}
+                  placeholder="輸入食物名稱，支援 Tab 自動完成..."
+                  defaultMealType={mealType}
+                  categories={searchCategories}
+                  userId={user?.id}
                 />
               </div>
 
-
-              {/* 新增按鈕 */}
-              <button
-                onClick={handleAddEntry}
-                disabled={!selectedFood || isSubmitting}
-                className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white py-3 rounded-lg font-medium"
-              >
-                {isSubmitting ? '新增中...' : '➕ 新增記錄'}
-              </button>
+              {/* 當前餐次顯示 */}
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-blue-800">當前餐次:</span>
+                  <div className="flex space-x-1">
+                    {[
+                      { value: 'breakfast', label: '🌅 早餐' },
+                      { value: 'lunch', label: '☀️ 午餐' },
+                      { value: 'dinner', label: '🌙 晚餐' },
+                      { value: 'snack', label: '🍪 點心' }
+                    ].map((meal) => (
+                      <button
+                        key={meal.value}
+                        onClick={() => setMealType(meal.value as any)}
+                        className={`px-2 py-1 rounded text-xs transition-all ${
+                          mealType === meal.value
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        }`}
+                      >
+                        {meal.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* 常用食物 */}
-            {user && (
-              <PopularFoods
-                userId={user.id}
-                onFoodSelect={handlePopularFoodSelect}
-                className="mt-6"
-              />
-            )}
           </div>
 
           {/* 右側：今日記錄 */}
@@ -675,10 +461,13 @@ export default function FoodDiaryPage() {
       {/* 快速新增自訂食物模態框 */}
       <QuickAddCustomFood
         isOpen={showQuickAddModal}
-        onClose={() => setShowQuickAddModal(false)}
+        onClose={() => {
+          setShowQuickAddModal(false)
+          setPrefilledFoodName('') // 清除預填名稱
+        }}
         onFoodCreated={handleQuickAddCreated}
         userId={user?.id}
-        prefilledName={foodSearch}
+        prefilledName={prefilledFoodName}
       />
     </div>
   )

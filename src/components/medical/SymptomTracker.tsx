@@ -287,11 +287,11 @@ export default function SymptomTracker({ onSymptomRecorded }: SymptomTrackerProp
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">嚴重程度評分 (1-10)</label>
+              <label className="block text-sm font-medium mb-2">嚴重程度評分 (1-5)</label>
               <input
                 type="range"
                 min="1"
-                max="10"
+                max="5"
                 value={severityScore}
                 onChange={(e) => setSeverityScore(parseInt(e.target.value))}
                 className="w-full"
@@ -450,7 +450,7 @@ export default function SymptomTracker({ onSymptomRecorded }: SymptomTrackerProp
                       </h4>
                       <div className="text-sm text-gray-600 mt-1">
                         頻率：{(trend.frequency * 100).toFixed(1)}% |
-                        平均嚴重度：{trend.average_severity.toFixed(1)}/10
+                        平均嚴重度：{trend.average_severity.toFixed(1)}/5
                       </div>
                       {trend.common_triggers.length > 0 && (
                         <div className="text-sm text-gray-600 mt-1">

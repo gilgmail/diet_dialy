@@ -118,7 +118,7 @@ export default function SymptomTrendsChart({
             <YAxis yAxisId="right" orientation="right" />
             <Tooltip
               formatter={(value, name) => [
-                `${value}${name === 'frequency' ? '%' : '/10'}`,
+                `${value}${name === 'frequency' ? '%' : '/5'}`,
                 name === 'frequency' ? '頻率' : '嚴重度'
               ]}
             />
@@ -136,7 +136,7 @@ export default function SymptomTrendsChart({
               type="monotone"
               dataKey="severity"
               stroke="#ef4444"
-              name="嚴重度 (/10)"
+              name="嚴重度 (/5)"
               strokeWidth={2}
             />
           </LineChart>

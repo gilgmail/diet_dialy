@@ -621,9 +621,9 @@ export default function FoodDatabasePage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
-                          {food.condition_scores ? (
+                          {food.medical_scores ? (
                             <div className="space-y-1">
-                              {Object.entries(food.condition_scores as any).slice(0, 2).map(([condition, score]: [string, any]) => (
+                              {Object.entries(food.medical_scores as any).slice(0, 2).map(([condition, score]: [string, any]) => (
                                 <div key={condition} className="flex items-center space-x-2">
                                   <span className="text-xs text-gray-600 capitalize">{condition}:</span>
                                   <span className={`text-xs px-2 py-1 rounded ${
@@ -635,9 +635,9 @@ export default function FoodDatabasePage() {
                                   </span>
                                 </div>
                               ))}
-                              {Object.keys(food.condition_scores).length > 2 && (
+                              {Object.keys(food.medical_scores).length > 2 && (
                                 <div className="text-xs text-gray-500">
-                                  +{Object.keys(food.condition_scores).length - 2} 更多
+                                  +{Object.keys(food.medical_scores).length - 2} 更多
                                 </div>
                               )}
                             </div>
@@ -767,7 +767,7 @@ export default function FoodDatabasePage() {
           </div>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <div className="text-2xl font-bold text-green-600">
-              {allFoods.filter(f => f.verification_status === 'admin_approved').length}
+              {allFoods.filter(f => f.verification_status === 'approved').length}
             </div>
             <div className="text-sm text-gray-600">已驗證食物</div>
           </div>
@@ -1010,7 +1010,7 @@ export default function FoodDatabasePage() {
               <FoodScoreCard
                 foodId={selectedFoodForScoring.id}
                 foodName={selectedFoodForScoring.name}
-                currentScores={selectedFoodForScoring.condition_scores}
+                currentScores={selectedFoodForScoring.medical_scores}
                 currentNotes={selectedFoodForScoring.verification_notes || ''}
                 onScoreUpdate={handleScoreUpdate}
                 isEditable={true}

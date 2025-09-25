@@ -9,6 +9,10 @@ export interface LocalFoodEntry extends Omit<FoodEntryInsert, 'user_id'> {
   synced: boolean
   sync_attempts: number
   last_sync_attempt?: string
+  // 自訂食物相關欄位
+  is_custom_food?: boolean
+  custom_food_source?: string
+  food_category?: string
 }
 
 export class LocalStorageService {
@@ -35,14 +39,18 @@ export class LocalStorageService {
     }
   }
 
-  // 新增本地記錄
+  // 新增本地記錄（支持自訂食物）
   addLocalEntry(entryData: FoodEntryInsert): LocalFoodEntry {
     const newEntry: LocalFoodEntry = {
       ...entryData,
       id: this.generateLocalId(),
       created_at: new Date().toISOString(),
       synced: false,
-      sync_attempts: 0
+      sync_attempts: 0,
+      // 保留自訂食物資訊
+      is_custom_food: (entryData as any).is_custom_food || false,
+      custom_food_source: (entryData as any).custom_food_source || null,
+      food_category: (entryData as any).food_category || null
     }
 
     const entries = this.getLocalEntries()

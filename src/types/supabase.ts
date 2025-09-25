@@ -173,6 +173,8 @@ export type Database = {
           photo_url: string | null
           location: string | null
           sync_status: 'pending' | 'synced' | 'error'
+          is_custom_food: boolean | null
+          custom_food_source: string | null
           created_at: string
           updated_at: string
         }
@@ -197,6 +199,8 @@ export type Database = {
           photo_url?: string | null
           location?: string | null
           sync_status?: 'pending' | 'synced' | 'error'
+          is_custom_food?: boolean | null
+          custom_food_source?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -221,6 +225,8 @@ export type Database = {
           photo_url?: string | null
           location?: string | null
           sync_status?: 'pending' | 'synced' | 'error'
+          is_custom_food?: boolean | null
+          custom_food_source?: string | null
           created_at?: string
           updated_at?: string
         }
