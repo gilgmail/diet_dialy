@@ -12,7 +12,11 @@ const customJestConfig = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     // Mock UUID as a static string for tests
-    '^uuid$': '<rootDir>/src/__tests__/__mocks__/uuid.js',
+    '^uuid$': '<rootDir>/src/__mocks__/uuid.js',
+    // Mock Google Sheets service
+    '^@/lib/google/sheets-service$': '<rootDir>/src/__mocks__/google-sheets-service.ts',
+    // Mock Offline Storage service
+    '^@/lib/offline-storage$': '<rootDir>/src/__mocks__/offline-storage.ts',
   },
   transformIgnorePatterns: [
     'node_modules/(?!(uuid|recharts|d3-.*|jspdf|html2canvas)/)',
@@ -20,6 +24,7 @@ const customJestConfig = {
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
     '<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}',
+    '!<rootDir>/src/**/__mocks__/**',
   ],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
@@ -33,6 +38,7 @@ const customJestConfig = {
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
+    '<rootDir>/src/__tests__/automated-sync-tests.spec.ts', // Playwright test, not Jest
   ],
   // Add jest environment options for better test handling
   testEnvironmentOptions: {

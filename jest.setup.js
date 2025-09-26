@@ -53,3 +53,34 @@ jest.mock('recharts', () => ({
 
 // Mock environment variables
 process.env.NODE_ENV = 'test'
+
+// Mock Offline Storage service
+jest.mock('@/lib/offline-storage', () => ({
+  offlineStorage: {
+    storeOfflineAction: jest.fn(async (action) => {
+      const id = `offline_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      return id;
+    }),
+    getOfflineActions: jest.fn(async () => []),
+    markActionSynced: jest.fn(async () => {}),
+    clearSyncedActions: jest.fn(async () => {}),
+    hasPendingSync: jest.fn(async () => false),
+    syncToServer: jest.fn(async () => ({ success: 0, failed: 0 })),
+    getStorageInfo: jest.fn(() => ({ used: 0, available: 1024 * 1024, percentage: 0 })),
+    clearAllData: jest.fn(async () => {})
+  },
+  OfflineAction: {}
+}));
+
+// Mock Supabase auth service
+jest.mock('@/hooks/useSupabaseAuth', () => ({
+  useSupabaseAuth: () => ({
+    user: null,
+    userProfile: null,
+    isLoading: false,
+    isAuthenticated: false,
+    signInWithGoogle: jest.fn(),
+    signOut: jest.fn(),
+    updateProfile: jest.fn(),
+  })
+}));

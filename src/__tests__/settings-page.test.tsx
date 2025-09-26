@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import SettingsPage from '@/app/settings/page'
 
@@ -299,14 +299,24 @@ describe('SettingsPage', () => {
 
       // Click save
       const saveButton = screen.getByText('💾 儲存設定')
-      fireEvent.click(saveButton)
+      await act(async () => {
+        fireEvent.click(saveButton)
+      })
 
       await waitFor(() => {
         expect(mockSupabaseAuth.updateProfile).toHaveBeenCalledWith({
           medical_conditions: ['發炎性腸病 (IBD)'],
           allergies: ['牛奶'],
           dietary_restrictions: ['素食'],
-          medications: []
+          medications: [],
+          preferences: {
+            bodyMeasurements: {
+              birthYear: null,
+              gender: null,
+              height: null,
+              weight: null,
+            },
+          },
         })
       })
     })
@@ -317,7 +327,9 @@ describe('SettingsPage', () => {
       render(<SettingsPage />)
 
       const saveButton = screen.getByText('💾 儲存設定')
-      fireEvent.click(saveButton)
+      await act(async () => {
+        fireEvent.click(saveButton)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('✅ 設定已儲存成功！')).toBeInTheDocument()
