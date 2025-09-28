@@ -56,7 +56,7 @@ class IBDConfigManager {
     return {
       claude: {
         apiKey: process.env.ANTHROPIC_API_KEY || '',
-        model: process.env.CLAUDE_MODEL || 'claude-3-sonnet-20240229',
+        model: process.env.CLAUDE_MODEL || 'claude-3-5-haiku-20241022',
         maxTokens: parseInt(process.env.CLAUDE_MAX_TOKENS || '1000'),
         temperature: parseFloat(process.env.CLAUDE_TEMPERATURE || '0.3'),
         timeout: parseInt(process.env.API_REQUEST_TIMEOUT || '30000')

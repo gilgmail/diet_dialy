@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
 import { foodsService } from '@/lib/supabase/foods'
 import type { Food, FoodInsert, FoodUpdate } from '@/types/supabase'
-import FoodScoreCard from '@/components/admin/FoodScoreCard'
 import Link from 'next/link'
 import {
   Database,
@@ -69,6 +68,8 @@ export default function FoodDatabasePage() {
   } | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(20)
+  // AI 評分相關狀態
+  const [isAIScoring, setIsAIScoring] = useState(false)
 
   const isAdmin = userProfile?.is_admin || false
 
@@ -201,7 +202,6 @@ export default function FoodDatabasePage() {
           fiber: editingFood.fiber,
           sugar: editingFood.sugar,
           sodium: editingFood.sodium,
-          medical_scores: editingFood.medical_scores,
           verification_status: editingFood.verification_status || 'pending',
           verification_notes: editingFood.verification_notes,
           created_by: user?.id,
@@ -225,7 +225,6 @@ export default function FoodDatabasePage() {
           fiber: editingFood.fiber,
           sugar: editingFood.sugar,
           sodium: editingFood.sodium,
-          medical_scores: editingFood.medical_scores,
           verification_status: editingFood.verification_status,
           verification_notes: editingFood.verification_notes,
           verified_by: user?.id,
@@ -252,16 +251,8 @@ export default function FoodDatabasePage() {
     try {
       setOperationLoading('delete')
 
-      const food = allFoods.find(f => f.id === id)
-
-      // 提供軟刪除和硬刪除選項
-      if (food?.is_custom) {
-        // 自訂食物可以直接刪除
-        await foodsService.deleteFood(id, user?.id!)
-      } else {
-        // 系統食物使用軟刪除 (標記為rejected)
-        await foodsService.softDeleteFood(id, user?.id!, '管理員刪除')
-      }
+      // 所有食物都使用硬刪除（完全移除）
+      await foodsService.deleteFood(id, user?.id!)
 
       setAllFoods(prev => prev.filter(f => f.id !== id))
       setShowDeleteConfirm(null)
@@ -273,22 +264,109 @@ export default function FoodDatabasePage() {
     }
   }
 
-  const handleScoreUpdate = async (foodId: string, scores: any, notes: string) => {
+
+  // AI 評分處理函數
+  const handleAIScoring = async (food: Food) => {
     try {
-      setOperationLoading('score-update')
+      setIsAIScoring(true)
 
-      const updatedFood = await foodsService.updateFoodScores(foodId, scores, notes, user?.id!)
-
-      if (updatedFood) {
-        // 更新本地狀態
-        setAllFoods(prev => prev.map(f => f.id === updatedFood.id ? updatedFood : f))
-        setSelectedFoodForScoring(null)
+      // 構建食物資料
+      const foodData = {
+        foodName: food.name,
+        category: food.category,
+        nutrition: {
+          calories: food.calories || undefined,
+          protein: food.protein || undefined,
+          carbohydrates: food.carbohydrates || undefined,
+          fat: food.fat || undefined,
+          fiber: food.fiber || undefined,
+          sodium: food.sodium || undefined,
+          sugar: food.sugar || undefined
+        },
+        brand: food.brand || undefined
       }
+
+      console.log('🤖 開始 AI 評分:', foodData)
+
+      // 調用 AI 評分 API
+      const response = await fetch('/api/ai/nutrition-score', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(foodData)
+      })
+
+      if (!response.ok) {
+        throw new Error(`AI API 請求失敗: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || 'AI 評分失敗')
+      }
+
+      // 構建完整的食物記錄以更新到資料庫
+      const updatedFoodData = {
+        ...foodData,
+        // AI 評分結果 - 基本欄位
+        ibd_score: result.score.value,
+        ibd_reasoning: result.analysis.reasoning,
+        ibd_recommendations: result.analysis.recommendations,
+        ibd_confidence: result.analysis.confidence,
+        ibd_warning: result.analysis.warning || null,
+        ibd_scored_at: result.timestamp,
+        ibd_scorer_version: 'v2.0-enhanced-ai-admin',
+        // AI 推理詳細欄位
+        nutritional_highlights: result.analysis.nutritional_highlights || [],
+        risk_factors: result.analysis.risk_factors || [],
+        scoring_method: result.method === 'claude_api' ? 'enhanced_ai' : 'fallback_system',
+      }
+
+      // 更新資料庫
+      const saveResponse = await fetch('/api/foods/save-demo-food', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...updatedFoodData, name: food.name })
+      })
+
+      const saveResult = await saveResponse.json()
+
+      if (saveResult.success) {
+        // 更新本地狀態
+        const updatedFood = {
+          ...food,
+          ibd_score: result.score.value,
+          ibd_reasoning: result.analysis.reasoning,
+          ibd_recommendations: result.analysis.recommendations,
+          ibd_confidence: result.analysis.confidence,
+          ibd_warning: result.analysis.warning || null,
+          ibd_scored_at: result.timestamp,
+          ibd_scorer_version: 'v2.0-enhanced-ai-admin',
+          ai_analysis: {
+            nutritional_highlights: result.analysis.nutritional_highlights || [],
+            risk_factors: result.analysis.risk_factors || [],
+            scoring_method: result.method === 'claude_api' ? 'enhanced_ai' : 'fallback_system',
+          }
+        }
+
+        setAllFoods(prev => prev.map(f => f.id === food.id ? updatedFood : f))
+        setSelectedFoodForScoring(updatedFood)
+
+        const confidencePercent = (result.analysis.confidence * 100).toFixed(0)
+        alert(`✅ AI 評分完成！\n\n食物：${food.name}\n評分：${result.score.value}/5 (${result.score.level})\n信心度：${confidencePercent}%\n評分已保存到資料庫`)
+      } else {
+        throw new Error(saveResult.error || '保存失敗')
+      }
+
     } catch (error) {
-      console.error('更新評分失敗:', error)
-      setError('更新評分失敗，請稍後重試')
+      console.error('AI 評分失敗:', error)
+      alert(`❌ AI 評分失敗：${error instanceof Error ? error.message : '未知錯誤'}`)
     } finally {
-      setOperationLoading(null)
+      setIsAIScoring(false)
     }
   }
 
@@ -476,6 +554,62 @@ export default function FoodDatabasePage() {
             </div>
           </div>
         )}
+
+        {/* AI 推理分析系統入口 */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm border border-blue-200 p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl">🤖</span>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">AI 推理分析系統</h3>
+                <p className="text-sm text-gray-600">使用增強版 AI 進行專業營養分析和 IBD 適用性評估</p>
+              </div>
+            </div>
+            <div className="flex space-x-3">
+              <Link
+                href="/admin/ai-scoring-demo"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors space-x-2"
+              >
+                <span>🔬</span>
+                <span>AI 評分測試</span>
+              </Link>
+              <button
+                onClick={() => window.open('/admin/ibd-scoring', '_blank')}
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors space-x-2"
+              >
+                <span>📊</span>
+                <span>IBD 評分管理</span>
+              </button>
+            </div>
+          </div>
+
+          {/* AI 分析統計 */}
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-3 rounded border">
+              <div className="text-sm text-gray-600">AI 已評分食物</div>
+              <div className="text-lg font-bold text-blue-600">
+                {allFoods.filter(food => food.ibd_score !== null && food.ibd_score !== undefined).length}
+              </div>
+            </div>
+            <div className="bg-white p-3 rounded border">
+              <div className="text-sm text-gray-600">高評分食物 (4-5分)</div>
+              <div className="text-lg font-bold text-green-600">
+                {allFoods.filter(food => food.ibd_score && food.ibd_score >= 4).length}
+              </div>
+            </div>
+            <div className="bg-white p-3 rounded border">
+              <div className="text-sm text-gray-600">需注意食物 (1-2分)</div>
+              <div className="text-lg font-bold text-red-600">
+                {allFoods.filter(food => food.ibd_score && food.ibd_score <= 2).length}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Filters and Controls */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
@@ -567,7 +701,7 @@ export default function FoodDatabasePage() {
                     </div>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    醫療評分
+                    AI 推理分析
                   </th>
                   <th
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -621,23 +755,47 @@ export default function FoodDatabasePage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
-                          {food.medical_scores ? (
-                            <div className="space-y-1">
-                              {Object.entries(food.medical_scores as any).slice(0, 2).map(([condition, score]: [string, any]) => (
-                                <div key={condition} className="flex items-center space-x-2">
-                                  <span className="text-xs text-gray-600 capitalize">{condition}:</span>
-                                  <span className={`text-xs px-2 py-1 rounded ${
-                                    score?.general_safety >= 4 ? 'bg-green-100 text-green-800' :
-                                    score?.general_safety >= 2 ? 'bg-yellow-100 text-yellow-800' :
-                                    'bg-red-100 text-red-800'
-                                  }`}>
-                                    {score?.general_safety !== undefined ? score.general_safety : 'N/A'}
+                          {food.ibd_score !== null && food.ibd_score !== undefined ? (
+                            <div className="space-y-2">
+                              {/* IBD 評分顯示 */}
+                              <div className="flex items-center space-x-2">
+                                <span className="text-xs text-gray-600">IBD 評分:</span>
+                                <span className={`text-xs px-2 py-1 rounded font-medium ${
+                                  food.ibd_score >= 4 ? 'bg-green-100 text-green-800' :
+                                  food.ibd_score >= 3 ? 'bg-blue-100 text-blue-800' :
+                                  food.ibd_score >= 2 ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800'
+                                }`}>
+                                  {food.ibd_score}/5
+                                </span>
+                              </div>
+
+                              {/* 信心度顯示 */}
+                              {food.ibd_confidence && (
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-xs text-gray-600">信心度:</span>
+                                  <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded">
+                                    {(food.ibd_confidence * 100).toFixed(0)}%
                                   </span>
                                 </div>
-                              ))}
-                              {Object.keys(food.medical_scores).length > 2 && (
+                              )}
+
+                              {/* AI 分析資料預覽 */}
+                              {food.ai_analysis && (
                                 <div className="text-xs text-gray-500">
-                                  +{Object.keys(food.medical_scores).length - 2} 更多
+                                  {food.ai_analysis.nutritional_highlights?.length > 0 && (
+                                    <div>🌟 營養亮點: {food.ai_analysis.nutritional_highlights.length} 項</div>
+                                  )}
+                                  {food.ai_analysis.risk_factors?.length > 0 && (
+                                    <div>🚨 風險因素: {food.ai_analysis.risk_factors.length} 項</div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* 評分版本 */}
+                              {food.ibd_scorer_version && (
+                                <div className="text-xs text-gray-400">
+                                  {food.ibd_scorer_version.includes('enhanced') ? '增強版 AI' : '基礎 AI'}
                                 </div>
                               )}
                             </div>
@@ -646,7 +804,7 @@ export default function FoodDatabasePage() {
                               onClick={() => setSelectedFoodForScoring(food)}
                               className="text-xs text-blue-600 hover:text-blue-800 underline"
                             >
-                              設定評分
+                              設定 AI 評分
                             </button>
                           )}
                         </td>
@@ -666,7 +824,7 @@ export default function FoodDatabasePage() {
                             <button
                               onClick={() => setSelectedFoodForScoring(food)}
                               className="text-green-600 hover:text-green-900"
-                              title="醫療評分"
+                              title="AI 推理分析"
                             >
                               <Star className="w-4 h-4" />
                             </button>
@@ -915,6 +1073,104 @@ export default function FoodDatabasePage() {
                 />
               </div>
 
+              {/* AI 推理分析區域 - 只對非新增食物顯示 */}
+              {!editingFood.isNew && (
+                <div className="pt-6 border-t border-gray-200">
+                  <h3 className="text-md font-medium text-gray-900 mb-4 flex items-center">
+                    <span className="mr-2">🤖</span>
+                    AI 推理分析預覽
+                  </h3>
+
+                  {/* 顯示當前食物的 AI 評分 */}
+                  {editingFood.ibd_score !== null && editingFood.ibd_score !== undefined ? (
+                    <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-600">IBD 評分:</span>
+                          <span className={`px-2 py-1 rounded text-sm font-medium ${
+                            editingFood.ibd_score >= 4 ? 'bg-green-100 text-green-800' :
+                            editingFood.ibd_score >= 3 ? 'bg-blue-100 text-blue-800' :
+                            editingFood.ibd_score >= 2 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {editingFood.ibd_score}/5
+                          </span>
+                        </div>
+                        {editingFood.ibd_confidence && (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-600">信心度:</span>
+                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-sm">
+                              {(editingFood.ibd_confidence * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleAIScoring(editingFood)}
+                          disabled={isAIScoring}
+                          className={`flex-1 px-3 py-2 rounded text-sm transition-colors flex items-center justify-center space-x-2 ${
+                            isAIScoring
+                              ? 'bg-gray-400 text-white cursor-not-allowed'
+                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                          }`}
+                        >
+                          {isAIScoring ? (
+                            <>
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                              <span>重新評分中...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>🔄</span>
+                              <span>重新 AI 評分</span>
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => window.open(`/admin/ai-scoring-demo?food=${encodeURIComponent(editingFood.name || '')}`, '_blank')}
+                          className="flex-1 bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
+                        >
+                          <span>🔬</span>
+                          <span>詳細分析</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-yellow-50 p-4 rounded-lg mb-4">
+                      <p className="text-sm text-yellow-800 mb-3">此食物尚未進行 AI 評分</p>
+                      <button
+                        onClick={() => handleAIScoring(editingFood)}
+                        disabled={isAIScoring}
+                        className={`w-full px-3 py-2 rounded text-sm transition-colors flex items-center justify-center space-x-2 ${
+                          isAIScoring
+                            ? 'bg-gray-400 text-white cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
+                      >
+                        {isAIScoring ? (
+                          <>
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                            <span>AI 評分中...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>🤖</span>
+                            <span>開始 AI 評分</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-gray-500 text-center">
+                    更改食物資訊後，建議重新進行 AI 評分以獲得最準確的分析結果
+                  </p>
+                </div>
+              )}
+
               <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
                 <button
                   onClick={() => {
@@ -958,7 +1214,7 @@ export default function FoodDatabasePage() {
                 <h3 className="text-lg font-semibold text-gray-900">確認刪除</h3>
               </div>
               <p className="text-gray-600 mb-6">
-                您確定要刪除這個食物嗎？此操作無法復原。
+                您確定要永久刪除這個食物嗎？此操作將完全移除該食物記錄，無法復原。
               </p>
               <div className="flex justify-end space-x-3">
                 <button
@@ -995,9 +1251,13 @@ export default function FoodDatabasePage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
-                醫療評分系統 - {selectedFoodForScoring.name}
-              </h2>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <span className="mr-2">🍽️</span>
+                  食物完整資料檢視
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">{selectedFoodForScoring.name}</p>
+              </div>
               <button
                 onClick={() => setSelectedFoodForScoring(null)}
                 className="text-gray-400 hover:text-gray-600"
@@ -1006,15 +1266,317 @@ export default function FoodDatabasePage() {
               </button>
             </div>
 
-            <div className="p-6">
-              <FoodScoreCard
-                foodId={selectedFoodForScoring.id}
-                foodName={selectedFoodForScoring.name}
-                currentScores={selectedFoodForScoring.medical_scores}
-                currentNotes={selectedFoodForScoring.verification_notes || ''}
-                onScoreUpdate={handleScoreUpdate}
-                isEditable={true}
-              />
+            <div className="p-6 space-y-6">
+              {/* 基本食物資料 */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="text-md font-medium text-gray-900 mb-4 flex items-center">
+                  <span className="mr-2">🍽️</span>
+                  基本食物資料
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-700 w-20">中文名稱:</span>
+                      <span className="text-sm text-gray-900">{selectedFoodForScoring.name}</span>
+                    </div>
+                    {selectedFoodForScoring.name_en && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-700 w-20">英文名稱:</span>
+                        <span className="text-sm text-gray-900">{selectedFoodForScoring.name_en}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-700 w-20">分類:</span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {selectedFoodForScoring.category}
+                      </span>
+                    </div>
+                    {selectedFoodForScoring.brand && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-700 w-20">品牌:</span>
+                        <span className="text-sm text-gray-900">{selectedFoodForScoring.brand}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-700 w-20">驗證狀態:</span>
+                      <div className="flex items-center space-x-1">
+                        {(selectedFoodForScoring.verification_status === 'admin_approved' || selectedFoodForScoring.verification_status === 'approved') && (
+                          <>
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <span className="text-sm text-green-700">已驗證</span>
+                          </>
+                        )}
+                        {selectedFoodForScoring.verification_status === 'pending' && (
+                          <>
+                            <Clock className="w-4 h-4 text-yellow-600" />
+                            <span className="text-sm text-yellow-700">待審核</span>
+                          </>
+                        )}
+                        {selectedFoodForScoring.verification_status === 'rejected' && (
+                          <>
+                            <XCircle className="w-4 h-4 text-red-600" />
+                            <span className="text-sm text-red-700">已拒絕</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-700 w-20">建立時間:</span>
+                      <span className="text-sm text-gray-900">
+                        {new Date(selectedFoodForScoring.created_at).toLocaleString('zh-TW')}
+                      </span>
+                    </div>
+                    {selectedFoodForScoring.updated_at && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-700 w-20">更新時間:</span>
+                        <span className="text-sm text-gray-900">
+                          {new Date(selectedFoodForScoring.updated_at).toLocaleString('zh-TW')}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-700 w-20">食物類型:</span>
+                      <span className={`text-sm px-2 py-1 rounded ${selectedFoodForScoring.is_custom ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
+                        {selectedFoodForScoring.is_custom ? '自訂食物' : '系統食物'}
+                      </span>
+                    </div>
+                    {selectedFoodForScoring.taiwan_origin && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-700 w-20">來源:</span>
+                        <span className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                          🇹🇼 台灣食物
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* 營養成分資料 */}
+              <div className="bg-orange-50 p-4 rounded-lg">
+                <h3 className="text-md font-medium text-gray-900 mb-4 flex items-center">
+                  <span className="mr-2">🥗</span>
+                  營養成分 (每100g)
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {selectedFoodForScoring.calories && (
+                    <div className="bg-white p-3 rounded border text-center">
+                      <div className="text-lg font-bold text-red-600">{selectedFoodForScoring.calories}</div>
+                      <div className="text-xs text-gray-600">熱量 (kcal)</div>
+                    </div>
+                  )}
+                  {selectedFoodForScoring.protein && (
+                    <div className="bg-white p-3 rounded border text-center">
+                      <div className="text-lg font-bold text-blue-600">{selectedFoodForScoring.protein}g</div>
+                      <div className="text-xs text-gray-600">蛋白質</div>
+                    </div>
+                  )}
+                  {selectedFoodForScoring.carbohydrates && (
+                    <div className="bg-white p-3 rounded border text-center">
+                      <div className="text-lg font-bold text-yellow-600">{selectedFoodForScoring.carbohydrates}g</div>
+                      <div className="text-xs text-gray-600">碳水化合物</div>
+                    </div>
+                  )}
+                  {selectedFoodForScoring.fat && (
+                    <div className="bg-white p-3 rounded border text-center">
+                      <div className="text-lg font-bold text-purple-600">{selectedFoodForScoring.fat}g</div>
+                      <div className="text-xs text-gray-600">脂肪</div>
+                    </div>
+                  )}
+                  {selectedFoodForScoring.fiber && (
+                    <div className="bg-white p-3 rounded border text-center">
+                      <div className="text-lg font-bold text-green-600">{selectedFoodForScoring.fiber}g</div>
+                      <div className="text-xs text-gray-600">膳食纖維</div>
+                    </div>
+                  )}
+                  {selectedFoodForScoring.sodium && (
+                    <div className="bg-white p-3 rounded border text-center">
+                      <div className="text-lg font-bold text-orange-600">{selectedFoodForScoring.sodium}mg</div>
+                      <div className="text-xs text-gray-600">鈉</div>
+                    </div>
+                  )}
+                  {selectedFoodForScoring.sugar && (
+                    <div className="bg-white p-3 rounded border text-center">
+                      <div className="text-lg font-bold text-pink-600">{selectedFoodForScoring.sugar}g</div>
+                      <div className="text-xs text-gray-600">糖</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+
+              {/* AI 推理分析系統 */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="text-md font-medium text-gray-900 mb-4 flex items-center">
+                  <span className="mr-2">🤖</span>
+                  AI 推理分析系統
+                </h3>
+
+                {/* 顯示現有 AI 評分 */}
+                {selectedFoodForScoring.ibd_score !== null && selectedFoodForScoring.ibd_score !== undefined ? (
+                  <div className="space-y-4 mb-4">
+                    <div className="bg-white p-4 rounded border">
+                      <h4 className="font-medium text-gray-900 mb-3">當前 AI 評分</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-600">IBD 評分:</span>
+                          <span className={`px-2 py-1 rounded text-sm font-medium ${
+                            selectedFoodForScoring.ibd_score >= 4 ? 'bg-green-100 text-green-800' :
+                            selectedFoodForScoring.ibd_score >= 3 ? 'bg-blue-100 text-blue-800' :
+                            selectedFoodForScoring.ibd_score >= 2 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {selectedFoodForScoring.ibd_score}/5
+                          </span>
+                        </div>
+                        {selectedFoodForScoring.ibd_confidence && (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-600">信心度:</span>
+                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-sm">
+                              {(selectedFoodForScoring.ibd_confidence * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {selectedFoodForScoring.ibd_scored_at && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          評分時間: {new Date(selectedFoodForScoring.ibd_scored_at).toLocaleString('zh-TW')}
+                          {selectedFoodForScoring.ibd_scorer_version && (
+                            <span className="ml-2 px-1 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
+                              {selectedFoodForScoring.ibd_scorer_version.includes('enhanced') ? '增強版 AI' : '基礎 AI'}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 詳細 AI 分析內容 */}
+                    {selectedFoodForScoring.ibd_reasoning && selectedFoodForScoring.ibd_reasoning.length > 0 && (
+                      <div className="bg-white p-4 rounded border mt-4">
+                        <h5 className="font-medium text-gray-900 mb-3 flex items-center">
+                          <span className="mr-2">🧠</span>
+                          AI 推理分析
+                        </h5>
+                        <div className="space-y-2">
+                          {selectedFoodForScoring.ibd_reasoning.map((reason, index) => (
+                            <div key={index} className="flex items-start space-x-2">
+                              <span className="text-blue-500 mt-1">•</span>
+                              <span className="text-sm text-gray-700">{reason}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 營養亮點與風險因素 */}
+                    {selectedFoodForScoring.ai_analysis && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        {selectedFoodForScoring.ai_analysis.nutritional_highlights && selectedFoodForScoring.ai_analysis.nutritional_highlights.length > 0 && (
+                          <div className="bg-green-50 p-3 rounded border">
+                            <h6 className="font-medium text-green-800 mb-2 flex items-center">
+                              <span className="mr-1">🌟</span>
+                              營養亮點
+                            </h6>
+                            <div className="space-y-1">
+                              {selectedFoodForScoring.ai_analysis.nutritional_highlights.map((highlight, index) => (
+                                <div key={index} className="text-sm text-green-700">
+                                  • {highlight}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedFoodForScoring.ai_analysis.risk_factors && selectedFoodForScoring.ai_analysis.risk_factors.length > 0 && (
+                          <div className="bg-red-50 p-3 rounded border">
+                            <h6 className="font-medium text-red-800 mb-2 flex items-center">
+                              <span className="mr-1">🚨</span>
+                              風險因素
+                            </h6>
+                            <div className="space-y-1">
+                              {selectedFoodForScoring.ai_analysis.risk_factors.map((risk, index) => (
+                                <div key={index} className="text-sm text-red-700">
+                                  • {risk}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 專業建議 */}
+                    {selectedFoodForScoring.ibd_recommendations && (
+                      <div className="bg-blue-50 p-4 rounded border mt-4">
+                        <h5 className="font-medium text-blue-900 mb-3 flex items-center">
+                          <span className="mr-2">💡</span>
+                          專業建議
+                        </h5>
+                        <div className="text-sm text-blue-800 whitespace-pre-line">
+                          {selectedFoodForScoring.ibd_recommendations}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 特別警示 */}
+                    {selectedFoodForScoring.ibd_warning && (
+                      <div className="bg-yellow-50 p-4 rounded border border-yellow-200 mt-4">
+                        <h5 className="font-medium text-yellow-900 mb-2 flex items-center">
+                          <span className="mr-2">⚠️</span>
+                          特別警示
+                        </h5>
+                        <div className="text-sm text-yellow-800">
+                          {selectedFoodForScoring.ibd_warning}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-white p-4 rounded border border-dashed border-gray-300 text-center mb-4">
+                    <p className="text-gray-500 text-sm">尚未進行 AI 評分</p>
+                  </div>
+                )}
+
+                {/* AI 推理操作按鈕 */}
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => handleAIScoring(selectedFoodForScoring)}
+                    disabled={isAIScoring}
+                    className={`flex-1 px-4 py-2 rounded transition-colors flex items-center justify-center space-x-2 ${
+                      isAIScoring
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {isAIScoring ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>AI 評分中...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>🤖</span>
+                        <span>{selectedFoodForScoring.ibd_score ? '重新' : '開始'} AI 評分</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => window.open(`/admin/ai-scoring-demo?food=${encodeURIComponent(selectedFoodForScoring.name)}`, '_blank')}
+                    className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <span>🔬</span>
+                    <span>詳細 AI 分析</span>
+                  </button>
+                </div>
+
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  使用增強版 AI 進行專業營養分析和 IBD 適用性評估
+                </p>
+              </div>
             </div>
           </div>
         </div>

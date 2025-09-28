@@ -25,49 +25,8 @@ export interface GoogleUserInfo {
   verified_email: boolean;
 }
 
-export interface GoogleSheetConfig {
-  spreadsheetId: string;
-  sheetName: string;
-  headers: string[];
-  dataRange: string;
-}
-
-export interface MedicalSpreadsheetStructure {
-  [key: string]: {
-    name: string;
-    headers: string[];
-    description: string;
-  };
-}
-
-export interface GoogleDriveFile {
-  id: string;
-  name: string;
-  mimeType: string;
-  size?: string;
-  createdTime: string;
-  modifiedTime: string;
-  parents?: string[];
-  webViewLink?: string;
-}
-
-export interface GoogleDriveUploadOptions {
-  folderId?: string;
-  fileName: string;
-  mimeType: string;
-  description?: string;
-  isPublic?: boolean;
-}
-
-export interface MedicalDataBackup {
-  userId: string;
-  conditions: MedicalCondition[];
-  backupDate: Date;
-  spreadsheetId?: string;
-  driveFiles: string[];
-  encryptionKey?: string;
-  version: string;
-}
+// Removed Google Sheets and Drive specific interfaces
+// Keeping only OAuth-related types for user authentication
 
 export interface SyncStatus {
   isOnline: boolean;

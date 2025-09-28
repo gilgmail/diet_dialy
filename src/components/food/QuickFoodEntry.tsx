@@ -28,8 +28,8 @@ export default function QuickFoodEntry({
 
   // 選填項目 - 預設100g
   const [amount, setAmount] = useState<number>(100);
-  const [photos, setPhotos] = useState<File[]>([]);
   const [notes, setNotes] = useState('');
+  // Photo functionality removed in Phase 1 optimization
 
   const [filteredFoods, setFilteredFoods] = useState<DatabaseFoodItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -99,20 +99,7 @@ export default function QuickFoodEntry({
     setAmount(100); // 預設份量
   };
 
-  // 照片上傳處理
-  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    if (files.length + photos.length > 2) { // 減少到最多2張
-      onError('最多只能上傳 2 張照片');
-      return;
-    }
-    setPhotos(prev => [...prev, ...files]);
-  };
-
-  // 移除照片
-  const removePhoto = (index: number) => {
-    setPhotos(prev => prev.filter((_, i) => i !== index));
-  };
+  // Photo upload functionality removed in Phase 1 optimization
 
   // AI分析並新增食材到資料庫
   const analyzeAndAddFood = async (foodName: string): Promise<DatabaseFoodItem | null> => {
@@ -259,7 +246,7 @@ export default function QuickFoodEntry({
           customUnit: 'g'
         },
         notes: notes.trim() || undefined,
-        tags: photos.length > 0 ? ['photo'] : undefined
+        tags: undefined // Photo functionality removed
       };
 
       // 直接呼叫歷史記錄API
@@ -432,47 +419,7 @@ export default function QuickFoodEntry({
               </p>
             </div>
 
-            {/* 照片上傳 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                📸 照片記錄 - 選填
-              </label>
-
-              {photos.length < 2 && (
-                <label className="flex items-center justify-center w-full h-20 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors">
-                  <div className="text-center">
-                    <span className="text-xs text-gray-600">點擊上傳照片</span>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                </label>
-              )}
-
-              {photos.length > 0 && (
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {photos.map((photo, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={URL.createObjectURL(photo)}
-                        alt={`照片 ${index + 1}`}
-                        className="w-full h-16 object-cover rounded-lg"
-                      />
-                      <button
-                        onClick={() => removePhoto(index)}
-                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full hover:bg-red-600"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Photo functionality removed in Phase 1 optimization */}
 
             {/* 備註 */}
             <div>

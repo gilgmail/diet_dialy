@@ -12,7 +12,8 @@ import {
   FileText,
   CheckCircle,
   AlertCircle,
-  Clock
+  Clock,
+  Copy
 } from 'lucide-react'
 
 export default function AdminDashboard() {
@@ -166,9 +167,23 @@ export default function AdminDashboard() {
                 <CheckCircle className="w-8 h-8 text-green-500 mr-3" />
                 <h3 className="text-lg font-semibold text-gray-900">食物審核</h3>
               </div>
-              <p className="text-gray-600 mb-4">專門審核用戶提交的待審核食物</p>
+              <p className="text-gray-600 mb-4">專門審核用戶提交的待審核食物，支援 AI 協助評分</p>
               <div className="flex items-center text-sm text-green-600">
                 <span>進入審核 →</span>
+              </div>
+            </div>
+          </Link>
+
+          {/* Duplicate Foods Management */}
+          <Link href="/admin/duplicate-foods">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="flex items-center mb-4">
+                <Copy className="w-8 h-8 text-red-500 mr-3" />
+                <h3 className="text-lg font-semibold text-gray-900">重複食物管理</h3>
+              </div>
+              <p className="text-gray-600 mb-4">檢測並清理資料庫中的重複食物項目，保持資料庫整潔</p>
+              <div className="flex items-center text-sm text-red-600">
+                <span>進入管理 →</span>
               </div>
             </div>
           </Link>

@@ -1,10 +1,23 @@
 'use client';
 
-import { FoodEntry } from './google/sheets-service';
+// Google Sheets service removed in Phase 1 optimization
+// Using local FoodEntry interface
+
+export interface FoodEntry {
+  id?: string;
+  timestamp?: string;
+  date: string;
+  time: string;
+  foodName: string;
+  category: string;
+  medicalScore?: number;
+  notes?: string;
+  userId: string;
+}
 
 /**
- * 離線食物記錄暫存管理器
- * 提供本地存儲、同步狀態管理和批量上傳功能
+ * 離線食物記錄暫存管理器 - 簡化版（移除 Google Sheets 依賴）
+ * 提供本地存儲、Supabase 同步和批量處理功能
  */
 
 export interface PendingFoodEntry extends Omit<FoodEntry, 'id' | 'timestamp'> {

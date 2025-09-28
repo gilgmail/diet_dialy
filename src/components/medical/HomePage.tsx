@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Camera,
   Heart,
   AlertTriangle,
   TrendingUp,
@@ -21,7 +20,7 @@ import {
 } from 'lucide-react';
 import type { MedicalCondition } from '@/types/medical';
 import MedicalConditionSelector from './MedicalConditionSelector';
-// import { FoodCamera } from './FoodCamera'; // Not implemented in Week 1
+// Camera functionality removed in Phase 1 optimization
 import MedicalScoreCard from './MedicalScoreCard';
 // import { RiskFactorsList } from './RiskFactorsList'; // Not implemented in Week 1
 // import { AlternativesGrid } from './AlternativesGrid'; // Not implemented in Week 1
@@ -58,12 +57,12 @@ const MOCK_USER_PROFILE = {
 };
 
 export function HomePage({ className = '' }: HomePageProps) {
-  const [activeView, setActiveView] = useState<'dashboard' | 'setup' | 'camera' | 'analysis' | 'risks' | 'alternatives'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'setup' | 'analysis' | 'risks' | 'alternatives'>('dashboard');
   const [userConditions, setUserConditions] = useState<MedicalCondition[]>(MOCK_USER_PROFILE.medicalConditions);
   const [setupComplete, setSetupComplete] = useState(MOCK_USER_PROFILE.setupComplete);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [lastPhoto, setLastPhoto] = useState<{file: File, analysis: ScoringResult} | null>(null);
+  // Photo functionality removed in Phase 1 optimization
 
   // Update time every minute
   useEffect(() => {
@@ -79,14 +78,7 @@ export function HomePage({ className = '' }: HomePageProps) {
     }
   };
 
-  const handlePhotoCapture = (photo: File, medicalContext: string) => {
-    // Mock analysis - in real app would call API
-    setLastPhoto({
-      file: photo,
-      analysis: MOCK_SCORING_RESULT
-    });
-    setActiveView('analysis');
-  };
+  // Photo capture functionality removed in Phase 1 optimization
 
   const getGreeting = () => {
     const hour = currentTime.getHours();
@@ -106,7 +98,7 @@ export function HomePage({ className = '' }: HomePageProps) {
   // Navigation items
   const navigationItems = [
     { id: 'dashboard', label: '主控台', icon: Activity },
-    { id: 'camera', label: '拍攝分析', icon: Camera },
+    // Camera functionality removed in Phase 1
     { id: 'risks', label: '風險因子', icon: AlertTriangle },
     { id: 'alternatives', label: '替代食物', icon: Heart },
     { id: 'setup', label: '醫療設定', icon: Settings }
@@ -345,19 +337,7 @@ export function HomePage({ className = '' }: HomePageProps) {
 
                     {/* Quick Actions */}
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveView('camera')}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-medical-primary/10 rounded-lg flex items-center justify-center">
-                              <Camera className="w-5 h-5 text-medical-primary" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <h3 className="font-medium">拍攝分析</h3>
-                              <p className="text-xs text-muted-foreground">拍攝食物獲得醫療建議</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                      {/* Camera card removed in Phase 1 optimization */}
 
                       <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveView('risks')}>
                         <CardContent className="p-4">
@@ -413,13 +393,7 @@ export function HomePage({ className = '' }: HomePageProps) {
                   />
                 )}
 
-                {/* Camera View */}
-                {activeView === 'camera' && (
-                  <FoodCamera
-                    medicalConditions={userConditions}
-                    onPhotoCapture={handlePhotoCapture}
-                  />
-                )}
+                {/* Camera functionality removed in Phase 1 optimization */}
 
                 {/* Analysis View */}
                 {activeView === 'analysis' && lastPhoto && (
@@ -454,7 +428,7 @@ export function HomePage({ className = '' }: HomePageProps) {
       >
         {activeView === 'dashboard' && '主控台已載入'}
         {activeView === 'setup' && '醫療設定頁面已載入'}
-        {activeView === 'camera' && '相機功能已載入'}
+        {/* Camera functionality removed */}
         {activeView === 'analysis' && '分析結果已載入'}
         {activeView === 'risks' && '風險因子清單已載入'}
         {activeView === 'alternatives' && '替代食物清單已載入'}

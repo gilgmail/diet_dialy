@@ -93,6 +93,15 @@ export type Database = {
           verified_at: string | null
           created_by: string | null
           is_custom: boolean
+          // IBD AI 評分欄位
+          ibd_score: number | null
+          ibd_reasoning: Json
+          ibd_recommendations: string | null
+          ibd_confidence: number | null
+          ibd_warning: string | null
+          ibd_scored_at: string | null
+          ibd_scorer_version: string | null
+          ai_analysis: Json
           created_at: string
           updated_at: string
         }
@@ -120,6 +129,15 @@ export type Database = {
           verified_at?: string | null
           created_by?: string | null
           is_custom?: boolean
+          // IBD AI 評分欄位
+          ibd_score?: number | null
+          ibd_reasoning?: Json
+          ibd_recommendations?: string | null
+          ibd_confidence?: number | null
+          ibd_warning?: string | null
+          ibd_scored_at?: string | null
+          ibd_scorer_version?: string | null
+          ai_analysis?: Json
           created_at?: string
           updated_at?: string
         }
@@ -147,6 +165,15 @@ export type Database = {
           verified_at?: string | null
           created_by?: string | null
           is_custom?: boolean
+          // IBD AI 評分欄位
+          ibd_score?: number | null
+          ibd_reasoning?: Json
+          ibd_recommendations?: string | null
+          ibd_confidence?: number | null
+          ibd_warning?: string | null
+          ibd_scored_at?: string | null
+          ibd_scorer_version?: string | null
+          ai_analysis?: Json
           created_at?: string
           updated_at?: string
         }

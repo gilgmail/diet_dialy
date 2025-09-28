@@ -35,7 +35,7 @@ export class RealClaudeIBDScorer {
     // 從環境變數載入 API 配置
     this.config = {
       apiKey: process.env.ANTHROPIC_API_KEY || '',
-      model: process.env.CLAUDE_MODEL || 'claude-3-sonnet-20240229',
+      model: process.env.CLAUDE_MODEL || 'claude-3-5-haiku-20241022',
       maxTokens: parseInt(process.env.CLAUDE_MAX_TOKENS || '1000'),
       temperature: parseFloat(process.env.CLAUDE_TEMPERATURE || '0.3')
     }
@@ -68,48 +68,77 @@ export class RealClaudeIBDScorer {
   private buildNutritionistPrompt(food: FoodNutrition): string {
     const foodDescription = this.formatFoodDescription(food)
 
-    return `你是一位擁有 18 年豐富經驗的專業營養師，專精於 IBD（發炎性腸道疾病，包括克隆氏病和潰瘍性結腸炎）患者的飲食管理。
+    return `你是一位擁有 20+ 年豐富臨床經驗的資深營養師和胃腸科專家，專精於 IBD（發炎性腸道疾病）患者的營養治療。你結合了循證醫學、營養學和臨床實務經驗。
 
-你具備以下專業知識：
-- IBD 病理生理學和營養需求
-- FODMAP 理論和實際應用
-- 抗發炎飲食原則
-- 消化道友善食物特性
-- 個人化營養策略
+🎯 **專業領域**：
+- IBD 病理生理學與營養療法
+- FODMAP 理論與個人化應用
+- 抗發炎飲食與腸道菌群調節
+- 消化道癒合與營養修復
+- 疾病活躍期與緩解期營養策略
+- 營養不良預防與治療
 
-評分標準（0-3分制）：
-- 0分：不合適 - 可能引發症狀惡化或加重腸道發炎
-- 1分：謹慎 - 需要小心評估，可能因人而異，建議少量嘗試
-- 2分：適中 - 一般情況下可以適量食用，風險相對較低
-- 3分：推薦 - 對IBD患者友善，安全性高且有營養益處
+⭐ **AI 增強評分系統 (1-5分制)**：
+- **1分 🚫**: 高風險 - 強烈不建議，可能嚴重惡化症狀或引發復發
+- **2分 ⚠️**: 需謹慎 - 個體差異大，建議專業指導下小量測試
+- **3分 😐**: 適中風險 - 適量食用，需觀察個人反應並調整
+- **4分 👍**: 推薦 - IBD 友善，安全性高，適合日常飲食規劃
+- **5分 ✅**: 極度推薦 - 治療性食物，有助症狀控制和腸道修復
 
-評估考量因素：
-1. 纖維含量與類型（不溶性纖維風險較高，可溶性纖維較友善）
-2. FODMAP成分含量（低FODMAP食物較安全）
-3. 加工程度（過度加工食品炎症風險較高）
-4. 抗發炎特性（omega-3脂肪酸、抗氧化物質等）
-5. 消化難易度（容易消化的食物風險較低）
-6. 常見IBD觸發因子（辛辣、高脂、咖啡因、酒精等）
-7. 營養密度（高營養密度但溫和的食物較佳）
-8. 食用方式影響（烹飪方式、份量控制等）
+🔬 **多維度智能分析框架**：
+1. **纖維分析** - 不溶性vs可溶性纖維比例及腸道影響
+2. **FODMAP 評估** - 發酵性寡糖、雙糖、單糖和多元醇含量
+3. **炎症指標** - 促炎vs抗炎成分分析（AA vs EPA/DHA比例）
+4. **消化負荷** - 胃腸道消化難易度和停留時間
+5. **營養密度** - 營養價值vs症狀風險的效益分析
+6. **個人化因子** - 疾病階段、症狀類型、併發症考量
+7. **烹飪影響** - 加工方式對營養和安全性的影響
+8. **臨床證據** - 最新研究文獻和臨床實證支持度
+9. **症狀誘發** - 腹瀉、腹痛、脹氣等症狀的風險評估
+10. **長期影響** - 營養狀況、骨密度、免疫功能的長期考量
 
 請評估以下食物：
 
 ${foodDescription}
 
-請以JSON格式回應，包含：
+📋 **要求 AI 增強分析報告 (JSON格式)**：
 {
-  "score": 0-3的整數評分,
-  "reasoning": ["詳細評分理由1", "評分理由2", "評分理由3"],
-  "recommendations": "具體的食用建議和注意事項",
-  "confidence": 0-1的信心度數值,
-  "warning": "如有特殊警告則填入，否則省略此欄位",
-  "nutritional_highlights": ["營養亮點1", "亮點2"],
-  "risk_factors": ["風險因子1", "因子2"],
-  "preparation_tips": "烹飪或食用建議"
+  "score": "1-5的整數評分",
+  "reasoning": [
+    "主要評分依據（結合多維度分析）",
+    "FODMAP和纖維影響評估",
+    "炎症和消化負荷分析",
+    "臨床證據和安全性考量"
+  ],
+  "recommendations": "個人化飲食建議，包含份量、時機、搭配建議",
+  "confidence": "0-1信心度（基於證據強度和臨床共識）",
+  "warning": "特殊警告或注意事項（如有）",
+  "nutritional_highlights": [
+    "關鍵營養優勢",
+    "對IBD患者的特殊益處",
+    "營養密度和生物利用度"
+  ],
+  "risk_factors": [
+    "潛在症狀誘發因子",
+    "消化道刺激風險",
+    "長期食用考量"
+  ],
+  "preparation_tips": "最佳烹飪方式和食用策略，以最大化益處並降低風險",
+  "disease_stage_advice": {
+    "active_phase": "疾病活躍期建議",
+    "remission_phase": "緩解期建議"
+  },
+  "symptom_management": {
+    "diarrhea": "腹瀉症狀管理",
+    "abdominal_pain": "腹痛預防",
+    "bloating": "脹氣控制"
+  },
+  "clinical_evidence": "相關研究證據強度（高/中/低）和主要發現",
+  "interaction_notes": "與其他食物或藥物的相互作用（如適用）"
 }
 
-請確保回應專業、實用，符合IBD患者的實際需求，並基於最新的營養學研究和臨床經驗。`
+🎯 **評估要求**：
+請基於最新的 IBD 營養研究、臨床指南和實證醫學，提供精準、個人化、可操作的專業建議。考慮台灣飲食習慣和食材特性，確保建議的實用性和文化適應性。`
   }
 
   // 格式化食物描述
@@ -139,8 +168,21 @@ ${foodDescription}
   private async callClaudeAPI(food: FoodNutrition): Promise<string> {
     const prompt = this.buildNutritionistPrompt(food)
 
+    // 確保使用正確的模型，避免回退到舊版本
+    const validModels = [
+      'claude-3-5-haiku-20241022',
+      'claude-3-haiku-20240307',
+      'claude-3-5-sonnet-latest'
+    ]
+
+    let modelToUse = this.config.model
+    if (!validModels.includes(modelToUse)) {
+      console.warn(`⚠️ 模型 ${modelToUse} 可能已過期，使用預設模型`)
+      modelToUse = 'claude-3-5-haiku-20241022'
+    }
+
     const response = await this.anthropic.messages.create({
-      model: this.config.model,
+      model: modelToUse,
       max_tokens: this.config.maxTokens,
       temperature: this.config.temperature,
       messages: [
@@ -193,13 +235,13 @@ ${foodDescription}
     }
   }
 
-  // 驗證評分範圍
-  private validateScore(score: any): 0 | 1 | 2 | 3 {
+  // 驗證評分範圍 (1-5 分系統)
+  private validateScore(score: any): 1 | 2 | 3 | 4 | 5 {
     const numScore = Number(score)
-    if ([0, 1, 2, 3].includes(numScore)) {
-      return numScore as 0 | 1 | 2 | 3
+    if ([1, 2, 3, 4, 5].includes(numScore)) {
+      return numScore as 1 | 2 | 3 | 4 | 5
     }
-    return 1 // 預設為謹慎評分
+    return 2 // 預設為謹慎評分
   }
 
   // 驗證信心度範圍
@@ -211,67 +253,120 @@ ${foodDescription}
     return 0.5 // 預設中等信心度
   }
 
-  // 備用評分邏輯（當 API 不可用時）
+  // 🤖 智能備用評分系統 (當 Claude API 不可用時)
   private fallbackScoring(food: FoodNutrition): IBDFoodScore {
-    const { name, category } = food
+    console.log('🤖 觸發備用評分系統，食物:', food.name)
+
+    const { name, category, calories, protein, fiber } = food
     const foodText = name.toLowerCase()
 
-    // 高風險關鍵字 (0分)
+    // 🚫 極高風險關鍵字 (1分)
+    const veryHighRiskKeywords = [
+      '辣椒', '麻辣', '辛辣', '咖啡', '酒精', '咖哩', '胡椒',
+      '芥末', '韓式', '泰式', '川菜', '火鍋'
+    ]
+
+    // ⚠️ 高風險關鍵字 (1-2分)
     const highRiskKeywords = [
-      '辣', '麻辣', '咖啡', '酒', '生菜', '堅果', '種子',
-      '玉米', '豆', '全麥', '高纖', '油炸', '燒烤'
+      '生菜', '生食', '堅果', '種子', '玉米', '全豆', '黑豆',
+      '油炸', '燒烤', '碳烤', '全麥', '高纖', '粗糧', '糙米'
     ]
 
-    // 中等風險關鍵字 (1分)
+    // 🤔 中等風險關鍵字 (2-3分)
     const moderateRiskKeywords = [
-      '牛奶', '乳製品', '奶', '起司', '優格',
-      '蒜', '洋蔥', '番茄', '柑橘'
+      '牛奶', '乳製品', '奶油', '起司', '優格', '乳酪',
+      '大蒜', '洋蔥', '青蔥', '韭菜', '番茄', '柑橘', '橙子'
     ]
 
-    // 推薦關鍵字 (3分)
-    const recommendedKeywords = [
-      '粥', '蒸', '魚', '雞胸', '雞蛋', '蛋',
-      '白米', '香蕉', '胡蘿蔔', '南瓜'
+    // 👍 良好食物關鍵字 (4分)
+    const goodKeywords = [
+      '蒸煮', '清蒸', '水煮', '魚肉', '雞胸', '瘦肉', '雞蛋',
+      '胡蘿蔔', '南瓜', '馬鈴薯', '地瓜', '小白菜', '菠菜'
     ]
 
-    let score: 0 | 1 | 2 | 3 = 2
-    let reasoning = ['基於營養師經驗的評估（備用模式）']
+    // ✅ 極推薦關鍵字 (5分)
+    const excellentKeywords = [
+      '白粥', '稀飯', '白米飯', '香蕉', '燕麥粥', '蒸蛋',
+      '雞湯', '魚湯', '小米粥', '藕粉', '嫩豆腐'
+    ]
+
+    // 🏥 分析演算法
+    let score: 1 | 2 | 3 | 4 | 5 = 3
+    let reasoning: string[] = []
     let confidence = 0.6
+    let riskFactors: string[] = []
+    let nutritionalHighlights: string[] = []
 
-    if (highRiskKeywords.some(keyword => foodText.includes(keyword))) {
-      score = 0
-      reasoning = [`含有IBD高風險成分，建議避免`]
+    // 極高風險檢測
+    if (veryHighRiskKeywords.some(keyword => foodText.includes(keyword))) {
+      score = 1
+      reasoning = [
+        '含有強刺激性成分，可能嚴重惡化IBD症狀',
+        '辛辣食物會增加腸道發炎反應',
+        '建議完全避免以預防症狀復發'
+      ]
+      riskFactors = ['腸道刺激', '症狀惡化風險', '發炎反應']
+      confidence = 0.9
+    }
+    // 高風險檢測
+    else if (highRiskKeywords.some(keyword => foodText.includes(keyword))) {
+      score = Math.random() < 0.7 ? 1 : 2 // 70%機率為1分
+      reasoning = [
+        '含有不易消化或高纖維成分',
+        '可能增加腸道負擔和症狀風險',
+        '建議避免或諮詢營養師'
+      ]
+      riskFactors = ['消化負擔', '纖維過高', '症狀誘發']
       confidence = 0.8
-    } else if (recommendedKeywords.some(keyword => foodText.includes(keyword))) {
-      score = 3
+    }
+    // 極推薦檢測
+    else if (excellentKeywords.some(keyword => foodText.includes(keyword))) {
+      score = 5
+      reasoning = [
+        '屬於IBD患者極度友善食物',
+        '易消化且營養價值高',
+        '有助腸道修復和症狀控制'
+      ]
+      nutritionalHighlights = ['易消化', '低刺激性', '營養豐富']
+      confidence = 0.9
+    }
+    // 良好食物檢測
+    else if (goodKeywords.some(keyword => foodText.includes(keyword))) {
+      score = 4
       reasoning = [`屬於IBD患者友善食物`]
       confidence = 0.8
     } else if (moderateRiskKeywords.some(keyword => foodText.includes(keyword))) {
-      score = 1
+      score = 2
       reasoning = [`需要謹慎評估個人耐受性`]
       confidence = 0.7
     }
+
+    console.log(`🤖 備用評分結果: ${food.name} = ${score}分, 推理:`, reasoning)
 
     return {
       score,
       reasoning,
       recommendations: this.getRecommendationByScore(score),
       confidence,
-      warning: score === 0 ? '建議完全避免此食物' : undefined
+      warning: score === 1 ? '建議完全避免此食物' : undefined,
+      nutritional_highlights: nutritionalHighlights,
+      risk_factors: riskFactors
     }
   }
 
-  // 根據評分生成建議
+  // 根據評分生成建議 (1-5 分系統)
   private getRecommendationByScore(score: number): string {
     switch (score) {
-      case 0:
-        return 'IBD患者應完全避免此食物，可能引發症狀惡化或加重腸道發炎反應。'
       case 1:
-        return '需要謹慎評估個人耐受性，建議從極小份量開始嘗試，並密切觀察身體反應。'
+        return 'IBD患者應完全避免此食物，可能引發症狀惡化或加重腸道發炎反應。'
       case 2:
-        return '一般情況下可以適量食用，建議注意烹飪方式和食用份量，觀察個人反應。'
+        return '需要謹慎評估個人耐受性，建議從極小份量開始嘗試，並密切觀察身體反應。'
       case 3:
-        return '推薦食用，對IBD患者相對安全且有營養益處，可作為日常飲食的一部分。'
+        return '一般情況下可以適量食用，建議注意烹飪方式和食用份量，觀察個人反應。'
+      case 4:
+        return '對IBD患者較為友善，安全性較高，適合作為日常飲食的一部分。'
+      case 5:
+        return '極度推薦食用，對IBD患者非常安全且有顯著營養益處，可安心作為主要食物來源。'
       default:
         return '請諮詢專業營養師或胃腸科醫師獲得個人化建議。'
     }

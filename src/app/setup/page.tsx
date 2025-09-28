@@ -4,8 +4,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { GoogleAuthButton } from '@/components/google/GoogleAuthButton';
-import { MedicalDataSetup } from '@/components/google/MedicalDataSetup';
-import { SyncStatus } from '@/components/google/SyncStatus';
 import { MedicalConditionSelector } from '@/components/medical/MedicalConditionSelector';
 import { useMedicalData } from '@/lib/google';
 import type { MedicalProfile } from '@/types/medical';
@@ -44,14 +42,6 @@ export default function SetupPage() {
     setSetupError(error);
   };
 
-  const handleSetupComplete = () => {
-    setCurrentStep(4);
-  };
-
-  const handleSetupError = (error: string) => {
-    setSetupError(error);
-  };
-
   const handleMedicalProfileComplete = (profile: Partial<MedicalProfile>) => {
     // 更新用戶配置文件
     setUserProfile(prev => ({
@@ -60,7 +50,7 @@ export default function SetupPage() {
       userId: user?.id || 'demo-user',
       id: user?.id || 'demo-user'
     }));
-    setCurrentStep(3); // 前往醫療數據初始化步驟
+    setCurrentStep(3); // 直接跳到完成步驟，跳過Google Sheets設置
   };
 
   const steps = [
@@ -80,17 +70,10 @@ export default function SetupPage() {
     },
     {
       number: 3,
-      title: '初始化醫療數據',
-      description: '為您的健康信息設置安全存儲',
-      icon: Database,
-      completed: currentStep > 3
-    },
-    {
-      number: 4,
       title: '準備使用',
-      description: '開始追蹤您的醫療數據',
+      description: '開始追蹤您的醫療數據和AI營養師評估',
       icon: CheckCircle,
-      completed: currentStep >= 4
+      completed: currentStep >= 3
     }
   ];
 
@@ -215,15 +198,7 @@ export default function SetupPage() {
             />
           )}
 
-          {currentStep === 3 && userProfile && (
-            <MedicalDataSetup
-              userProfile={userProfile}
-              onSetupComplete={handleSetupComplete}
-              onSetupError={handleSetupError}
-            />
-          )}
-
-          {currentStep === 4 && (
+          {currentStep === 3 && (
             <Card className="max-w-2xl w-full">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2 text-green-700">
@@ -231,12 +206,10 @@ export default function SetupPage() {
                   <span>設置完成！</span>
                 </CardTitle>
                 <CardDescription>
-                  您的安全醫療數據存儲已準備就緒。
+                  您的帳戶已設置完成，可以開始使用AI營養師功能。
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Sync Status */}
-                <SyncStatus showDetails={true} />
 
                 {/* Next Steps */}
                 <div className="text-center space-y-4">
@@ -244,19 +217,19 @@ export default function SetupPage() {
                   <div className="grid grid-cols-1 gap-3 text-sm">
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>開始記錄您的每日症狀</span>
+                      <span>開始記錄您的食物攝入</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>追蹤您的食物攝入和反應</span>
+                      <span>使用AI營養師評估食物健康度</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>監控藥物有效性</span>
+                      <span>追蹤食物和症狀的關聯性</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>為您的醫療保健提供者生成報告</span>
+                      <span>查看健康趨勢分析和建議</span>
                     </div>
                   </div>
 

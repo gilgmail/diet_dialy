@@ -99,7 +99,7 @@ export class IBDScoringService {
     return data as IBDScoredFood[]
   }
 
-  // 為單一食物進行 IBD 評分
+  // 為單一食物進行 IBD 評分 - 使用增強版 AI API
   async scoreFood(foodId: string): Promise<IBDFoodScore | null> {
     try {
       // 先獲取食物資訊
@@ -108,24 +108,81 @@ export class IBDScoringService {
         throw new Error('找不到指定食物')
       }
 
-      // 呼叫 AI 評分服務
-      const score = await ibdNutritionistScorer.scoreFood({
-        name: food.name,
-        category: food.category,
-        calories: food.calories || undefined,
-        protein: food.protein || undefined,
-        carbohydrates: food.carbohydrates || undefined,
-        fat: food.fat || undefined,
-        fiber: food.fiber || undefined,
-        sodium: food.sodium || undefined
+      // 呼叫增強版 AI 評分 API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/ai/nutrition-score`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          foodName: food.name,
+          category: food.category,
+          nutrition: {
+            calories: food.calories || undefined,
+            protein: food.protein || undefined,
+            carbohydrates: food.carbohydrates || undefined,
+            fat: food.fat || undefined,
+            fiber: food.fiber || undefined,
+            sodium: food.sodium || undefined,
+            sugar: food.sugar || undefined
+          },
+          brand: food.brand || undefined,
+          ingredients: food.ingredients || undefined,
+          preparation: food.preparation || undefined
+        })
       })
+
+      if (!response.ok) {
+        throw new Error(`AI API 請求失敗: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || 'AI 評分失敗')
+      }
+
+      // 轉換為舊格式以保持相容性
+      const score: IBDFoodScore = {
+        score: result.score.value,
+        reasoning: result.analysis.reasoning || [],
+        recommendations: result.analysis.recommendations || '',
+        confidence: result.analysis.confidence || 0.5,
+        warning: result.analysis.warning
+      }
 
       // 更新資料庫
       await this.updateFoodScore(foodId, score)
 
       return score
     } catch (error) {
-      console.error('食物評分失敗:', error)
+      console.error('增強版 AI 評分失敗:', error)
+
+      // 嘗試使用舊的備用評分系統
+      try {
+        const food = await this.getFoodIBDScore(foodId)
+        if (!food) return null
+
+        console.log('使用備用評分系統...')
+        const fallbackScore = await ibdNutritionistScorer.scoreFood({
+          name: food.name,
+          category: food.category,
+          calories: food.calories || undefined,
+          protein: food.protein || undefined,
+          carbohydrates: food.carbohydrates || undefined,
+          fat: food.fat || undefined,
+          fiber: food.fiber || undefined,
+          sodium: food.sodium || undefined
+        })
+
+        if (fallbackScore) {
+          await this.updateFoodScore(foodId, fallbackScore)
+          return fallbackScore
+        }
+      } catch (fallbackError) {
+        console.error('備用評分也失敗:', fallbackError)
+      }
+
       return null
     }
   }
@@ -200,7 +257,7 @@ export class IBDScoringService {
         ibd_confidence: score.confidence,
         ibd_warning: score.warning,
         ibd_scored_at: new Date().toISOString(),
-        ibd_scorer_version: 'v1.0'
+        ibd_scorer_version: 'v2.0-enhanced-ai'
       })
       .eq('id', foodId)
 

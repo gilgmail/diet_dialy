@@ -1,8 +1,8 @@
 // IBD 營養師 AI 評分系統
 // 基於 18 年營養師專業經驗的 Claude AI 評分引擎
 
-interface IBDFoodScore {
-  score: 0 | 1 | 2 | 3  // 0: 不合適, 1: 謹慎, 2: 適中, 3: 推薦
+export interface IBDFoodScore {
+  score: 1 | 2 | 3 | 4 | 5  // 1: 不建議, 2: 謹慎, 3: 適中, 4: 良好, 5: 極推薦
   reasoning: string[]    // 評分理由
   recommendations: string // 食用建議
   confidence: number     // 信心度 0-1

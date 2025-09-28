@@ -23,7 +23,10 @@ import {
   Star,
   Edit3,
   Database,
-  Shield
+  Shield,
+  Bot,
+  Brain,
+  Sparkles
 } from 'lucide-react';
 
 interface PendingFoodEntry extends Food {
@@ -48,6 +51,8 @@ export default function FoodVerificationPage(): JSX.Element {
   const [suggestedCategory, setSuggestedCategory] = useState('');
   const [suggestedMedicalScore, setSuggestedMedicalScore] = useState(5);
   const [medicalScores, setMedicalScores] = useState<any>({});
+  const [isAIAnalyzing, setIsAIAnalyzing] = useState(false);
+  const [aiScore, setAiScore] = useState<any>(null);
 
   // 初始化醫療評分
   const initializeMedicalScores = (food?: PendingFoodEntry) => {
@@ -181,6 +186,109 @@ export default function FoodVerificationPage(): JSX.Element {
     } catch (error) {
       console.error('拒絕失敗:', error);
       setError('拒絕失敗，請重試');
+    }
+  };
+
+  // AI 協助分析功能
+  const handleAIAssist = async (food: PendingFoodEntry) => {
+    setIsAIAnalyzing(true);
+    setError(null);
+
+    try {
+      // 準備食物資料給 AI 評分（符合 API 格式）
+      const foodData = {
+        foodName: food.name,
+        category: food.category || '未分類',
+        nutrition: {
+          calories: food.calories,
+          protein: food.protein,
+          carbohydrates: food.carbohydrates,
+          fat: food.fat,
+          fiber: food.fiber,
+          sodium: food.sodium,
+          sugar: food.sugar
+        },
+        brand: food.brand,
+        ingredients: food.description
+      };
+
+      // 調用 AI 評分 API
+      const response = await fetch('/api/ai/nutrition-score', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(foodData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI 分析失敗: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        setAiScore(result);
+
+        // 自動填入建議分類（使用食物原本分類）
+        if (food.category) {
+          setSuggestedCategory(food.category);
+        }
+
+        // 自動填入醫療評分
+        if (result.score?.value) {
+          setSuggestedMedicalScore(result.score.value);
+
+          // 根據 AI 評分自動填入醫療評分欄位
+          const aiScore = result.score.value;
+          setMedicalScores((prev: any) => ({
+            ...prev,
+            ibd: {
+              acute_phase: Math.max(1, aiScore - 1), // 急性期通常較低
+              general_safety: aiScore,
+              remission_phase: Math.min(5, aiScore + 0.5) // 緩解期可稍高
+            },
+            cancer_chemo: {
+              general_safety: aiScore,
+              immune_support: aiScore,
+              nausea_friendly: aiScore,
+              nutrition_density: aiScore
+            }
+          }));
+        }
+
+        // 自動填入管理員備註
+        if (result.analysis) {
+          const aiNotes = [];
+          if (result.score?.value) {
+            aiNotes.push(`🤖 AI 評分: ${result.score.value}分 (${result.score.level}) ${result.score.emoji}`);
+          }
+          if (result.analysis.reasoning && result.analysis.reasoning.length > 0) {
+            aiNotes.push(`📝 分析要點: ${result.analysis.reasoning.slice(0, 2).join('、')}`);
+          }
+          if (result.analysis.recommendations) {
+            aiNotes.push(`💡 建議: ${result.analysis.recommendations.substring(0, 100)}...`);
+          }
+          if (result.analysis.confidence) {
+            aiNotes.push(`🎯 信心度: ${(result.analysis.confidence * 100).toFixed(0)}%`);
+          }
+          if (result.analysis.warning) {
+            aiNotes.push(`⚠️ 警告: ${result.analysis.warning}`);
+          }
+
+          setAdminNotes(aiNotes.join('\n\n'));
+        }
+
+        setError(null);
+      } else {
+        throw new Error(result.error || 'AI 分析回應格式錯誤');
+      }
+    } catch (error) {
+      console.error('AI 協助分析失敗:', error);
+      setError(error instanceof Error ? error.message : 'AI 分析失敗，請重試');
+      setAiScore(null);
+    } finally {
+      setIsAIAnalyzing(false);
     }
   };
 
@@ -423,6 +531,8 @@ export default function FoodVerificationPage(): JSX.Element {
                     setSelectedFood(food);
                     setSuggestedCategory(food.category || '');
                     initializeMedicalScores(food);
+                    setAiScore(null); // 清除之前的 AI 評分
+                    setAdminNotes(''); // 清除管理員備註
                   }}
                 >
                   <CardContent className="p-4">
@@ -630,7 +740,51 @@ export default function FoodVerificationPage(): JSX.Element {
                   {/* Admin Review Section */}
                   {selectedFood.verification_status === 'pending' && (
                     <div className="border-t pt-4">
-                      <h4 className="font-semibold text-gray-900 mb-3">管理員審核</h4>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-gray-900">管理員審核</h4>
+                        <Button
+                          onClick={() => handleAIAssist(selectedFood)}
+                          disabled={isAIAnalyzing}
+                          variant="outline"
+                          size="sm"
+                          className="bg-gradient-to-r from-purple-500 to-blue-500 text-white border-0 hover:from-purple-600 hover:to-blue-600"
+                        >
+                          {isAIAnalyzing ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              AI 分析中...
+                            </>
+                          ) : (
+                            <>
+                              <Brain className="w-4 h-4 mr-2" />
+                              🤖 AI 協助分析
+                            </>
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* AI Score Display */}
+                      {aiScore && (
+                        <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Sparkles className="w-4 h-4 text-purple-600" />
+                            <span className="font-medium text-purple-700">AI 營養師評估結果</span>
+                            <Badge className="bg-purple-100 text-purple-700">
+                              {aiScore.score?.value ? `${aiScore.score.value}分 ${aiScore.score.emoji}` : 'N/A'}
+                            </Badge>
+                          </div>
+                          {aiScore.analysis?.reasoning && aiScore.analysis.reasoning.length > 0 && (
+                            <div className="text-sm text-gray-700">
+                              <strong>評分依據:</strong> {aiScore.analysis.reasoning.slice(0, 2).join('、')}
+                            </div>
+                          )}
+                          {aiScore.analysis?.confidence && (
+                            <div className="text-sm text-gray-600 mt-1">
+                              信心度: {(aiScore.analysis.confidence * 100).toFixed(0)}% | 方法: {aiScore.method}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       <div className="space-y-4">
                         <div>

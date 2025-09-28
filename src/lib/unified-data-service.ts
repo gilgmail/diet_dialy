@@ -25,7 +25,7 @@ export interface UnifiedFoodEntry {
 
 /**
  * 統一的資料管理服務
- * 負責協調本地資料和 Google Sheets 資料
+ * 負責協調本地資料和 Supabase 資料
  */
 class UnifiedDataService {
   private listeners: Array<(entries: UnifiedFoodEntry[]) => void> = [];
