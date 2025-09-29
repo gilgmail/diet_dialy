@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
 import { foodsService } from '@/lib/supabase/foods'
+import { useMedicalAccess } from '@/hooks/useMedicalAccess'
+import { MultiConditionScorer } from '@/lib/ai/multi-condition-scorer'
+import FilteredAIAnalysis from '@/components/ai/FilteredAIAnalysis'
+import AdminAIAnalysis from '@/components/ai/AdminAIAnalysis'
 import type { Food, FoodInsert, FoodUpdate } from '@/types/supabase'
+import type { MultiConditionResult } from '@/lib/ai/multi-condition-scorer'
 import Link from 'next/link'
 import {
   Database,
@@ -58,6 +63,7 @@ export default function FoodDatabasePage() {
   const [showNewFoodForm, setShowNewFoodForm] = useState(false)
   const [operationLoading, setOperationLoading] = useState<string | null>(null)
   const [selectedFoodForScoring, setSelectedFoodForScoring] = useState<Food | null>(null)
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<MultiConditionResult | null>(null)
   const [dbStats, setDbStats] = useState<{
     total: number
     approved: number
@@ -70,6 +76,7 @@ export default function FoodDatabasePage() {
   const [itemsPerPage] = useState(20)
   // AI 評分相關狀態
   const [isAIScoring, setIsAIScoring] = useState(false)
+  const { hasPermission, isAdmin: userIsAdmin, filterAnalysis } = useMedicalAccess()
 
   const isAdmin = userProfile?.is_admin || false
 
@@ -265,106 +272,142 @@ export default function FoodDatabasePage() {
   }
 
 
-  // AI 評分處理函數
+  // 增強版 AI 評分處理函數 - 支援多種醫療狀況
   const handleAIScoring = async (food: Food) => {
     try {
       setIsAIScoring(true)
+      setAiAnalysisResult(null)
 
       // 構建食物資料
       const foodData = {
-        foodName: food.name,
+        name: food.name,
         category: food.category,
-        nutrition: {
-          calories: food.calories || undefined,
-          protein: food.protein || undefined,
-          carbohydrates: food.carbohydrates || undefined,
-          fat: food.fat || undefined,
-          fiber: food.fiber || undefined,
-          sodium: food.sodium || undefined,
-          sugar: food.sugar || undefined
-        },
-        brand: food.brand || undefined
+        calories: food.calories || undefined,
+        protein: food.protein || undefined,
+        carbohydrates: food.carbohydrates || undefined,
+        fat: food.fat || undefined,
+        fiber: food.fiber || undefined,
+        sodium: food.sodium || undefined,
+        sugar: food.sugar || undefined,
+        brand: food.brand || undefined,
+        ingredients: undefined, // TODO: 從食物描述或其他欄位提取
+        preparation: undefined  // TODO: 從食物描述或其他欄位提取
       }
 
-      console.log('🤖 開始 AI 評分:', foodData)
+      console.log('🤖 開始多條件 AI 評分:', foodData)
 
-      // 調用 AI 評分 API
-      const response = await fetch('/api/ai/nutrition-score', {
+      // 使用新的多條件 API
+      const apiResponse = await fetch('/api/ai/multi-condition-score', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(foodData)
+        body: JSON.stringify({
+          foodName: food.name,
+          category: food.category,
+          nutrition: {
+            calories: food.calories,
+            protein: food.protein,
+            carbohydrates: food.carbohydrates,
+            fat: food.fat,
+            fiber: food.fiber,
+            sodium: food.sodium,
+            sugar: food.sugar
+          },
+          brand: food.brand,
+          ingredients: undefined, // TODO: 從食物描述或其他欄位提取
+          preparation: undefined, // TODO: 從食物描述或其他欄位提取
+          fullAnalysis: isAdmin // 管理員獲得完整分析
+        })
       })
 
-      if (!response.ok) {
-        throw new Error(`AI API 請求失敗: ${response.status}`)
+      if (!apiResponse.ok) {
+        throw new Error(`多條件 API 請求失敗: ${apiResponse.status}`)
       }
 
-      const result = await response.json()
+      const analysisResult = await apiResponse.json()
 
-      if (!result.success) {
-        throw new Error(result.error || 'AI 評分失敗')
+      if (!analysisResult.success) {
+        throw new Error(analysisResult.error || '多條件 AI 評分失敗')
       }
 
-      // 構建完整的食物記錄以更新到資料庫
-      const updatedFoodData = {
-        ...foodData,
-        // AI 評分結果 - 基本欄位
-        ibd_score: result.score.value,
-        ibd_reasoning: result.analysis.reasoning,
-        ibd_recommendations: result.analysis.recommendations,
-        ibd_confidence: result.analysis.confidence,
-        ibd_warning: result.analysis.warning || null,
-        ibd_scored_at: result.timestamp,
-        ibd_scorer_version: 'v2.0-enhanced-ai-admin',
-        // AI 推理詳細欄位
-        nutritional_highlights: result.analysis.nutritional_highlights || [],
-        risk_factors: result.analysis.risk_factors || [],
-        scoring_method: result.method === 'claude_api' ? 'enhanced_ai' : 'fallback_system',
-      }
+      console.log('✅ 多條件 AI 評分完成:', analysisResult)
+      setAiAnalysisResult(analysisResult)
 
-      // 更新資料庫
-      const saveResponse = await fetch('/api/foods/save-demo-food', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ...updatedFoodData, name: food.name })
-      })
+      if (analysisResult.success) {
+        // 更新資料庫 - 保存完整的多條件分析結果
+        const saveResponse = await fetch('/api/foods/save-demo-food', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: food.name,
+            foodName: food.name,
+            category: food.category,
+            nutrition: {
+              calories: food.calories,
+              protein: food.protein,
+              carbohydrates: food.carbohydrates,
+              fat: food.fat,
+              fiber: food.fiber,
+              sodium: food.sodium,
+              sugar: food.sugar
+            },
+            brand: food.brand,
+            // 保存多條件分析結果到現有的 IBD 欄位（向後相容）
+            ibd_score: analysisResult.overall_score,
+            ibd_reasoning: analysisResult.general_analysis.reasoning,
+            ibd_recommendations: analysisResult.general_analysis.recommendations,
+            ibd_confidence: analysisResult.general_analysis.confidence,
+            ibd_warning: null,
+            ibd_scored_at: analysisResult.timestamp,
+            ibd_scorer_version: 'v3.0-multi-condition-ai',
+            // 擴展分析結果
+            multi_condition_analysis: {
+              overall_score: analysisResult.overall_score,
+              conditions: analysisResult.conditions,
+              allergen_analysis: analysisResult.allergen_analysis,
+              general_analysis: analysisResult.general_analysis,
+              timestamp: analysisResult.timestamp
+            },
+            scoring_method: analysisResult.general_analysis.method
+          })
+        })
 
-      const saveResult = await saveResponse.json()
+        const saveResult = await saveResponse.json()
 
-      if (saveResult.success) {
-        // 更新本地狀態
-        const updatedFood = {
-          ...food,
-          ibd_score: result.score.value,
-          ibd_reasoning: result.analysis.reasoning,
-          ibd_recommendations: result.analysis.recommendations,
-          ibd_confidence: result.analysis.confidence,
-          ibd_warning: result.analysis.warning || null,
-          ibd_scored_at: result.timestamp,
-          ibd_scorer_version: 'v2.0-enhanced-ai-admin',
-          ai_analysis: {
-            nutritional_highlights: result.analysis.nutritional_highlights || [],
-            risk_factors: result.analysis.risk_factors || [],
-            scoring_method: result.method === 'claude_api' ? 'enhanced_ai' : 'fallback_system',
+        if (saveResult.success) {
+          // 更新本地狀態
+          const updatedFood = {
+            ...food,
+            ibd_score: analysisResult.overall_score,
+            ibd_reasoning: analysisResult.general_analysis.reasoning,
+            ibd_recommendations: analysisResult.general_analysis.recommendations,
+            ibd_confidence: analysisResult.general_analysis.confidence,
+            ibd_scored_at: analysisResult.timestamp,
+            ibd_scorer_version: 'v3.0-multi-condition-ai',
+            ai_analysis: {
+              multi_condition_analysis: analysisResult,
+              scoring_method: analysisResult.general_analysis.method
+            }
           }
+
+          setAllFoods(prev => prev.map(f => f.id === food.id ? updatedFood : f))
+          setSelectedFoodForScoring(updatedFood)
+
+          const confidencePercent = (analysisResult.general_analysis.confidence * 100).toFixed(0)
+          alert(`✅ 多條件 AI 評分完成！\n\n食物：${food.name}\n整體評分：${analysisResult.overall_score}/5\n信心度：${confidencePercent}%\n涵蓋條件：${analysisResult.conditions.length} 個\n評分已保存到資料庫`)
+        } else {
+          throw new Error(saveResult.error || '保存失敗')
         }
-
-        setAllFoods(prev => prev.map(f => f.id === food.id ? updatedFood : f))
-        setSelectedFoodForScoring(updatedFood)
-
-        const confidencePercent = (result.analysis.confidence * 100).toFixed(0)
-        alert(`✅ AI 評分完成！\n\n食物：${food.name}\n評分：${result.score.value}/5 (${result.score.level})\n信心度：${confidencePercent}%\n評分已保存到資料庫`)
       } else {
-        throw new Error(saveResult.error || '保存失敗')
+        throw new Error('多條件 AI 評分失敗')
       }
 
     } catch (error) {
-      console.error('AI 評分失敗:', error)
-      alert(`❌ AI 評分失敗：${error instanceof Error ? error.message : '未知錯誤'}`)
+      console.error('多條件 AI 評分失敗:', error)
+      alert(`❌ 多條件 AI 評分失敗：${error instanceof Error ? error.message : '未知錯誤'}`)
     } finally {
       setIsAIScoring(false)
     }
@@ -571,7 +614,7 @@ export default function FoodDatabasePage() {
             </div>
             <div className="flex space-x-3">
               <Link
-                href="/admin/ai-scoring-demo"
+                href="/admin/ibd-scoring"
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors space-x-2"
               >
                 <span>🔬</span>
@@ -781,13 +824,13 @@ export default function FoodDatabasePage() {
                               )}
 
                               {/* AI 分析資料預覽 */}
-                              {food.ai_analysis && (
+                              {food.ai_analysis && typeof food.ai_analysis === 'object' && food.ai_analysis !== null && (
                                 <div className="text-xs text-gray-500">
-                                  {food.ai_analysis.nutritional_highlights?.length > 0 && (
-                                    <div>🌟 營養亮點: {food.ai_analysis.nutritional_highlights.length} 項</div>
+                                  {(food.ai_analysis as any).nutritional_highlights?.length > 0 && (
+                                    <div>🌟 營養亮點: {(food.ai_analysis as any).nutritional_highlights.length} 項</div>
                                   )}
-                                  {food.ai_analysis.risk_factors?.length > 0 && (
-                                    <div>🚨 風險因素: {food.ai_analysis.risk_factors.length} 項</div>
+                                  {(food.ai_analysis as any).risk_factors?.length > 0 && (
+                                    <div>🚨 風險因素: {(food.ai_analysis as any).risk_factors.length} 項</div>
                                   )}
                                 </div>
                               )}
@@ -925,7 +968,7 @@ export default function FoodDatabasePage() {
           </div>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <div className="text-2xl font-bold text-green-600">
-              {allFoods.filter(f => f.verification_status === 'approved').length}
+              {allFoods.filter(f => f.verification_status === 'approved' || f.verification_status === 'admin_approved').length}
             </div>
             <div className="text-sm text-gray-600">已驗證食物</div>
           </div>
@@ -1108,10 +1151,10 @@ export default function FoodDatabasePage() {
 
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => handleAIScoring(editingFood)}
-                          disabled={isAIScoring}
+                          onClick={() => editingFood.id && handleAIScoring(editingFood as Food)}
+                          disabled={isAIScoring || !editingFood.id}
                           className={`flex-1 px-3 py-2 rounded text-sm transition-colors flex items-center justify-center space-x-2 ${
-                            isAIScoring
+                            isAIScoring || !editingFood.id
                               ? 'bg-gray-400 text-white cursor-not-allowed'
                               : 'bg-blue-600 text-white hover:bg-blue-700'
                           }`}
@@ -1142,10 +1185,10 @@ export default function FoodDatabasePage() {
                     <div className="bg-yellow-50 p-4 rounded-lg mb-4">
                       <p className="text-sm text-yellow-800 mb-3">此食物尚未進行 AI 評分</p>
                       <button
-                        onClick={() => handleAIScoring(editingFood)}
-                        disabled={isAIScoring}
+                        onClick={() => editingFood.id && handleAIScoring(editingFood as Food)}
+                        disabled={isAIScoring || !editingFood.id}
                         className={`w-full px-3 py-2 rounded text-sm transition-colors flex items-center justify-center space-x-2 ${
-                          isAIScoring
+                          isAIScoring || !editingFood.id
                             ? 'bg-gray-400 text-white cursor-not-allowed'
                             : 'bg-blue-600 text-white hover:bg-blue-700'
                         }`}
@@ -1300,7 +1343,7 @@ export default function FoodDatabasePage() {
                     <div className="flex items-center space-x-2">
                       <span className="text-sm font-medium text-gray-700 w-20">驗證狀態:</span>
                       <div className="flex items-center space-x-1">
-                        {(selectedFoodForScoring.verification_status === 'admin_approved' || selectedFoodForScoring.verification_status === 'approved') && (
+                        {selectedFoodForScoring.verification_status === 'approved' && (
                           <>
                             <CheckCircle className="w-4 h-4 text-green-600" />
                             <span className="text-sm text-green-700">已驗證</span>
@@ -1342,14 +1385,6 @@ export default function FoodDatabasePage() {
                         {selectedFoodForScoring.is_custom ? '自訂食物' : '系統食物'}
                       </span>
                     </div>
-                    {selectedFoodForScoring.taiwan_origin && (
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-gray-700 w-20">來源:</span>
-                        <span className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-                          🇹🇼 台灣食物
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -1407,11 +1442,11 @@ export default function FoodDatabasePage() {
               </div>
 
 
-              {/* AI 推理分析系統 */}
+              {/* AI 推理分析系統 - 增強版多條件分析 */}
               <div className="bg-blue-50 p-4 rounded-lg">
                 <h3 className="text-md font-medium text-gray-900 mb-4 flex items-center">
                   <span className="mr-2">🤖</span>
-                  AI 推理分析系統
+                  增強版 AI 推理分析系統 - 多醫療條件評估
                 </h3>
 
                 {/* 顯示現有 AI 評分 */}
@@ -1454,14 +1489,14 @@ export default function FoodDatabasePage() {
                     </div>
 
                     {/* 詳細 AI 分析內容 */}
-                    {selectedFoodForScoring.ibd_reasoning && selectedFoodForScoring.ibd_reasoning.length > 0 && (
+                    {selectedFoodForScoring.ibd_reasoning && Array.isArray(selectedFoodForScoring.ibd_reasoning) && selectedFoodForScoring.ibd_reasoning.length > 0 && (
                       <div className="bg-white p-4 rounded border mt-4">
                         <h5 className="font-medium text-gray-900 mb-3 flex items-center">
                           <span className="mr-2">🧠</span>
                           AI 推理分析
                         </h5>
                         <div className="space-y-2">
-                          {selectedFoodForScoring.ibd_reasoning.map((reason, index) => (
+                          {(selectedFoodForScoring.ibd_reasoning as string[]).map((reason, index) => (
                             <div key={index} className="flex items-start space-x-2">
                               <span className="text-blue-500 mt-1">•</span>
                               <span className="text-sm text-gray-700">{reason}</span>
@@ -1472,16 +1507,16 @@ export default function FoodDatabasePage() {
                     )}
 
                     {/* 營養亮點與風險因素 */}
-                    {selectedFoodForScoring.ai_analysis && (
+                    {selectedFoodForScoring.ai_analysis && typeof selectedFoodForScoring.ai_analysis === 'object' && selectedFoodForScoring.ai_analysis !== null && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        {selectedFoodForScoring.ai_analysis.nutritional_highlights && selectedFoodForScoring.ai_analysis.nutritional_highlights.length > 0 && (
+                        {(selectedFoodForScoring.ai_analysis as any).nutritional_highlights && Array.isArray((selectedFoodForScoring.ai_analysis as any).nutritional_highlights) && (selectedFoodForScoring.ai_analysis as any).nutritional_highlights.length > 0 && (
                           <div className="bg-green-50 p-3 rounded border">
                             <h6 className="font-medium text-green-800 mb-2 flex items-center">
                               <span className="mr-1">🌟</span>
                               營養亮點
                             </h6>
                             <div className="space-y-1">
-                              {selectedFoodForScoring.ai_analysis.nutritional_highlights.map((highlight, index) => (
+                              {((selectedFoodForScoring.ai_analysis as any).nutritional_highlights as string[]).map((highlight, index) => (
                                 <div key={index} className="text-sm text-green-700">
                                   • {highlight}
                                 </div>
@@ -1490,14 +1525,14 @@ export default function FoodDatabasePage() {
                           </div>
                         )}
 
-                        {selectedFoodForScoring.ai_analysis.risk_factors && selectedFoodForScoring.ai_analysis.risk_factors.length > 0 && (
+                        {(selectedFoodForScoring.ai_analysis as any).risk_factors && Array.isArray((selectedFoodForScoring.ai_analysis as any).risk_factors) && (selectedFoodForScoring.ai_analysis as any).risk_factors.length > 0 && (
                           <div className="bg-red-50 p-3 rounded border">
                             <h6 className="font-medium text-red-800 mb-2 flex items-center">
                               <span className="mr-1">🚨</span>
                               風險因素
                             </h6>
                             <div className="space-y-1">
-                              {selectedFoodForScoring.ai_analysis.risk_factors.map((risk, index) => (
+                              {((selectedFoodForScoring.ai_analysis as any).risk_factors as string[]).map((risk, index) => (
                                 <div key={index} className="text-sm text-red-700">
                                   • {risk}
                                 </div>
@@ -1574,9 +1609,41 @@ export default function FoodDatabasePage() {
                 </div>
 
                 <p className="text-xs text-gray-500 mt-2 text-center">
-                  使用增強版 AI 進行專業營養分析和 IBD 適用性評估
+                  使用增強版 AI 進行多醫療條件營養分析：IBD、IBS、癌症化療、過敏原評估
                 </p>
               </div>
+
+              {/* 顯示最新的多條件 AI 分析結果 */}
+              {aiAnalysisResult && (
+                <div className="mt-6">
+                  {userIsAdmin ? (
+                    <AdminAIAnalysis
+                      result={aiAnalysisResult}
+                      showMetrics={true}
+                      className="border border-purple-200 rounded-lg"
+                    />
+                  ) : (
+                    <div className="border border-blue-200 rounded-lg p-4">
+                      <h4 className="text-lg font-medium text-blue-800 mb-3">
+                        🤖 AI 營養分析結果
+                      </h4>
+                      <FilteredAIAnalysis
+                        result={{
+                          success: true,
+                          food_name: aiAnalysisResult.food_name,
+                          overall_score: aiAnalysisResult.overall_score,
+                          visible_conditions: aiAnalysisResult.conditions || [],
+                          allergen_analysis: aiAnalysisResult.allergen_analysis,
+                          general_analysis: aiAnalysisResult.general_analysis,
+                          access_level: 'basic' as const
+                        }}
+                        showPermissionInfo={true}
+                        className=""
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

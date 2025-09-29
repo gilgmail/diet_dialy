@@ -2,14 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { foodHistoryDatabase } from '@/lib/food-history-database';
 import { CreateHistoryEntryRequest, FoodHistoryQuery } from '@/types/history';
 import { ExtendedMedicalProfile, MedicalCondition } from '@/types/medical';
+import { getAuthenticatedUser, createUnauthorizedResponse } from '@/lib/supabase/server-auth';
 
 // GET /api/history - Query food history entries
 export async function GET(request: NextRequest) {
   try {
+    // ✅ SECURITY: Get authenticated user from session
+    const authenticatedUser = await getAuthenticatedUser(request);
+    if (!authenticatedUser) {
+      return createUnauthorizedResponse('請先登入以查看歷史記錄');
+    }
+
     const { searchParams } = new URL(request.url);
 
+    // ✅ SECURITY: Use authenticated user ID, ignore any userId from URL parameters
     const query: FoodHistoryQuery = {
-      userId: searchParams.get('userId') || 'demo-user',
+      userId: authenticatedUser.id, // Use authenticated user ID only
       dateFrom: searchParams.get('dateFrom') || undefined,
       dateTo: searchParams.get('dateTo') || undefined,
       foodIds: searchParams.get('foodIds')?.split(',') || undefined,
@@ -21,6 +29,7 @@ export async function GET(request: NextRequest) {
       sortOrder: searchParams.get('sortOrder') as any || 'desc'
     };
 
+    console.log('🔐 Authenticated history query for user:', authenticatedUser.id);
     const entries = await foodHistoryDatabase.queryHistory(query);
 
     return NextResponse.json({
@@ -40,14 +49,23 @@ export async function GET(request: NextRequest) {
 // POST /api/history - Create new food history entry
 export async function POST(request: NextRequest) {
   try {
+    // ✅ SECURITY: Get authenticated user from session
+    const authenticatedUser = await getAuthenticatedUser(request);
+    if (!authenticatedUser) {
+      return createUnauthorizedResponse('請先登入以新增記錄');
+    }
+
     const body = await request.json();
-    const createRequest: CreateHistoryEntryRequest = body;
+    const createRequest: CreateHistoryEntryRequest = {
+      ...body,
+      userId: authenticatedUser.id // ✅ SECURITY: Force use authenticated user ID
+    };
 
     // Create a demo medical profile for scoring
-    // In a real app, this would come from user authentication
+    // TODO: In production, this should come from user's actual medical profile
     const demoMedicalProfile: ExtendedMedicalProfile = {
-      id: 'demo-profile',
-      userId: 'demo-user',
+      id: `profile-${authenticatedUser.id}`,
+      userId: authenticatedUser.id,
       primary_condition: 'ibd' as MedicalCondition,
       current_phase: 'remission',
       known_allergies: [],
@@ -62,6 +80,7 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date()
     };
 
+    console.log('🔐 Creating history entry for authenticated user:', authenticatedUser.id);
     const entry = await foodHistoryDatabase.createHistoryEntry(createRequest, demoMedicalProfile);
 
     return NextResponse.json({

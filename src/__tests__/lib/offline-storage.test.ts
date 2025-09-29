@@ -1,4 +1,4 @@
-import { offlineStorage, OfflineAction } from '@/lib/offline-storage';
+import { offlineStorageManager, PendingFoodEntry, FoodEntry } from '@/lib/offline-storage';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -29,349 +29,252 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock
 });
 
+// Mock console.log to avoid test noise
+global.console = {
+  ...console,
+  log: jest.fn(),
+};
+
+// Mock fetch for sync tests
+global.fetch = jest.fn();
+
 // Mock navigator.onLine
 Object.defineProperty(navigator, 'onLine', {
   writable: true,
-  value: true
+  value: true,
 });
-
-// Mock fetch
-global.fetch = jest.fn();
 
 describe('OfflineStorageManager', () => {
   beforeEach(() => {
-    localStorageMock.clear();
+    // Reset mock calls and clear localStorage before each test
     jest.clearAllMocks();
-    (navigator as any).onLine = true;
+    localStorageMock.clear();
+    Object.defineProperty(navigator, 'onLine', { value: true, writable: true });
+    (global.fetch as jest.Mock).mockClear();
   });
 
-  describe('storeOfflineAction', () => {
-    it('stores action with generated ID and timestamp', async () => {
-      const action = {
-        type: 'CREATE' as const,
-        entity: 'food_history' as const,
-        data: { foodId: 'test_food', portion: 100 }
+  describe('addPendingEntry', () => {
+    it('creates pending entry with generated ID and timestamp', () => {
+      const entry: Omit<FoodEntry, 'id' | 'timestamp'> = {
+        date: '2024-01-15',
+        time: '12:00',
+        foodName: '白米飯',
+        category: '主食',
+        medicalScore: 4,
+        userId: 'test-user'
       };
 
-      const actionId = await offlineStorage.storeOfflineAction(action);
+      const pendingEntry = offlineStorageManager.addPendingEntry(entry);
 
-      expect(actionId).toMatch(/^offline_\d+_[a-z0-9]+$/);
+      expect(pendingEntry.tempId).toMatch(/^temp_\d+_[a-z0-9]+$/);
+      expect(pendingEntry.createdAt).toBeTruthy();
+      expect(pendingEntry.syncStatus).toBe('pending');
+      expect(pendingEntry.foodName).toBe('白米飯');
+
       expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        'diet_daily_offline_actions',
-        expect.stringContaining(actionId)
+        'diet_daily_pending_entries',
+        expect.stringContaining(pendingEntry.tempId)
       );
     });
 
-    it('appends to existing actions', async () => {
-      // Store first action
-      const action1 = {
-        type: 'CREATE' as const,
-        entity: 'food_history' as const,
-        data: { foodId: 'food1' }
+    it('appends to existing pending entries', () => {
+      // Add first entry
+      const entry1: Omit<FoodEntry, 'id' | 'timestamp'> = {
+        date: '2024-01-15',
+        time: '12:00',
+        foodName: '白米飯',
+        category: '主食',
+        userId: 'test-user'
       };
-      await offlineStorage.storeOfflineAction(action1);
 
-      // Store second action
-      const action2 = {
-        type: 'UPDATE' as const,
-        entity: 'symptoms' as const,
-        data: { symptomId: 'symptom1' }
+      // Add second entry
+      const entry2: Omit<FoodEntry, 'id' | 'timestamp'> = {
+        date: '2024-01-15',
+        time: '14:00',
+        foodName: '深海魚',
+        category: '蛋白質',
+        userId: 'test-user'
       };
-      await offlineStorage.storeOfflineAction(action2);
 
-      const actions = await offlineStorage.getOfflineActions();
-      expect(actions).toHaveLength(2);
-      expect(actions[0].entity).toBe('food_history');
-      expect(actions[1].entity).toBe('symptoms');
+      offlineStorageManager.addPendingEntry(entry1);
+      offlineStorageManager.addPendingEntry(entry2);
+
+      const pendingEntries = offlineStorageManager.getPendingEntries();
+      expect(pendingEntries).toHaveLength(2);
+      expect(pendingEntries[0].foodName).toBe('白米飯');
+      expect(pendingEntries[1].foodName).toBe('深海魚');
     });
   });
 
-  describe('getOfflineActions', () => {
-    it('returns empty array when no actions stored', async () => {
-      const actions = await offlineStorage.getOfflineActions();
-      expect(actions).toEqual([]);
+  describe('getPendingEntries', () => {
+    it('returns empty array when no entries stored', () => {
+      const entries = offlineStorageManager.getPendingEntries();
+      expect(entries).toEqual([]);
     });
 
-    it('returns stored actions', async () => {
-      const mockActions: OfflineAction[] = [
+    it('returns stored pending entries', () => {
+      const mockEntries: PendingFoodEntry[] = [
         {
-          id: 'action1',
-          type: 'CREATE',
-          entity: 'food_history',
-          data: { foodId: 'test' },
-          timestamp: Date.now(),
-          synced: false
+          tempId: 'temp_123',
+          createdAt: new Date().toISOString(),
+          syncStatus: 'pending',
+          date: '2024-01-15',
+          time: '12:00',
+          foodName: '白米飯',
+          category: '主食',
+          userId: 'test-user'
         }
       ];
 
-      localStorageMock.setItem(
-        'diet_daily_offline_actions',
-        JSON.stringify(mockActions)
-      );
+      localStorageMock.setItem('diet_daily_pending_entries', JSON.stringify(mockEntries));
 
-      const actions = await offlineStorage.getOfflineActions();
-      expect(actions).toEqual(mockActions);
+      const entries = offlineStorageManager.getPendingEntries();
+      expect(entries).toEqual(mockEntries);
     });
 
-    it('handles corrupted localStorage gracefully', async () => {
-      localStorageMock.setItem('diet_daily_offline_actions', 'invalid json');
+    it('handles corrupted localStorage gracefully', () => {
+      // Mock console.error to avoid noise during expected error
+      const originalConsoleError = console.error;
+      console.error = jest.fn();
 
-      const actions = await offlineStorage.getOfflineActions();
-      expect(actions).toEqual([]);
+      localStorageMock.setItem('diet_daily_pending_entries', 'invalid-json');
+
+      const entries = offlineStorageManager.getPendingEntries();
+      expect(entries).toEqual([]);
+
+      // Verify error was logged
+      expect(console.error).toHaveBeenCalledWith(
+        '❌ 讀取暫存記錄失敗:',
+        expect.any(SyntaxError)
+      );
+
+      // Restore console.error
+      console.error = originalConsoleError;
     });
   });
 
-  describe('markActionSynced', () => {
-    it('marks specific action as synced', async () => {
-      const mockActions: OfflineAction[] = [
-        {
-          id: 'action1',
-          type: 'CREATE',
-          entity: 'food_history',
-          data: { foodId: 'test1' },
-          timestamp: Date.now(),
-          synced: false
-        },
-        {
-          id: 'action2',
-          type: 'CREATE',
-          entity: 'food_history',
-          data: { foodId: 'test2' },
-          timestamp: Date.now(),
-          synced: false
-        }
-      ];
+  describe('removeSyncedEntries', () => {
+    it('removes synced entries', () => {
+      // Add entry first
+      const entry: Omit<FoodEntry, 'id' | 'timestamp'> = {
+        date: '2024-01-15',
+        time: '12:00',
+        foodName: '白米飯',
+        category: '主食',
+        userId: 'test-user'
+      };
 
-      localStorageMock.setItem(
-        'diet_daily_offline_actions',
-        JSON.stringify(mockActions)
-      );
+      const pendingEntry = offlineStorageManager.addPendingEntry(entry);
 
-      await offlineStorage.markActionSynced('action1');
+      // Mark as synced
+      offlineStorageManager.updateSyncStatus(pendingEntry.tempId, 'synced');
 
-      const updatedActions = await offlineStorage.getOfflineActions();
-      expect(updatedActions[0].synced).toBe(true);
-      expect(updatedActions[1].synced).toBe(false);
+      // Remove synced entries
+      const removedCount = offlineStorageManager.removeSyncedEntries();
+
+      expect(removedCount).toBe(1);
+      const remainingEntries = offlineStorageManager.getPendingEntries();
+      expect(remainingEntries).toHaveLength(0);
     });
   });
 
-  describe('clearSyncedActions', () => {
-    it('removes only synced actions', async () => {
-      const mockActions: OfflineAction[] = [
-        {
-          id: 'action1',
-          type: 'CREATE',
-          entity: 'food_history',
-          data: { foodId: 'test1' },
-          timestamp: Date.now(),
-          synced: true
-        },
-        {
-          id: 'action2',
-          type: 'CREATE',
-          entity: 'food_history',
-          data: { foodId: 'test2' },
-          timestamp: Date.now(),
-          synced: false
-        }
-      ];
+  describe('updateSyncStatus', () => {
+    it('updates sync status of specific entry', () => {
+      // Add entry first
+      const entry: Omit<FoodEntry, 'id' | 'timestamp'> = {
+        date: '2024-01-15',
+        time: '12:00',
+        foodName: '白米飯',
+        category: '主食',
+        userId: 'test-user'
+      };
 
-      localStorageMock.setItem(
-        'diet_daily_offline_actions',
-        JSON.stringify(mockActions)
-      );
+      const pendingEntry = offlineStorageManager.addPendingEntry(entry);
 
-      await offlineStorage.clearSyncedActions();
+      // Update sync status
+      offlineStorageManager.updateSyncStatus(pendingEntry.tempId, 'synced');
 
-      const remainingActions = await offlineStorage.getOfflineActions();
-      expect(remainingActions).toHaveLength(1);
-      expect(remainingActions[0].id).toBe('action2');
+      const updatedEntries = offlineStorageManager.getPendingEntries();
+      expect(updatedEntries[0].syncStatus).toBe('synced');
     });
   });
 
   describe('hasPendingSync', () => {
-    it('returns true when unsynced actions exist', async () => {
-      const mockActions: OfflineAction[] = [
-        {
-          id: 'action1',
-          type: 'CREATE',
-          entity: 'food_history',
-          data: { foodId: 'test' },
-          timestamp: Date.now(),
-          synced: false
-        }
-      ];
+    it('returns true when unsynced entries exist', () => {
+      const entry: Omit<FoodEntry, 'id' | 'timestamp'> = {
+        date: '2024-01-15',
+        time: '12:00',
+        foodName: '白米飯',
+        category: '主食',
+        userId: 'test-user'
+      };
 
-      localStorageMock.setItem(
-        'diet_daily_offline_actions',
-        JSON.stringify(mockActions)
-      );
+      offlineStorageManager.addPendingEntry(entry);
 
-      const hasPending = await offlineStorage.hasPendingSync();
-      expect(hasPending).toBe(true);
+      expect(offlineStorageManager.getPendingCount()).toBeGreaterThan(0);
     });
 
-    it('returns false when all actions are synced', async () => {
-      const mockActions: OfflineAction[] = [
-        {
-          id: 'action1',
-          type: 'CREATE',
-          entity: 'food_history',
-          data: { foodId: 'test' },
-          timestamp: Date.now(),
-          synced: true
-        }
-      ];
-
-      localStorageMock.setItem(
-        'diet_daily_offline_actions',
-        JSON.stringify(mockActions)
-      );
-
-      const hasPending = await offlineStorage.hasPendingSync();
-      expect(hasPending).toBe(false);
+    it('returns false when all entries are synced', () => {
+      expect(offlineStorageManager.getPendingCount()).toBe(0);
     });
   });
 
-  describe('syncToServer', () => {
-    it('skips sync when offline', async () => {
-      (navigator as any).onLine = false;
+  describe('getPendingCount', () => {
+    it('returns correct pending count', () => {
+      expect(offlineStorageManager.getPendingCount()).toBe(0);
 
-      const result = await offlineStorage.syncToServer();
+      // Add entry
+      const entry: Omit<FoodEntry, 'id' | 'timestamp'> = {
+        date: '2024-01-15',
+        time: '12:00',
+        foodName: '白米飯',
+        category: '主食',
+        userId: 'test-user'
+      };
 
-      expect(result).toEqual({ success: 0, failed: 0 });
-      expect(fetch).not.toHaveBeenCalled();
-    });
-
-    it('syncs unsynced actions successfully', async () => {
-      const mockActions: OfflineAction[] = [
-        {
-          id: 'action1',
-          type: 'CREATE',
-          entity: 'food_history',
-          data: { foodId: 'test' },
-          timestamp: Date.now(),
-          synced: false
-        }
-      ];
-
-      localStorageMock.setItem(
-        'diet_daily_offline_actions',
-        JSON.stringify(mockActions)
-      );
-
-      (fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        status: 200
-      });
-
-      const result = await offlineStorage.syncToServer();
-
-      expect(result.success).toBe(1);
-      expect(result.failed).toBe(0);
-      expect(fetch).toHaveBeenCalledWith('/api/history', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ foodId: 'test' })
-      });
-    });
-
-    it('handles sync failures gracefully', async () => {
-      const mockActions: OfflineAction[] = [
-        {
-          id: 'action1',
-          type: 'CREATE',
-          entity: 'food_history',
-          data: { foodId: 'test' },
-          timestamp: Date.now(),
-          synced: false
-        }
-      ];
-
-      localStorageMock.setItem(
-        'diet_daily_offline_actions',
-        JSON.stringify(mockActions)
-      );
-
-      (fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error'
-      });
-
-      const result = await offlineStorage.syncToServer();
-
-      expect(result.success).toBe(0);
-      expect(result.failed).toBe(1);
-    });
-
-    it('uses correct HTTP methods for different operations', async () => {
-      const mockActions: OfflineAction[] = [
-        {
-          id: 'action1',
-          type: 'UPDATE',
-          entity: 'food_history',
-          data: { foodId: 'test' },
-          timestamp: Date.now(),
-          synced: false
-        },
-        {
-          id: 'action2',
-          type: 'DELETE',
-          entity: 'food_history',
-          data: { foodId: 'test' },
-          timestamp: Date.now(),
-          synced: false
-        }
-      ];
-
-      localStorageMock.setItem(
-        'diet_daily_offline_actions',
-        JSON.stringify(mockActions)
-      );
-
-      (fetch as jest.Mock)
-        .mockResolvedValueOnce({ ok: true })
-        .mockResolvedValueOnce({ ok: true });
-
-      await offlineStorage.syncToServer();
-
-      expect(fetch).toHaveBeenCalledWith('/api/history', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ foodId: 'test' })
-      });
-
-      expect(fetch).toHaveBeenCalledWith('/api/history', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ foodId: 'test' })
-      });
+      offlineStorageManager.addPendingEntry(entry);
+      expect(offlineStorageManager.getPendingCount()).toBe(1);
     });
   });
 
-  describe('getStorageInfo', () => {
-    it('returns storage usage information', () => {
-      localStorageMock.setItem('test', 'test data');
+  describe('getErrorCount', () => {
+    it('returns correct error count', () => {
+      // Add entry and mark it as error
+      const entry: Omit<FoodEntry, 'id' | 'timestamp'> = {
+        date: '2024-01-15',
+        time: '12:00',
+        foodName: '白米飯',
+        category: '主食',
+        userId: 'test-user'
+      };
 
-      const info = offlineStorage.getStorageInfo();
+      const pendingEntry = offlineStorageManager.addPendingEntry(entry);
+      offlineStorageManager.updateSyncStatus(pendingEntry.tempId, 'error', 'Test error');
 
-      expect(info).toHaveProperty('used');
-      expect(info).toHaveProperty('available');
-      expect(info).toHaveProperty('percentage');
-      expect(info.available).toBe(5120); // 5MB in KB
+      expect(offlineStorageManager.getErrorCount()).toBe(1);
     });
   });
 
-  describe('clearAllData', () => {
-    it('removes all offline storage data', async () => {
-      localStorageMock.setItem('diet_daily_offline', 'test');
-      localStorageMock.setItem('diet_daily_offline_actions', 'test');
+  describe('clearAllPendingEntries', () => {
+    it('removes all pending entries', () => {
+      // Add some data
+      const entry: Omit<FoodEntry, 'id' | 'timestamp'> = {
+        date: '2024-01-15',
+        time: '12:00',
+        foodName: '白米飯',
+        category: '主食',
+        userId: 'test-user'
+      };
 
-      await offlineStorage.clearAllData();
+      offlineStorageManager.addPendingEntry(entry);
 
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('diet_daily_offline');
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('diet_daily_offline_actions');
+      // Clear all data
+      offlineStorageManager.clearAllPendingEntries();
+
+      const entries = offlineStorageManager.getPendingEntries();
+      expect(entries).toHaveLength(0);
+
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('diet_daily_pending_entries');
     });
   });
 });

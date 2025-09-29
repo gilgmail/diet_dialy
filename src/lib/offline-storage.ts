@@ -363,3 +363,6 @@ class OfflineStorageManager {
 
 // 單例導出
 export const offlineStorageManager = new OfflineStorageManager();
+
+// Legacy export for backward compatibility
+export const offlineStorage = offlineStorageManager;

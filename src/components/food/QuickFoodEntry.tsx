@@ -55,7 +55,7 @@ export default function QuickFoodEntry({
   useEffect(() => {
     const loadFrequentFoods = async () => {
       try {
-        const response = await fetch('/api/history/frequent?userId=demo-user&limit=8');
+        const response = await fetch('/api/history/frequent?limit=8');
         const data = await response.json();
         if (data.success) {
           setFrequentFoods(data.frequentFoods);

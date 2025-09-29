@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { foodHistoryDatabase } from '@/lib/food-history-database';
 import { DatabaseFoodItem } from '@/types/food';
+import { getAuthenticatedUser, createUnauthorizedResponse } from '@/lib/supabase/server-auth';
 
 interface FrequentFood extends DatabaseFoodItem {
   frequency: number;
@@ -10,11 +11,18 @@ interface FrequentFood extends DatabaseFoodItem {
 // GET /api/history/frequent - 取得用戶常吃的食物
 export async function GET(request: NextRequest) {
   try {
+    // ✅ SECURITY: Get authenticated user from session
+    const authenticatedUser = await getAuthenticatedUser(request);
+    if (!authenticatedUser) {
+      return createUnauthorizedResponse('請先登入以查看常吃食物');
+    }
+
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || 'demo-user';
+    // ✅ SECURITY: Use authenticated user ID, ignore any userId from URL parameters
+    const userId = authenticatedUser.id;
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    console.log('📊 取得常吃食物:', { userId, limit });
+    console.log('📊 取得常吃食物 (已驗證用戶):', { userId, limit });
     console.log('🔄 使用 queryHistory 方法取得歷史記錄');
 
     // 取得用戶的所有歷史記錄

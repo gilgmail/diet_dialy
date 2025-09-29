@@ -249,7 +249,9 @@ export class EnhancedFoodEntriesService {
   } {
     return {
       sqlFile: 'sql-scripts/create_food_entries_table.sql',
-      consoleUrl: 'https://supabase.com/dashboard/project/lbjeyvvierxcnrytuvto/sql',
+      consoleUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?
+        `https://supabase.com/dashboard/project/${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname.split('.')[0]}/sql` :
+        'https://supabase.com/dashboard',
       instructions: [
         '1. 前往 Supabase 控制台 SQL 編輯器',
         '2. 複製 sql-scripts/create_food_entries_table.sql 的內容',

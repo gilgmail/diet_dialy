@@ -21,12 +21,21 @@ export default function HomePage() {
                 v4.0.0 - Supabase 版本
               </div>
               {!isLoading && !isAuthenticated && (
-                <button
-                  onClick={signInWithGoogle}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium"
-                >
-                  🔐 登入
-                </button>
+                <div className="flex items-center space-x-3">
+                  <Link
+                    href="/onboarding"
+                    className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                    data-testid="get-started-button"
+                  >
+                    🚀 開始使用
+                  </Link>
+                  <button
+                    onClick={signInWithGoogle}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium"
+                  >
+                    🔐 登入
+                  </button>
+                </div>
               )}
               {isAuthenticated && user && (
                 <div className="flex items-center space-x-2">

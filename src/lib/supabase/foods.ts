@@ -9,7 +9,7 @@ export class SupabaseFoodsService {
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
-      .eq('verification_status', 'approved')
+      .in('verification_status', ['approved', 'admin_approved'])
       .order('name')
 
     if (error) {
@@ -25,7 +25,7 @@ export class SupabaseFoodsService {
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
-      .eq('verification_status', 'approved')
+      .in('verification_status', ['approved', 'admin_approved'])
       .ilike('name', `%${searchTerm}%`)
       .order('name')
       .limit(20)
@@ -44,7 +44,7 @@ export class SupabaseFoodsService {
       .from('diet_daily_foods')
       .select('*')
       .eq('category', category)
-      .eq('verification_status', 'approved')
+      .in('verification_status', ['approved', 'admin_approved'])
       .order('name')
 
     if (error) {
@@ -78,7 +78,7 @@ export class SupabaseFoodsService {
 
     // 驗證狀態過濾
     if (!options?.includeUnverified) {
-      supabaseQuery = supabaseQuery.eq('verification_status', 'approved')
+      supabaseQuery = supabaseQuery.in('verification_status', ['approved', 'admin_approved'])
     }
 
     // 是否包含自訂食物
@@ -200,7 +200,7 @@ export class SupabaseFoodsService {
     }
 
     // 確保 verification_status 值完全符合約束
-    const validStatus = status === 'approved' ? 'admin_approved' : 'rejected';
+    const validStatus = status === 'approved' ? 'approved' : 'rejected';
 
     const updateData: any = {
       verification_status: validStatus,
@@ -244,7 +244,7 @@ export class SupabaseFoodsService {
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('category')
-      .eq('verification_status', 'approved')
+      .in('verification_status', ['approved', 'admin_approved'])
 
     if (error) {
       console.error('Get food categories error:', error)
@@ -327,7 +327,7 @@ export class SupabaseFoodsService {
       { count: taiwanCount }
     ] = await Promise.all([
       supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }),
-      supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).eq('verification_status', 'approved'),
+      supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).in('verification_status', ['approved', 'admin_approved']),
       supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).eq('verification_status', 'pending'),
       supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).eq('verification_status', 'rejected'),
       supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).eq('is_custom', true),
@@ -463,7 +463,7 @@ export class SupabaseFoodsService {
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
-      .eq('verification_status', 'approved')
+      .in('verification_status', ['approved', 'admin_approved'])
       .order('created_at', { ascending: false })
       .limit(limit)
 

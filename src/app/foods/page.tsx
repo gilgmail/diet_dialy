@@ -30,6 +30,7 @@ export default function FoodsPage() {
   const [error, setError] = useState<string | null>(null)
   const [sortField, setSortField] = useState<SortField>('name')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+  const [selectedFoodForDetail, setSelectedFoodForDetail] = useState<Food | null>(null)
 
   // 載入食物數據
   useEffect(() => {
@@ -128,6 +129,12 @@ export default function FoodsPage() {
 
   const getMedicalScore = (food: Food): number => {
     try {
+      // First try to get the actual IBD score from the food data
+      if (food.ibd_score !== null && food.ibd_score !== undefined) {
+        return food.ibd_score
+      }
+
+      // Fallback to medical_scores if available
       const scores = food.medical_scores as any
       if (scores && typeof scores === 'object') {
         return scores.ibd_score || 3 // 預設中等風險
@@ -138,34 +145,49 @@ export default function FoodsPage() {
     }
   }
 
-  const getMedicalAdvice = (food: Food): string => {
+  const getAIAnalysisDisplay = (food: Food): { highlights: string[], risks: string[], hasData: boolean } => {
     try {
-      const scores = food.medical_scores as any
-      if (scores && typeof scores === 'object') {
-        const ibdScore = scores.ibd_score || 3
-        const chenoSafety = scores.chemo_safety || 'caution'
-        const fodmapLevel = scores.fodmap_level || 'medium'
+      // Try to get AI analysis data from different possible sources
+      const aiAnalysis = food.ai_analysis as any
+      const medicalScores = food.medical_scores as any
 
-        const advice = []
+      let highlights: string[] = []
+      let risks: string[] = []
 
-        if (ibdScore === 1) advice.push('IBD友善')
-        else if (ibdScore === 4) advice.push('IBD高風險')
-        else if (ibdScore === 3) advice.push('IBD中等風險')
-        else advice.push('IBD低風險')
-
-        if (chenoSafety === 'safe') advice.push('化療安全')
-        else if (chenoSafety === 'avoid') advice.push('化療應避免')
-        else advice.push('化療需謹慎')
-
-        if (fodmapLevel === 'low') advice.push('低FODMAP')
-        else if (fodmapLevel === 'high') advice.push('高FODMAP')
-        else advice.push('中等FODMAP')
-
-        return advice.join(' | ')
+      // Check if we have AI analysis data with nutritional highlights and risk factors
+      if (aiAnalysis && typeof aiAnalysis === 'object') {
+        if (Array.isArray(aiAnalysis.nutritional_highlights)) {
+          highlights = aiAnalysis.nutritional_highlights
+        }
+        if (Array.isArray(aiAnalysis.risk_factors)) {
+          risks = aiAnalysis.risk_factors
+        }
       }
-      return '待評估'
+
+      // Fallback: Generate basic analysis from medical scores if no AI analysis
+      if (highlights.length === 0 && risks.length === 0 && medicalScores && typeof medicalScores === 'object') {
+        const ibdScore = medicalScores.ibd_score || 3
+        const chenoSafety = medicalScores.chemo_safety || 'caution'
+        const fodmapLevel = medicalScores.fodmap_level || 'medium'
+
+        // Generate highlights based on positive scores
+        if (ibdScore === 1) highlights.push('IBD友善食物')
+        if (chenoSafety === 'safe') highlights.push('化療期安全')
+        if (fodmapLevel === 'low') highlights.push('低FODMAP食物')
+
+        // Generate risks based on negative scores
+        if (ibdScore === 4) risks.push('IBD高風險')
+        if (chenoSafety === 'avoid') risks.push('化療期應避免')
+        if (fodmapLevel === 'high') risks.push('高FODMAP成分')
+      }
+
+      return {
+        highlights,
+        risks,
+        hasData: highlights.length > 0 || risks.length > 0
+      }
     } catch {
-      return '待評估'
+      return { highlights: [], risks: [], hasData: false }
     }
   }
 
@@ -224,6 +246,149 @@ export default function FoodsPage() {
           >
             重新載入
           </button>
+        </div>
+      </div>
+    )
+  }
+
+  // 詳細 AI 分析彈窗組件
+  const FoodDetailModal = () => {
+    if (!selectedFoodForDetail) return null
+
+    const analysis = getAIAnalysisDisplay(selectedFoodForDetail)
+    const score = getMedicalScore(selectedFoodForDetail)
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          {/* Modal Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">{selectedFoodForDetail.name}</h2>
+              {selectedFoodForDetail.name_en && (
+                <p className="text-sm text-gray-600">{selectedFoodForDetail.name_en}</p>
+              )}
+              <div className="flex items-center space-x-2 mt-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {selectedFoodForDetail.category}
+                </span>
+                <span className={`text-xs px-2 py-1 rounded font-medium ${
+                  score >= 4 ? 'bg-green-100 text-green-800' :
+                  score >= 3 ? 'bg-blue-100 text-blue-800' :
+                  score >= 2 ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  IBD評分: {score}/5
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setSelectedFoodForDetail(null)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <span className="sr-only">關閉</span>
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Modal Body */}
+          <div className="p-6 space-y-6">
+            {/* AI Analysis Summary */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-3 flex items-center">
+                <span className="mr-2">🤖</span>
+                AI 推理分析
+              </h3>
+
+              {analysis.hasData ? (
+                <div className="space-y-4">
+                  {/* Nutritional Highlights */}
+                  {analysis.highlights.length > 0 && (
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <h4 className="font-medium text-green-800 mb-2 flex items-center">
+                        <span className="mr-1">🌟</span>
+                        營養亮點
+                      </h4>
+                      <div className="space-y-1">
+                        {analysis.highlights.map((highlight, index) => (
+                          <div key={index} className="text-sm text-green-700">
+                            • {highlight}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Risk Factors */}
+                  {analysis.risks.length > 0 && (
+                    <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                      <h4 className="font-medium text-red-800 mb-2 flex items-center">
+                        <span className="mr-1">🚨</span>
+                        風險因素
+                      </h4>
+                      <div className="space-y-1">
+                        {analysis.risks.map((risk, index) => (
+                          <div key={index} className="text-sm text-red-700">
+                            • {risk}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-gray-50 p-4 rounded-lg text-center">
+                  <p className="text-gray-600">此食物尚未進行 AI 分析</p>
+                  <p className="text-sm text-gray-500 mt-1">評分基於基礎醫療數據</p>
+                </div>
+              )}
+            </div>
+
+            {/* Additional Information */}
+            {selectedFoodForDetail.verification_notes && (
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">備註資訊</h3>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-700">{selectedFoodForDetail.verification_notes}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Food Details */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">食物詳細資料</h3>
+              <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">分類:</span>
+                    <span className="text-sm text-gray-900 ml-2">{selectedFoodForDetail.category}</span>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">IBD評分:</span>
+                    <span className="text-sm text-gray-900 ml-2">{score}/5</span>
+                  </div>
+                </div>
+                {selectedFoodForDetail.brand && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">品牌:</span>
+                    <span className="text-sm text-gray-900 ml-2">{selectedFoodForDetail.brand}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Modal Footer */}
+          <div className="flex justify-end p-6 border-t border-gray-200">
+            <button
+              onClick={() => setSelectedFoodForDetail(null)}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              關閉
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -309,6 +474,9 @@ export default function FoodsPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    編號
+                  </th>
                   <th
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                     onClick={() => handleSort('name')}
@@ -332,21 +500,12 @@ export default function FoodsPage() {
                     onClick={() => handleSort('medical_score')}
                   >
                     <div className="flex items-center space-x-1">
-                      <span>醫療建議</span>
+                      <span>風險評分</span>
                       <SortIcon field="medical_score" />
                     </div>
                   </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
-                    onClick={() => handleSort('verification_status')}
-                  >
-                    <div className="flex items-center space-x-1">
-                      <span>驗證狀態</span>
-                      <SortIcon field="verification_status" />
-                    </div>
-                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    備註 (醫療建議原因)
+                    AI 推理分析
                   </th>
                 </tr>
               </thead>
@@ -356,6 +515,9 @@ export default function FoodsPage() {
                     key={food.id}
                     className={`hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}
                   >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {index + 1}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col">
                         <div className="text-sm font-medium text-gray-900">{food.name}</div>
@@ -370,24 +532,58 @@ export default function FoodsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {getMedicalAdvice(food)}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        風險評分: {getMedicalScore(food)}/4
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
-                        {getVerificationStatusIcon(food.verification_status)}
-                        <span className="text-sm text-gray-900">
-                          {getVerificationStatusText(food.verification_status)}
+                        <span className="text-xs text-gray-600">IBD 評分:</span>
+                        <span className={`text-xs px-2 py-1 rounded font-medium ${
+                          getMedicalScore(food) >= 4 ? 'bg-green-100 text-green-800' :
+                          getMedicalScore(food) >= 3 ? 'bg-blue-100 text-blue-800' :
+                          getMedicalScore(food) >= 2 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {getMedicalScore(food)}/5
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 max-w-xs truncate">
-                        {food.verification_notes || '無備註'}
+                      <div className="text-sm text-gray-900 cursor-pointer hover:bg-gray-50 rounded p-2 -m-2 transition-colors"
+                           onClick={() => setSelectedFoodForDetail(food)}
+                           title="點擊查看詳細 AI 分析">
+                        {(() => {
+                          const analysis = getAIAnalysisDisplay(food)
+
+                          if (!analysis.hasData) {
+                            return (
+                              <div className="text-gray-500 text-sm">
+                                待AI分析
+                                <div className="text-xs text-blue-600 mt-1">點擊查看詳細資料</div>
+                              </div>
+                            )
+                          }
+
+                          return (
+                            <div className="space-y-1">
+                              {analysis.highlights.length > 0 && (
+                                <div className="text-xs">
+                                  <span className="text-green-600">🌟 營養亮點: </span>
+                                  <span className="text-gray-700">
+                                    {analysis.highlights.slice(0, 2).join(', ')}
+                                    {analysis.highlights.length > 2 && <span className="text-gray-500"> +{analysis.highlights.length - 2}項</span>}
+                                  </span>
+                                </div>
+                              )}
+                              {analysis.risks.length > 0 && (
+                                <div className="text-xs">
+                                  <span className="text-red-600">🚨 風險因素: </span>
+                                  <span className="text-gray-700">
+                                    {analysis.risks.slice(0, 2).join(', ')}
+                                    {analysis.risks.length > 2 && <span className="text-gray-500"> +{analysis.risks.length - 2}項</span>}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="text-xs text-blue-600 mt-1">點擊查看完整分析</div>
+                            </div>
+                          )
+                        })()}
                       </div>
                     </td>
                   </tr>
@@ -406,22 +602,14 @@ export default function FoodsPage() {
         </div>
 
         {/* 統計資訊 */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <div className="text-2xl font-bold text-blue-600">{filteredFoods.length}</div>
             <div className="text-sm text-gray-600">顯示食物數量</div>
           </div>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="text-2xl font-bold text-green-600">
-              {filteredFoods.filter(f => f.verification_status === 'approved').length}
-            </div>
-            <div className="text-sm text-gray-600">已驗證食物</div>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div className="text-2xl font-bold text-yellow-600">
-              {filteredFoods.filter(f => f.verification_status === 'pending').length}
-            </div>
-            <div className="text-sm text-gray-600">待審核食物</div>
+            <div className="text-2xl font-bold text-green-600">{foods.length}</div>
+            <div className="text-sm text-gray-600">總食物數量</div>
           </div>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <div className="text-2xl font-bold text-orange-600">
@@ -431,6 +619,9 @@ export default function FoodsPage() {
           </div>
         </div>
       </div>
+
+      {/* 詳細 AI 分析彈窗 */}
+      <FoodDetailModal />
     </div>
   )
 }

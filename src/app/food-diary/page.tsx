@@ -152,7 +152,6 @@ export default function FoodDiaryPage() {
     }
 
     setTimeout(() => setMessage(''), 3000)
-    setSearchResults([]) // 清空搜尋結果
   }
 
   // 處理增強輸入組件的食物選擇

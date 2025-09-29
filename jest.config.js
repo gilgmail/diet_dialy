@@ -15,16 +15,16 @@ const customJestConfig = {
     '^uuid$': '<rootDir>/src/__mocks__/uuid.js',
     // Mock Google Sheets service
     '^@/lib/google/sheets-service$': '<rootDir>/src/__mocks__/google-sheets-service.ts',
-    // Mock Offline Storage service
-    '^@/lib/offline-storage$': '<rootDir>/src/__mocks__/offline-storage.ts',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(uuid|recharts|d3-.*|jspdf|html2canvas)/)',
+    'node_modules/(?!(uuid|recharts|d3-.*|jspdf|html2canvas|web-streams-polyfill)/)',
   ],
   testMatch: [
-    '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
+    '<rootDir>/src/**/__tests__/**/*.{test,spec}.{js,jsx,ts,tsx}',
     '<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}',
+    '<rootDir>/tests/**/*.test.{js,jsx,ts,tsx}',
     '!<rootDir>/src/**/__mocks__/**',
+    '!<rootDir>/src/**/__tests__/**/*-validation.ts', // Exclude validation utilities
   ],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
@@ -39,6 +39,10 @@ const customJestConfig = {
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
     '<rootDir>/src/__tests__/automated-sync-tests.spec.ts', // Playwright test, not Jest
+    '<rootDir>/tests/security/multi-user-e2e.spec.ts', // E2E test for Playwright
+    '<rootDir>/src/__tests__/e2e/', // All E2E tests should use Playwright, not Jest
+    '.*\\.spec\\.ts$', // Playwright spec files
+    '.*\\.e2e\\.test\\.ts$', // E2E test files
   ],
   // Add jest environment options for better test handling
   testEnvironmentOptions: {

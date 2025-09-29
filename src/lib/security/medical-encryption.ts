@@ -4,6 +4,7 @@
  */
 
 import CryptoJS from 'crypto-js';
+import { logError, logMedical } from '@/lib/logger';
 
 export interface EncryptedData {
   data: string;
@@ -75,7 +76,7 @@ class MedicalEncryption {
         timestamp: new Date().toISOString()
       };
     } catch (error) {
-      console.error('Medical encryption error:', error);
+      logError('Medical encryption failed', { component: 'MedicalEncryption', action: 'encrypt' });
       throw new Error('Failed to encrypt medical data');
     }
   }
@@ -112,7 +113,7 @@ class MedicalEncryption {
         return decryptedString;
       }
     } catch (error) {
-      console.error('Medical decryption error:', error);
+      logError('Medical decryption failed', { component: 'MedicalEncryption', action: 'decrypt' });
       throw new Error('Failed to decrypt medical data');
     }
   }
@@ -204,7 +205,7 @@ class MedicalAuditLogger {
 
       localStorage.setItem('medical_audit_logs', JSON.stringify(logs));
     } catch (error) {
-      console.error('Failed to persist audit log:', error);
+      logError('Audit log persistence failed', { component: 'MedicalAuditLogger', action: 'persist' });
     }
   }
 }
@@ -226,7 +227,7 @@ class SecureMedicalStorage {
 
       this.auditLogger.logAccess('store', key, userId, true);
     } catch (error) {
-      console.error('Failed to store medical data:', error);
+      logError('Medical data storage failed', { component: 'SecureMedicalStorage', action: 'store' });
       throw error;
     }
   }
@@ -246,7 +247,7 @@ class SecureMedicalStorage {
 
       return decryptedData;
     } catch (error) {
-      console.error('Failed to retrieve medical data:', error);
+      logError('Medical data retrieval failed', { component: 'SecureMedicalStorage', action: 'retrieve' });
       return null;
     }
   }

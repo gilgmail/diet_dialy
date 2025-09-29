@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { User as AuthUser } from '@supabase/supabase-js'
 import { authService } from '@/lib/supabase/auth'
 import type { User } from '@/types/supabase'
+import { logAuth, logError, logDebug, logWarn } from '@/lib/logger'
 
 interface UseSupabaseAuthReturn {
   // 認證狀態
@@ -28,9 +29,10 @@ function useSupabaseAuth(): UseSupabaseAuthReturn {
   const [userProfile, setUserProfile] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  console.log('🔍 useSupabaseAuth 狀態:', {
-    user: !!user,
-    userProfile: !!userProfile,
+  logDebug('Auth state check', {
+    component: 'useSupabaseAuth',
+    hasUser: !!user,
+    hasProfile: !!userProfile,
     isLoading,
     hasAuthService: !!authService
   })
@@ -40,37 +42,37 @@ function useSupabaseAuth(): UseSupabaseAuthReturn {
     let mounted = true
 
     const initializeAuth = async () => {
-      console.log('🚀 開始初始化認證...')
+      logAuth('Authentication initialization started')
 
       try {
-        console.log('📡 呼叫 authService.getCurrentUser()...')
+        logDebug('Calling authService.getCurrentUser', { component: 'useSupabaseAuth' })
         const authUser = await authService.getCurrentUser()
-        console.log('👤 獲取用戶結果:', !!authUser, authUser?.id || 'no user')
+        logAuth('User retrieval completed', authUser?.id, 'getCurrentUser')
 
         if (mounted && authUser) {
-          console.log('👍 設定用戶狀態...')
+          logDebug('Setting user state', { component: 'useSupabaseAuth' })
           setUser(authUser)
 
           // 嘗試載入用戶資料
           try {
-            console.log('📋 載入用戶資料...', authUser.id)
+            logDebug('Loading user profile', { component: 'useSupabaseAuth', userId: authUser.id })
             const profile = await authService.getUserProfile(authUser.id)
-            console.log('📋 載入用戶資料結果:', !!profile)
+            logDebug('User profile loaded', { component: 'useSupabaseAuth', hasProfile: !!profile })
             if (mounted) {
               setUserProfile(profile)
             }
           } catch (profileError) {
-            console.warn('⚠️ 載入用戶資料失敗:', profileError)
+            logWarn('Failed to load user profile', { component: 'useSupabaseAuth', error: 'profile_load_failed' })
             // 不阻擋載入完成
           }
         } else {
-          console.log('👤 沒有找到認證用戶')
+          logAuth('No authenticated user found', undefined, 'getCurrentUser')
         }
       } catch (error) {
-        console.error('❌ 初始化認證失敗:', error)
+        logError('Authentication initialization failed', { component: 'useSupabaseAuth' })
       } finally {
         if (mounted) {
-          console.log('✅ 載入完成，設定 isLoading = false')
+          logDebug('Authentication loading completed', { component: 'useSupabaseAuth' })
           setIsLoading(false)
         }
       }
@@ -79,7 +81,7 @@ function useSupabaseAuth(): UseSupabaseAuthReturn {
     initializeAuth()
 
     return () => {
-      console.log('🔄 useSupabaseAuth cleanup')
+      logDebug('Auth hook cleanup', { component: 'useSupabaseAuth' })
       mounted = false
     }
   }, [])
@@ -90,7 +92,7 @@ function useSupabaseAuth(): UseSupabaseAuthReturn {
       setIsLoading(true)
       await authService.signInWithGoogle()
     } catch (error) {
-      console.error('Google sign-in error:', error)
+      logError('Google sign-in failed', { component: 'useSupabaseAuth', action: 'signIn' })
       throw error
     }
   }, [])
@@ -102,7 +104,7 @@ function useSupabaseAuth(): UseSupabaseAuthReturn {
       setUser(null)
       setUserProfile(null)
     } catch (error) {
-      console.error('Sign out error:', error)
+      logError('Sign out failed', { component: 'useSupabaseAuth', action: 'signOut' })
       throw error
     }
   }, [])
@@ -113,16 +115,16 @@ function useSupabaseAuth(): UseSupabaseAuthReturn {
       throw new Error('User not authenticated')
     }
 
-    console.log('💾 開始更新用戶資料:', updates)
+    logDebug('Starting user profile update', { component: 'useSupabaseAuth' })
 
     try {
       // 簡化：直接嘗試更新，如果失敗則創建
       let updatedProfile
       try {
         updatedProfile = await authService.updateUserProfile(user.id, updates)
-        console.log('✅ 更新成功:', !!updatedProfile)
+        logDebug('Profile update successful', { component: 'useSupabaseAuth', hasProfile: !!updatedProfile })
       } catch (updateError) {
-        console.log('📝 更新失敗，嘗試創建:', updateError)
+        logDebug('Profile update failed, attempting create', { component: 'useSupabaseAuth' })
 
         // 如果更新失敗，嘗試創建用戶資料
         updatedProfile = await authService.upsertUserProfile({
@@ -130,14 +132,14 @@ function useSupabaseAuth(): UseSupabaseAuthReturn {
           email: user.email!,
           ...updates
         })
-        console.log('✅ 創建成功:', !!updatedProfile)
+        logDebug('Profile create successful', { component: 'useSupabaseAuth', hasProfile: !!updatedProfile })
       }
 
       if (updatedProfile) {
         setUserProfile(updatedProfile)
       }
     } catch (error) {
-      console.error('❌ 資料更新失敗:', error)
+      logError('Profile update/create failed', { component: 'useSupabaseAuth' })
       throw error
     }
   }, [user?.id])
@@ -148,7 +150,7 @@ function useSupabaseAuth(): UseSupabaseAuthReturn {
         const profile = await authService.getUserProfile(user.id)
         setUserProfile(profile)
       } catch (error) {
-        console.error('Refresh profile error:', error)
+        logError('Profile refresh failed', { component: 'useSupabaseAuth', action: 'refreshProfile' })
       }
     }
   }, [user?.id])

@@ -52,7 +52,7 @@ export default function ManualFoodEntry({
   useEffect(() => {
     const loadFrequentFoods = async () => {
       try {
-        const response = await fetch('/api/history/frequent?userId=demo-user&limit=10');
+        const response = await fetch('/api/history/frequent?limit=10');
         const data = await response.json();
         if (data.success) {
           setFrequentFoods(data.frequentFoods);

@@ -75,8 +75,8 @@ test.describe('Settings Page E2E Tests', () => {
       await loginButton.click();
 
       // In a real scenario, this would redirect to Google OAuth
-      // For testing, we're just checking the button interaction works
-      await expect(loginButton).toHaveBeenClicked;
+      // For testing, we're just checking the button is still visible after click
+      await expect(loginButton).toBeVisible();
     });
   });
 
@@ -95,7 +95,7 @@ test.describe('Settings Page E2E Tests', () => {
       // Mock authenticated state
       await page.addInitScript(() => {
         // Mock the useSupabaseAuth hook to return authenticated state
-        window.mockAuthState = {
+        (window as any).mockAuthState = {
           user: {
             id: 'test-user',
             email: 'test@example.com'
@@ -153,7 +153,7 @@ test.describe('Settings Page E2E Tests', () => {
       if (await loginButton.isVisible()) {
         // Tab until we reach the login button
         let attempts = 0;
-        while (!(await loginButton.isFocused()) && attempts < 10) {
+        while (!(await loginButton.evaluate(el => document.activeElement === el)) && attempts < 10) {
           await page.keyboard.press('Tab');
           attempts++;
         }

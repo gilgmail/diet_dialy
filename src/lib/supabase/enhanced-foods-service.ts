@@ -1,6 +1,29 @@
-// 增強食物服務 - 整合多疾病個人化評分系統
+// 增強食物服務 - 使用統一的多條件評分系統
 import { supabase } from './client'
-import { FoodScoringService, type IBDScores, type TriggerAnalysis, type IBDPatientProfile } from '@/lib/ai/food-scoring-service'
+import { MultiConditionScorer, type MultiConditionResult } from '@/lib/ai/multi-condition-scorer'
+
+// Legacy types - will be gradually phased out
+type IBDScores = {
+  acute_phase: number
+  remission_phase: number
+  general_safety: number
+}
+
+type TriggerAnalysis = {
+  high_fiber: boolean
+  high_fat: boolean
+  high_sugar: boolean
+  spicy: boolean
+  acidic: boolean
+  [key: string]: boolean
+}
+
+type IBDPatientProfile = {
+  ibd_type: string
+  current_phase: string
+  personal_triggers: string[]
+  [key: string]: any
+}
 
 export interface MultiConditionScores {
   ibd?: {

@@ -165,7 +165,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <MainNavigation />
 
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-6" data-testid="dashboard">
         {/* 頂部標題區域 */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">儀表板</h1>

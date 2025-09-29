@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DatabaseFoodItem } from '@/types/food';
 import { medicalScoringEngine } from '@/lib/medical/scoring-engine';
 import type { ExtendedMedicalProfile, FoodItem } from '@/types/medical';
+import { getExternalApiUrl, getApiKey } from '@/lib/env-validation';
+import { logError, logInfo } from '@/lib/logger';
 
 interface FoodAnalyzerRequest {
   foodName: string;
@@ -140,10 +142,13 @@ async function analyzeWithAI(
   }
 
   // 使用OpenAI分析食材
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const apiUrl = getExternalApiUrl('openai');
+  const apiKey = getApiKey('openai');
+
+  const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${openaiKey}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({

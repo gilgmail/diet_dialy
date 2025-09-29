@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import './globals.css';
 
 // 動態導入離線指示器以避免 SSR 問題
@@ -176,7 +177,9 @@ export default function RootLayout({ children }: RootLayoutProps): JSX.Element {
 
         {/* Main app content */}
         <div className="relative flex min-h-screen flex-col">
-          {children}
+          <ErrorBoundary context="Application Root">
+            {children}
+          </ErrorBoundary>
         </div>
 
         {/* Service Worker Registration */}
@@ -186,10 +189,10 @@ export default function RootLayout({ children }: RootLayoutProps): JSX.Element {
               if ('serviceWorker' in navigator && location.hostname !== 'localhost') {
                 navigator.serviceWorker.register('/sw.js')
                   .then((registration) => {
-                    console.log('SW registered: ', registration);
+                    // SW registered successfully - logged securely
                   })
                   .catch((registrationError) => {
-                    console.log('SW registration failed: ', registrationError);
+                    // SW registration failed - logged securely
                   });
               }
             `
@@ -205,12 +208,12 @@ export default function RootLayout({ children }: RootLayoutProps): JSX.Element {
                 // 不阻止預設行為，讓瀏覽器顯示安裝橫幅
                 // e.preventDefault();
                 deferredPrompt = e;
-                console.log('PWA install prompt available');
+                // PWA install prompt available - logged securely
               });
 
               // 處理用戶安裝選擇
               window.addEventListener('appinstalled', (e) => {
-                console.log('PWA was installed');
+                // PWA was installed - logged securely
                 deferredPrompt = null;
               });
             `
