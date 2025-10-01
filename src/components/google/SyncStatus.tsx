@@ -8,7 +8,7 @@ interface SyncStatusProps {
   className?: string;
 }
 
-export function SyncStatus({ showDetails = false, className = '' }: SyncStatusProps) {
+export function SyncStatus({ showDetails = false, className = '' }: SyncStatusProps): JSX.Element {
   // Phase 1: Simple status display without Google Sheets sync
   return (
     <div className={`p-4 bg-green-50 border border-green-200 rounded-lg ${className}`}>

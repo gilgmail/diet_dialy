@@ -60,10 +60,10 @@ export async function GET(request: NextRequest) {
           name: foods[0].name, // 使用第一個項目的原始名稱
           duplicates: foods.sort((a, b) => {
             // 優先保留已驗證的食物
-            if (a.verification_status === 'admin_approved' && b.verification_status !== 'admin_approved') {
+            if (a.verification_status === 'approved' && b.verification_status !== 'approved') {
               return -1
             }
-            if (b.verification_status === 'admin_approved' && a.verification_status !== 'admin_approved') {
+            if (b.verification_status === 'approved' && a.verification_status !== 'approved') {
               return 1
             }
             // 其次保留較完整營養資訊的食物
@@ -166,10 +166,10 @@ export async function POST(request: NextRequest) {
             name: foods[0].name,
             duplicates: foods.sort((a, b) => {
               // 優先保留已驗證的食物
-              if (a.verification_status === 'admin_approved' && b.verification_status !== 'admin_approved') {
+              if (a.verification_status === 'approved' && b.verification_status !== 'approved') {
                 return -1
               }
-              if (b.verification_status === 'admin_approved' && a.verification_status !== 'admin_approved') {
+              if (b.verification_status === 'approved' && a.verification_status !== 'approved') {
                 return 1
               }
               // 其次保留較完整營養資訊的食物

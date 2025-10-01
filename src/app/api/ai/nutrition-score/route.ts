@@ -54,22 +54,14 @@ export async function POST(request: NextRequest) {
 
     // 重新導向到多條件評分 API
     const multiConditionBody = {
-      foodData: {
-        name: body.foodName,
-        category: body.category || '其他',
-        calories: body.nutrition?.calories,
-        protein: body.nutrition?.protein,
-        carbohydrates: body.nutrition?.carbohydrates,
-        fat: body.nutrition?.fat,
-        fiber: body.nutrition?.fiber,
-        sodium: body.nutrition?.sodium,
-        sugar: body.nutrition?.sugar,
-        brand: body.brand,
-        ingredients: body.ingredients,
-        preparation: body.preparation
-      },
-      conditions: [
-        { type: 'IBD' as const }
+      foodName: body.foodName,
+      category: body.category || '其他',
+      nutrition: body.nutrition,
+      brand: body.brand,
+      ingredients: body.ingredients,
+      preparation: body.preparation,
+      medicalConditions: [
+        { type: 'IBD' as const, severity: 'moderate' as const }
       ]
     }
 
@@ -84,7 +76,13 @@ export async function POST(request: NextRequest) {
     })
 
     if (!multiConditionResponse.ok) {
-      throw new Error('Multi-condition API call failed')
+      const errorText = await multiConditionResponse.text()
+      console.error('Multi-condition API failed:', {
+        status: multiConditionResponse.status,
+        statusText: multiConditionResponse.statusText,
+        error: errorText
+      })
+      throw new Error(`Multi-condition API call failed: ${multiConditionResponse.status} - ${errorText}`)
     }
 
     const multiResult = await multiConditionResponse.json()

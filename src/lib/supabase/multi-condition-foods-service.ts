@@ -142,7 +142,7 @@ export class MultiConditionFoodsService {
     let query = supabase
       .from('diet_daily_foods')
       .select('*')
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
       .ilike('name', `%${searchTerm}%`)
       .limit(20)
 
@@ -196,7 +196,7 @@ export class MultiConditionFoodsService {
     let query = supabase
       .from('diet_daily_foods')
       .select('*')
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
 
     query = query.order('created_at', { ascending: false }).limit(limit * 2)
 
@@ -276,7 +276,7 @@ export class MultiConditionFoodsService {
     let query = supabase
       .from('diet_daily_foods')
       .select('*')
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
       .eq('taiwan_origin', true)
 
     if (category) {
@@ -429,7 +429,7 @@ export class MultiConditionFoodsService {
     let query = supabase
       .from('diet_daily_foods')
       .select('category')
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
 
     const { data, error } = await query
 

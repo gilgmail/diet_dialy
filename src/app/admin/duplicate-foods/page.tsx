@@ -153,7 +153,7 @@ export default function DuplicateFoodsPage(): JSX.Element {
   // 獲取驗證狀態顏色
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'admin_approved': return 'text-green-600 bg-green-100';
+      case 'approved': return 'text-green-600 bg-green-100';
       case 'rejected': return 'text-red-600 bg-red-100';
       default: return 'text-yellow-600 bg-yellow-100';
     }
@@ -162,7 +162,7 @@ export default function DuplicateFoodsPage(): JSX.Element {
   // 獲取驗證狀態文字
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'admin_approved': return '已通過';
+      case 'approved': return '已通過';
       case 'rejected': return '已拒絕';
       default: return '待審核';
     }

@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Only include verified foods
-    supabaseQuery = supabaseQuery.eq('verification_status', 'admin_approved')
+    supabaseQuery = supabaseQuery.eq('verification_status', 'approved')
     filtersApplied.push('verified_only')
 
     // Apply pagination

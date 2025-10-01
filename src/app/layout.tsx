@@ -1,17 +1,8 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
-import dynamic from 'next/dynamic';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import OfflineIndicator from '@/components/common/OfflineIndicator';
 import './globals.css';
-
-// 動態導入離線指示器以避免 SSR 問題
-const OfflineIndicator = dynamic(
-  () => import('@/components/common/OfflineIndicator'),
-  { ssr: false }
-);
-
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -152,8 +143,7 @@ export default function RootLayout({ children }: RootLayoutProps): JSX.Element {
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased',
-          'supports-[height:100dvh]:min-h-[100dvh]', // Dynamic viewport height
-          inter.variable
+          'supports-[height:100dvh]:min-h-[100dvh]' // Dynamic viewport height
         )}
       >
         {/* Offline Indicator */}

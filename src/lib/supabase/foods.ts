@@ -2,6 +2,32 @@
 import { supabase } from './client'
 import type { Food, FoodInsert, FoodUpdate } from '@/types/supabase'
 
+const DB_APPROVED_STATUSES = ['admin_approved', 'ai_approved', 'approved'] as const
+type AppVerificationStatus = 'pending' | 'approved' | 'rejected'
+
+const toDbVerificationStatus = (status: AppVerificationStatus): string => {
+  if (status === 'approved') {
+    return 'admin_approved'
+  }
+  return status
+}
+
+const normalizeVerificationStatus = (status: string | null | undefined): AppVerificationStatus => {
+  if (!status) return 'pending'
+  if (status === 'rejected') return 'rejected'
+  if (DB_APPROVED_STATUSES.includes(status as typeof DB_APPROVED_STATUSES[number])) {
+    return 'approved'
+  }
+  return 'pending'
+}
+
+const normalizeFood = (food: any): Food => ({
+  ...food,
+  verification_status: normalizeVerificationStatus(food?.verification_status)
+})
+
+const normalizeFoods = (foods: any[] | null): Food[] => foods ? foods.map(normalizeFood) : []
+
 export class SupabaseFoodsService {
 
   // 獲取所有已驗證的食物
@@ -9,7 +35,7 @@ export class SupabaseFoodsService {
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
-      .in('verification_status', ['approved', 'admin_approved'])
+      .in('verification_status', DB_APPROVED_STATUSES)
       .order('name')
 
     if (error) {
@@ -17,7 +43,7 @@ export class SupabaseFoodsService {
       throw error
     }
 
-    return data || []
+    return normalizeFoods(data)
   }
 
   // 搜尋已驗證的食物
@@ -25,7 +51,7 @@ export class SupabaseFoodsService {
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
-      .in('verification_status', ['approved', 'admin_approved'])
+      .in('verification_status', DB_APPROVED_STATUSES)
       .ilike('name', `%${searchTerm}%`)
       .order('name')
       .limit(20)
@@ -35,7 +61,7 @@ export class SupabaseFoodsService {
       throw error
     }
 
-    return data || []
+    return normalizeFoods(data)
   }
 
   // 依分類獲取食物
@@ -44,7 +70,7 @@ export class SupabaseFoodsService {
       .from('diet_daily_foods')
       .select('*')
       .eq('category', category)
-      .in('verification_status', ['approved', 'admin_approved'])
+      .in('verification_status', DB_APPROVED_STATUSES)
       .order('name')
 
     if (error) {
@@ -52,7 +78,7 @@ export class SupabaseFoodsService {
       throw error
     }
 
-    return data || []
+    return normalizeFoods(data)
   }
 
   // 搜尋食物
@@ -78,7 +104,7 @@ export class SupabaseFoodsService {
 
     // 驗證狀態過濾
     if (!options?.includeUnverified) {
-      supabaseQuery = supabaseQuery.in('verification_status', ['approved', 'admin_approved'])
+      supabaseQuery = supabaseQuery.in('verification_status', DB_APPROVED_STATUSES)
     }
 
     // 是否包含自訂食物
@@ -95,7 +121,7 @@ export class SupabaseFoodsService {
       throw error
     }
 
-    return data || []
+    return normalizeFoods(data)
   }
 
   // 根據 ID 獲取食物
@@ -111,7 +137,7 @@ export class SupabaseFoodsService {
       return null
     }
 
-    return data
+    return data ? normalizeFood(data) : null
   }
 
   // 建立自訂食物
@@ -131,14 +157,20 @@ export class SupabaseFoodsService {
       throw error
     }
 
-    return data
+    return data ? normalizeFood(data) : null
   }
 
   // 建立食物 (通用方法)
   async createFood(foodData: FoodInsert): Promise<Food | null> {
+    const insertData: any = { ...foodData }
+
+    if (insertData.verification_status) {
+      insertData.verification_status = toDbVerificationStatus(insertData.verification_status)
+    }
+
     const { data, error } = await supabase
       .from('diet_daily_foods')
-      .insert(foodData)
+      .insert(insertData)
       .select()
       .single()
 
@@ -147,14 +179,20 @@ export class SupabaseFoodsService {
       throw error
     }
 
-    return data
+    return data ? normalizeFood(data) : null
   }
 
   // 更新食物資料
   async updateFood(id: string, updates: FoodUpdate): Promise<Food | null> {
+    const updatePayload: any = { ...updates }
+
+    if (updatePayload.verification_status) {
+      updatePayload.verification_status = toDbVerificationStatus(updatePayload.verification_status)
+    }
+
     const { data, error } = await supabase
       .from('diet_daily_foods')
-      .update(updates)
+      .update(updatePayload)
       .eq('id', id)
       .select()
       .single()
@@ -164,7 +202,7 @@ export class SupabaseFoodsService {
       throw error
     }
 
-    return data
+    return data ? normalizeFood(data) : null
   }
 
   // 獲取待驗證的食物 (僅管理員)
@@ -180,7 +218,7 @@ export class SupabaseFoodsService {
       throw error
     }
 
-    return data || []
+    return normalizeFoods(data)
   }
 
   // 驗證食物 (僅管理員)
@@ -201,9 +239,10 @@ export class SupabaseFoodsService {
 
     // 確保 verification_status 值完全符合約束
     const validStatus = status === 'approved' ? 'approved' : 'rejected';
+    const dbStatus = toDbVerificationStatus(validStatus);
 
     const updateData: any = {
-      verification_status: validStatus,
+      verification_status: dbStatus,
       verified_by: verifiedBy,
       verification_notes: finalNotes,
       verified_at: new Date().toISOString()
@@ -232,7 +271,7 @@ export class SupabaseFoodsService {
       }
 
       console.log('✅ Successfully verified food with medical scores in notes:', data)
-      return data
+      return data ? normalizeFood(data) : null
     } catch (err) {
       console.error('💥 Exception in verifyFood:', err)
       throw err
@@ -244,7 +283,7 @@ export class SupabaseFoodsService {
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('category')
-      .in('verification_status', ['approved', 'admin_approved'])
+      .in('verification_status', DB_APPROVED_STATUSES)
 
     if (error) {
       console.error('Get food categories error:', error)
@@ -270,7 +309,7 @@ export class SupabaseFoodsService {
       throw error
     }
 
-    return data || []
+    return normalizeFoods(data)
   }
 
   // 刪除自訂食物
@@ -327,7 +366,7 @@ export class SupabaseFoodsService {
       { count: taiwanCount }
     ] = await Promise.all([
       supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }),
-      supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).in('verification_status', ['approved', 'admin_approved']),
+      supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).in('verification_status', DB_APPROVED_STATUSES),
       supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).eq('verification_status', 'pending'),
       supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).eq('verification_status', 'rejected'),
       supabase.from('diet_daily_foods').select('*', { count: 'exact', head: true }).eq('is_custom', true),
@@ -356,7 +395,7 @@ export class SupabaseFoodsService {
       throw error
     }
 
-    return data || []
+    return normalizeFoods(data)
   }
 
   // 分頁獲取食物
@@ -376,7 +415,11 @@ export class SupabaseFoodsService {
       query = query.eq('category', filters.category)
     }
     if (filters?.verification_status) {
-      query = query.eq('verification_status', filters.verification_status)
+      if (filters.verification_status === 'approved') {
+        query = query.in('verification_status', DB_APPROVED_STATUSES)
+      } else {
+        query = query.eq('verification_status', filters.verification_status)
+      }
     }
     if (filters?.taiwan_origin !== undefined) {
       query = query.eq('taiwan_origin', filters.taiwan_origin)
@@ -405,7 +448,7 @@ export class SupabaseFoodsService {
     const hasMore = total > page * limit
 
     return {
-      data: data || [],
+      data: normalizeFoods(data),
       total,
       hasMore
     }
@@ -418,10 +461,13 @@ export class SupabaseFoodsService {
     verifiedBy: string,
     notes?: string
   ): Promise<Food[]> {
+    const normalizedStatus = status === 'approved' ? 'approved' : 'rejected'
+    const dbStatus = toDbVerificationStatus(normalizedStatus)
+
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .update({
-        verification_status: status,
+        verification_status: dbStatus,
         verified_by: verifiedBy,
         verification_notes: notes,
         verified_at: new Date().toISOString()
@@ -434,7 +480,7 @@ export class SupabaseFoodsService {
       throw error
     }
 
-    return data || []
+    return normalizeFoods(data)
   }
 
   // 檢查食物名稱是否重複
@@ -463,7 +509,7 @@ export class SupabaseFoodsService {
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
-      .in('verification_status', ['approved', 'admin_approved'])
+      .in('verification_status', DB_APPROVED_STATUSES)
       .order('created_at', { ascending: false })
       .limit(limit)
 
@@ -472,14 +518,22 @@ export class SupabaseFoodsService {
       throw error
     }
 
-    return data || []
+    return normalizeFoods(data)
   }
 
   // 批量建立食物
   async bulkCreateFoods(foods: FoodInsert[]): Promise<Food[]> {
+    const insertFoods = foods.map(food => {
+      const payload: any = { ...food }
+      if (payload.verification_status) {
+        payload.verification_status = toDbVerificationStatus(payload.verification_status)
+      }
+      return payload
+    })
+
     const { data, error } = await supabase
       .from('diet_daily_foods')
-      .insert(foods)
+      .insert(insertFoods)
       .select()
 
     if (error) {
@@ -487,7 +541,7 @@ export class SupabaseFoodsService {
       throw error
     }
 
-    return data || []
+    return normalizeFoods(data)
   }
 
   // 批量更新食物驗證狀態
@@ -497,10 +551,12 @@ export class SupabaseFoodsService {
     verifiedBy: string,
     notes?: string
   ): Promise<boolean> {
+    const dbStatus = toDbVerificationStatus(status)
+
     const { error } = await supabase
       .from('diet_daily_foods')
       .update({
-        verification_status: status,
+        verification_status: dbStatus,
         verified_by: verifiedBy,
         verification_notes: notes,
         verified_at: new Date().toISOString()
@@ -567,7 +623,7 @@ export class SupabaseFoodsService {
       return null
     }
 
-    return data
+    return data ? normalizeFood(data) : null
   }
 }
 

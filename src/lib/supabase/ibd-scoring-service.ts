@@ -43,7 +43,7 @@ export class IBDScoringService {
       .from('diet_daily_foods')
       .select('*')
       .eq('ibd_score', score)
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
       .order('ibd_confidence', { ascending: false })
       .limit(limit)
 
@@ -66,7 +66,7 @@ export class IBDScoringService {
       .from('diet_daily_foods')
       .select('*')
       .not('ibd_score', 'is', null) // 只取已評分的食物
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
 
     // 搜尋條件
     if (query) {
@@ -234,7 +234,7 @@ export class IBDScoringService {
       .from('diet_daily_foods')
       .select('id')
       .eq('category', category)
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
       .is('ibd_score', null)
 
     if (error || !foods) {
@@ -323,7 +323,7 @@ export class IBDScoringService {
       .from('diet_daily_foods')
       .select('*')
       .gte('ibd_score', 2)
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
       .order('ibd_score', { ascending: false })
       .order('ibd_confidence', { ascending: false })
       .limit(limit)
@@ -342,7 +342,7 @@ export class IBDScoringService {
       .from('diet_daily_foods')
       .select('*')
       .lte('ibd_score', 1)
-      .eq('verification_status', 'admin_approved')
+      .eq('verification_status', 'approved')
       .order('ibd_score', { ascending: true })
       .order('ibd_confidence', { ascending: false })
       .limit(limit)

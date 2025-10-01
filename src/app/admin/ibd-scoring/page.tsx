@@ -98,7 +98,7 @@ export default function IBDScoringAdminPage() {
       const { data } = await foodsService.getFoodsPaginated(currentPage, pageSize, {
         search: searchTerm,
         category: selectedCategory || undefined,
-        verification_status: 'admin_approved'
+        verification_status: 'approved'
       })
 
       // 根據評分篩選

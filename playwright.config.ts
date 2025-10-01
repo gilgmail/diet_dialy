@@ -29,7 +29,7 @@ export default defineConfig({
   /* 全局測試配置 */
   use: {
     /* 基礎 URL */
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: process.env.BASE_URL || 'http://127.0.0.1:3000',
 
     /* 追蹤模式 */
     trace: 'on-first-retry',
@@ -90,8 +90,10 @@ export default defineConfig({
 
   /* 在開始測試前啟動開發伺服器 */
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
+    command: process.env.CI
+      ? 'npm run start -- --hostname 0.0.0.0 --port 3000'
+      : 'npm run dev',
+    url: 'http://127.0.0.1:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },

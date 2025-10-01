@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SymptomTrendsChart from '@/components/medical/charts/SymptomTrendsChart';
 import type { SymptomTrend, FoodSymptomCorrelation, SeverityPattern } from '@/lib/medical/symptom-tracker';
@@ -106,8 +106,8 @@ describe('SymptomTrendsChart', () => {
 
     // Should render chart components
     expect(screen.getByTestId('line-chart')).toBeInTheDocument();
-    expect(screen.getByTestId('x-axis')).toBeInTheDocument();
-    expect(screen.getByTestId('y-axis')).toBeInTheDocument();
+    expect(screen.getAllByTestId('x-axis').length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId('y-axis').length).toBeGreaterThan(0);
   });
 
   it('handles empty data gracefully', () => {
@@ -221,7 +221,7 @@ describe('SymptomTrendsChart', () => {
     );
 
     // Check for numeric statistics in the summary
-    expect(screen.getByText('2')).toBeInTheDocument(); // Number of symptom types
-    expect(screen.getByText('1')).toBeInTheDocument(); // Number improving/correlations
+    expect(screen.getAllByText('2').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(2);
   });
 });

@@ -1,13 +1,14 @@
 // Google authentication button component
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { useGoogleAuth } from '@/lib/google';
+import { useEffect, useRef, useState } from 'react';
 import { Loader2, Shield, User, AlertCircle } from 'lucide-react';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { useGoogleAuth, type GoogleUser } from '@/lib/google';
 
 interface GoogleAuthButtonProps {
-  onAuthSuccess?: (user: any) => void;
+  onAuthSuccess?: (user: GoogleUser) => void;
   onAuthError?: (error: string) => void;
   variant?: 'default' | 'outline' | 'secondary';
   size?: 'sm' | 'default' | 'lg';
@@ -20,7 +21,7 @@ export function GoogleAuthButton({
   variant = 'default',
   size = 'default',
   className = ''
-}: GoogleAuthButtonProps) {
+}: GoogleAuthButtonProps): JSX.Element {
   const {
     isAuthenticated,
     user,
@@ -31,15 +32,29 @@ export function GoogleAuthButton({
   } = useGoogleAuth();
   
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const hasNotifiedRef = useRef(false);
 
-  const handleSignIn = async () => {
+  useEffect(() => {
+    if (isAuthenticated && user && !hasNotifiedRef.current) {
+      onAuthSuccess?.(user);
+      hasNotifiedRef.current = true;
+    }
+
+    if (!isAuthenticated) {
+      hasNotifiedRef.current = false;
+    }
+  }, [isAuthenticated, user, onAuthSuccess]);
+
+  const handleSignIn = async (): Promise<void> => {
     if (isSigningIn) return;
     
     setIsSigningIn(true);
     try {
       const authUrl = await signIn();
-      // Redirect to Google OAuth
-      window.location.href = authUrl;
+
+      if (authUrl) {
+        window.location.href = authUrl;
+      }
     } catch (err) {
       console.error('Sign in failed:', err);
       const errorMessage = err instanceof Error ? err.message : 'Sign in failed';
@@ -49,7 +64,7 @@ export function GoogleAuthButton({
     }
   };
 
-  const handleSignOut = async () => {
+  const handleSignOut = async (): Promise<void> => {
     try {
       await signOut();
     } catch (err) {
@@ -64,10 +79,12 @@ export function GoogleAuthButton({
       <div className={`flex items-center space-x-3 ${className}`}>
         <div className="flex items-center space-x-2">
           {user.picture ? (
-            <img 
-              src={user.picture} 
+            <Image
+              src={user.picture}
               alt={user.name}
-              className="w-8 h-8 rounded-full"
+              width={32}
+              height={32}
+              className="rounded-full"
             />
           ) : (
             <User className="w-8 h-8 rounded-full bg-gray-100 p-1" />

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-export default function OfflineIndicator() {
+export default function OfflineIndicator(): JSX.Element | null {
   const [isOnline, setIsOnline] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -10,14 +10,14 @@ export default function OfflineIndicator() {
     // 初始化網路狀態
     setIsOnline(navigator.onLine);
 
-    const handleOnline = () => {
+    const handleOnline = (): void => {
       setIsOnline(true);
       setIsVisible(true);
       // 顯示重新連線訊息3秒
-      setTimeout(() => setIsVisible(false), 3000);
+      setTimeout((): void => setIsVisible(false), 3000);
     };
 
-    const handleOffline = () => {
+    const handleOffline = (): void => {
       setIsOnline(false);
       setIsVisible(true);
     };
@@ -25,7 +25,7 @@ export default function OfflineIndicator() {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    return () => {
+    return (): void => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };

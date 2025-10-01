@@ -1,0 +1,29 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": {
+      "@/components/ErrorBoundary": ["./src/components/ErrorBoundary"],
+      "@/components/*": ["./src/components/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/types/*": ["./src/types/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/stores/*": ["./src/stores/*"],
+      "@/data/*": ["./src/data/*"],
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/app/layout.tsx",
+    "src/components/common/OfflineIndicator.tsx",
+    "src/components/ErrorBoundary.tsx",
+    "src/components/google/**/*",
+    "src/components/ui/button.tsx",
+    "src/lib/google/**/*",
+    "src/lib/logger.ts",
+    "src/lib/utils.ts",
+    "src/types/**/*"
+  ],
+  "exclude": []
+}

@@ -415,7 +415,7 @@ export default function FoodDatabasePage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'admin_approved':
+      case 'approved':
         return <CheckCircle className="w-4 h-4 text-green-600" />
       case 'rejected':
         return <XCircle className="w-4 h-4 text-red-600" />
@@ -428,7 +428,7 @@ export default function FoodDatabasePage() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'admin_approved': return '已驗證'
+      case 'approved': return '已驗證'
       case 'rejected': return '已拒絕'
       case 'pending': return '待審核'
       default: return '未知'
@@ -968,7 +968,7 @@ export default function FoodDatabasePage() {
           </div>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <div className="text-2xl font-bold text-green-600">
-              {allFoods.filter(f => f.verification_status === 'approved' || f.verification_status === 'admin_approved').length}
+              {allFoods.filter(f => f.verification_status === 'approved' || f.verification_status === 'approved').length}
             </div>
             <div className="text-sm text-gray-600">已驗證食物</div>
           </div>
