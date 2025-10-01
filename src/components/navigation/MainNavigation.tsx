@@ -15,6 +15,12 @@ export default function MainNavigation(): JSX.Element {
       description: '概覽與快速功能'
     },
     {
+      href: '/symptoms',
+      label: '症狀日記',
+      icon: '📅',
+      description: '每日症狀記錄'
+    },
+    {
       href: '/food-diary',
       label: '食物日記',
       icon: '🍽️',

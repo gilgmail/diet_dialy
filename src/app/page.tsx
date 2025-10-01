@@ -1,10 +1,44 @@
 'use client'
 
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
 
 export default function HomePage() {
+  const router = useRouter()
   const { user, isLoading, isAuthenticated, signInWithGoogle } = useSupabaseAuth()
+
+  // 已登入用戶自動導向儀表板
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.push('/dashboard')
+    }
+  }, [isLoading, isAuthenticated, router])
+
+  // 載入中顯示
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">載入中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 已登入用戶在重導向前的過渡畫面
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">前往儀表板...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -65,6 +99,20 @@ export default function HomePage() {
             </div>
           </Link>
 
+          {/* Symptom Diary */}
+          <Link href="/symptoms" className="group">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all group-hover:scale-105">
+              <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-white text-2xl">📅</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">症狀日記</h3>
+              <p className="text-sm text-gray-600 mb-3">記錄每日症狀、健康狀態與醫療追蹤</p>
+              <div className="flex items-center text-blue-500 text-sm font-medium">
+                記錄症狀 →
+              </div>
+            </div>
+          </Link>
+
           {/* Food Diary */}
           <Link href="/food-diary" className="group">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all group-hover:scale-105">
@@ -103,6 +151,20 @@ export default function HomePage() {
               <p className="text-sm text-gray-600 mb-3">查看個人食物記錄、統計分析和趨勢</p>
               <div className="flex items-center text-green-500 text-sm font-medium">
                 查看記錄 →
+              </div>
+            </div>
+          </Link>
+
+          {/* Correlation Analysis */}
+          <Link href="/correlation-analysis" className="group">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all group-hover:scale-105">
+              <div className="w-12 h-12 bg-teal-500 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-white text-2xl">🧠</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">關聯分析</h3>
+              <p className="text-sm text-gray-600 mb-3">AI 智能分析食物與症狀的關聯性</p>
+              <div className="flex items-center text-teal-500 text-sm font-medium">
+                開始分析 →
               </div>
             </div>
           </Link>
