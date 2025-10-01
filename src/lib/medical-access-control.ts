@@ -1,10 +1,14 @@
 /**
  * Medical Condition-Based Access Control
  * Controls which AI analysis results users can see based on their medical conditions
+ * Enhanced with daily symptom tracking integration
  */
 
 import { createClient } from '@/lib/supabase/client'
+import { DailySymptomService } from '@/lib/supabase/daily-symptom-service'
+import { SymptomCorrelationService } from '@/lib/supabase/symptom-correlation-service'
 import type { MultiConditionResult, MedicalCondition } from '@/lib/ai/multi-condition-scorer'
+import type { DailySymptomEntry, SymptomFoodCorrelation } from '@/types/medical'
 
 export interface UserMedicalProfile {
   medical_conditions: string[]
@@ -334,6 +338,335 @@ export class MedicalAccessControl {
       conditionCount,
       allergyCount
     }
+  }
+
+  /**
+   * Enhanced analysis with symptom tracking context
+   * Provides personalized food recommendations based on user's symptom history
+   */
+  async enhanceAnalysisWithSymptomHistory(
+    analysisResult: MultiConditionResult,
+    userId: string
+  ): Promise<FilteredAnalysisResult & {
+    symptom_context?: {
+      recent_symptoms: DailySymptomEntry[]
+      food_correlations: SymptomFoodCorrelation[]
+      personalized_recommendations: string[]
+      risk_warnings: string[]
+    }
+  }> {
+    // Get base filtered analysis
+    const baseResult = await this.filterAnalysisForUser(analysisResult, userId)
+
+    try {
+      // Get recent symptom data (last 30 days)
+      const recentSymptoms = await DailySymptomService.getRecentEntries(userId, 30)
+
+      // Get food correlations for this specific food if it exists in DB
+      const foodCorrelations = await this.getFoodCorrelationsForAnalysis(userId, analysisResult.food_name)
+
+      // Generate personalized recommendations based on symptom history
+      const personalizedRecommendations = this.generateSymptomBasedRecommendations(
+        recentSymptoms,
+        foodCorrelations,
+        analysisResult
+      )
+
+      // Identify risk warnings based on symptom patterns
+      const riskWarnings = this.identifySymptomBasedRisks(
+        recentSymptoms,
+        foodCorrelations,
+        analysisResult
+      )
+
+      return {
+        ...baseResult,
+        symptom_context: {
+          recent_symptoms: recentSymptoms.slice(0, 7), // Last 7 days only for privacy
+          food_correlations: foodCorrelations,
+          personalized_recommendations: personalizedRecommendations,
+          risk_warnings: riskWarnings
+        }
+      }
+
+    } catch (error) {
+      console.error('Error enhancing analysis with symptom history:', error)
+      return baseResult
+    }
+  }
+
+  /**
+   * Check if user should be warned about food based on symptom history
+   */
+  async shouldWarnAboutFood(
+    userId: string,
+    foodId: string,
+    foodName: string
+  ): Promise<{
+    shouldWarn: boolean
+    warningLevel: 'low' | 'medium' | 'high'
+    reasons: string[]
+    recommendations: string[]
+  }> {
+    try {
+      // Get user's correlation data for this food
+      const correlation = await SymptomCorrelationService.getFoodCorrelation(userId, foodId)
+
+      if (!correlation) {
+        return {
+          shouldWarn: false,
+          warningLevel: 'low',
+          reasons: [],
+          recommendations: []
+        }
+      }
+
+      const reasons: string[] = []
+      const recommendations: string[] = []
+      let warningLevel: 'low' | 'medium' | 'high' = 'low'
+
+      // Check correlation strength and type
+      if (correlation.correlation_type === 'positive' && correlation.correlation_strength > 0.3) {
+        warningLevel = correlation.correlation_strength > 0.6 ? 'high' : 'medium'
+        reasons.push(`此食物與症狀惡化有中度到強烈關聯 (關聯強度: ${correlation.correlation_strength.toFixed(2)})`)
+
+        // Identify specific problematic symptoms
+        const problematicSymptoms = Object.entries(correlation.symptom_impacts)
+          .filter(([_, impact]) => Math.abs(impact) > 0.3)
+          .map(([symptom, _]) => this.getSymptomDisplayName(symptom))
+
+        if (problematicSymptoms.length > 0) {
+          reasons.push(`特別影響症狀: ${problematicSymptoms.join('、')}`)
+        }
+
+        // Generate recommendations
+        if (warningLevel === 'high') {
+          recommendations.push('建議避免食用此食物')
+          recommendations.push('如需食用，請先諮詢醫療專業人員')
+        } else {
+          recommendations.push('建議謹慎食用，並密切觀察症狀變化')
+          recommendations.push('可考慮減少食用份量或頻率')
+        }
+
+        if (correlation.sample_size < 10) {
+          recommendations.push('需要更多數據來確認此關聯性，建議持續追蹤')
+        }
+      }
+
+      // Check if user has confirmed/denied this correlation
+      if (correlation.user_confirmed === false) {
+        warningLevel = 'low'
+        reasons.push('您已確認此關聯性不準確')
+        recommendations.push('系統將基於您的反饋調整分析')
+      } else if (correlation.user_confirmed === true) {
+        if (warningLevel === 'low') warningLevel = 'medium'
+        reasons.push('您已確認此關聯性準確')
+      }
+
+      return {
+        shouldWarn: reasons.length > 0,
+        warningLevel,
+        reasons,
+        recommendations
+      }
+
+    } catch (error) {
+      console.error('Error checking food warning:', error)
+      return {
+        shouldWarn: false,
+        warningLevel: 'low',
+        reasons: ['無法取得症狀關聯性資料'],
+        recommendations: ['建議根據個人經驗判斷']
+      }
+    }
+  }
+
+  /**
+   * Get user's symptom tracking compliance and data quality
+   */
+  async getSymptomTrackingStatus(userId: string): Promise<{
+    isActive: boolean
+    trackingStreak: number
+    dataQuality: number
+    lastEntryDate?: Date
+    weeklyCompleteness: number
+    recommendations: string[]
+  }> {
+    try {
+      const summary = await DailySymptomService.getUserSummary(userId)
+
+      if (!summary) {
+        return {
+          isActive: false,
+          trackingStreak: 0,
+          dataQuality: 0,
+          weeklyCompleteness: 0,
+          recommendations: [
+            '開始記錄每日症狀以獲得個人化食物建議',
+            '建議每天花 2-3 分鐘記錄症狀狀況',
+            '持續追蹤有助於識別食物觸發因子'
+          ]
+        }
+      }
+
+      // Calculate weekly completeness (last 7 days)
+      const recentEntries = await DailySymptomService.getRecentEntries(userId, 7)
+      const weeklyCompleteness = recentEntries.length / 7
+
+      // Generate recommendations based on tracking status
+      const recommendations: string[] = []
+
+      if (summary.tracking_streak < 7) {
+        recommendations.push('建議持續追蹤至少一週以建立基準線')
+      }
+
+      if (weeklyCompleteness < 0.8) {
+        recommendations.push('建議提高記錄頻率以獲得更準確的分析')
+      }
+
+      if (summary.total_entries >= 30) {
+        recommendations.push('資料充足，可開始分析食物與症狀的關聯性')
+      }
+
+      // Calculate average data quality from recent entries
+      const avgDataQuality = recentEntries.length > 0
+        ? recentEntries.reduce((sum, entry) => sum + entry.data_completeness_score, 0) / recentEntries.length
+        : 0
+
+      return {
+        isActive: summary.tracking_streak > 0,
+        trackingStreak: summary.tracking_streak,
+        dataQuality: avgDataQuality,
+        lastEntryDate: summary.last_entry_date,
+        weeklyCompleteness,
+        recommendations
+      }
+
+    } catch (error) {
+      console.error('Error getting symptom tracking status:', error)
+      return {
+        isActive: false,
+        trackingStreak: 0,
+        dataQuality: 0,
+        weeklyCompleteness: 0,
+        recommendations: ['無法取得追蹤狀態，請稍後再試']
+      }
+    }
+  }
+
+  /**
+   * Private helper methods
+   */
+
+  private async getFoodCorrelationsForAnalysis(
+    userId: string,
+    foodName: string
+  ): Promise<SymptomFoodCorrelation[]> {
+    try {
+      // Try to find correlations by food name (fuzzy matching)
+      const correlations = await SymptomCorrelationService.getCorrelationsByFilters(userId, {
+        limit: 10
+      })
+
+      return correlations.filter(correlation =>
+        correlation.food_name.toLowerCase().includes(foodName.toLowerCase()) ||
+        foodName.toLowerCase().includes(correlation.food_name.toLowerCase())
+      )
+    } catch (error) {
+      console.error('Error fetching food correlations:', error)
+      return []
+    }
+  }
+
+  private generateSymptomBasedRecommendations(
+    recentSymptoms: DailySymptomEntry[],
+    foodCorrelations: SymptomFoodCorrelation[],
+    analysisResult: MultiConditionResult
+  ): string[] {
+    const recommendations: string[] = []
+
+    // Analyze recent symptom trends
+    if (recentSymptoms.length >= 7) {
+      const recentAvgHealth = recentSymptoms.slice(0, 7).reduce((sum, entry) =>
+        sum + entry.overall_health, 0) / 7
+
+      if (recentAvgHealth < 3) {
+        recommendations.push('近期整體健康狀況較差，建議選擇溫和、易消化的食物')
+      }
+
+      const recentSymptomLoad = recentSymptoms.slice(0, 7).reduce((sum, entry) =>
+        sum + entry.abdominal_pain + entry.diarrhea + entry.bloody_stool + entry.bloating, 0) / 7
+
+      if (recentSymptomLoad > 5) {
+        recommendations.push('近期症狀較為活躍，建議避免已知觸發食物')
+      }
+    }
+
+    // Analyze food correlations
+    if (foodCorrelations.length > 0) {
+      const negativeCorrelations = foodCorrelations.filter(c => c.correlation_type === 'negative')
+      if (negativeCorrelations.length > 0) {
+        recommendations.push('根據您的症狀記錄，此類食物可能有助於改善症狀')
+      }
+
+      const positiveCorrelations = foodCorrelations.filter(c => c.correlation_type === 'positive')
+      if (positiveCorrelations.length > 0) {
+        recommendations.push('根據您的症狀記錄，建議謹慎食用此類食物')
+      }
+    }
+
+    // General recommendations based on analysis
+    if (analysisResult.overall_score >= 4) {
+      recommendations.push('此食物的醫療評分較高，適合您的醫療狀況')
+    } else if (analysisResult.overall_score <= 2) {
+      recommendations.push('此食物的醫療評分較低，建議尋找替代選項')
+    }
+
+    return recommendations
+  }
+
+  private identifySymptomBasedRisks(
+    recentSymptoms: DailySymptomEntry[],
+    foodCorrelations: SymptomFoodCorrelation[],
+    analysisResult: MultiConditionResult
+  ): string[] {
+    const warnings: string[] = []
+
+    // Check for high-risk correlations
+    const highRiskCorrelations = foodCorrelations.filter(c =>
+      c.correlation_type === 'positive' && c.correlation_strength > 0.5
+    )
+
+    if (highRiskCorrelations.length > 0) {
+      warnings.push('此食物與您的症狀惡化有強烈關聯')
+    }
+
+    // Check recent symptom patterns
+    if (recentSymptoms.length >= 3) {
+      const recentBloodyStool = recentSymptoms.slice(0, 3).some(entry => entry.bloody_stool > 2)
+      if (recentBloodyStool) {
+        warnings.push('近期有血便症狀，建議諮詢醫師後再決定飲食')
+      }
+
+      const consistentPain = recentSymptoms.slice(0, 3).every(entry => entry.abdominal_pain > 3)
+      if (consistentPain) {
+        warnings.push('近期腹痛持續，建議選擇溫和食物')
+      }
+    }
+
+    return warnings
+  }
+
+  private getSymptomDisplayName(symptom: string): string {
+    const displayNames: Record<string, string> = {
+      'overall_health': '整體健康',
+      'abdominal_pain': '腹痛',
+      'diarrhea': '腹瀉',
+      'bloody_stool': '血便',
+      'bloating': '脹氣'
+    }
+
+    return displayNames[symptom] || symptom
   }
 }
 
