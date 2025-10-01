@@ -1,0 +1,308 @@
+name: Diet Daily CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # 代碼質量檢查
+  lint-and-type-check:
+    name: 代碼質量檢查
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 代碼
+        uses: actions/checkout@v4
+
+      - name: 設置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 安裝依賴
+        run: npm ci
+
+      - name: ESLint 檢查
+        run: npm run lint
+
+      - name: TypeScript 檢查
+        run: npm run type-check
+
+      - name: 代碼格式檢查
+        run: npx prettier --check .
+
+  # 單元測試
+  unit-tests:
+    name: 單元測試
+    runs-on: ubuntu-latest
+    needs: lint-and-type-check
+
+    steps:
+      - name: Checkout 代碼
+        uses: actions/checkout@v4
+
+      - name: 設置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 安裝依賴
+        run: npm ci
+
+      - name: 運行單元測試
+        run: npm run test:coverage
+
+      - name: 上傳覆蓋率報告
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+
+  # 構建應用
+  build:
+    name: 構建應用
+    runs-on: ubuntu-latest
+    needs: lint-and-type-check
+
+    steps:
+      - name: Checkout 代碼
+        uses: actions/checkout@v4
+
+      - name: 設置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 安裝依賴
+        run: npm ci
+
+      - name: 構建應用
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: 上傳構建產物
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-files
+          path: |
+            .next/
+            public/
+          retention-days: 1
+
+  # E2E 測試
+  e2e-tests:
+    name: E2E 測試
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout 代碼
+        uses: actions/checkout@v4
+
+      - name: 設置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 安裝依賴
+        run: npm ci
+
+      - name: 下載構建產物
+        uses: actions/download-artifact@v3
+        with:
+          name: build-files
+
+      - name: 安裝 Playwright
+        run: npx playwright install --with-deps
+
+      - name: 啟動應用
+        run: npm start &
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: 等待應用啟動
+        run: npx wait-on http://localhost:3000
+
+      - name: 運行 E2E 測試
+        run: npm run test:e2e
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: 上傳測試報告
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+  # 安全掃描
+  security-scan:
+    name: 安全掃描
+    runs-on: ubuntu-latest
+    needs: lint-and-type-check
+
+    steps:
+      - name: Checkout 代碼
+        uses: actions/checkout@v4
+
+      - name: 運行 Trivy 漏洞掃描
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: 上傳掃描結果到 GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: npm audit
+        run: npm audit --audit-level high
+
+  # Docker 鏡像構建
+  build-docker:
+    name: 構建 Docker 鏡像
+    runs-on: ubuntu-latest
+    needs: [unit-tests, build]
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout 代碼
+        uses: actions/checkout@v4
+
+      - name: 設置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登錄到 Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 提取元數據
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 構建並推送 Docker 鏡像
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.prod
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # 部署到 Staging
+  deploy-staging:
+    name: 部署到 Staging
+    runs-on: ubuntu-latest
+    needs: [e2e-tests, security-scan, build-docker]
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.your-domain.com
+
+    steps:
+      - name: Checkout 代碼
+        uses: actions/checkout@v4
+
+      - name: 部署到 Staging
+        run: |
+          echo "部署到 Staging 環境"
+          # 這裡添加實際的部署命令
+          # 例如: kubectl apply -f k8s/staging/ 或 docker-compose 命令
+
+      - name: 運行煙霧測試
+        run: |
+          curl -f https://staging.your-domain.com/api/health
+          # 添加其他煙霧測試
+
+  # 部署到 Production
+  deploy-production:
+    name: 部署到 Production
+    runs-on: ubuntu-latest
+    needs: [e2e-tests, security-scan, build-docker]
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://your-domain.com
+
+    steps:
+      - name: Checkout 代碼
+        uses: actions/checkout@v4
+
+      - name: 部署到 Production
+        run: |
+          echo "部署到 Production 環境"
+          # 這裡添加實際的部署命令
+
+      - name: 運行生產環境煙霧測試
+        run: |
+          curl -f https://your-domain.com/api/health
+          # 添加其他生產環境測試
+
+      - name: 發送部署通知
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  # 性能測試
+  performance-test:
+    name: 性能測試
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: Checkout 代碼
+        uses: actions/checkout@v4
+
+      - name: 設置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 安裝 Lighthouse CI
+        run: npm install -g @lhci/cli
+
+      - name: 運行 Lighthouse
+        run: |
+          lhci autorun --upload.target=temporary-public-storage
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: 運行負載測試
+        run: |
+          npx artillery quick --count 50 --num 5 https://staging.your-domain.com
