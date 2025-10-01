@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { foodHistoryDatabase } from '@/lib/food-history-database';
+import { foodEntryService } from '@/lib/supabase/food-entry-service';
 import { CreateHistoryEntryRequest, FoodHistoryQuery } from '@/types/history';
 import { ExtendedMedicalProfile, MedicalCondition } from '@/types/medical';
 import { getAuthenticatedUser, createUnauthorizedResponse } from '@/lib/supabase/server-auth';
@@ -30,7 +30,29 @@ export async function GET(request: NextRequest) {
     };
 
     console.log('🔐 Authenticated history query for user:', authenticatedUser.id);
-    const entries = await foodHistoryDatabase.queryHistory(query);
+    console.log('📊 Query params:', { dateFrom: query.dateFrom, dateTo: query.dateTo, limit: query.limit });
+
+    // Use Supabase food entry service instead of local JSON database
+    let entries;
+    if (query.dateFrom && query.dateTo) {
+      entries = await foodEntryService.getEntriesByRange(
+        authenticatedUser.id,
+        query.dateFrom,
+        query.dateTo,
+        query.limit || 100
+      );
+    } else {
+      entries = await foodEntryService.getRecentEntries(
+        authenticatedUser.id,
+        query.limit || 50
+      );
+    }
+
+    console.log('📊 Food History API - Entries found:', entries.length);
+    if (entries.length > 0) {
+      console.log('📅 Sample entry consumedAt:', entries[0].consumedAt);
+      console.log('📅 First 3 entries:', entries.slice(0, 3).map(e => ({ id: e.id, consumedAt: e.consumedAt })));
+    }
 
     return NextResponse.json({
       success: true,
@@ -56,32 +78,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const createRequest: CreateHistoryEntryRequest = {
-      ...body,
-      userId: authenticatedUser.id // ✅ SECURITY: Force use authenticated user ID
-    };
-
-    // Create a demo medical profile for scoring
-    // TODO: In production, this should come from user's actual medical profile
-    const demoMedicalProfile: ExtendedMedicalProfile = {
-      id: `profile-${authenticatedUser.id}`,
-      userId: authenticatedUser.id,
-      primary_condition: 'ibd' as MedicalCondition,
-      current_phase: 'remission',
-      known_allergies: [],
-      personal_triggers: [],
-      current_side_effects: [],
-      lactose_intolerant: false,
-      fiber_sensitive: false,
-      allergies: [],
-      medications: [],
-      dietaryRestrictions: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
 
     console.log('🔐 Creating history entry for authenticated user:', authenticatedUser.id);
-    const entry = await foodHistoryDatabase.createHistoryEntry(createRequest, demoMedicalProfile);
+
+    // Use Supabase food entry service
+    const entry = await foodEntryService.createEntry(authenticatedUser.id, {
+      ...body,
+      userId: authenticatedUser.id
+    });
 
     return NextResponse.json({
       success: true,

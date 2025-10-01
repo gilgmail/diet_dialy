@@ -6,47 +6,89 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
 import { foodEntriesService } from '@/lib/supabase/food-entries'
 import { unifiedFoodEntriesService, type UnifiedFoodEntry } from '@/lib/unified-food-entries'
 import type { FoodEntry } from '@/types/supabase'
+import type { DailySymptomEntry } from '@/types/medical'
+
+// 統一的時間軸記錄類型
+type TimelineEntry = {
+  id: string
+  type: 'food' | 'symptom'
+  date: string
+  timestamp: Date
+  data: FoodEntry | DailySymptomEntry
+}
 
 export default function HistoryPage() {
   const { user, isAuthenticated, isLoading } = useSupabaseAuth()
   const [entries, setEntries] = useState<FoodEntry[]>([])
-  const [filteredEntries, setFilteredEntries] = useState<FoodEntry[]>([])
-  const [todayEntries, setTodayEntries] = useState<UnifiedFoodEntry[]>([])
+  const [symptomEntries, setSymptomEntries] = useState<DailySymptomEntry[]>([])
+  const [timelineEntries, setTimelineEntries] = useState<TimelineEntry[]>([])
+  const [filteredTimeline, setFilteredTimeline] = useState<TimelineEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [dateRange, setDateRange] = useState('month')
-  const [showTodaySection, setShowTodaySection] = useState(true)
+  const [recordType, setRecordType] = useState<'all' | 'food' | 'symptom'>('all')
 
   useEffect(() => {
     if (user) {
       loadEntries()
-      loadTodayEntries()
-      // 設置用戶ID並嘗試同步
-      unifiedFoodEntriesService.setUserIdForUnsyncedEntries(user.id)
-      syncEntries()
     }
   }, [user, dateRange])
 
-  // 定期更新今日記錄以保持同步
+  // 合併並篩選時間軸記錄
   useEffect(() => {
-    if (user) {
-      const interval = setInterval(loadTodayEntries, 10000) // 每10秒更新一次
-      return () => clearInterval(interval)
-    }
-  }, [user])
+    // 建立統一時間軸
+    const timeline: TimelineEntry[] = [
+      ...entries.map(entry => ({
+        id: entry.id,
+        type: 'food' as const,
+        date: entry.consumed_at.split('T')[0],
+        timestamp: new Date(entry.consumed_at),
+        data: entry
+      })),
+      ...symptomEntries.map(entry => ({
+        id: entry.id,
+        type: 'symptom' as const,
+        date: entry.recorded_date,
+        timestamp: new Date(entry.recorded_at),
+        data: entry
+      }))
+    ]
 
+    // 按時間排序
+    timeline.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    setTimelineEntries(timeline)
+  }, [entries, symptomEntries])
+
+  // 根據記錄類型和搜尋詞篩選
   useEffect(() => {
-    // Filter entries based on search term
-    if (searchTerm.trim()) {
-      const filtered = entries.filter(entry =>
-        entry.food_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (entry.notes && entry.notes.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
-      setFilteredEntries(filtered)
-    } else {
-      setFilteredEntries(entries)
+    let filtered = timelineEntries
+
+    // 篩選記錄類型
+    if (recordType !== 'all') {
+      filtered = filtered.filter(entry => entry.type === recordType)
     }
-  }, [entries, searchTerm])
+
+    // 搜尋篩選
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(entry => {
+        if (entry.type === 'food') {
+          const foodData = entry.data as FoodEntry
+          return (
+            foodData.food_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (foodData.notes && foodData.notes.toLowerCase().includes(searchTerm.toLowerCase()))
+          )
+        } else {
+          const symptomData = entry.data as DailySymptomEntry
+          return (
+            symptomData.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            false
+          )
+        }
+      })
+    }
+
+    setFilteredTimeline(filtered)
+  }, [timelineEntries, recordType, searchTerm])
 
   const loadEntries = async () => {
     if (!user) return
@@ -54,12 +96,22 @@ export default function HistoryPage() {
     setLoading(true)
     try {
       const { startDate, endDate } = getDateRange(dateRange)
-      const data = await foodEntriesService.getUserFoodEntriesByDateRange(
-        user.id,
-        startDate,
-        endDate
-      )
-      setEntries(data)
+
+      // 並行載入食物和症狀記錄
+      const [foodResponse, symptomResponse] = await Promise.all([
+        foodEntriesService.getUserFoodEntriesByDateRange(user.id, startDate, endDate),
+        fetch(`/api/medical/daily-symptoms?userId=${user.id}&startDate=${startDate}&endDate=${endDate}`)
+      ])
+
+      setEntries(foodResponse)
+
+      // 解析症狀記錄 API 響應
+      if (symptomResponse.ok) {
+        const { data } = await symptomResponse.json()
+        setSymptomEntries(Array.isArray(data) ? data : (data ? [data] : []))
+      } else {
+        setSymptomEntries([])
+      }
     } catch (error) {
       console.error('載入歷史記錄失敗:', error)
     } finally {
@@ -67,32 +119,6 @@ export default function HistoryPage() {
     }
   }
 
-  const loadTodayEntries = async () => {
-    if (!user) return
-
-    try {
-      const entries = await unifiedFoodEntriesService.getTodayEntries(user.id)
-      setTodayEntries(entries)
-    } catch (error) {
-      console.error('載入今日記錄失敗:', error)
-    }
-  }
-
-  const syncEntries = async () => {
-    if (!user) return
-
-    try {
-      const result = await unifiedFoodEntriesService.syncAllEntries(user.id)
-      if (result.success > 0) {
-        console.log(`Successfully synced ${result.success} entries`)
-        // 重新載入今日記錄和歷史記錄
-        loadTodayEntries()
-        loadEntries()
-      }
-    } catch (error) {
-      console.error('同步記錄失敗:', error)
-    }
-  }
 
   const getDateRange = (range: string) => {
     const today = new Date()
@@ -178,7 +204,7 @@ export default function HistoryPage() {
             <Link href="/" className="text-gray-500 hover:text-gray-700">
               ← 返回首頁
             </Link>
-            <h1 className="text-2xl font-bold text-gray-900">📊 食物追蹤</h1>
+            <h1 className="text-2xl font-bold text-gray-900">📊 健康記錄追蹤</h1>
           </div>
         </div>
       </div>
@@ -186,19 +212,25 @@ export default function HistoryPage() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* 統計卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">今日記錄</h3>
-            <p className="text-3xl font-bold text-green-600">{todayEntries.length}</p>
-            <p className="text-sm text-gray-500">即時同步</p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">總記錄數</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-l-4 border-l-blue-500">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">食物記錄</h3>
             <p className="text-3xl font-bold text-blue-600">{entries.length}</p>
-            <p className="text-sm text-gray-500">歷史記錄</p>
+            <p className="text-sm text-gray-500">飲食追蹤</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-l-4 border-l-rose-500">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">症狀記錄</h3>
+            <p className="text-3xl font-bold text-rose-600">{symptomEntries.length}</p>
+            <p className="text-sm text-gray-500">健康追蹤</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-l-4 border-l-emerald-500">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">總記錄數</h3>
+            <p className="text-3xl font-bold text-emerald-600">{timelineEntries.length}</p>
+            <p className="text-sm text-gray-500">所有記錄</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-l-4 border-l-orange-500">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">平均醫療評分</h3>
             <p className="text-3xl font-bold text-orange-600">
               {entries.length > 0
@@ -208,21 +240,27 @@ export default function HistoryPage() {
             </p>
             <p className="text-sm text-gray-500">健康指標</p>
           </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">同步狀態</h3>
-            <p className="text-3xl font-bold text-purple-600">
-              {todayEntries.filter(entry => entry.isSynced).length}/{todayEntries.length}
-            </p>
-            <p className="text-sm text-gray-500">已同步記錄</p>
-          </div>
         </div>
 
         {/* 篩選控制 */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">篩選選項</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* 記錄類型 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">記錄類型</label>
+              <select
+                value={recordType}
+                onChange={(e) => setRecordType(e.target.value as 'all' | 'food' | 'symptom')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">📊 所有記錄</option>
+                <option value="food">🍽️ 僅食物</option>
+                <option value="symptom">❤️ 僅症狀</option>
+              </select>
+            </div>
+
             {/* 時間範圍 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">時間範圍</label>
@@ -239,172 +277,143 @@ export default function HistoryPage() {
 
             {/* 搜尋 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">搜尋食物</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">搜尋</label>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="輸入食物名稱或備註..."
+                placeholder="搜尋食物名稱或備註..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
         </div>
 
-        {/* 今日記錄同步顯示 */}
-        {showTodaySection && (
-          <div className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-xl shadow-sm p-6 mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">🍽️</span>
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">今日飲食記錄</h2>
-                  <p className="text-sm text-gray-600">與食物日記即時同步</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-green-600 font-medium">即時同步</span>
-                <button
-                  onClick={syncEntries}
-                  className="text-blue-600 hover:text-blue-700 text-sm px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
-                >
-                  🔄 同步
-                </button>
-                <button
-                  onClick={() => setShowTodaySection(false)}
-                  className="text-gray-400 hover:text-gray-600 p-1"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
 
-            {todayEntries.length === 0 ? (
-              <div className="text-center py-6 bg-white rounded-lg border border-gray-100">
-                <span className="text-3xl mb-2 block">📝</span>
-                <p className="text-gray-600 mb-3">今天還沒有飲食記錄</p>
-                <Link
-                  href="/food-diary"
-                  className="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
-                >
-                  <span className="mr-2">➕</span>
-                  開始記錄今日飲食
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {todayEntries.map((entry, index) => (
-                  <div key={entry.id || `temp-${index}`} className="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="font-medium text-gray-900">{entry.food_name}</h3>
-                          {!entry.isSynced && (
-                            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
-                              本地記錄
-                            </span>
-                          )}
-                          {entry.isSynced && (
-                            <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                              已同步
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
-                          <span>
-                            🕐 {new Date(entry.consumed_at).toLocaleTimeString('zh-TW', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </span>
-                          <span>
-                            {entry.meal_type === 'breakfast' ? '🌅 早餐' :
-                             entry.meal_type === 'lunch' ? '☀️ 午餐' :
-                             entry.meal_type === 'dinner' ? '🌙 晚餐' : '🍪 點心'}
-                          </span>
-                          <span>📏 {entry.quantity}{entry.unit}</span>
-                          {entry.calories && <span>🔥 {Math.round(entry.calories)} 卡</span>}
-                        </div>
-                        {entry.notes && (
-                          <p className="text-sm text-gray-600 mt-2 italic">💭 {entry.notes}</p>
-                        )}
-                      </div>
-                      {entry.medical_score && (
-                        <div className="text-right ml-4">
-                          <span className={`px-2 py-1 rounded-full text-xs ${getMedicalScoreColor(entry.medical_score)}`}>
-                            {entry.medical_score}/5
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <div className="mt-4 pt-4 border-t border-gray-200 text-center">
-                  <Link
-                    href="/food-diary"
-                    className="inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
-                  >
-                    <span className="mr-1">➕</span>
-                    繼續記錄更多食物
-                  </Link>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 記錄列表 */}
+        {/* 統一時間軸記錄列表 */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            歷史記錄 ({filteredEntries.length} 筆記錄)
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">
+              時間軸記錄 ({filteredTimeline.length} 筆)
+            </h2>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">🍽️ {entries.length} 食物</span>
+              <span className="px-2 py-1 bg-rose-100 text-rose-700 rounded">❤️ {symptomEntries.length} 症狀</span>
+            </div>
+          </div>
 
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
               <p className="text-gray-600">載入中...</p>
             </div>
-          ) : filteredEntries.length === 0 ? (
+          ) : filteredTimeline.length === 0 ? (
             <div className="text-center py-8">
-              <span className="text-4xl mb-4 block">🍽️</span>
+              <span className="text-4xl mb-4 block">📊</span>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">沒有記錄</h3>
-              <p className="text-gray-600 mb-4">開始記錄您的飲食吧！</p>
-              <Link href="/food-diary" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
-                前往記錄
-              </Link>
+              <p className="text-gray-600 mb-4">開始記錄您的飲食和健康狀況吧！</p>
+              <div className="flex justify-center gap-3">
+                <Link href="/food-diary" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                  記錄食物
+                </Link>
+                <Link href="/symptoms" className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg">
+                  記錄症狀
+                </Link>
+              </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              {filteredEntries.map((entry) => (
-                <div key={entry.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium text-gray-900">{entry.food_name}</h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {formatDateTime(entry.consumed_at)} •
-                        {entry.meal_type === 'breakfast' ? ' 早餐' :
-                         entry.meal_type === 'lunch' ? ' 午餐' :
-                         entry.meal_type === 'dinner' ? ' 晚餐' : ' 點心'}
-                      </p>
-                      <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                        <span>📏 {entry.quantity}{entry.unit}</span>
-                        {entry.calories && <span>🔥 {Math.round(entry.calories)} 卡</span>}
+            <div className="space-y-3">
+              {filteredTimeline.map((entry) => (
+                <div
+                  key={entry.id}
+                  className={`border rounded-lg p-4 hover:bg-gray-50 transition-colors ${
+                    entry.type === 'food'
+                      ? 'border-blue-200 bg-blue-50/30'
+                      : 'border-rose-200 bg-rose-50/30'
+                  }`}
+                >
+                  {entry.type === 'food' ? (
+                    // 食物記錄顯示
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-lg">
+                        🍽️
                       </div>
-                      {entry.notes && (
-                        <p className="text-sm text-gray-600 mt-2 italic">📝 {entry.notes}</p>
-                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-medium text-gray-900">{(entry.data as FoodEntry).food_name}</h3>
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">食物</span>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {formatDateTime((entry.data as FoodEntry).consumed_at)} •
+                          {(entry.data as FoodEntry).meal_type === 'breakfast' ? ' 早餐' :
+                           (entry.data as FoodEntry).meal_type === 'lunch' ? ' 午餐' :
+                           (entry.data as FoodEntry).meal_type === 'dinner' ? ' 晚餐' : ' 點心'}
+                        </p>
+                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                          <span>📏 {(entry.data as FoodEntry).quantity}{(entry.data as FoodEntry).unit}</span>
+                          {(entry.data as FoodEntry).calories && (
+                            <span>🔥 {Math.round((entry.data as FoodEntry).calories!)} 卡</span>
+                          )}
+                          {(entry.data as FoodEntry).medical_score && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs ${getMedicalScoreColor((entry.data as FoodEntry).medical_score)}`}>
+                              醫療評分 {(entry.data as FoodEntry).medical_score}/5
+                            </span>
+                          )}
+                        </div>
+                        {(entry.data as FoodEntry).notes && (
+                          <p className="text-sm text-gray-600 mt-2 italic">📝 {(entry.data as FoodEntry).notes}</p>
+                        )}
+                      </div>
                     </div>
-
-                    {entry.medical_score && (
-                      <div className="text-right">
-                        <span className={`px-2 py-1 rounded-full text-xs ${getMedicalScoreColor(entry.medical_score)}`}>
-                          醫療評分：{entry.medical_score}/5
-                        </span>
-                        <p className="text-xs text-gray-500 mt-1">{getMedicalScoreText(entry.medical_score)}</p>
+                  ) : (
+                    // 症狀記錄顯示
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-rose-500 rounded-full flex items-center justify-center text-white text-lg">
+                        ❤️
                       </div>
-                    )}
-                  </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-medium text-gray-900">症狀記錄</h3>
+                          <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-xs rounded-full">症狀</span>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {formatDateTime((entry.data as DailySymptomEntry).recorded_at.toString())}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            (entry.data as DailySymptomEntry).overall_health >= 4 ? 'bg-green-100 text-green-700' :
+                            (entry.data as DailySymptomEntry).overall_health >= 3 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            健康 {(entry.data as DailySymptomEntry).overall_health}/5
+                          </span>
+                          {(entry.data as DailySymptomEntry).abdominal_pain > 0 && (
+                            <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
+                              腹痛 {(entry.data as DailySymptomEntry).abdominal_pain}
+                            </span>
+                          )}
+                          {(entry.data as DailySymptomEntry).diarrhea > 0 && (
+                            <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full">
+                              腹瀉 {(entry.data as DailySymptomEntry).diarrhea}
+                            </span>
+                          )}
+                          {(entry.data as DailySymptomEntry).bloody_stool > 0 && (
+                            <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full">
+                              血便 {(entry.data as DailySymptomEntry).bloody_stool}
+                            </span>
+                          )}
+                          {(entry.data as DailySymptomEntry).bloating > 0 && (
+                            <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full">
+                              脹氣 {(entry.data as DailySymptomEntry).bloating}
+                            </span>
+                          )}
+                        </div>
+                        {(entry.data as DailySymptomEntry).notes && (
+                          <p className="text-sm text-gray-600 mt-2 italic">📝 {(entry.data as DailySymptomEntry).notes}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
