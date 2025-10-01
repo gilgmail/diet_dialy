@@ -207,11 +207,8 @@ const withPWA = require('next-pwa')({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
-  experimental: {
-    typedRoutes: true,
-    serverComponentsExternalPackages: []
-  },
+  typedRoutes: true,
+  serverExternalPackages: [],
   images: {
     domains: [],
     formats: ['image/webp', 'image/avif']

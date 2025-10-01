@@ -5,10 +5,23 @@
  */
 
 import { createClient } from '@/lib/supabase/client'
-import { DailySymptomService } from '@/lib/supabase/daily-symptom-service'
-import { SymptomCorrelationService } from '@/lib/supabase/symptom-correlation-service'
 import type { MultiConditionResult, MedicalCondition } from '@/lib/ai/multi-condition-scorer'
 import type { DailySymptomEntry, SymptomFoodCorrelation } from '@/types/medical'
+
+// Dynamic imports for server-side services to avoid importing next/headers in client components
+let DailySymptomService: any = null
+let SymptomCorrelationService: any = null
+
+async function loadServerServices() {
+  if (typeof window === 'undefined' && !DailySymptomService) {
+    const [dailyModule, correlationModule] = await Promise.all([
+      import('@/lib/supabase/daily-symptom-service'),
+      import('@/lib/supabase/symptom-correlation-service')
+    ])
+    DailySymptomService = dailyModule.DailySymptomService
+    SymptomCorrelationService = correlationModule.SymptomCorrelationService
+  }
+}
 
 export interface UserMedicalProfile {
   medical_conditions: string[]
@@ -359,6 +372,9 @@ export class MedicalAccessControl {
     const baseResult = await this.filterAnalysisForUser(analysisResult, userId)
 
     try {
+      // Load server services if not already loaded
+      await loadServerServices()
+
       // Get recent symptom data (last 30 days)
       const recentSymptoms = await DailySymptomService.getRecentEntries(userId, 30)
 
@@ -409,6 +425,9 @@ export class MedicalAccessControl {
     recommendations: string[]
   }> {
     try {
+      // Load server services if not already loaded
+      await loadServerServices()
+
       // Get user's correlation data for this food
       const correlation = await SymptomCorrelationService.getFoodCorrelation(userId, foodId)
 
@@ -493,6 +512,9 @@ export class MedicalAccessControl {
     recommendations: string[]
   }> {
     try {
+      // Load server services if not already loaded
+      await loadServerServices()
+
       const summary = await DailySymptomService.getUserSummary(userId)
 
       if (!summary) {
@@ -563,6 +585,9 @@ export class MedicalAccessControl {
     foodName: string
   ): Promise<SymptomFoodCorrelation[]> {
     try {
+      // Load server services if not already loaded
+      await loadServerServices()
+
       // Try to find correlations by food name (fuzzy matching)
       const correlations = await SymptomCorrelationService.getCorrelationsByFilters(userId, {
         limit: 10

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
 import { foodsService } from '@/lib/supabase/foods'
-import { useMedicalAccess } from '@/hooks/useMedicalAccess'
 import { MultiConditionScorer } from '@/lib/ai/multi-condition-scorer'
 import FilteredAIAnalysis from '@/components/ai/FilteredAIAnalysis'
 import AdminAIAnalysis from '@/components/ai/AdminAIAnalysis'
@@ -76,9 +75,10 @@ export default function FoodDatabasePage() {
   const [itemsPerPage] = useState(20)
   // AI 評分相關狀態
   const [isAIScoring, setIsAIScoring] = useState(false)
-  const { hasPermission, isAdmin: userIsAdmin, filterAnalysis } = useMedicalAccess()
 
+  // For admin page, we don't need medical access control
   const isAdmin = userProfile?.is_admin || false
+  const userIsAdmin = isAdmin
 
   // Load all foods using enhanced Supabase integration
   useEffect(() => {
