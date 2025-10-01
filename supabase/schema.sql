@@ -62,6 +62,7 @@ CREATE TABLE diet_daily_foods (
     -- 食物標籤和屬性
     tags JSONB DEFAULT '[]'::jsonb,
     properties JSONB DEFAULT '{}'::jsonb,
+    ai_nutrient_gaps JSONB DEFAULT '{}'::jsonb,
 
     -- 驗證狀態
     verification_status TEXT DEFAULT 'pending' CHECK (verification_status IN ('pending', 'approved', 'rejected')),
