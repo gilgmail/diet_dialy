@@ -24,8 +24,7 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
     setFoodName(food.name)
     setSelectedFoodInfo(food)
 
-    // Auto-fill nutrition information
-    if (food.serving_size) setPortionSize(food.serving_size)
+    // Auto-fill nutrition information (calories from database is per 100g)
     if (food.calories !== undefined) setCalories(food.calories.toString())
   }
 

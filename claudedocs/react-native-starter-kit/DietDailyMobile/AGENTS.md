@@ -1,19 +1,33 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-Source files live in `src/`, with `src/app` owning navigation (`RootNavigator`) and `src/features` split by domain (auth, dashboard, food diary, symptom diary). Shared clients, stores, and types sit under `src/shared`, while design tokens belong in `src/theme`. Global bootstrap logic stays in `App.tsx` and `index.ts`. Co-locate tests beside the subject or under `src/__tests__/`, and keep static media in `assets/` with platform configs inside `ios/`.
+- Keep all runtime code in `src/`; navigation lives in `src/app/RootNavigator` while feature domains (auth, dashboard, food diary, symptom diary) live under `src/features`.
+- Share clients, stores, and types by colocating them in `src/shared`, and author design tokens exclusively inside `src/theme`.
+- Bootstrap the app in `App.tsx` and `index.ts`. Place colocated tests beside the file or under `src/__tests__/` and store media assets inside `assets/`.
+- Native platform configuration resides in `ios/`; avoid duplicating configuration elsewhere.
 
 ## Build, Test, and Development Commands
-Run `npm start` to launch the Expo dev server with live reload. Use `npm run android` or `npm run ios` for device builds via Expo Run. Validate responsive layouts with `npm run web`. Execute suites through `npx expo test` (append `--watch` while iterating). Household formatting checks run with `npx prettier --check "src/**/*.{ts,tsx}"` and lint with `npx eslint "src/**/*.{ts,tsx}"`.
+- `npm start` launches the Expo dev server with live reload.
+- `npm run android` / `npm run ios` build and run the project via Expo Run on connected devices or emulators.
+- `npm run web` validates responsive layouts in the Expo web runtime.
+- `npx expo test` executes the Jest suite; append `--watch` while iterating locally.
 
 ## Coding Style & Naming Conventions
-Write modern TypeScript with functional React components. Use 2-space indentation, avoid semicolons, and favor hooks for state. Name components and screens in `PascalCase`, hooks and helpers in `camelCase`, and share utilities through `@/shared/...` aliases instead of deep relatives. Style definitions should live alongside their component and pull tokens from `src/theme`.
+- Write modern TypeScript with functional React components, two-space indentation, and no semicolons.
+- Name components/screens in PascalCase, hooks/utilities in camelCase, and reuse logic through `@/shared/...` imports instead of deep relatives.
+- Co-locate styles with their component and source tokens from `src/theme`; prefer hooks for state management.
+- Run `npx prettier --check "src/**/*.{ts,tsx}"` and `npx eslint "src/**/*.{ts,tsx}"` before committing.
 
 ## Testing Guidelines
-Tests rely on Jest with `@testing-library/react-native`. Name files `*.test.tsx` or `*.test.ts`. Target at least 80% statement coverage and focus on user flows, not implementation details. Snapshots are acceptable when they capture meaningful UI changes—review updates before committing.
+- Tests rely on Jest and `@testing-library/react-native` with filenames ending in `.test.ts` or `.test.tsx`.
+- Aim for ≥80% statement coverage and emphasize user flows over implementation detail assertions.
+- Snapshots are acceptable when they capture meaningful UI changes; inspect diffs before approval.
 
 ## Commit & Pull Request Guidelines
-Follow Conventional Commits (`feat:`, `fix:`, `chore:`) and scope each commit to a single concern. Pull requests should summarize changes, link the relevant issue or task ID, attach screenshots for UI updates, and include the latest test output. Request review from the owning feature area, resolve feedback promptly, and confirm Expo build checks before merging.
+- Use Conventional Commits (`feat:`, `fix:`, `chore:`, etc.) and keep each commit scoped to a single concern.
+- Pull requests should summarize the change, link the relevant issue/task ID, attach screenshots for UI updates, and paste the latest test output.
+- Request review from the owning feature area and confirm Expo build checks prior to merge.
 
-## Environment & Configuration Notes
-Expo reads configuration from `app.json`; keep secrets in untracked `.env` files. Add new backend integrations through typed clients in `src/shared/api`, and manage state transitions within the appropriate feature store to maintain predictable data flow.
+## Security & Configuration Tips
+- Expo reads configuration from `app.json`; keep secrets in untracked `.env` files and load them via environment helpers.
+- Introduce backend integrations through typed clients in `src/shared/api`, and coordinate state transitions within the corresponding feature store to maintain predictable data flow.

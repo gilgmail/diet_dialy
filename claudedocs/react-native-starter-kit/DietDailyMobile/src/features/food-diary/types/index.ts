@@ -34,13 +34,13 @@ export interface UpdateFoodEntryInput {
 }
 
 // Food Database Item from Supabase (diet_daily_foods table)
+// Note: Nutrition values are per 100g
 export interface Food {
   id: string
   name: string
   name_en?: string
   category: string
   brand?: string
-  serving_size?: string
   calories?: number
   protein?: number
   carbohydrates?: number
@@ -61,7 +61,6 @@ export interface FoodSearchResult {
   name_en?: string
   brand?: string
   calories?: number
-  serving_size?: string
   category?: string
   protein?: number
   carbohydrates?: number

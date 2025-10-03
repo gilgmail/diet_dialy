@@ -132,12 +132,17 @@ export function FoodSearchInput({
 
       {showResults && searchResults.length > 0 && (
         <Card style={styles.resultsCard}>
+          {/* Note: FlatList nested in ScrollView warning is acceptable here
+              - Fixed height (300px) limits performance impact
+              - Search results are limited (max 20 items)
+              - This is a dropdown component, not a main list */}
           <FlatList
             data={searchResults}
             renderItem={renderFoodItem}
             keyExtractor={item => item.id}
             style={styles.resultsList}
             keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled={true}
           />
         </Card>
       )}

@@ -1,9 +1,45 @@
 import { supabase } from '@/shared/api/supabase/client'
 import type {
+  FoodEntry as FoodEntryRow,
+  FoodEntryInsert,
+  FoodEntryUpdate,
+} from '@/shared/types/supabase'
+import type {
   FoodEntry,
   CreateFoodEntryInput,
   UpdateFoodEntryInput,
+  MealType,
 } from '../types'
+
+function extractPortion(entry: FoodEntryRow): string | undefined {
+  const unit = entry.unit?.trim()
+  if (unit) return unit
+
+  const data = entry.nutrition_data
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    const portion = (data as Record<string, unknown>).portion_size
+    if (typeof portion === 'string' && portion.trim()) {
+      return portion.trim()
+    }
+  }
+
+  return undefined
+}
+
+function mapFoodEntry(entry: FoodEntryRow): FoodEntry {
+  return {
+    id: entry.id,
+    user_id: entry.user_id,
+    food_name: entry.food_name,
+    meal_type: (entry.meal_type || 'breakfast') as MealType,
+    portion_size: extractPortion(entry),
+    calories: entry.calories ?? undefined,
+    notes: entry.notes ?? undefined,
+    consumed_at: entry.consumed_at,
+    created_at: entry.created_at,
+    updated_at: entry.updated_at,
+  }
+}
 
 export class FoodDiaryService {
   /**
@@ -20,7 +56,10 @@ export class FoodDiaryService {
 
       if (error) throw error
 
-      return { data: data as FoodEntry[], error: null }
+      return {
+        data: (data as FoodEntryRow[]).map(mapFoodEntry),
+        error: null,
+      }
     } catch (error) {
       return {
         data: null,
@@ -52,7 +91,10 @@ export class FoodDiaryService {
 
       if (error) throw error
 
-      return { data: data as FoodEntry[], error: null }
+      return {
+        data: (data as FoodEntryRow[]).map(mapFoodEntry),
+        error: null,
+      }
     } catch (error) {
       return {
         data: null,
@@ -68,13 +110,15 @@ export class FoodDiaryService {
    */
   static async createFoodEntry(userId: string, input: CreateFoodEntryInput) {
     try {
-      const entry = {
+      const portion = input.portion_size?.trim()
+
+      const entry: FoodEntryInsert = {
         user_id: userId,
         food_name: input.food_name,
         meal_type: input.meal_type,
-        portion_size: input.portion_size,
-        calories: input.calories,
-        notes: input.notes,
+        unit: portion || undefined,
+        calories: input.calories ?? null,
+        notes: input.notes ?? null,
         consumed_at: input.consumed_at || new Date().toISOString(),
       }
 
@@ -86,7 +130,7 @@ export class FoodDiaryService {
 
       if (error) throw error
 
-      return { data: data as FoodEntry, error: null }
+      return { data: mapFoodEntry(data as FoodEntryRow), error: null }
     } catch (error) {
       return {
         data: null,
@@ -106,9 +150,36 @@ export class FoodDiaryService {
     input: UpdateFoodEntryInput
   ) {
     try {
+      const updatePayload: FoodEntryUpdate = {}
+
+      if (input.food_name !== undefined) {
+        updatePayload.food_name = input.food_name
+      }
+
+      if (input.meal_type !== undefined) {
+        updatePayload.meal_type = input.meal_type
+      }
+
+      if (input.portion_size !== undefined) {
+        const portion = input.portion_size?.trim()
+        updatePayload.unit = portion || ''
+      }
+
+      if (input.calories !== undefined) {
+        updatePayload.calories = input.calories ?? null
+      }
+
+      if (input.notes !== undefined) {
+        updatePayload.notes = input.notes ?? null
+      }
+
+      if (input.consumed_at !== undefined) {
+        updatePayload.consumed_at = input.consumed_at
+      }
+
       const { data, error } = await supabase
         .from('food_entries')
-        .update(input)
+        .update(updatePayload)
         .eq('id', entryId)
         .eq('user_id', userId)
         .select()
@@ -116,7 +187,7 @@ export class FoodDiaryService {
 
       if (error) throw error
 
-      return { data: data as FoodEntry, error: null }
+      return { data: mapFoodEntry(data as FoodEntryRow), error: null }
     } catch (error) {
       return {
         data: null,
@@ -166,9 +237,9 @@ export class FoodDiaryService {
       const APPROVED_STATUSES = ['admin_approved', 'ai_approved', 'approved']
 
       // Multi-field search across name, name_en, brand (matching Web App)
-      const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('diet_daily_foods')
-        .select('id, name, name_en, brand, category, serving_size, calories, protein, carbohydrates, fat, verification_status')
+        .select('id, name, name_en, brand, category, calories, protein, carbohydrates, fat, verification_status')
         .or(`name.ilike.%${query}%,name_en.ilike.%${query}%,brand.ilike.%${query}%`)
         .in('verification_status', APPROVED_STATUSES)
         .order('name')
@@ -206,7 +277,7 @@ export class FoodDiaryService {
 
       const { data, error } = await supabase
         .from('diet_daily_foods')
-        .select('id, name, name_en, brand, category, serving_size, calories, protein, carbohydrates, fat')
+        .select('id, name, name_en, brand, category, calories, protein, carbohydrates, fat')
         .in('verification_status', APPROVED_STATUSES)
         .order('created_at', { ascending: false })
         .limit(limit)
@@ -234,7 +305,7 @@ export class FoodDiaryService {
 
       const { data, error } = await supabase
         .from('diet_daily_foods')
-        .select('id, name, name_en, brand, category, serving_size, calories, protein, carbohydrates, fat')
+        .select('id, name, name_en, brand, category, calories, protein, carbohydrates, fat')
         .eq('category', category)
         .in('verification_status', APPROVED_STATUSES)
         .order('name')
