@@ -18,6 +18,7 @@ export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
 export interface CreateFoodEntryInput {
   food_name: string
   meal_type: MealType
+  amount?: number // Quantity, defaults to 1
   portion_size?: string
   calories?: number
   notes?: string

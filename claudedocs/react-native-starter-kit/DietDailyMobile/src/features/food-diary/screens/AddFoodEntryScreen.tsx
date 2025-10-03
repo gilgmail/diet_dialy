@@ -1,31 +1,69 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Button, TextInput, SegmentedButtons, Chip } from 'react-native-paper'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useQuery } from '@tanstack/react-query'
+import { useAuthStore } from '@/shared/stores/authStore'
+import { FoodDiaryService } from '../services/FoodDiaryService'
 import { colors, typography, spacing } from '@/theme'
 import { useFoodDiary } from '../hooks/useFoodDiary'
-import { MEAL_TYPES, type MealType, type FoodSearchResult } from '../types'
+import { MEAL_TYPES, type MealType, type FoodSearchResult, type FoodEntry } from '../types'
 import { FoodSearchInput } from '../components/FoodSearchInput'
 
 type AddFoodEntryScreenProps = NativeStackScreenProps<any, 'AddFoodEntry'>
 
+// Get meal type based on current time
+function getMealTypeByTime(): MealType {
+  const hour = new Date().getHours()
+
+  if (hour >= 5 && hour < 11) return 'breakfast'  // 5-11: 早餐
+  if (hour >= 11 && hour < 15) return 'lunch'     // 11-15: 午餐
+  if (hour >= 15 && hour < 17) return 'snack'     // 15-17: 點心
+  if (hour >= 17 && hour < 20) return 'dinner'    // 17-20: 晚餐
+
+  return 'snack' // 其他時間: 點心
+}
+
 export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
+  const { user } = useAuthStore()
   const { createEntry, isCreating } = useFoodDiary()
 
+  // Fetch today's entries
+  const { data: todayEntries = [] } = useQuery({
+    queryKey: ['foodEntries', user?.id, new Date().toISOString().split('T')[0]],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const result = await FoodDiaryService.getFoodEntriesByDate(user.id, new Date())
+      return result.data || []
+    },
+    enabled: !!user?.id,
+  })
+
+  // Calculate today's statistics
+  const todayStats = useMemo(() => {
+    const stats = {
+      breakfast: 0,
+      lunch: 0,
+      dinner: 0,
+      snack: 0,
+      total: todayEntries.length,
+    }
+
+    todayEntries.forEach((entry: FoodEntry) => {
+      if (entry.meal_type in stats) {
+        stats[entry.meal_type as keyof typeof stats]++
+      }
+    })
+
+    return stats
+  }, [todayEntries])
+
   const [foodName, setFoodName] = useState('')
-  const [mealType, setMealType] = useState<MealType>('breakfast')
-  const [portionSize, setPortionSize] = useState('')
-  const [calories, setCalories] = useState('')
-  const [notes, setNotes] = useState('')
-  const [selectedFoodInfo, setSelectedFoodInfo] = useState<FoodSearchResult | null>(null)
+  const [mealType, setMealType] = useState<MealType>(getMealTypeByTime())
 
   const handleSelectFood = (food: FoodSearchResult) => {
     setFoodName(food.name)
-    setSelectedFoodInfo(food)
-
-    // Auto-fill nutrition information (calories from database is per 100g)
-    if (food.calories !== undefined) setCalories(food.calories.toString())
   }
 
   const handleSubmit = async () => {
@@ -38,17 +76,10 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
       await createEntry({
         food_name: foodName.trim(),
         meal_type: mealType,
-        portion_size: portionSize.trim() || undefined,
-        calories: calories ? parseInt(calories, 10) : undefined,
-        notes: notes.trim() || undefined,
       })
 
-      Alert.alert('成功', '食物記錄已新增', [
-        {
-          text: '確定',
-          onPress: () => navigation.goBack(),
-        },
-      ])
+      // Navigate back without alert for quick entry
+      navigation.goBack()
     } catch (error) {
       Alert.alert('錯誤', error instanceof Error ? error.message : '新增失敗')
     }
@@ -67,59 +98,41 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>新增飲食記錄</Text>
-            <Text style={styles.subtitle}>記錄您的餐點內容</Text>
+          {/* Today's Statistics */}
+          <View style={styles.statsContainer}>
+            <Text style={styles.statsTitle}>今日已記錄</Text>
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statIcon}>🌅</Text>
+                <Text style={styles.statCount}>{todayStats.breakfast}</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statIcon}>☀️</Text>
+                <Text style={styles.statCount}>{todayStats.lunch}</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statIcon}>🌙</Text>
+                <Text style={styles.statCount}>{todayStats.dinner}</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statIcon}>🍪</Text>
+                <Text style={styles.statCount}>{todayStats.snack}</Text>
+              </View>
+            </View>
           </View>
 
           {/* Food Name with Search */}
           <View style={styles.section}>
-            <Text style={styles.label}>食物名稱 *</Text>
-            <Text style={styles.helperText}>
-              可以直接輸入或從資料庫搜尋
-            </Text>
             <FoodSearchInput
               value={foodName}
               onChangeText={setFoodName}
               onSelectFood={handleSelectFood}
               placeholder="搜尋或輸入食物名稱..."
             />
-
-            {/* Show selected food nutrition info */}
-            {selectedFoodInfo && (
-              <View style={styles.nutritionChips}>
-                {selectedFoodInfo.category && (
-                  <Chip
-                    icon="tag"
-                    style={styles.chip}
-                    textStyle={styles.chipText}
-                  >
-                    {selectedFoodInfo.category}
-                  </Chip>
-                )}
-                {selectedFoodInfo.protein !== undefined && (
-                  <Chip style={styles.chip} textStyle={styles.chipText}>
-                    蛋白質: {selectedFoodInfo.protein}g
-                  </Chip>
-                )}
-                {selectedFoodInfo.carbohydrates !== undefined && (
-                  <Chip style={styles.chip} textStyle={styles.chipText}>
-                    碳水: {selectedFoodInfo.carbohydrates}g
-                  </Chip>
-                )}
-                {selectedFoodInfo.fat !== undefined && (
-                  <Chip style={styles.chip} textStyle={styles.chipText}>
-                    脂肪: {selectedFoodInfo.fat}g
-                  </Chip>
-                )}
-              </View>
-            )}
           </View>
 
           {/* Meal Type */}
           <View style={styles.section}>
-            <Text style={styles.label}>餐點類型 *</Text>
             <SegmentedButtons
               value={mealType}
               onValueChange={value => setMealType(value as MealType)}
@@ -127,76 +140,23 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
               style={styles.segmentedButtons}
             />
           </View>
-
-          {/* Portion Size */}
-          <View style={styles.section}>
-            <Text style={styles.label}>份量</Text>
-            <TextInput
-              mode="outlined"
-              placeholder="例如：1碗、100g"
-              value={portionSize}
-              onChangeText={setPortionSize}
-              style={styles.input}
-              outlineColor={colors.border}
-              activeOutlineColor={colors.primary[500]}
-            />
-          </View>
-
-          {/* Calories */}
-          <View style={styles.section}>
-            <Text style={styles.label}>熱量 (kcal)</Text>
-            <TextInput
-              mode="outlined"
-              placeholder="例如：150"
-              value={calories}
-              onChangeText={setCalories}
-              keyboardType="numeric"
-              style={styles.input}
-              outlineColor={colors.border}
-              activeOutlineColor={colors.primary[500]}
-            />
-          </View>
-
-          {/* Notes */}
-          <View style={styles.section}>
-            <Text style={styles.label}>備註</Text>
-            <TextInput
-              mode="outlined"
-              placeholder="其他說明..."
-              value={notes}
-              onChangeText={setNotes}
-              multiline
-              numberOfLines={3}
-              style={[styles.input, styles.textArea]}
-              outlineColor={colors.border}
-              activeOutlineColor={colors.primary[500]}
-            />
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.actions}>
-            <Button
-              mode="outlined"
-              onPress={() => navigation.goBack()}
-              disabled={isCreating}
-              style={[styles.button, styles.cancelButton]}
-              labelStyle={styles.cancelButtonLabel}
-            >
-              取消
-            </Button>
-            <Button
-              mode="contained"
-              onPress={handleSubmit}
-              loading={isCreating}
-              disabled={isCreating || !foodName.trim()}
-              style={[styles.button, styles.submitButton]}
-              labelStyle={styles.submitButtonLabel}
-            >
-              儲存
-            </Button>
-          </View>
         </View>
       </ScrollView>
+
+      {/* Floating Save Button */}
+      <View style={styles.floatingButtonContainer}>
+        <Button
+          mode="contained"
+          onPress={handleSubmit}
+          loading={isCreating}
+          disabled={isCreating || !foodName.trim()}
+          style={styles.floatingButton}
+          labelStyle={styles.floatingButtonLabel}
+          icon="check"
+        >
+          儲存記錄
+        </Button>
+      </View>
     </SafeAreaView>
   )
 }
@@ -211,80 +171,66 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 100, // Space for floating button
   },
   content: {
     padding: spacing.lg,
   },
-  header: {
-    marginBottom: spacing.xl,
+  statsContainer: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
-  title: {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
+  statsTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
+    marginBottom: spacing.md,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statIcon: {
+    fontSize: 24,
     marginBottom: spacing.xs,
   },
-  subtitle: {
-    fontSize: typography.fontSize.base,
-    color: colors.text.secondary,
+  statCount: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
   },
   section: {
     marginBottom: spacing.lg,
   },
-  label: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-  },
-  helperText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    marginBottom: spacing.sm,
-  },
   input: {
     backgroundColor: colors.background,
-  },
-  textArea: {
-    minHeight: 80,
   },
   segmentedButtons: {
     backgroundColor: colors.surface,
   },
-  actions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.xl,
+  floatingButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: spacing.lg,
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
-  button: {
-    flex: 1,
-    borderRadius: 12,
-  },
-  cancelButton: {
-    borderColor: colors.border,
-  },
-  cancelButtonLabel: {
-    color: colors.text.secondary,
-  },
-  submitButton: {
+  floatingButton: {
     backgroundColor: colors.primary[500],
+    borderRadius: 12,
+    paddingVertical: spacing.xs,
   },
-  submitButtonLabel: {
+  floatingButtonLabel: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.text.inverse,
-  },
-  nutritionChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  chip: {
-    backgroundColor: colors.primary[50],
-    marginRight: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  chipText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.primary[700],
   },
 })

@@ -116,11 +116,15 @@ export class FoodDiaryService {
         user_id: userId,
         food_name: input.food_name,
         meal_type: input.meal_type,
-        unit: portion || undefined,
+        amount: input.amount || 1, // Default to 1 serving if not provided
+        unit: portion || '份', // Default to '份' (serving) if not provided
         calories: input.calories ?? null,
         notes: input.notes ?? null,
         consumed_at: input.consumed_at || new Date().toISOString(),
+        nutrition_data: {},
       }
+
+      console.log('Creating food entry:', entry)
 
       const { data, error } = await supabase
         .from('food_entries')
@@ -128,10 +132,16 @@ export class FoodDiaryService {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase insert error:', error)
+        throw error
+      }
+
+      console.log('Food entry created successfully:', data)
 
       return { data: mapFoodEntry(data as FoodEntryRow), error: null }
     } catch (error) {
+      console.error('Create food entry error:', error)
       return {
         data: null,
         error: {
