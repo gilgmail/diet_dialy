@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import {
   View,
   Text,
@@ -6,12 +6,11 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
-  Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { FAB, Card, IconButton, ActivityIndicator } from 'react-native-paper'
+import { Card, ActivityIndicator } from 'react-native-paper'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { format } from 'date-fns'
+import { format, startOfDay, parseISO } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
 import { colors, typography, spacing } from '@/theme'
 import { useFoodDiary } from '../hooks/useFoodDiary'
@@ -19,83 +18,133 @@ import { MEAL_TYPES, type FoodEntry } from '../types'
 
 type FoodDiaryScreenProps = NativeStackScreenProps<any, 'FoodDiary'>
 
+interface DayGroup {
+  date: string
+  dateDisplay: string
+  entries: FoodEntry[]
+  totalCalories: number
+  mealBreakdown: {
+    breakfast: number
+    lunch: number
+    dinner: number
+    snack: number
+  }
+}
+
 export function FoodDiaryScreen({ navigation }: FoodDiaryScreenProps) {
-  const { entries, isLoading, refetch, deleteEntry, isDeleting } = useFoodDiary()
+  const { entries, isLoading, refetch } = useFoodDiary()
 
-  const handleAddEntry = () => {
-    navigation.navigate('AddFoodEntry')
+  // Group entries by date
+  const groupedEntries = useMemo(() => {
+    const groups = new Map<string, FoodEntry[]>()
+
+    entries.forEach((entry) => {
+      const dateKey = format(parseISO(entry.consumed_at), 'yyyy-MM-dd')
+      if (!groups.has(dateKey)) {
+        groups.set(dateKey, [])
+      }
+      groups.get(dateKey)!.push(entry)
+    })
+
+    // Convert to array and sort by date (newest first)
+    const dayGroups: DayGroup[] = Array.from(groups.entries())
+      .map(([date, dayEntries]) => {
+        const totalCalories = dayEntries.reduce((sum, e) => sum + (e.calories || 0), 0)
+        const mealBreakdown = {
+          breakfast: dayEntries.filter(e => e.meal_type === 'breakfast').length,
+          lunch: dayEntries.filter(e => e.meal_type === 'lunch').length,
+          dinner: dayEntries.filter(e => e.meal_type === 'dinner').length,
+          snack: dayEntries.filter(e => e.meal_type === 'snack').length,
+        }
+
+        // Format date display
+        const dateObj = parseISO(`${date}T00:00:00`)
+        const today = startOfDay(new Date())
+        const entryDate = startOfDay(dateObj)
+        const diffDays = Math.floor((today.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24))
+
+        let dateDisplay = format(dateObj, 'MM月dd日 (E)', { locale: zhTW })
+        if (diffDays === 0) dateDisplay = '今天'
+        else if (diffDays === 1) dateDisplay = '昨天'
+        else if (diffDays === 2) dateDisplay = '前天'
+
+        return {
+          date,
+          dateDisplay,
+          entries: dayEntries,
+          totalCalories,
+          mealBreakdown,
+        }
+      })
+      .sort((a, b) => b.date.localeCompare(a.date))
+
+    return dayGroups
+  }, [entries])
+
+  const handleDayPress = (dayGroup: DayGroup) => {
+    // TODO: Navigate to day detail screen
+    navigation.navigate('FoodDayDetail', { date: dayGroup.date })
   }
 
-  const handleDeleteEntry = (entry: FoodEntry) => {
-    Alert.alert('刪除記錄', `確定要刪除「${entry.food_name}」嗎？`, [
-      { text: '取消', style: 'cancel' },
-      {
-        text: '刪除',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteEntry(entry.id)
-          } catch (error) {
-            Alert.alert('錯誤', '刪除失敗')
-          }
-        },
-      },
-    ])
-  }
-
-  const getMealTypeInfo = (mealType: string) => {
-    return MEAL_TYPES.find(m => m.value === mealType) || MEAL_TYPES[0]
-  }
-
-  const renderEntry = ({ item }: { item: FoodEntry }) => {
-    const mealInfo = getMealTypeInfo(item.meal_type)
-
+  const renderDayGroup = ({ item }: { item: DayGroup }) => {
     return (
-      <Card style={styles.entryCard}>
-        <View style={styles.entryHeader}>
-          <View style={styles.entryHeaderLeft}>
-            <Text style={styles.mealIcon}>{mealInfo.icon}</Text>
-            <View>
-              <Text style={styles.foodName}>{item.food_name}</Text>
-              <Text style={styles.mealType}>{mealInfo.label}</Text>
-            </View>
+      <TouchableOpacity
+        onPress={() => handleDayPress(item)}
+        activeOpacity={0.7}
+      >
+        <Card style={styles.dayCard}>
+          <View style={styles.dayHeader}>
+            <Text style={styles.dateText}>{item.dateDisplay}</Text>
+            <Text style={styles.totalEntriesText}>{item.entries.length} 筆記錄</Text>
           </View>
-          <IconButton
-            icon="delete-outline"
-            size={20}
-            iconColor={colors.error}
-            onPress={() => handleDeleteEntry(item)}
-            disabled={isDeleting}
-          />
-        </View>
 
-        <View style={styles.entryDetails}>
-          {item.portion_size && (
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>份量：</Text>
-              <Text style={styles.detailValue}>{item.portion_size}</Text>
+          <View style={styles.mealBreakdownContainer}>
+            {item.mealBreakdown.breakfast > 0 && (
+              <View style={styles.mealItem}>
+                <Text style={styles.mealIcon}>🌅</Text>
+                <Text style={styles.mealCount}>{item.mealBreakdown.breakfast}</Text>
+              </View>
+            )}
+            {item.mealBreakdown.lunch > 0 && (
+              <View style={styles.mealItem}>
+                <Text style={styles.mealIcon}>☀️</Text>
+                <Text style={styles.mealCount}>{item.mealBreakdown.lunch}</Text>
+              </View>
+            )}
+            {item.mealBreakdown.dinner > 0 && (
+              <View style={styles.mealItem}>
+                <Text style={styles.mealIcon}>🌙</Text>
+                <Text style={styles.mealCount}>{item.mealBreakdown.dinner}</Text>
+              </View>
+            )}
+            {item.mealBreakdown.snack > 0 && (
+              <View style={styles.mealItem}>
+                <Text style={styles.mealIcon}>🍪</Text>
+                <Text style={styles.mealCount}>{item.mealBreakdown.snack}</Text>
+              </View>
+            )}
+          </View>
+
+          {item.totalCalories > 0 && (
+            <View style={styles.caloriesContainer}>
+              <Text style={styles.caloriesLabel}>總熱量</Text>
+              <Text style={styles.caloriesValue}>{item.totalCalories} kcal</Text>
             </View>
           )}
-          {item.calories && (
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>熱量：</Text>
-              <Text style={styles.detailValue}>{item.calories} kcal</Text>
-            </View>
-          )}
-          <View style={styles.detailItem}>
-            <Text style={styles.detailLabel}>時間：</Text>
-            <Text style={styles.detailValue}>
-              {format(new Date(item.consumed_at), 'HH:mm')}
-            </Text>
-          </View>
-        </View>
 
-        {item.notes && (
-          <View style={styles.entryNotes}>
-            <Text style={styles.notesText}>{item.notes}</Text>
+          <View style={styles.foodPreviewContainer}>
+            {item.entries.slice(0, 3).map((entry, index) => (
+              <Text key={entry.id} style={styles.foodPreviewText}>
+                {index > 0 && ' • '}
+                {entry.food_name}
+              </Text>
+            ))}
+            {item.entries.length > 3 && (
+              <Text style={styles.foodPreviewText}> ...</Text>
+            )}
           </View>
-        )}
-      </Card>
+        </Card>
+      </TouchableOpacity>
     )
   }
 
@@ -103,26 +152,26 @@ export function FoodDiaryScreen({ navigation }: FoodDiaryScreenProps) {
     <View style={styles.emptyState}>
       <Text style={styles.emptyIcon}>🍽️</Text>
       <Text style={styles.emptyTitle}>還沒有飲食記錄</Text>
-      <Text style={styles.emptyText}>點擊下方按鈕開始記錄您的餐點</Text>
+      <Text style={styles.emptyText}>開始記錄您的餐點吧</Text>
     </View>
   )
 
   const renderHeader = () => (
     <View style={styles.header}>
       <Text style={styles.title}>飲食日記</Text>
-      <Text style={styles.subtitle}>記錄每日飲食內容</Text>
+      <Text style={styles.subtitle}>查看歷史飲食記錄</Text>
     </View>
   )
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <FlatList
-        data={entries}
-        renderItem={renderEntry}
-        keyExtractor={item => item.id}
+        data={groupedEntries}
+        renderItem={renderDayGroup}
+        keyExtractor={item => item.date}
         contentContainerStyle={[
           styles.listContent,
-          entries.length === 0 && styles.listContentEmpty,
+          groupedEntries.length === 0 && styles.listContentEmpty,
         ]}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={!isLoading ? renderEmptyState : null}
@@ -140,13 +189,6 @@ export function FoodDiaryScreen({ navigation }: FoodDiaryScreenProps) {
           <ActivityIndicator size="large" color={colors.primary[500]} />
         </View>
       )}
-
-      <FAB
-        icon="plus"
-        style={styles.fab}
-        onPress={handleAddEntry}
-        color={colors.text.inverse}
-      />
     </SafeAreaView>
   )
 }
@@ -173,72 +215,77 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl + 56, // FAB height + padding
+    paddingBottom: spacing.xl,
   },
   listContentEmpty: {
     flexGrow: 1,
   },
-  entryCard: {
+  dayCard: {
     marginBottom: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: 16,
+    padding: spacing.lg,
     elevation: 1,
   },
-  entryHeader: {
+  dayHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: spacing.md,
+    marginBottom: spacing.md,
   },
-  entryHeaderLeft: {
+  dateText: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+  },
+  totalEntriesText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+  },
+  mealBreakdownContainer: {
     flexDirection: 'row',
+    gap: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  mealItem: {
     alignItems: 'center',
-    flex: 1,
   },
   mealIcon: {
-    fontSize: 32,
-    marginRight: spacing.md,
-  },
-  foodName: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
+    fontSize: 24,
     marginBottom: spacing.xs / 2,
   },
-  mealType: {
+  mealCount: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  caloriesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.primary[50],
+    borderRadius: 8,
+    marginBottom: spacing.md,
+  },
+  caloriesLabel: {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
   },
-  entryDetails: {
+  caloriesValue: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary[700],
+  },
+  foodPreviewContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-    gap: spacing.md,
   },
-  detailItem: {
-    flexDirection: 'row',
-  },
-  detailLabel: {
+  foodPreviewText: {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
-  },
-  detailValue: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.primary,
-    fontWeight: typography.fontWeight.medium,
-  },
-  entryNotes: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-    paddingTop: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  notesText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    lineHeight: typography.fontSize.sm * typography.lineHeight.normal,
+    lineHeight: typography.fontSize.sm * 1.5,
   },
   emptyState: {
     flex: 1,
@@ -270,11 +317,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
-  },
-  fab: {
-    position: 'absolute',
-    right: spacing.lg,
-    bottom: spacing.lg,
-    backgroundColor: colors.primary[500],
   },
 })

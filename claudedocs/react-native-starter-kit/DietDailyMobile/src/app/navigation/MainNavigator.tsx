@@ -1,12 +1,13 @@
 import React from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { Button } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { DashboardScreen } from '@/features/dashboard/screens/DashboardScreen'
 import { FoodDiaryScreen } from '@/features/food-diary/screens/FoodDiaryScreen'
+import { FoodDayDetailScreen } from '@/features/food-diary/screens/FoodDayDetailScreen'
 import { AddFoodEntryScreen } from '@/features/food-diary/screens/AddFoodEntryScreen'
 import { SymptomDiaryScreen } from '@/features/symptom-diary/screens/SymptomDiaryScreen'
 import { AddSymptomEntryScreen } from '@/features/symptom-diary/screens/AddSymptomEntryScreen'
@@ -18,23 +19,25 @@ const Tab = createBottomTabNavigator<MainTabParamList>()
 
 
 
-// Temporary Profile Screen
+// Profile Screen with Dashboard embedded
 function ProfileScreen() {
   const { user, signOut } = useAuth()
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>個人設定</Text>
-      <Text style={styles.subtitle}>{user?.email}</Text>
-      <Button
-        mode="outlined"
-        onPress={signOut}
-        style={styles.button}
-        labelStyle={styles.buttonLabel}
-      >
-        登出
-      </Button>
-    </View>
+    <ScrollView style={styles.profileContainer}>
+      <DashboardScreen />
+      <View style={styles.profileActions}>
+        <Button
+          mode="outlined"
+          onPress={signOut}
+          style={styles.logoutButton}
+          labelStyle={styles.logoutButtonLabel}
+          icon="logout"
+        >
+          登出
+        </Button>
+      </View>
+    </ScrollView>
   )
 }
 
@@ -54,11 +57,11 @@ function MainTabs() {
     >
       <Tab.Screen
         name="Home"
-        component={DashboardScreen}
+        component={AddFoodEntryScreen}
         options={{
-          tabBarLabel: '首頁',
+          tabBarLabel: '新增',
           tabBarIcon: ({ color, size }) => (
-            <Icon name="home-outline" size={size} color={color} />
+            <Icon name="plus-circle-outline" size={size} color={color} />
           ),
         }}
       />
@@ -105,11 +108,11 @@ export function MainNavigator() {
     >
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen
-        name="AddFoodEntry"
-        component={AddFoodEntryScreen}
+        name="FoodDayDetail"
+        component={FoodDayDetailScreen}
         options={{
           headerShown: true,
-          title: '新增飲食記錄',
+          title: '每日詳情',
           headerStyle: {
             backgroundColor: colors.surface,
           },
@@ -133,6 +136,22 @@ export function MainNavigator() {
 }
 
 const styles = StyleSheet.create({
+  profileContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  profileActions: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
+  logoutButton: {
+    borderColor: colors.error,
+    borderRadius: 12,
+  },
+  logoutButtonLabel: {
+    fontSize: typography.fontSize.base,
+    color: colors.error,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,
