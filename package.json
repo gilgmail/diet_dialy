@@ -65,8 +65,7 @@
     "recharts": "^3.2.1",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
-    "uuid": "^13.0.0",
-    "zod": "^3.23.8"
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.5.4",
