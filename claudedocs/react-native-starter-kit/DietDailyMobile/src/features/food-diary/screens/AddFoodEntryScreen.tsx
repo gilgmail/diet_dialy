@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Button, TextInput, SegmentedButtons, Chip } from 'react-native-paper'
+import { Button, TextInput, SegmentedButtons, Chip, IconButton } from 'react-native-paper'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '@/shared/stores/authStore'
@@ -10,6 +10,9 @@ import { colors, typography, spacing } from '@/theme'
 import { useFoodDiary } from '../hooks/useFoodDiary'
 import { MEAL_TYPES, type MealType, type FoodSearchResult, type FoodEntry } from '../types'
 import { FoodSearchInput } from '../components/FoodSearchInput'
+import DateTimePicker from '@react-native-community/datetimepicker'
+import { format } from 'date-fns'
+import { zhTW } from 'date-fns/locale'
 
 type AddFoodEntryScreenProps = NativeStackScreenProps<any, 'AddFoodEntry'>
 
@@ -29,12 +32,16 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
   const { user } = useAuthStore()
   const { createEntry, isCreating } = useFoodDiary()
 
-  // Fetch today's entries
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [recentEntries, setRecentEntries] = useState<FoodEntry[]>([])
+
+  // Fetch selected date's entries
   const { data: todayEntries = [] } = useQuery({
-    queryKey: ['foodEntries', user?.id, new Date().toISOString().split('T')[0]],
+    queryKey: ['foodEntries', user?.id, selectedDate.toISOString().split('T')[0]],
     queryFn: async () => {
       if (!user?.id) return []
-      const result = await FoodDiaryService.getFoodEntriesByDate(user.id, new Date())
+      const result = await FoodDiaryService.getFoodEntriesByDate(user.id, selectedDate)
       return result.data || []
     },
     enabled: !!user?.id,
@@ -66,6 +73,13 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
     setFoodName(food.name)
   }
 
+  const handleDateChange = (event: any, date?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios')
+    if (date) {
+      setSelectedDate(date)
+    }
+  }
+
   const handleSubmit = async () => {
     if (!foodName.trim()) {
       Alert.alert('錯誤', '請輸入食物名稱')
@@ -73,13 +87,23 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
     }
 
     try {
-      await createEntry({
+      const newEntry = await createEntry({
         food_name: foodName.trim(),
         meal_type: mealType,
+        consumed_at: selectedDate.toISOString(),
       })
 
-      // Navigate back without alert for quick entry
-      navigation.goBack()
+      // Add to recent entries list
+      if (newEntry) {
+        setRecentEntries(prev => [newEntry, ...prev].slice(0, 5))
+      }
+
+      // Clear input for next entry
+      setFoodName('')
+      setMealType(getMealTypeByTime())
+
+      // Show success feedback
+      Alert.alert('成功', `已新增「${foodName.trim()}」`)
     } catch (error) {
       Alert.alert('錯誤', error instanceof Error ? error.message : '新增失敗')
     }
@@ -98,9 +122,33 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
+          {/* Date Picker */}
+          <View style={styles.datePickerContainer}>
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <IconButton icon="calendar" size={20} />
+              <Text style={styles.dateText}>
+                {format(selectedDate, 'yyyy年MM月dd日 (E)', { locale: zhTW })}
+              </Text>
+              <IconButton icon="chevron-down" size={20} />
+            </TouchableOpacity>
+          </View>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={selectedDate}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleDateChange}
+              maximumDate={new Date()}
+            />
+          )}
+
           {/* Today's Statistics */}
           <View style={styles.statsContainer}>
-            <Text style={styles.statsTitle}>今日已記錄</Text>
+            <Text style={styles.statsTitle}>本日已記錄</Text>
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
                 <Text style={styles.statIcon}>🌅</Text>
@@ -120,6 +168,21 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
               </View>
             </View>
           </View>
+
+          {/* Recent Entries */}
+          {recentEntries.length > 0 && (
+            <View style={styles.recentEntriesContainer}>
+              <Text style={styles.recentEntriesTitle}>剛新增的記錄</Text>
+              {recentEntries.map((entry) => (
+                <View key={entry.id} style={styles.recentEntryItem}>
+                  <Text style={styles.recentEntryIcon}>
+                    {MEAL_TYPES.find(m => m.value === entry.meal_type)?.icon}
+                  </Text>
+                  <Text style={styles.recentEntryText}>{entry.food_name}</Text>
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* Food Name with Search */}
           <View style={styles.section}>
@@ -175,6 +238,47 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.lg,
+  },
+  datePickerContainer: {
+    marginBottom: spacing.lg,
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    paddingVertical: spacing.sm,
+  },
+  dateText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  recentEntriesContainer: {
+    backgroundColor: colors.primary[50],
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  recentEntriesTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary[700],
+    marginBottom: spacing.sm,
+  },
+  recentEntryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+  recentEntryIcon: {
+    fontSize: 16,
+    marginRight: spacing.sm,
+  },
+  recentEntryText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.primary,
   },
   statsContainer: {
     backgroundColor: colors.surface,

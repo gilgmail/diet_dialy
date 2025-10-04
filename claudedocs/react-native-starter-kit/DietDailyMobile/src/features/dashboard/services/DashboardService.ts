@@ -20,23 +20,40 @@ export class DashboardService {
     error: { message: string } | null
   }> {
     try {
+      console.log('[DashboardService] Fetching data for userId:', userId)
+
       // Fetch food and symptom entries in parallel
       const [foodResult, symptomResult] = await Promise.all([
         this.getFoodEntries(userId),
         this.getSymptomEntries(userId),
       ])
 
-      if (foodResult.error || symptomResult.error) {
-        throw new Error('Failed to fetch dashboard data')
+      console.log('[DashboardService] Food entries:', {
+        count: foodResult.data?.length || 0,
+        hasError: !!foodResult.error,
+        error: foodResult.error
+      })
+
+      console.log('[DashboardService] Symptom entries:', {
+        count: symptomResult.data?.length || 0,
+        hasError: !!symptomResult.error,
+        error: symptomResult.error
+      })
+
+      // Only throw if food entries fail (symptom entries are optional for now)
+      if (foodResult.error) {
+        throw new Error('Failed to fetch food entries')
       }
 
       const foodEntries = foodResult.data || []
-      const symptomEntries = symptomResult.data || []
+      const symptomEntries = symptomResult.data || [] // Use empty array if symptom fetch fails
 
       // Calculate statistics
       const stats = this.calculateStats(foodEntries, symptomEntries)
       const weeklyTrend = this.calculateWeeklyTrend(foodEntries, symptomEntries)
       const insights = this.generateInsights(stats, weeklyTrend)
+
+      console.log('[DashboardService] Calculated stats:', stats)
 
       return {
         data: {
@@ -47,6 +64,7 @@ export class DashboardService {
         error: null,
       }
     } catch (error) {
+      console.error('[DashboardService] Error:', error)
       return {
         data: null,
         error: {

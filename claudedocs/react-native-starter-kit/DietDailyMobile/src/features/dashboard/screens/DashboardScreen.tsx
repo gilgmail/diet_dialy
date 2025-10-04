@@ -79,11 +79,11 @@ export function DashboardScreen() {
         </Text>
       </View>
 
-      {/* Quick Stats */}
+      {/* Quick Stats - Optimized Layout */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>今日概況</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statRow}>
+        <View style={styles.statsCompactRow}>
+          <View style={styles.statCompactItem}>
             <StatCard
               icon="food-apple"
               iconColor="#10B981"
@@ -92,20 +92,11 @@ export function DashboardScreen() {
               subtitle="筆記錄"
             />
           </View>
-          <View style={styles.statRow}>
-            <StatCard
-              icon="fire"
-              iconColor="#F59E0B"
-              label="今日熱量"
-              value={stats?.todayCalories || 0}
-              subtitle="大卡"
-            />
-          </View>
-          <View style={styles.statRow}>
+          <View style={styles.statCompactItem}>
             <StatCard
               icon="medical-bag"
               iconColor="#EF4444"
-              label="今日症狀"
+              label="症狀"
               value={stats?.todaySymptomEntries || 0}
               subtitle="筆記錄"
             />
@@ -116,27 +107,23 @@ export function DashboardScreen() {
       {/* Weekly Stats */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>本週數據</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statRow}>
+        <View style={styles.statsCompactRow}>
+          <View style={styles.statCompactItem}>
             <StatCard
               icon="calendar-week"
               iconColor={colors.primary[500]}
               label="本週飲食"
               value={stats?.weekFoodEntries || 0}
-              subtitle={`總計 ${stats?.weekCalories || 0} 大卡`}
+              subtitle="筆記錄"
             />
           </View>
-          <View style={styles.statRow}>
+          <View style={styles.statCompactItem}>
             <StatCard
               icon="chart-line"
               iconColor="#8B5CF6"
               label="本週症狀"
               value={stats?.weekSymptomEntries || 0}
-              subtitle={
-                stats?.mostCommonSymptom
-                  ? `常見：${stats.mostCommonSymptom}`
-                  : '無記錄'
-              }
+              subtitle="筆記錄"
             />
           </View>
         </View>
@@ -254,6 +241,13 @@ const styles = StyleSheet.create({
   },
   statRow: {
     width: '100%',
+  },
+  statsCompactRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  statCompactItem: {
+    flex: 1,
   },
   emptyContainer: {
     alignItems: 'center',

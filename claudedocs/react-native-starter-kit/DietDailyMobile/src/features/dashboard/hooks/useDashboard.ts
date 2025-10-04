@@ -17,13 +17,23 @@ export function useDashboard() {
   } = useQuery({
     queryKey: ['dashboard', user?.id],
     queryFn: async () => {
+      console.log('[useDashboard] Fetching dashboard data for user:', user?.id)
+
       if (!user?.id) {
+        console.error('[useDashboard] User not authenticated')
         throw new Error('User not authenticated')
       }
 
       const result = await DashboardService.getDashboardData(user.id)
 
+      console.log('[useDashboard] Dashboard data result:', {
+        hasData: !!result.data,
+        hasError: !!result.error,
+        stats: result.data?.stats
+      })
+
       if (result.error) {
+        console.error('[useDashboard] Error:', result.error.message)
         throw new Error(result.error.message)
       }
 

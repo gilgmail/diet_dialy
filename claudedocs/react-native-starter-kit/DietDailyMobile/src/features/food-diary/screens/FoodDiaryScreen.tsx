@@ -125,13 +125,6 @@ export function FoodDiaryScreen({ navigation }: FoodDiaryScreenProps) {
             )}
           </View>
 
-          {item.totalCalories > 0 && (
-            <View style={styles.caloriesContainer}>
-              <Text style={styles.caloriesLabel}>總熱量</Text>
-              <Text style={styles.caloriesValue}>{item.totalCalories} kcal</Text>
-            </View>
-          )}
-
           <View style={styles.foodPreviewContainer}>
             {item.entries.slice(0, 3).map((entry, index) => (
               <Text key={entry.id} style={styles.foodPreviewText}>
