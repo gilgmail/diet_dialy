@@ -93,10 +93,10 @@ export class DashboardService {
    */
   private static async getSymptomEntries(userId: string) {
     const { data, error } = await supabase
-      .from('symptom_entries')
+      .from('daily_symptom_entries')
       .select('*')
       .eq('user_id', userId)
-      .order('occurred_at', { ascending: false })
+      .order('recorded_date', { ascending: false })
 
     return { data: data as SymptomEntry[], error }
   }
@@ -137,12 +137,12 @@ export class DashboardService {
       0
     )
 
-    // Symptom stats
+    // Symptom stats - use recorded_at for timestamp filtering
     const todaySymptomEntries = symptomEntries.filter(
-      (entry) => new Date(entry.occurred_at) >= startOfToday
+      (entry) => new Date(entry.recorded_at) >= startOfToday
     )
     const weekSymptomEntries = symptomEntries.filter(
-      (entry) => new Date(entry.occurred_at) >= startOfWeek
+      (entry) => new Date(entry.recorded_at) >= startOfWeek
     )
 
     // Most common symptom
@@ -178,10 +178,10 @@ export class DashboardService {
       mostCommonSymptom,
       averageSeverity,
       lastEntryDate:
-        foodEntries[0]?.consumed_at || symptomEntries[0]?.occurred_at,
+        foodEntries[0]?.consumed_at || symptomEntries[0]?.recorded_at,
       firstEntryDate:
         foodEntries[foodEntries.length - 1]?.consumed_at ||
-        symptomEntries[symptomEntries.length - 1]?.occurred_at,
+        symptomEntries[symptomEntries.length - 1]?.recorded_at,
     }
   }
 
@@ -210,7 +210,7 @@ export class DashboardService {
       })
 
       const daySymptomEntries = symptomEntries.filter((entry) => {
-        const entryDate = new Date(entry.occurred_at)
+        const entryDate = new Date(entry.recorded_at)
         return entryDate >= date && entryDate < nextDay
       })
 

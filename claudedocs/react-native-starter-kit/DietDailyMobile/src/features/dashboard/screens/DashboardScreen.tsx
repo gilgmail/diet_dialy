@@ -17,7 +17,11 @@ import { colors, typography, spacing } from '@/theme'
 import { MEAL_TYPES } from '@/features/food-diary/types'
 import { SEVERITY_LEVELS } from '@/features/symptom-diary/types'
 
-export function DashboardScreen() {
+interface DashboardScreenProps {
+  hideHeader?: boolean
+}
+
+export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {}) {
   const { user } = useAuth()
   const { stats, weeklyTrend, insights, isLoading, refetch } = useDashboard()
   const [refreshing, setRefreshing] = useState(false)
@@ -72,12 +76,14 @@ export function DashboardScreen() {
       }
     >
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>健康儀表板</Text>
-        <Text style={styles.headerSubtitle}>
-          {user?.name || user?.email || '使用者'}
-        </Text>
-      </View>
+      {!hideHeader && (
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>健康儀表板</Text>
+          <Text style={styles.headerSubtitle}>
+            {user?.name || user?.email || '使用者'}
+          </Text>
+        </View>
+      )}
 
       {/* Quick Stats - Optimized Layout */}
       <View style={styles.section}>
@@ -145,29 +151,9 @@ export function DashboardScreen() {
             dataKey="symptomCount"
             color="#EF4444"
           />
-          <WeeklyChart
-            data={weeklyTrend.week}
-            title="每日熱量攝取"
-            dataKey="totalCalories"
-            color="#F59E0B"
-          />
         </View>
       )}
 
-      {/* Distribution Charts */}
-      {weeklyTrend && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>數據分布</Text>
-          <DistributionChart
-            title="餐點類型分布"
-            data={mealDistributionData}
-          />
-          <DistributionChart
-            title="症狀嚴重程度分布"
-            data={severityDistributionData}
-          />
-        </View>
-      )}
 
       {/* Health Insights */}
       {insights.length > 0 && (

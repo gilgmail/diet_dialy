@@ -1,13 +1,30 @@
 // Symptom Diary Types
+// Compatible with daily_symptom_entries table structure
 
 export interface SymptomEntry {
   id: string
   user_id: string
+  recorded_date: string // YYYY-MM-DD format
+  recorded_at: string
+
+  // UI-friendly fields (mapped from/to database fields)
   symptom_name: string
   severity: SeverityLevel
   duration_minutes?: number
   notes?: string
-  occurred_at: string
+
+  // Core symptom scores (0-5 scale, for database compatibility)
+  overall_health: number
+  abdominal_pain: number
+  diarrhea: number
+  bloody_stool: number
+  bloating: number
+
+  // Additional data arrays (for database compatibility)
+  additional_symptoms: string[]
+  medications_taken: string[]
+  triggers_identified: string[]
+
   created_at: string
   updated_at: string
 }

@@ -19,25 +19,32 @@ const Tab = createBottomTabNavigator<MainTabParamList>()
 
 
 
-// Profile Screen with Dashboard embedded
+// Profile Screen with Dashboard embedded and logout at top
 function ProfileScreen() {
   const { user, signOut } = useAuth()
 
   return (
-    <ScrollView style={styles.profileContainer}>
-      <DashboardScreen />
-      <View style={styles.profileActions}>
+    <View style={styles.profileContainer}>
+      <View style={styles.profileHeader}>
+        <View style={styles.profileHeaderLeft}>
+          <Text style={styles.profileTitle}>我的</Text>
+          <Text style={styles.profileSubtitle}>
+            {user?.name || user?.email || '使用者'}
+          </Text>
+        </View>
         <Button
           mode="outlined"
           onPress={signOut}
           style={styles.logoutButton}
           labelStyle={styles.logoutButtonLabel}
           icon="logout"
+          compact
         >
           登出
         </Button>
       </View>
-    </ScrollView>
+      <DashboardScreen hideHeader={true} />
+    </View>
   )
 }
 
@@ -140,16 +147,36 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  profileActions: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xl,
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  profileHeaderLeft: {
+    flex: 1,
+  },
+  profileTitle: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  profileSubtitle: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
   },
   logoutButton: {
     borderColor: colors.error,
-    borderRadius: 12,
+    borderRadius: 8,
   },
   logoutButtonLabel: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     color: colors.error,
   },
   container: {

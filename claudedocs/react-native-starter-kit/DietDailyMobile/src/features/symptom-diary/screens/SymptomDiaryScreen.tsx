@@ -62,6 +62,7 @@ export function SymptomDiaryScreen() {
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleString('zh-TW', {
+      year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -113,7 +114,7 @@ export function SymptomDiaryScreen() {
           )}
           <View style={styles.detailRow}>
             <Icon name="calendar" size={16} color={colors.text.secondary} />
-            <Text style={styles.detailText}>{formatTime(item.occurred_at)}</Text>
+            <Text style={styles.detailText}>{formatTime(item.recorded_at)}</Text>
           </View>
         </View>
 
