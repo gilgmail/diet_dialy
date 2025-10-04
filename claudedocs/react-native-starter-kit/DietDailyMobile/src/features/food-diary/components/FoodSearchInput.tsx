@@ -1,11 +1,11 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native'
 import { TextInput, Card } from 'react-native-paper'
 import { colors, typography, spacing } from '@/theme'
@@ -28,6 +28,14 @@ export function FoodSearchInput({
   const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showResults, setShowResults] = useState(false)
+
+  // Close dropdown when value is cleared externally
+  useEffect(() => {
+    if (value.trim().length === 0) {
+      setShowResults(false)
+      setSearchResults([])
+    }
+  }, [value])
 
   const handleSearch = useCallback(
     async (query: string) => {
@@ -67,48 +75,13 @@ export function FoodSearchInput({
     setSearchResults([])
   }
 
-  const renderFoodItem = ({ item }: { item: FoodSearchResult }) => (
+  const renderFoodItem = (item: FoodSearchResult) => (
     <TouchableOpacity
+      key={item.id}
       onPress={() => handleSelectFood(item)}
       style={styles.resultItem}
     >
-      <View style={styles.resultItemHeader}>
-        <View style={styles.foodNameContainer}>
-          <Text style={styles.foodName}>{item.name}</Text>
-          {item.name_en && (
-            <Text style={styles.foodNameEn}>{item.name_en}</Text>
-          )}
-        </View>
-        <Text style={styles.foodCategory}>{item.category}</Text>
-      </View>
-      {item.brand && (
-        <Text style={styles.brandText}>品牌: {item.brand}</Text>
-      )}
-      <View style={styles.resultItemDetails}>
-        {item.serving_size && (
-          <Text style={styles.detailText}>份量: {item.serving_size}</Text>
-        )}
-        {item.calories !== undefined && (
-          <Text style={styles.detailText}>熱量: {item.calories} kcal</Text>
-        )}
-      </View>
-      {(item.protein !== undefined ||
-        item.carbohydrates !== undefined ||
-        item.fat !== undefined) && (
-        <View style={styles.nutritionInfo}>
-          {item.protein !== undefined && (
-            <Text style={styles.nutritionText}>蛋白質: {item.protein}g</Text>
-          )}
-          {item.carbohydrates !== undefined && (
-            <Text style={styles.nutritionText}>
-              碳水: {item.carbohydrates}g
-            </Text>
-          )}
-          {item.fat !== undefined && (
-            <Text style={styles.nutritionText}>脂肪: {item.fat}g</Text>
-          )}
-        </View>
-      )}
+      <Text style={styles.foodName}>{item.name}</Text>
     </TouchableOpacity>
   )
 
@@ -131,31 +104,30 @@ export function FoodSearchInput({
       />
 
       {showResults && searchResults.length > 0 && (
-        <Card style={styles.resultsCard}>
-          {/* Note: FlatList nested in ScrollView warning is acceptable here
-              - Fixed height (300px) limits performance impact
-              - Search results are limited (max 20 items)
-              - This is a dropdown component, not a main list */}
-          <FlatList
-            data={searchResults}
-            renderItem={renderFoodItem}
-            keyExtractor={item => item.id}
-            style={styles.resultsList}
-            keyboardShouldPersistTaps="handled"
-            nestedScrollEnabled={true}
-          />
-        </Card>
+        <View style={styles.resultsWrapper}>
+          <Card style={styles.resultsCard}>
+            <ScrollView
+              style={styles.resultsList}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+            >
+              {searchResults.map(renderFoodItem)}
+            </ScrollView>
+          </Card>
+        </View>
       )}
 
       {showResults && searchResults.length === 0 && !isSearching && value.trim().length > 0 && (
-        <Card style={styles.resultsCard}>
-          <View style={styles.noResultsContainer}>
-            <Text style={styles.noResultsText}>資料庫中沒有「{value}」</Text>
-            <Text style={styles.noResultsHint}>
-              沒關係！可以直接使用此名稱記錄
-            </Text>
-          </View>
-        </Card>
+        <View style={styles.resultsWrapper}>
+          <Card style={styles.resultsCard}>
+            <View style={styles.noResultsContainer}>
+              <Text style={styles.noResultsText}>資料庫中沒有「{value}」</Text>
+              <Text style={styles.noResultsHint}>
+                沒關係！可以直接使用此名稱記錄
+              </Text>
+            </View>
+          </Card>
+        </View>
       )}
     </View>
   )
@@ -169,78 +141,34 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: colors.background,
   },
+  resultsWrapper: {
+    marginTop: spacing.xs,
+    width: '100%',
+  },
   resultsCard: {
-    position: 'absolute',
-    top: 60,
-    left: 0,
-    right: 0,
-    maxHeight: 300,
+    maxHeight: 240,
     backgroundColor: colors.surface,
-    elevation: 4,
-    zIndex: 20,
+    elevation: 6,
+    borderRadius: 12,
+    overflow: 'hidden',
+    width: '100%',
   },
   resultsList: {
-    maxHeight: 300,
+    maxHeight: 240,
   },
   resultItem: {
-    padding: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  resultItemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.xs,
-  },
-  foodNameContainer: {
-    flex: 1,
-  },
   foodName: {
     fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
   },
-  foodNameEn: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    marginTop: 2,
-  },
-  foodCategory: {
-    fontSize: typography.fontSize.sm,
-    color: colors.primary[500],
-    marginLeft: spacing.sm,
-  },
-  brandText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.secondary,
-    marginBottom: spacing.xs,
-    fontStyle: 'italic',
-  },
-  resultItemDetails: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.xs,
-  },
-  detailText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-  },
-  nutritionInfo: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  nutritionText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.text.secondary,
-    backgroundColor: colors.primary[50],
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
   noResultsContainer: {
-    padding: spacing.lg,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
     alignItems: 'center',
   },
   noResultsText: {
@@ -251,5 +179,6 @@ const styles = StyleSheet.create({
   noResultsHint: {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
+    textAlign: 'center',
   },
 })
