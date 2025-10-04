@@ -16,6 +16,9 @@ export type MainStackParamList = {
   MainTabs: undefined
   AddFoodEntry: undefined
   AddSymptomEntry: undefined
+  FoodDayDetail: {
+    date: string
+  }
 }
 
 export type RootStackParamList = {

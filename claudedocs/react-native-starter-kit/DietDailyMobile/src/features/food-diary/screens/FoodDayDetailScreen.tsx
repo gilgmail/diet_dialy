@@ -15,11 +15,12 @@ import { zhTW } from 'date-fns/locale'
 import { colors, typography, spacing } from '@/theme'
 import { useFoodDiary } from '../hooks/useFoodDiary'
 import { MEAL_TYPES, type FoodEntry } from '../types'
+import type { MainStackParamList } from '@/app/navigation/types'
 
-type FoodDayDetailScreenProps = NativeStackScreenProps<any, 'FoodDayDetail'>
+type FoodDayDetailScreenProps = NativeStackScreenProps<MainStackParamList, 'FoodDayDetail'>
 
 export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenProps) {
-  const { date } = route.params as { date: string }
+  const { date } = route.params
   const { entries, deleteEntry, isDeleting } = useFoodDiary()
 
   // Filter entries for this specific date

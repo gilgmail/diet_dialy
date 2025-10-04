@@ -11,6 +11,7 @@ import { FoodDayDetailScreen } from '@/features/food-diary/screens/FoodDayDetail
 import { AddFoodEntryScreen } from '@/features/food-diary/screens/AddFoodEntryScreen'
 import { SymptomDiaryScreen } from '@/features/symptom-diary/screens/SymptomDiaryScreen'
 import { AddSymptomEntryScreen } from '@/features/symptom-diary/screens/AddSymptomEntryScreen'
+import { HomeScreen } from '@/features/home/screens/HomeScreen'
 import { colors, typography, spacing } from '@/theme'
 import type { MainStackParamList, MainTabParamList } from './types'
 
@@ -64,7 +65,7 @@ function MainTabs() {
     >
       <Tab.Screen
         name="Home"
-        component={AddFoodEntryScreen}
+        component={HomeScreen}
         options={{
           tabBarLabel: '新增',
           tabBarIcon: ({ color, size }) => (
@@ -115,11 +116,11 @@ export function MainNavigator() {
     >
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen
-        name="FoodDayDetail"
-        component={FoodDayDetailScreen}
+        name="AddFoodEntry"
+        component={AddFoodEntryScreen}
         options={{
           headerShown: true,
-          title: '每日詳情',
+          title: '新增飲食記錄',
           headerStyle: {
             backgroundColor: colors.surface,
           },
@@ -132,6 +133,18 @@ export function MainNavigator() {
         options={{
           headerShown: true,
           title: '新增症狀記錄',
+          headerStyle: {
+            backgroundColor: colors.surface,
+          },
+          headerTintColor: colors.text.primary,
+        }}
+      />
+      <Stack.Screen
+        name="FoodDayDetail"
+        component={FoodDayDetailScreen}
+        options={{
+          headerShown: true,
+          title: '每日詳情',
           headerStyle: {
             backgroundColor: colors.surface,
           },
