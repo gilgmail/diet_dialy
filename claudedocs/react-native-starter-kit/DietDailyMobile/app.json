@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "470437922488-j76be7jruh6et0l0ms7h31qa1m5ln9a5.apps.googleusercontent.com"
+      "bundleIdentifier": "com.gilko.DietDailyMobile"
     },
     "android": {
       "adaptiveIcon": {

@@ -9,7 +9,46 @@ import type {
   WeeklyTrend,
   HealthInsight,
   DashboardData,
+  WeeklyAnalysisHistoryItem,
 } from '../types'
+
+interface WeeklyIBDAnalysisCard {
+  summary?: string
+  foods_to_monitor?: Array<{
+    food?: string
+    risk_level?: string
+    reasoning?: string[]
+    recommended_actions?: string[]
+    supporting_days?: string[]
+  }>
+  supportive_foods?: Array<{
+    food?: string
+    benefits?: string[]
+    suggestions?: string[]
+  }>
+  gut_health_recommendations?: string[]
+  warning_signs?: string[]
+  follow_up_actions?: string[]
+}
+
+interface WeeklyIBDAnalysisResult {
+  success: boolean
+  method: 'claude_api' | 'fallback' | 'insufficient_data'
+  prompt_used: string
+  timeframe: {
+    startDate: string
+    endDate: string
+    daysCovered: number
+  }
+  analysis: WeeklyIBDAnalysisCard
+}
+
+interface WeeklyIBDAnalysisResponse {
+  success: boolean
+  analysis?: WeeklyIBDAnalysisResult
+  history?: WeeklyAnalysisHistoryItem[]
+  error?: string
+}
 
 export class DashboardService {
   /**
@@ -52,6 +91,9 @@ export class DashboardService {
       const stats = this.calculateStats(foodEntries, symptomEntries)
       const weeklyTrend = this.calculateWeeklyTrend(foodEntries, symptomEntries)
       const insights = this.generateInsights(stats, weeklyTrend)
+      const { insights: aiInsights, history } = await this.getAIInsights(userId, weeklyTrend)
+
+      const combinedInsights = [...aiInsights, ...insights]
 
       console.log('[DashboardService] Calculated stats:', stats)
 
@@ -59,7 +101,8 @@ export class DashboardService {
         data: {
           stats,
           weeklyTrend,
-          insights,
+          insights: combinedInsights,
+          analysisHistory: history,
         },
         error: null,
       }
@@ -261,6 +304,214 @@ export class DashboardService {
     }
   }
 
+  private static sanitizeList(values?: string[] | null): string[] {
+    if (!values || !Array.isArray(values)) {
+      return []
+    }
+    return values
+      .map((value) => (typeof value === 'string' ? value.trim() : ''))
+      .filter((value) => value.length > 0)
+  }
+
+  private static formatDate(date?: string): string | undefined {
+    if (!date) return undefined
+    return date.split('T')[0]
+  }
+
+  private static async getAIInsights(
+    userId: string,
+    weeklyTrend: WeeklyTrend
+  ): Promise<{ insights: HealthInsight[]; history: WeeklyAnalysisHistoryItem[] }> {
+    try {
+      const apiBase = process.env.EXPO_PUBLIC_API_URL
+      if (!apiBase) {
+        console.log('[DashboardService] EXPO_PUBLIC_API_URL not configured, skip AI insights')
+        return { insights: [], history: [] }
+      }
+
+      const history = await this.fetchAnalysisHistory(apiBase, userId)
+
+      if (!weeklyTrend.week.length) {
+        return { insights: [], history }
+      }
+
+      const startDate = this.formatDate(weeklyTrend.week[0]?.date)
+      const endDate = this.formatDate(weeklyTrend.week[weeklyTrend.week.length - 1]?.date)
+
+      const endpoint = apiBase.endsWith('/api')
+        ? `${apiBase}/ai/weekly-ibd-analysis`
+        : `${apiBase.replace(/\/+$/, '')}/ai/weekly-ibd-analysis`
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          startDate,
+          endDate,
+        }),
+      })
+
+      if (!response.ok) {
+        console.warn('[DashboardService] AI insight request failed', response.status)
+        return { insights: [], history }
+      }
+
+      const payload = (await response.json()) as WeeklyIBDAnalysisResponse
+      if (!payload.success || !payload.analysis) {
+        console.warn('[DashboardService] AI insight response missing analysis', payload.error)
+        return { insights: [], history }
+      }
+
+      const aiAnalysis = payload.analysis.analysis
+      if (!aiAnalysis) {
+        const normalizedHistory = this.normalizeHistory(apiBase, payload.history)
+        return { insights: [], history: normalizedHistory.length ? normalizedHistory : history }
+      }
+
+      const timestamp = new Date().toISOString()
+      const insights: HealthInsight[] = []
+
+      if (aiAnalysis.summary) {
+        insights.push({
+          id: `ai-weekly-summary-${timestamp}`,
+          type: 'info',
+          icon: '🤖',
+          title: 'AI 每週腸道分析',
+          description: aiAnalysis.summary.trim(),
+          timestamp,
+        })
+      }
+
+      const topRisk = aiAnalysis.foods_to_monitor?.find((item) => item?.food)
+      if (topRisk?.food) {
+        const reasons = this.sanitizeList(topRisk.reasoning)
+        const actions = this.sanitizeList(topRisk.recommended_actions)
+        const supporting = this.sanitizeList(topRisk.supporting_days)
+
+        const descriptionParts: string[] = []
+        if (reasons.length > 0) {
+          descriptionParts.push(reasons[0])
+        }
+        if (actions.length > 0) {
+          descriptionParts.push(`建議：${actions[0]}`)
+        }
+        if (supporting.length > 0) {
+          descriptionParts.push(`相關日期：${supporting.slice(0, 3).join('、')}`)
+        }
+
+        insights.push({
+          id: `ai-weekly-risk-${topRisk.food}-${timestamp}`,
+          type: topRisk.risk_level === 'high' ? 'warning' : 'info',
+          icon: topRisk.risk_level === 'high' ? '⚠️' : '🧐',
+          title: `優先留意：${topRisk.food}`,
+          description: descriptionParts.join('\n') || '請持續監測該食物對症狀的影響。',
+          timestamp,
+        })
+      }
+
+      const gutTips = this.sanitizeList(aiAnalysis.gut_health_recommendations)
+      if (gutTips.length > 0) {
+        insights.push({
+          id: `ai-weekly-gut-${timestamp}`,
+          type: 'positive',
+          icon: '🌿',
+          title: '腸道修復建議',
+          description: gutTips.slice(0, 2).join('\n'),
+          timestamp,
+        })
+      }
+
+      const followUps = this.sanitizeList(aiAnalysis.follow_up_actions)
+      if (followUps.length > 0) {
+        insights.push({
+          id: `ai-weekly-actions-${timestamp}`,
+          type: 'info',
+          icon: '📝',
+          title: '下週行動重點',
+          description: followUps.slice(0, 2).join('\n'),
+          timestamp,
+        })
+      }
+
+      const warningNotes = this.sanitizeList(aiAnalysis.warning_signs)
+      if (warningNotes.length > 0) {
+        insights.push({
+          id: `ai-weekly-warning-${timestamp}`,
+          type: 'warning',
+          icon: '🚨',
+          title: '警示訊號',
+          description: warningNotes.slice(0, 2).join('\n'),
+          timestamp,
+        })
+      }
+
+      const normalizedHistory = this.normalizeHistory(apiBase, payload.history)
+
+      return {
+        insights,
+        history: normalizedHistory.length ? normalizedHistory : history,
+      }
+    } catch (error) {
+      console.error('[DashboardService] Failed to load AI insights:', error)
+      return { insights: [], history: [] }
+    }
+  }
+
+  private static async fetchAnalysisHistory(
+    apiBase: string,
+    userId: string
+  ): Promise<WeeklyAnalysisHistoryItem[]> {
+    try {
+      const baseUrl = apiBase.endsWith('/api') ? apiBase : `${apiBase.replace(/\/+$/, '')}/api`
+      const response = await fetch(`${baseUrl}/ai/weekly-ibd-analysis?userId=${userId}`)
+
+      if (!response.ok) {
+        return []
+      }
+
+      const data = (await response.json()) as { success: boolean; history?: WeeklyAnalysisHistoryItem[] }
+      if (!data.success || !Array.isArray(data.history)) {
+        return []
+      }
+      return this.normalizeHistory(apiBase, data.history)
+    } catch (error) {
+      console.error('[DashboardService] Failed to fetch analysis history:', error)
+      return []
+    }
+  }
+
+  private static normalizeHistory(
+    apiBase: string,
+    items?: WeeklyAnalysisHistoryItem[]
+  ): WeeklyAnalysisHistoryItem[] {
+    if (!items || items.length === 0) {
+      return []
+    }
+
+    const baseUrl = apiBase.endsWith('/api') ? apiBase : `${apiBase.replace(/\/+$/, '')}/api`
+    const apiRoot = baseUrl.replace(/\/api$/, '')
+
+    return items.map((item: any) => ({
+      ...item,
+      pdfPath:
+        item.pdfPath && typeof item.pdfPath === 'string' && !item.pdfPath.startsWith('http')
+          ? `${apiRoot}${item.pdfPath}`
+          : item.pdfPath,
+      foodsToMonitor: item.foodsToMonitor || item.foods_to_monitor || [],
+      supportiveFoods: item.supportiveFoods || item.supportive_foods || [],
+    }))
+      .reduce<WeeklyAnalysisHistoryItem[]>((acc, item) => {
+        const key = `${item.startDate}_${item.endDate}`
+        if (!acc.find((existing) => `${existing.startDate}_${existing.endDate}` === key)) {
+          acc.push(item)
+        }
+        return acc
+      }, [])
+  }
+
   /**
    * Generate health insights based on data
    */
@@ -302,31 +553,6 @@ export class DashboardService {
         icon: '⚠️',
         title: '注意症狀頻率',
         description: '本週症狀記錄較多，建議諮詢醫療專業人員',
-        timestamp: new Date().toISOString(),
-      })
-    }
-
-    // Calorie tracking
-    if (stats.weekCalories > 0) {
-      const avgDailyCalories = Math.round(stats.weekCalories / 7)
-      insights.push({
-        id: '4',
-        type: 'info',
-        icon: '📊',
-        title: '每日平均熱量',
-        description: `本週平均每日攝取 ${avgDailyCalories} 大卡`,
-        timestamp: new Date().toISOString(),
-      })
-    }
-
-    // Most common symptom
-    if (stats.mostCommonSymptom) {
-      insights.push({
-        id: '5',
-        type: 'info',
-        icon: '🔍',
-        title: '常見症狀',
-        description: `最常記錄的症狀：${stats.mostCommonSymptom}`,
         timestamp: new Date().toISOString(),
       })
     }

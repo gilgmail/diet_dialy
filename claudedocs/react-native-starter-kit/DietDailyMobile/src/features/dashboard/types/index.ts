@@ -56,10 +56,24 @@ export interface HealthInsight {
   timestamp: string
 }
 
+export interface WeeklyAnalysisHistoryItem {
+  id: string
+  title: string
+  createdAt: string
+  startDate: string
+  endDate: string
+  summary: string
+  pdfPath: string
+  followUpActions: string[]
+  foodsToMonitor?: Array<{ food: string; risk_level?: string; reasoning?: string[]; recommended_actions?: string[] }>
+  supportiveFoods?: Array<{ food: string; benefits?: string[]; suggestions?: string[] }>
+}
+
 export interface DashboardData {
   stats: DashboardStats
   weeklyTrend: WeeklyTrend
   insights: HealthInsight[]
+  analysisHistory?: WeeklyAnalysisHistoryItem[]
 }
 
 // Chart Data Types

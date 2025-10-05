@@ -48,6 +48,7 @@ export function useDashboard() {
     stats: dashboardData?.stats,
     weeklyTrend: dashboardData?.weeklyTrend,
     insights: dashboardData?.insights || [],
+    analysisHistory: dashboardData?.analysisHistory || [],
     isLoading,
     error: error?.message || null,
 

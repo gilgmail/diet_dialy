@@ -1,12 +1,14 @@
 // Supabase 食物記錄服務
 import { supabase } from './client'
-import type { FoodEntry, FoodEntryInsert, FoodEntryUpdate } from '@/types/supabase'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database, FoodEntry, FoodEntryInsert, FoodEntryUpdate } from '@/types/supabase'
 
 export class SupabaseFoodEntriesService {
+  constructor(private readonly client: SupabaseClient<Database> = supabase) {}
 
   // 建立食物記錄
   async createFoodEntry(entryData: FoodEntryInsert): Promise<FoodEntry | null> {
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('food_entries')
       .insert(entryData)
       .select()
@@ -22,7 +24,7 @@ export class SupabaseFoodEntriesService {
 
   // 更新食物記錄
   async updateFoodEntry(id: string, updates: FoodEntryUpdate): Promise<FoodEntry | null> {
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('food_entries')
       .update(updates)
       .eq('id', id)
@@ -39,7 +41,7 @@ export class SupabaseFoodEntriesService {
 
   // 刪除食物記錄
   async deleteFoodEntry(id: string): Promise<boolean> {
-    const { error } = await supabase
+    const { error } = await this.client
       .from('food_entries')
       .delete()
       .eq('id', id)
@@ -57,7 +59,7 @@ export class SupabaseFoodEntriesService {
     const startDate = `${date}T00:00:00.000Z`
     const endDate = `${date}T23:59:59.999Z`
 
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('food_entries')
       .select('*')
       .eq('user_id', userId)
@@ -79,7 +81,7 @@ export class SupabaseFoodEntriesService {
     startDate: string,
     endDate: string
   ): Promise<FoodEntry[]> {
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('food_entries')
       .select('*')
       .eq('user_id', userId)
@@ -106,7 +108,7 @@ export class SupabaseFoodEntriesService {
       mealType?: string
     }
   ): Promise<FoodEntry[]> {
-    let query = supabase
+    let query = this.client
       .from('food_entries')
       .select(`
         *,
@@ -172,7 +174,7 @@ export class SupabaseFoodEntriesService {
 
   // 獲取常用食物
   async getFrequentFoods(userId: string, limit: number = 10): Promise<any[]> {
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('food_entries')
       .select('food_name, food_id, COUNT(*) as frequency')
       .eq('user_id', userId)
@@ -202,7 +204,7 @@ export class SupabaseFoodEntriesService {
     topFoods: Array<{ food_name: string; frequency: number }>
   }> {
     // 獲取基本統計
-    const { data: entries, error } = await supabase
+    const { data: entries, error } = await this.client
       .from('food_entries')
       .select('calories, meal_type, food_name, consumed_at')
       .eq('user_id', userId)
@@ -261,7 +263,7 @@ export class SupabaseFoodEntriesService {
       endDate?: string
     }
   ): Promise<FoodEntry[]> {
-    let supabaseQuery = supabase
+    let supabaseQuery = this.client
       .from('food_entries')
       .select('*')
       .eq('user_id', userId)
@@ -297,7 +299,7 @@ export class SupabaseFoodEntriesService {
     startDate: string,
     endDate: string
   ): Promise<any> {
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('food_entries')
       .select('symptoms_before, symptoms_after, medical_score, consumed_at')
       .eq('user_id', userId)
@@ -315,7 +317,7 @@ export class SupabaseFoodEntriesService {
 
   // 批量建立食物記錄
   async bulkCreateFoodEntries(entries: FoodEntryInsert[]): Promise<FoodEntry[]> {
-    const { data, error } = await supabase
+    const { data, error } = await this.client
       .from('food_entries')
       .insert(entries)
       .select()
