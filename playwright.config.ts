@@ -110,11 +110,10 @@ export default defineConfig({
     /* 斷言超時時間 */
     timeout: 5000,
 
-    /* 截圖比較閾值 */
-    threshold: 0.2,
-
-    /* 像素比較模式 */
-    mode: 'default'
+    /* 截圖比較配置 */
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.2,
+    },
   },
 
   /* 測試超時設定 */
