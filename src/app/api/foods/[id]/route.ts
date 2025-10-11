@@ -5,10 +5,11 @@ import { UpdateFoodRequest } from '@/types/food';
 // GET /api/foods/[id] - Get food by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const food = await foodDatabase.getFoodById(params.id);
+    const { id } = await params;
+    const food = await foodDatabase.getFoodById(id);
 
     if (!food) {
       return NextResponse.json(
@@ -30,12 +31,13 @@ export async function GET(
 // PUT /api/foods/[id] - Update food
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body: Omit<UpdateFoodRequest, 'id'> = await request.json();
     const updateRequest: UpdateFoodRequest = {
-      id: params.id,
+      id,
       ...body
     };
 
@@ -54,10 +56,11 @@ export async function PUT(
 // DELETE /api/foods/[id] - Delete food
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await foodDatabase.deleteFood(params.id);
+    const { id } = await params;
+    await foodDatabase.deleteFood(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

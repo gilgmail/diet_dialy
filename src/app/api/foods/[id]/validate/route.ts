@@ -4,10 +4,11 @@ import { foodDatabase } from '@/lib/food-database';
 // PATCH /api/foods/[id]/validate - Validate food medically
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const validatedFood = await foodDatabase.validateFood(params.id);
+    const { id } = await params;
+    const validatedFood = await foodDatabase.validateFood(id);
 
     return NextResponse.json({ food: validatedFood });
   } catch (error) {
