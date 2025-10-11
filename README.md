@@ -1,232 +1,251 @@
-# Diet Daily - Medical Food Tracker
+# Diet Daily - AI-Powered Medical Food Tracker
 
-A medical-grade Progressive Web Application (PWA) designed for patients with IBD, IBS, food allergies, and those undergoing chemotherapy treatment. Built with Next.js 14, TypeScript, and Tailwind CSS for Taiwan and Hong Kong healthcare systems.
+**Version 0.1.0** - Development Phase
 
-## 🏥 Medical Focus
+A comprehensive full-stack application for patients managing IBD, IBS, food allergies, and chemotherapy treatment. Features AI-powered analysis, real-time symptom tracking, and cross-platform support for Taiwan and Hong Kong healthcare systems.
 
-Diet Daily is specifically designed for patients managing:
+## 🌟 Current Features (v0.1.0)
 
-- **IBD (Inflammatory Bowel Disease)** - Crohn's Disease & Ulcerative Colitis
-- **化療 (Chemotherapy)** - Nutrition management during cancer treatment
-- **過敏 (Food Allergies)** - Comprehensive allergen tracking and avoidance
-- **IBS (Irritable Bowel Syndrome)** - Symptom patterns and trigger identification
-- **Celiac Disease** - Gluten-free lifestyle management
+### 🤖 AI-Powered Analysis
+- **Weekly IBD Analysis** - Claude AI generates personalized gut health reports
+- **Food Scoring** - Multi-condition medical scoring for diet optimization
+- **Symptom Correlation** - AI-driven pattern recognition for trigger identification
+- **PDF Reports** - Healthcare provider-ready analysis reports
 
-## ✨ Key Features
+### 📱 Multi-Platform
+- **Next.js 15 Web App** - Modern, responsive web application
+- **React Native Mobile** - Native iOS/Android app with offline sync (in development)
+- **Progressive Web App** - Installable web app with offline capabilities
+- **Cross-Platform Sync** - Real-time data synchronization via Supabase
 
-### Medical-Grade Tracking
-- **Symptom Logging** - Precise severity tracking with medical terminology
-- **Food Diary** - Comprehensive nutritional analysis with trigger identification
-- **Medication Management** - Reminders and interaction tracking
-- **Medical Reports** - Healthcare provider-ready summaries
+### 🏥 Medical-Grade Tracking
+- **Daily Symptom Diary** - Comprehensive IBD symptom logging with severity tracking
+- **Food Entry System** - Search 20,000+ foods with nutritional data
+- **Medical Dashboard** - Weekly trends, insights, and AI analysis
+- **Admin Panel** - Food database management and duplicate detection
 
-### Progressive Web App
-- **Offline-First Architecture** - Continue tracking without internet
-- **Cross-Platform** - Works on mobile, tablet, and desktop
-- **Installable** - Native app experience through PWA
-- **Secure** - End-to-end encryption for medical data
-
-### Taiwan/Hong Kong Localization
-- **Multiple Languages** - English, Traditional Chinese (Taiwan & Hong Kong)
-- **Regional Healthcare Integration** - Compatible with local medical systems
-- **Cultural Food Database** - Asian cuisine with nutritional data
-- **Local Medical Standards** - Compliant with regional healthcare requirements
+### 🔐 Backend Infrastructure
+- **Supabase** - PostgreSQL database with real-time subscriptions
+- **Authentication** - Google OAuth and email/password
+- **Row-Level Security** - User data isolation and privacy
+- **Real-time Sync** - Instant updates across devices
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-
-- Node.js 18+ and npm 8+
-- Modern web browser with PWA support
+- Node.js 20+
+- npm 10+
+- Supabase account (for backend)
+- Anthropic API key (for AI features)
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-org/diet-daily.git
-   cd diet-daily
-   ```
+\`\`\`bash
+# Clone repository
+git clone https://github.com/your-org/diet-daily.git
+cd diet-daily
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+# Install dependencies
+npm install
 
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env.local
-   # Edit .env.local with your configuration
-   ```
+# Set up environment (copy and configure)
+cp .env.example .env.local
 
-4. **Run the development server**
-   ```bash
-   npm run dev
-   ```
+# Required environment variables:
+# - NEXT_PUBLIC_SUPABASE_URL
+# - NEXT_PUBLIC_SUPABASE_ANON_KEY
+# - ANTHROPIC_API_KEY
+# - NEXTAUTH_SECRET
 
-5. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+# Run development server
+npm run dev
 
-### Building for Production
+# Open browser
+open http://localhost:3000
+\`\`\`
 
-```bash
-npm run build
-npm start
-```
+### Mobile App Setup (React Native)
 
-## 🏗️ Project Structure
+\`\`\`bash
+cd claudedocs/react-native-starter-kit/DietDailyMobile
 
-```
+# Install dependencies
+npm install
+
+# iOS
+npm run ios
+
+# Android
+npm run android
+\`\`\`
+
+## 🏗️ Architecture
+
+\`\`\`
 diet-daily/
 ├── src/
-│   ├── app/                 # Next.js 14 App Router
-│   │   ├── globals.css      # Global styles with medical themes
-│   │   ├── layout.tsx       # Root layout with PWA setup
-│   │   └── page.tsx         # Homepage
-│   ├── components/          # Reusable UI components
-│   │   └── ui/              # Base UI components (shadcn/ui)
-│   ├── lib/                 # Utility functions and constants
-│   │   ├── utils.ts         # Common utilities
-│   │   └── constants.ts     # Medical constants and i18n
-│   └── types/               # TypeScript type definitions
-│       ├── medical.ts       # Medical condition types
-│       ├── nutrition.ts     # Food and nutrition types
-│       ├── user.ts          # User and preferences types
-│       └── index.ts         # Type exports
-├── public/                  # Static assets
-│   ├── manifest.json        # PWA manifest
-│   ├── icons/              # App icons for all sizes
-│   └── splash/             # iOS splash screens
-├── tailwind.config.ts       # Tailwind with medical themes
-├── next.config.js          # Next.js with PWA configuration
-└── tsconfig.json           # TypeScript configuration
-```
+│   ├── app/                    # Next.js 15 App Router
+│   │   ├── api/               # API Routes
+│   │   │   ├── ai/           # AI analysis endpoints
+│   │   │   ├── foods/        # Food database API
+│   │   │   └── medical/      # Symptom tracking API
+│   │   ├── admin/            # Admin dashboard
+│   │   ├── auth/             # Authentication flows
+│   │   └── food-diary/       # Main application
+│   ├── components/            # React components
+│   ├── lib/                   # Utilities and services
+│   │   ├── supabase/         # Supabase client config
+│   │   └── anthropic/        # Claude AI integration
+│   └── types/                 # TypeScript definitions
+│       ├── medical.ts         # Medical & symptom types
+│       ├── food.ts           # Food & nutrition types
+│       └── supabase.ts       # Database types
+├── claudedocs/
+│   └── react-native-starter-kit/
+│       └── DietDailyMobile/  # React Native mobile app
+├── scripts/                   # Utility scripts
+│   ├── ci-test.sh            # CI/CD testing
+│   └── cleanup-console-logs.sh
+└── .github/
+    └── workflows/
+        └── ci-cd.yml         # GitHub Actions workflow
+\`\`\`
 
-## 🎯 Development Scripts
+## 🧪 Development Scripts
 
-```bash
+\`\`\`bash
 # Development
-npm run dev              # Start development server
-npm run build           # Build for production
-npm run start           # Start production server
+npm run dev                # Start dev server (Next.js)
+npm run build              # Production build
+npm start                  # Start production server
 
 # Code Quality
-npm run lint            # Run ESLint
-npm run type-check      # TypeScript type checking
+npm run lint               # ESLint
+npm run type-check         # TypeScript validation
 
 # Testing
-npm run test            # Run tests
-npm run test:watch      # Watch mode testing
-npm run test:coverage   # Coverage reporting
-```
+npm run test               # Run tests
+npm run test:coverage      # Coverage report
+npm run test:e2e           # Playwright E2E tests
+
+# Local CI/CD Testing
+./scripts/ci-test.sh       # Simulate GitHub Actions locally
+\`\`\`
 
 ## 🔧 Technology Stack
 
-### Core Framework
-- **Next.js 14** - React framework with App Router
-- **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first styling with medical themes
-
-### UI Components
+### Frontend
+- **Next.js 15.5** - React framework with App Router
+- **React 19** - UI library
+- **TypeScript 5** - Type safety
+- **Tailwind CSS** - Utility-first styling
 - **Radix UI** - Accessible component primitives
-- **shadcn/ui** - Beautiful, accessible components
-- **Lucide React** - Medical and health-focused icons
+- **shadcn/ui** - Beautiful UI components
 
-### PWA & Performance
-- **next-pwa** - Service worker and offline functionality
-- **Workbox** - Advanced caching strategies
-- **Web App Manifest** - Installable app configuration
+### Backend & Database
+- **Supabase** - PostgreSQL database + Auth + Realtime
+- **Supabase Storage** - File storage for PDFs/images
+- **Row-Level Security** - Database-level access control
+- **Real-time Subscriptions** - Live data updates
 
-### Medical & Accessibility
-- **WCAG 2.1 AA** - Full accessibility compliance
-- **ARIA** - Screen reader support
-- **Semantic HTML** - Proper document structure
-- **Medical Typography** - Optimized for healthcare professionals
+### AI & Analysis
+- **Anthropic Claude** - AI-powered health analysis
+- **OpenAI** (optional) - Food analysis alternative
+- **PDF-lib** - PDF report generation
+- **Date-fns** - Date manipulation for time-series analysis
 
-## 🏥 Medical Compliance
+### Mobile (React Native)
+- **Expo SDK 52** - React Native framework
+- **Expo Router** - File-based routing
+- **React Native Paper** - Material Design components
+- **Async Storage** - Local data persistence
 
-### Data Protection
-- **GDPR Compliant** - European data protection standards
-- **HIPAA Ready** - Healthcare data security framework
-- **End-to-End Encryption** - Patient data protection
-- **7-Year Retention** - Medical record retention standards
+### CI/CD & Testing
+- **GitHub Actions** - Automated testing and deployment
+- **Playwright** - E2E browser testing
+- **Jest** - Unit testing framework
+- **ESLint** - Code linting
+- **TypeScript Compiler** - Type checking
 
-### Accessibility Standards
-- **WCAG 2.1 AA** - Web accessibility guidelines
-- **Screen Reader Support** - Compatible with assistive technology
-- **Keyboard Navigation** - Full keyboard accessibility
-- **High Contrast Mode** - Visual accessibility support
-
-### Medical Standards
-- **ICD-11 Compatible** - International disease classification
-- **SNOMED CT Ready** - Clinical terminology standards
-- **HL7 FHIR** - Healthcare data exchange standards
-- **Regional Compliance** - Taiwan/Hong Kong healthcare requirements
-
-## 🌏 Localization
+## 🌍 Localization
 
 ### Supported Languages
-- **English** - Primary interface language
-- **Traditional Chinese (Taiwan)** - 繁體中文 (台灣)
-- **Traditional Chinese (Hong Kong)** - 繁體中文 (香港)
+- English (primary)
+- Traditional Chinese - Taiwan (繁體中文-台灣)
+- Traditional Chinese - Hong Kong (繁體中文-香港)
 
 ### Regional Features
-- **Taiwan Healthcare System** - Compatible with National Health Insurance
-- **Hong Kong Medical Standards** - Aligned with Hospital Authority requirements
-- **Local Food Database** - Traditional Chinese cuisine with nutritional data
-- **Cultural Considerations** - Respectful of local medical practices
+- Taiwan food database with 20,000+ items
+- Hong Kong cuisine support
+- Local medical terminology
+- Cultural dietary considerations
 
-## 🔒 Security & Privacy
+## 📊 Current Status & Roadmap
 
-### Data Security
-- Client-side encryption for sensitive medical data
-- Secure authentication with multi-factor support
-- Regular security audits and updates
-- Penetration testing for medical compliance
+### ✅ Completed (v0.1.0)
+- Web application with Next.js 15
+- Supabase backend integration
+- Google OAuth authentication
+- Food search and entry system
+- Daily symptom tracking
+- AI-powered weekly analysis
+- PDF report generation
+- Admin panel for food management
+- Mobile app foundation (iOS working)
+- CI/CD pipeline setup
 
-### Privacy Controls
-- Granular data sharing permissions
-- Complete data export functionality
-- Right to data deletion (GDPR Article 17)
-- Transparent privacy policy with medical focus
+### 🚧 In Progress
+- Mobile app feature parity
+- Enhanced AI analysis models
+- Medication tracking
+- Medical report export
+- Real-time notifications
 
-## 📱 PWA Features
+### 📋 Planned Features
+See [AGENT.md](AGENT.md) for detailed development roadmap
 
-### Offline Capabilities
-- Full functionality without internet connection
-- Intelligent data synchronization
-- Offline-first architecture
-- Background sync when connection restored
+## 🔒 Security & Compliance
 
-### Native App Experience
-- Install to home screen
-- Push notifications for medication reminders
-- Background app refresh
-- Native sharing capabilities
+### Data Protection
+- GDPR compliant data handling
+- End-to-end encryption for sensitive data
+- Supabase Row-Level Security (RLS)
+- Secure API key management
 
-## 🤝 Contributing
-
-We welcome contributions from healthcare professionals, developers, and patients. Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
-
-- Code of conduct for medical applications
-- Development workflow and standards
-- Medical accuracy review process
-- Accessibility testing requirements
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Medical Standards
+- Following HIPAA-ready practices
+- Taiwan healthcare data regulations
+- Hong Kong Personal Data (Privacy) Ordinance
+- Medical disclaimer on all health advice
 
 ## ⚠️ Medical Disclaimer
 
-Diet Daily is a health tracking tool and is not intended to diagnose, treat, cure, or prevent any disease. Always consult with qualified healthcare professionals for medical advice. This application does not replace professional medical consultation, diagnosis, or treatment.
+Diet Daily is a health tracking tool for personal use and is not intended to diagnose, treat, cure, or prevent any disease. Always consult qualified healthcare professionals for medical advice. This application does not replace professional medical consultation, diagnosis, or treatment.
+
+## 🤝 Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+### Development Workflow
+1. Fork the repository
+2. Create feature branch (\`git checkout -b feature/AmazingFeature\`)
+3. Commit changes (\`git commit -m 'Add AmazingFeature'\`)
+4. Push to branch (\`git push origin feature/AmazingFeature\`)
+5. Open Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
 
 ## 🆘 Support
 
-- **Medical Questions**: Consult your healthcare provider
-- **Technical Support**: [support@dietdaily.app](mailto:support@dietdaily.app)
-- **Documentation**: [docs.dietdaily.app](https://docs.dietdaily.app)
-- **Community Forum**: [community.dietdaily.app](https://community.dietdaily.app)
+- **Technical Issues**: [GitHub Issues](https://github.com/your-org/diet-daily/issues)
+- **Medical Questions**: Please consult your healthcare provider
+- **Documentation**: See [AGENT.md](AGENT.md) for technical details
 
 ---
 
-Built with ❤️ for patients managing their health journey in Taiwan and Hong Kong.
+**Built with** Claude Code **for** patients managing their health journey in Taiwan and Hong Kong.
+
+**Current Version**: 0.1.0 (Development Phase)  
+**Last Updated**: 2025-01-12
