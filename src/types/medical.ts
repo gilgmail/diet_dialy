@@ -46,6 +46,38 @@ export type SymptomType =
   | 'insomnia'
   | 'other';
 
+// Alert system types
+export interface TriggerConditions {
+  symptom_types?: SymptomType[];
+  severity_min?: SymptomSeverity;
+  frequency_threshold?: number; // occurrences per time period
+  time_window_hours?: number;
+  combined_conditions?: 'all' | 'any'; // require all conditions or any
+}
+
+export interface EscalationRules {
+  escalate_after_hours?: number;
+  escalate_to_channels?: ('app' | 'email' | 'sms')[];
+  require_acknowledgment?: boolean;
+  auto_escalate_severity?: SymptomSeverity;
+}
+
+export interface TriggerData {
+  symptom_type: SymptomType;
+  severity: SymptomSeverity;
+  timestamp: string;
+  related_entry_id?: string;
+  threshold_exceeded_by?: number;
+}
+
+export interface NotificationDeliveryStatus {
+  app?: 'sent' | 'failed' | 'pending';
+  email?: 'sent' | 'failed' | 'pending';
+  sms?: 'sent' | 'failed' | 'pending';
+  last_attempt?: string;
+  error_message?: string;
+}
+
 // Symptom tracking related types
 export interface SymptomEntry {
   id: string;
@@ -314,7 +346,7 @@ export interface SymptomAlert {
   duration_threshold: number; // Days to trigger
 
   // Alert conditions and delivery
-  trigger_conditions: Record<string, any>; // Complex conditions
+  trigger_conditions: TriggerConditions;
   notification_frequency: 'immediate' | 'daily' | 'weekly' | 'disabled';
   notification_channels: ('app' | 'email' | 'sms')[];
 
@@ -324,7 +356,7 @@ export interface SymptomAlert {
   trigger_count: number;
 
   // Escalation
-  escalation_rules: Record<string, any>;
+  escalation_rules: EscalationRules;
 
   // Timestamps
   created_at: Date;
@@ -340,7 +372,7 @@ export interface SymptomAlertHistory {
   triggered_at: Date;
   trigger_symptom_entry?: string; // Daily entry ID
   trigger_reason: string;
-  trigger_data: Record<string, any>;
+  trigger_data: TriggerData;
 
   // Resolution
   acknowledged_at?: Date;
@@ -351,7 +383,7 @@ export interface SymptomAlertHistory {
   // Notification status
   notification_sent: boolean;
   notification_channels_used: string[];
-  notification_delivery_status: Record<string, any>;
+  notification_delivery_status: NotificationDeliveryStatus;
 
   // User feedback
   was_helpful?: boolean;
