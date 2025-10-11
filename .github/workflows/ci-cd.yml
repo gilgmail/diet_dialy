@@ -36,16 +36,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
-        continue-on-error: true
+      - name: Lint (warnings allowed)
+        run: npm run lint || true
 
       - name: Build application
         run: npm run build
 
-      - name: Run unit tests with coverage
-        run: npm run test:coverage
-        continue-on-error: true
+      - name: Run unit tests with coverage (failures allowed)
+        run: npm run test:coverage || true
 
       - name: Upload Playwright report
         if: always()
