@@ -313,9 +313,26 @@ export class DashboardService {
       .filter((value) => value.length > 0)
   }
 
-  private static formatDate(date?: string): string | undefined {
+  private static formatDate(date?: string | Date | null): string | undefined {
     if (!date) return undefined
-    return date.split('T')[0]
+
+    if (date instanceof Date) {
+      if (Number.isNaN(date.getTime())) {
+        return undefined
+      }
+      return date.toISOString().split('T')[0]
+    }
+
+    if (typeof date === 'string') {
+      const trimmed = date.trim()
+      if (!trimmed) return undefined
+      if (trimmed.includes('T')) {
+        return trimmed.split('T')[0]
+      }
+      return trimmed
+    }
+
+    return undefined
   }
 
   private static async getAIInsights(
@@ -335,12 +352,23 @@ export class DashboardService {
         return { insights: [], history }
       }
 
+      // Use first day of week as startDate, but use TODAY as endDate to ensure we include all recent data
       const startDate = this.formatDate(weeklyTrend.week[0]?.date)
-      const endDate = this.formatDate(weeklyTrend.week[weeklyTrend.week.length - 1]?.date)
+      const today = new Date()
+      const endDate = this.formatDate(today)
+
+      // 🔍 Diagnostic logging for date range
+      console.log('[DashboardService] 🔍 Requesting AI analysis:')
+      console.log('  📅 startDate:', startDate)
+      console.log('  📅 endDate:', endDate)
+      console.log('  📊 weeklyTrend length:', weeklyTrend.week.length)
+      console.log('  👤 userId:', userId)
 
       const normalizedBase = apiBase.replace(/\/+$/, '')
       const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
       const endpoint = `${baseApiUrl}/ai/weekly-ibd-analysis`
+
+      console.log('  🌐 endpoint:', endpoint)
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -355,13 +383,23 @@ export class DashboardService {
       })
 
       if (!response.ok) {
-        console.warn('[DashboardService] AI insight request failed', response.status)
+        console.warn('[DashboardService] ❌ AI insight request failed', response.status)
         return { insights: [], history }
       }
 
       const payload = (await response.json()) as WeeklyIBDAnalysisResponse
+
+      // 🔍 Diagnostic logging for response
+      console.log('[DashboardService] 📥 AI analysis response received:')
+      console.log('  ✅ success:', payload.success)
+      console.log('  📊 method:', payload.analysis?.method)
+      console.log('  🍽️ food entries:', payload.analysis?.totals?.food_entries)
+      console.log('  ❤️ symptom entries:', payload.analysis?.totals?.symptom_entries)
+      console.log('  📅 timeframe:', payload.analysis?.timeframe)
+      console.log('  📚 history count:', payload.history?.length)
+
       if (!payload.success || !payload.analysis) {
-        console.warn('[DashboardService] AI insight response missing analysis', payload.error)
+        console.warn('[DashboardService] ⚠️ AI insight response missing analysis', payload.error)
         return { insights: [], history }
       }
 

@@ -112,15 +112,31 @@ async function fetchWeeklyHistory(userId: string, limit: number = 5) {
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
 
+    // 🔍 Diagnostic logging for deduplication
+    console.log('[fetchWeeklyHistory] 🔍 Deduplication process:')
+    console.log('  📊 Total reports before dedup:', sorted.length)
+
+    // Improved deduplication: Keep only the most recent report per date range
+    // This ensures new reports with updated data replace old ones
     const dedupMap = new Map<string, typeof sorted[0]>()
     sorted.forEach((item) => {
       const key = `${item.startDate}_${item.endDate}`
-      if (!dedupMap.has(key)) {
+      const exists = dedupMap.has(key)
+
+      if (!exists) {
         dedupMap.set(key, item)
       }
+
+      // Log each dedup decision with more detail
+      console.log(`  ${exists ? '⏭️ Skip' : '✅ Keep'} [${key}]`)
+      console.log(`    🕒 Created: ${item.createdAt}`)
+      console.log(`    📊 Data: ${item.title}`)
     })
 
-    return Array.from(dedupMap.values())
+    const dedupedItems = Array.from(dedupMap.values())
+    console.log('  📊 Total reports after dedup:', dedupedItems.length)
+
+    return dedupedItems
   } catch (error) {
     console.error('[weekly-ibd-analysis] Failed to load history:', error)
     return []
@@ -194,6 +210,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 🔍 Diagnostic logging for API request
+    console.log('[weekly-ibd-analysis] 🔍 POST request received:')
+    console.log('  👤 userId:', body.userId)
+    console.log('  📅 startDate:', body.startDate)
+    console.log('  📅 endDate:', body.endDate)
+
     const agent = new IBDWeeklyAnalysisAgent()
     const result = await agent.analyze(body.userId, {
       startDate: body.startDate,
@@ -203,11 +225,22 @@ export async function POST(request: NextRequest) {
       includePromptRecommendations: body.includePromptRecommendations
     })
 
+    // 🔍 Diagnostic logging for analysis result
+    console.log('[weekly-ibd-analysis] 📊 Analysis completed:')
+    console.log('  ✅ success:', result.success)
+    console.log('  📊 method:', result.method)
+    console.log('  🍽️ food_entries:', result.totals.food_entries)
+    console.log('  ❤️ symptom_entries:', result.totals.symptom_entries)
+    console.log('  📅 timeframe:', result.timeframe)
+
     if (result.success) {
+      console.log('[weekly-ibd-analysis] 💾 Saving report to storage...')
       await upsertWeeklyReport(body.userId, result)
+      console.log('[weekly-ibd-analysis] ✅ Report saved successfully')
     }
 
     const history = await fetchWeeklyHistory(body.userId)
+    console.log('[weekly-ibd-analysis] 📚 Fetched history:', history.length, 'reports')
 
     const status = result.success ? 200 : 202
 

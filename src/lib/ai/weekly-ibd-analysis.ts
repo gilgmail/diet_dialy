@@ -481,6 +481,13 @@ export class IBDWeeklyAnalysisAgent {
     foodEntries: FoodEntry[]
     symptomEntries: DailySymptomEntry[]
   }> {
+    // 🔍 Diagnostic logging for data fetching
+    console.log('[fetchDataset] 🔍 Fetching data for analysis:')
+    console.log('  👤 userId:', userId)
+    console.log('  📅 startDate:', timeframe.startDate)
+    console.log('  📅 endDate:', timeframe.endDate)
+    console.log('  📊 daysCovered:', timeframe.daysCovered)
+
     const foodEntries = await this.foodEntryService.getUserFoodEntriesByDateRange(
       userId,
       timeframe.startDate,
@@ -492,6 +499,23 @@ export class IBDWeeklyAnalysisAgent {
       timeframe.startDate,
       timeframe.endDate
     )
+
+    // 🔍 Diagnostic logging for retrieved data
+    console.log('[fetchDataset] 📥 Data retrieved:')
+    console.log('  🍽️ Food entries:', foodEntries.length)
+    console.log('  ❤️ Symptom entries:', symptomEntries.length)
+
+    if (foodEntries.length > 0) {
+      const dates = foodEntries.map(e => e.consumed_at.split('T')[0])
+      const uniqueDates = [...new Set(dates)]
+      console.log('  📅 Unique food dates:', uniqueDates.sort())
+    }
+
+    if (symptomEntries.length > 0) {
+      const dates = symptomEntries.map(e => e.recorded_date)
+      const uniqueDates = [...new Set(dates)]
+      console.log('  📅 Unique symptom dates:', uniqueDates.sort())
+    }
 
     return {
       foodEntries,
