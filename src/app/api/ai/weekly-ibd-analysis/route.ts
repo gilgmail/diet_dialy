@@ -28,7 +28,7 @@ async function upsertWeeklyReport(
   userId: string,
   analysis: Awaited<ReturnType<IBDWeeklyAnalysisAgent['analyze']>>
 ) {
-  if (!analysis.success || analysis.method !== 'claude_api') {
+  if (!analysis.success || analysis.method === 'insufficient_data') {
     return null
   }
 
@@ -44,6 +44,7 @@ async function upsertWeeklyReport(
       userId,
       timeframe,
       generatedAt: new Date().toISOString(),
+      method: analysis.method,
       totals: analysis.totals,
       prompt: analysis.prompt_used,
       analysis: analysis.analysis,
@@ -202,7 +203,7 @@ export async function POST(request: NextRequest) {
       includePromptRecommendations: body.includePromptRecommendations
     })
 
-    if (result.success && result.method === 'claude_api') {
+    if (result.success) {
       await upsertWeeklyReport(body.userId, result)
     }
 

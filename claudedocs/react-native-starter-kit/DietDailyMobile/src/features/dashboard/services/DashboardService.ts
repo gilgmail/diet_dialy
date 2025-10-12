@@ -338,9 +338,9 @@ export class DashboardService {
       const startDate = this.formatDate(weeklyTrend.week[0]?.date)
       const endDate = this.formatDate(weeklyTrend.week[weeklyTrend.week.length - 1]?.date)
 
-      const endpoint = apiBase.endsWith('/api')
-        ? `${apiBase}/ai/weekly-ibd-analysis`
-        : `${apiBase.replace(/\/+$/, '')}/ai/weekly-ibd-analysis`
+      const normalizedBase = apiBase.replace(/\/+$/, '')
+      const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
+      const endpoint = `${baseApiUrl}/ai/weekly-ibd-analysis`
 
       const response = await fetch(endpoint, {
         method: 'POST',
