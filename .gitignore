@@ -104,6 +104,11 @@ Thumbs.db
 *.medical
 *.patient
 
+# Archive directories
+/data/archive/
+/docs_archive_*/
+/docs_reference_*/
+
 # Test files
 /test-results/
 /playwright-report/
