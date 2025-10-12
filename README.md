@@ -67,7 +67,7 @@ open http://localhost:3000
 ### Mobile App Setup (React Native)
 
 \`\`\`bash
-cd claudedocs/react-native-starter-kit/DietDailyMobile
+cd mobile/react-native-starter-kit/DietDailyMobile
 
 # Install dependencies
 npm install
@@ -100,7 +100,7 @@ diet-daily/
 │       ├── medical.ts         # Medical & symptom types
 │       ├── food.ts           # Food & nutrition types
 │       └── supabase.ts       # Database types
-├── claudedocs/
+├── mobile/
 │   └── react-native-starter-kit/
 │       └── DietDailyMobile/  # React Native mobile app
 ├── scripts/                   # Utility scripts

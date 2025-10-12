@@ -1,0 +1,6723 @@
+{
+  "totalCount": 959,
+  "uniqueCount": 959,
+  "duplicateCount": 0,
+  "duplicateEntries": 0,
+  "duplicates": [],
+  "toRemove": [],
+  "allFoods": [
+    [
+      "蚵仔煎",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "臭豆腐",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "鹽酥雞",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "雞排",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "珍珠奶茶",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "刈包",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "胡椒餅",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "豬血糕",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "甜不辣",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "肉圓",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "蔥抓餅",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "煎餃",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "滷肉飯",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "米血糕",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "麻辣鴨血",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "鐵蛋",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "碳烤玉米",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "章魚燒",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "炸雞排",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "地瓜球",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "車輪餅",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "紅豆餅",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "雞蛋糕",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "鯛魚燒",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "蜂蜜蛋糕",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "花生捲冰淇淋",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "愛玉冰",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "仙草凍",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "豆花",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "剉冰",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "芋圓",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "湯圓",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "燒仙草",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "八寶冰",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "雪花冰",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "綿綿冰",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "椰子冰",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "芒果冰",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "紅豆冰",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "抹茶冰",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "棺材板",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "蝦仁煎",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "廣東粥",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "鹹粥",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "瘦肉粥",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "海鮮粥",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "小籠包",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "煎包",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "水煎包",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "生煎包",
+      {
+        "batch": 1,
+        "file": "taiwan_foods_batch_01.sql"
+      }
+    ],
+    [
+      "鳳梨酥",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "太陽餅",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "牛軋糖",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "麻糬",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "糕仔",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "發糕",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "紅龜粿",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "草仔粿",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "菜頭粿",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "碗粿",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "油飯",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "筒仔米糕",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "虱目魚粥",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "肉粽",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "鹼粽",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "豆沙粽",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "栗子粽",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "蛋黃粽",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "素粽",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "冰粽",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "潤餅",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "春捲",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "蒸餃",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "燒餅",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "韭菜盒",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "蘿蔔絲餅",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "蔥油餅",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "酥餅",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "綠豆糕",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "蓮蓉餅",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "月餅",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "中秋月餅",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "蛋黃酥",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "鳳眼糕",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "芋頭酥",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "老婆餅",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "老公餅",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "娃娃酥",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "核桃酥",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "杏仁餅",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "花生糖",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "芝麻糖",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "麥芽糖",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "黑糖糕",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "年糕",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "蘿蔔糕",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "芋頭糕",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "紅豆糕",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "桂花糕",
+      {
+        "batch": 2,
+        "file": "taiwan_foods_batch_02.sql"
+      }
+    ],
+    [
+      "布丁",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "奶酪",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "茶凍",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "咖啡凍",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "檸檬愛玉",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "蓮子湯",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "紅豆湯",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "綠豆湯",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "薏仁湯",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "銀耳湯",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "燉蛋",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "蒸蛋",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "茶葉蛋",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "滷蛋",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "皮蛋",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "鹹鴨蛋",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "松花蛋",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "溫泉蛋",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "水煮蛋",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "泡沫紅茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "烏龍茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "高山茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "凍頂茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "東方美人茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "鐵觀音",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "包種茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "蜜香紅茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "阿里山茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "冬瓜茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "青草茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "苦茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "決明子茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "薄荷茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "洋甘菊茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "玫瑰茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "桂花茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "茉莉花茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "菊花茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "豆漿",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "米漿",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "杏仁茶",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "薏仁漿",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "黑豆漿",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "紅豆漿",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "綠豆漿",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "燕麥漿",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "核桃漿",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "芝麻漿",
+      {
+        "batch": 3,
+        "file": "taiwan_foods_batch_03.sql"
+      }
+    ],
+    [
+      "木瓜牛奶",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "酪梨牛奶",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "香蕉牛奶",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "草莓牛奶",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "芒果牛奶",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "鳳梨牛奶",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "椰子汁",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "甘蔗汁",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "楊桃汁",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "蓮霧汁",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "仙草蜜",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "愛玉檸檬",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "檸檬蜂蜜",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "金桔檸檬",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "柳橙汁",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "蘋果汁",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "葡萄汁",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "蔓越莓汁",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "番茄汁",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "胡蘿蔔汁",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "咖啡",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "拿鐵",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "卡布奇諾",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "摩卡",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "美式咖啡",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "黑咖啡",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "冰咖啡",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "熱咖啡",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "三合一咖啡",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "即溶咖啡",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "可可",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "熱巧克力",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "奶昔",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "優格飲",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "養樂多",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "舒跑",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "蠻牛",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "保力達B",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "維他露P",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "黑松沙士",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "啤酒",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "台灣啤酒",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "金牌啤酒",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "海尼根",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "米酒",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "高粱酒",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "紹興酒",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "花雕酒",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "藥酒",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "保健酒",
+      {
+        "batch": 4,
+        "file": "taiwan_foods_batch_04.sql"
+      }
+    ],
+    [
+      "阿宗麵線",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "鼎邊趖",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "雞肉飯",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "魯肉飯",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "擔仔麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "牛肉麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "刀削麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "炸醬麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "排骨麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "餛飩麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "乾麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "陽春麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "榨菜肉絲麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "海鮮麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "素食麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "泡麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "科學麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "王子麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "維力炸醬麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "統一麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "大甲芋頭",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "東泉辣椒醬",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "台中肉丸",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "清水米糕",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "后里馬鈴薯",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "新社香菇",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "大雅小麥",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "霧峰香米",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "虱目魚湯",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "意麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "度小月",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "安平豆花",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "台南肉粽",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "肉燥飯",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "鱔魚意麵",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "蝦仁肉圓",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "浮水魚羹",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "土魠魚羹",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "肉燥米粉",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "台南春捲",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "椪餅",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "方塊酥",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "椰子餅",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "花生酥",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "芝麻餅",
+      {
+        "batch": 5,
+        "file": "taiwan_foods_batch_05.sql"
+      }
+    ],
+    [
+      "六合夜市",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "旗津海產",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "左營眷村菜",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "岡山羊肉",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "美濃客家菜",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "路竹番茄",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "大樹玉荷包",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "大寮紅豆",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "林園石斑魚",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "永安石蚵",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "花蓮薯",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "太魯閣小米",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "原住民料理",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "小米酒",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "山豬肉",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "野菜",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "阿美族菜",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "太魯閣族菜",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "花蓮玉米",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "花蓮西瓜",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "池上便當",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "關山米",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "太麻里金針",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "成功鏢旗魚",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "綠島海草",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "蘭嶼飛魚",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "初鹿牛奶",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "鹿野鳳梨",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "卑南豬血腸",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "知本溫泉蛋",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "宜蘭餅",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "諾貝爾奶凍",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "三星蔥",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "羅東肉羹",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "頭城海鮮",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "冬山河鴨賞",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "礁溪溫泉菜",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "蘇澳冷泉",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "南方澳魚丸",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "員山魚丸米粉",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "埔里米粉",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "日月潭紅茶",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "集集香蕉",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "竹山番薯",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "草屯茭白筍",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "國姓咖啡",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "魚池阿薩姆",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "水里梅子",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "信義葡萄",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "仁愛高山茶",
+      {
+        "batch": 6,
+        "file": "taiwan_foods_batch_06.sql"
+      }
+    ],
+    [
+      "白切雞",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "口水雞",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "鹽焗雞",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "三杯雞",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "麻油雞",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "薑母鴨",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "燒酒雞",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "雞湯",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "雞絲麵",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "紅燒肉",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "東坡肉",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "控肉",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "滷肉",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "白切肉",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "蒜泥白肉",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "回鍋肉",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "糖醋排骨",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "紅燒排骨",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "清蒸魚",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "紅燒魚",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "糖醋魚",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "乾煎魚",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "魚湯",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "鱸魚湯",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "鮭魚",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "石斑魚",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "蝦子",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "白灼蝦",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "糖醋蝦",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "椒鹽蝦",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "蝦仁炒蛋",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "蝦仁豆腐",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "蝦球",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "鳳梨蝦球",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "蝦餃",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "蝦仁燒賣",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "螃蟹",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "薑蔥蟹",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "避風塘蟹",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "蟹黃豆腐",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "蟹肉羹",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "花蟹",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "石蟹",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "軟殼蟹",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "蟹膏",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "蟹黃",
+      {
+        "batch": 7,
+        "file": "taiwan_foods_batch_07.sql"
+      }
+    ],
+    [
+      "花枝",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "花枝丸",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "花枝羹",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "炸花枝",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "燙花枝",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "花枝炒麵",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "魷魚",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "魷魚絲",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "鐵板魷魚",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "魷魚羹",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蚵仔",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蚵仔麵線",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蚵仔湯",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "燙蚵仔",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "炸蚵仔",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蚵仔粥",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蚵仔酥",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蚵仔餅",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蚵仔豆腐",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蛤蜊",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蛤蜊湯",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蛤蜊絲瓜",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蛤蜊冬瓜",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "酒蒸蛤蜊",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "薑絲蛤蜊",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蛤蜊麵",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蛤蜊粥",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蛤蜊豆腐",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蛤蜊蒸蛋",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "三杯中卷",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "椒鹽魚下巴",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "糖醋里肌",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "宮保雞丁",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "左宗棠雞",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "怪味雞",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "辣子雞",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "麻婆豆腐",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "紅燒豆腐",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "家常豆腐",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "鐵板豆腐",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "皮蛋豆腐",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "涼拌豆腐",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "油豆腐",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "炸豆腐",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "蒸豆腐",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "滷豆腐",
+      {
+        "batch": 8,
+        "file": "taiwan_foods_batch_08.sql"
+      }
+    ],
+    [
+      "炒青菜",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "燙青菜",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "蒜泥菠菜",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "腰果菠菜",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "炒高麗菜",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "高麗菜捲",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "炒空心菜",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "蒜蓉空心菜",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "炒韭菜",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "韭菜炒蛋",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "炒豆芽菜",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "涼拌豆芽",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "炒綠豆芽",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "炒黃豆芽",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "炒花椰菜",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "白花椰菜",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "青花菜",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "炒芥藍",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "芥藍牛肉",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "白斬雞",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "鐵板牛肉",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "黑椒牛柳",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "牛肉炒河粉",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "紅燒牛肉",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "清燉牛肉",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "咖哩牛肉",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "蔥爆牛肉",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "青椒牛肉絲",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "芹菜牛肉",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "蒜蓉排骨",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "椒鹽排骨",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "蒸排骨",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "滷排骨",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "炸排骨",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "烤排骨",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "燉排骨",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "酥炸排骨",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "宮保蝦球",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "腰果蝦仁",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "龍井蝦仁",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "彩椒蝦仁",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "蝦仁滑蛋",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "油爆蝦",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "茄汁蝦",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "乾燒蝦仁",
+      {
+        "batch": 9,
+        "file": "taiwan_foods_batch_09.sql"
+      }
+    ],
+    [
+      "紅燒牛肉麵",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "清燉牛肉麵",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "番茄牛肉麵",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "酸菜牛肉麵",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "川味牛肉麵",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "半筋半肉麵",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "牛肚麵",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "牛筋麵",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "牛雜麵",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "牛尾湯",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "豬肉韭菜餃",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "豬肉高麗菜餃",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "豬肉玉米餃",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "豬肉芹菜餃",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "牛肉餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "羊肉餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "雞肉餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "魚肉餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "蝦仁餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "三鮮餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "素食餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "韭菜餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "白菜餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "冬瓜餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "絲瓜餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "南瓜餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "紅蘿蔔餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "玉米餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "香菇餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "筍子餃子",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "豬肉小籠包",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "蟹黃小籠包",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "蝦仁小籠包",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "雞肉小籠包",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "牛肉小籠包",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "素食小籠包",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "韭菜小籠包",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "絲瓜小籠包",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "冬瓜小籠包",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "南瓜小籠包",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "白粥",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "皮蛋瘦肉粥",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "魚片粥",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "蝦仁粥",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "螃蟹粥",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "雞肉粥",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "牛肉粥",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "蔬菜粥",
+      {
+        "batch": 10,
+        "file": "taiwan_foods_batch_10.sql"
+      }
+    ],
+    [
+      "小米粥",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "綠豆粥",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "紅豆粥",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "八寶粥",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "南瓜粥",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "山藥粥",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "蓮子粥",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "薏仁粥",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "燕麥粥",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "糙米粥",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷豆干",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷海帶",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷花生",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷雞翅",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷雞腳",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷雞胗",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷雞心",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷豬腳",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷豬耳朵",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷豬舌",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷豬皮",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷大腸",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷小腸",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷肚",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷血腸",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷米血",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷干絲",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "滷蘿蔔",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤雞翅",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤雞腿",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤雞胸",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤豬肋排",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤牛排",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤羊排",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤魚",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤蝦",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤花枝",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤玉米",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤地瓜",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤香腸",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤米腸",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤豆干",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤杏鮑菇",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤茄子",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤青椒",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤洋蔥",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤馬鈴薯",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "烤南瓜",
+      {
+        "batch": 11,
+        "file": "taiwan_foods_batch_11.sql"
+      }
+    ],
+    [
+      "乖乖",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "可樂果",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "滿漢大餐",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "阿Q桶麵",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "花雕雞麵",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "蝦味先",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "卡迪那",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "品客",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "樂事",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "波的多",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "多力多滋",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "奇多",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "康師傅",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "好麗友",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "義美",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "孔雀餅乾",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "蘇打餅乾",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "消化餅乾",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "奶油餅乾",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "夾心餅乾",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "威化餅",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "蛋捲",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "煎餅",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "米餅",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "仙貝",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "洋芋片",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "蝦餅",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "魷魚片",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "海苔",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "紫菜",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "昆布",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "魚鬆",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "肉鬆",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "太妃糖",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "軟糖",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "硬糖",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "棒棒糖",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "口香糖",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "薄荷糖",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "喉糖",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "維他命糖",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "益生菌糖",
+      {
+        "batch": 12,
+        "file": "taiwan_foods_batch_12.sql"
+      }
+    ],
+    [
+      "巧克力",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "白巧克力",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "黑巧克力",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "牛奶巧克力",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "堅果巧克力",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "夾心巧克力",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "松露巧克力",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "生巧克力",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "巧克力棒",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "巧克力豆",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "蜜餞",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "話梅",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "李子",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "芒果乾",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "鳳梨乾",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "香蕉乾",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "地瓜乾",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "蕃茄乾",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "葡萄乾",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "蔓越莓乾",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "堅果",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "花生",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "核桃",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "杏仁",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "腰果",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "開心果",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "夏威夷豆",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "胡桃",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "松子",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "瓜子",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "爆米花",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "玉米片",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "玉米棒",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "米果",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "米香",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "麻荖",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "黑糖",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "冰糖",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "冷凍水餃",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "冷凍包子",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "冷凍饅頭",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "冷凍燒餅",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "冷凍蔥抓餅",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "冷凍手抓餅",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "冷凍蛋餅皮",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "冷凍春捲皮",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "冷凍餛飩皮",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "冷凍餃子皮",
+      {
+        "batch": 13,
+        "file": "taiwan_foods_batch_13.sql"
+      }
+    ],
+    [
+      "冷凍雞塊",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍雞翅",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍雞排",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍雞腿",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍雞胸",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍魚排",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍魚片",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍蝦仁",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍花枝",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍螃蟹",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍牛肉片",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍豬肉片",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍羊肉片",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍培根",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍火腿",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍香腸",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍貢丸",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍魚丸",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍蝦丸",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍花枝丸",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍蔬菜",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍青豆",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍玉米",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍紅蘿蔔",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍花椰菜",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍青花菜",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍毛豆",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍四季豆",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍豌豆",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍蠶豆",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍水果",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍草莓",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍藍莓",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍芒果",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍鳳梨",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍香蕉",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍荔枝",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍龍眼",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍櫻桃",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍桃子",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍麵條",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍烏龍麵",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍拉麵",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍義大利麵",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍河粉",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍米粉",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍冬粉",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍年糕",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍湯圓",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍粽子",
+      {
+        "batch": 14,
+        "file": "taiwan_foods_batch_14.sql"
+      }
+    ],
+    [
+      "冷凍便當",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍炒飯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍燴飯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍蛋炒飯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍海鮮炒飯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍牛肉炒飯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍雞肉炒飯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍豬肉炒飯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍蝦仁炒飯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍咖哩飯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍湯品",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍雞湯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍排骨湯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍魚湯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍蛤蜊湯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍玉米湯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍酸辣湯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍味噌湯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍海帶湯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "冷凍紫菜湯",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "午餐肉",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "牛肉罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "豬肉罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "雞肉罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "火腿罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "香腸罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "肉醬罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "肉鬆罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "魚罐頭",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "鮪魚罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "沙丁魚罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "鯖魚罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "秋刀魚罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "鮭魚罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "蟹肉罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "蝦仁罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "蛤蜊罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "牡蠣罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "花枝罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "魷魚罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "玉米罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "青豆罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "紅蘿蔔罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "筍罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "蘑菇罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "香菇罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "番茄罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "南瓜罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "地瓜罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "芋頭罐",
+      {
+        "batch": 15,
+        "file": "taiwan_foods_batch_15.sql"
+      }
+    ],
+    [
+      "水果罐頭",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "鳳梨罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "桃子罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "梨子罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "蘋果罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "柳橙罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "葡萄柚罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "荔枝罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "龍眼罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "櫻桃罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "湯品罐頭",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "雞湯罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "牛肉湯罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "蘑菇湯罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "玉米湯罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "番茄湯罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "海鮮湯罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "蛤蜊湯罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "酸辣湯罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "味噌湯罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "調理包",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "咖哩包",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "紅燒包",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "滷肉包",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "麻婆豆腐包",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "宮保雞丁包",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "糖醋排骨包",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "三杯雞包",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "蔥爆牛肉包",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "魚香茄子包",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "泡麵調料包",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "杯麵",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "碗麵",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "袋裝麵",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "乾拌麵",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "關廟麵",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "油麵",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "拉麵",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "醬料罐",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "沙茶醬",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "蠔油",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "醬油",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "醋",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "香油",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "辣椒醬",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "甜辣醬",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "番茄醬",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "美乃滋",
+      {
+        "batch": 16,
+        "file": "taiwan_foods_batch_16.sql"
+      }
+    ],
+    [
+      "高麗菜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "白菜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "青江菜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "小白菜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "青菜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "菠菜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "韭菜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "韭黃",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "蒜苗",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "青蔥",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "芹菜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "香菜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "九層塔",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "空心菜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "地瓜葉",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "莧菜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "茼蒿",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "萵苣",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "生菜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "大陸妹",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "花椰菜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "芥藍",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "青椒",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "甜椒",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "辣椒",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "茄子",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "番茄",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "小番茄",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "櫻桃番茄",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "黃瓜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "絲瓜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "冬瓜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "苦瓜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "南瓜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "扁蒲",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "胡瓜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "越瓜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "菜瓜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "佛手瓜",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "蘿蔔",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "紅蘿蔔",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "白蘿蔔",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "水蘿蔔",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "櫻桃蘿蔔",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "牛蒡",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "竹筍",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "綠竹筍",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "桂竹筍",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "麻竹筍",
+      {
+        "batch": 17,
+        "file": "taiwan_foods_batch_17.sql"
+      }
+    ],
+    [
+      "玉米",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "馬鈴薯",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "地瓜",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "芋頭",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "山藥",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "蓮藕",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "荸薺",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "菱角",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "茭白筍",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "豆芽菜",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "鯛魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "鱸魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "虱目魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "吳郭魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "鯧魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "白鯧",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "黑鯧",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "肉鯧",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "銀鯧",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "鯖魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "秋刀魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "白帶魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "土魠魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "旗魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "鮪魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "鱈魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "比目魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "黃魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "紅魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "石頭魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "河豚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "鰻魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "鱔魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "泥鰍",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "鯉魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "草魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "鰱魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "鱅魚",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "白蝦",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "草蝦",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "沙蝦",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "明蝦",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "龍蝦",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "基圍蝦",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "胭脂蝦",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "櫻花蝦",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "蝦米",
+      {
+        "batch": 18,
+        "file": "taiwan_foods_batch_18.sql"
+      }
+    ],
+    [
+      "紅蟳",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "處女蟳",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "三點蟹",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "旭蟹",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "和尚蟹",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "沙公",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "沙母",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "文蛤",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "赤嘴",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "蜆",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "蚵",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "牡蠣",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "扇貝",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "干貝",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "九孔",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "鮑魚",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "螺類",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "海瓜子",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "蟶子",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "竹蟶",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "血蚶",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "淡菜",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "孔雀蛤",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "象拔蚌",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "海螺",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "小卷",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "透抽",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "軟絲",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "章魚",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "海參",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "海蜇皮",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "海帶",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "豬肉",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "牛肉",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "雞肉",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "鴨肉",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "鵝肉",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "羊肉",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "兔肉",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "鹿肉",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "土雞",
+      {
+        "batch": 19,
+        "file": "taiwan_foods_batch_19.sql"
+      }
+    ],
+    [
+      "酸菜",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "泡菜",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "醃蘿蔔",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "醃黃瓜",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "醃筍",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "醃蒜",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "醃蔥",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "醃薑",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "醃辣椒",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "醃豆",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "鹹菜",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "梅干菜",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "雪裡紅",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "豆豉",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "豆腐乳",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "醃豆腐",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "榨菜",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "冬菜",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "福菜",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "鹹蛋",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "醃肉",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "臘肉",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "香腸",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "臘腸",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "火腿",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "培根",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "肉乾",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "乾香菇",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "乾木耳",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "白木耳",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "金針菇",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "杏鮑菇",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "秀珍菇",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "草菇",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "茶樹菇",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "猴頭菇",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "松茸",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "乾筍",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "筍乾",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "蘿蔔乾",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "菜脯",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "髮菜",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "銀耳",
+      {
+        "batch": 20,
+        "file": "taiwan_foods_batch_20.sql"
+      }
+    ],
+    [
+      "紅棗",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "黑棗",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "龍眼乾",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "荔枝乾",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "杏乾",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "柿餅",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "蓮子",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "蓮藕粉",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "太白粉",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "玉米粉",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "地瓜粉",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "樹薯粉",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "在來米粉",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "糯米粉",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "麵粉",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ],
+    [
+      "高筋麵粉",
+      {
+        "batch": 21,
+        "file": "taiwan_foods_batch_21.sql"
+      }
+    ]
+  ]
+}
