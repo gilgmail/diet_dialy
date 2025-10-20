@@ -98,7 +98,7 @@ async function fetchWeeklyHistory(userId: string, limit = DEFAULT_HISTORY_LIMIT)
 
     const { data, error } = await admin.storage
       .from(HISTORY_BUCKET)
-      .list(userId, { limit, sortBy: { column: 'created_at', order: 'desc' } })
+      .list(userId, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } })
 
     if (error) throw error
     if (!data) return []
@@ -142,7 +142,14 @@ async function fetchWeeklyHistory(userId: string, limit = DEFAULT_HISTORY_LIMIT)
       }
     })
 
-    return Array.from(dedupMap.values())
+    const deduped = Array.from(dedupMap.values())
+
+    // Add report numbers (newest = #1)
+    return deduped.slice(0, limit).map((item, index) => ({
+      ...item,
+      reportNumber: index + 1,
+      totalReports: deduped.length,
+    }))
   } catch (error) {
     console.error('[weekly-ibd-analysis] Failed to load history:', error)
     return []
@@ -222,19 +229,43 @@ export async function POST(request: NextRequest) {
       includePromptRecommendations: body.includePromptRecommendations,
     })
 
-    // Save successful report
+    // Fetch history (before saving new report to get current count)
+    const history = await fetchWeeklyHistory(body.userId)
+
+    // Save successful report and prepare response message
+    let reportInfo = null
     if (result.success) {
       await upsertWeeklyReport(body.userId, result)
+      const newReportNumber = 1 // 新報告永遠是 #1 (最新)
+      const totalReports = history.length + 1
+      reportInfo = {
+        reportNumber: newReportNumber,
+        totalReports: totalReports,
+        message: `✅ 報告 #${newReportNumber} 生成成功（共 ${totalReports} 份報告）`,
+        dateRange: `${result.timeframe.startDate} ~ ${result.timeframe.endDate}`,
+      }
     }
 
-    // Fetch history
-    const history = await fetchWeeklyHistory(body.userId)
+    // Refresh history to include new report
+    const updatedHistory = result.success ? await fetchWeeklyHistory(body.userId) : history
+
+    // Prepare error message if analysis failed
+    let errorMessage = null
+    if (!result.success) {
+      if (result.method === 'insufficient_data') {
+        errorMessage = `❌ 資料不足：需要至少 3 筆飲食記錄才能進行分析。目前只有 ${result.totals.food_entries || 0} 筆。`
+      } else {
+        errorMessage = `⚠️ 分析失敗：無法完成 AI 分析，請稍後再試。`
+      }
+    }
 
     return NextResponse.json(
       {
         success: result.success,
         analysis: result,
-        history,
+        history: updatedHistory,
+        reportInfo,
+        error: errorMessage,
       },
       { status: result.success ? 200 : 202 }
     )

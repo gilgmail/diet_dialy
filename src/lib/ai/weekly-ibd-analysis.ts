@@ -756,7 +756,9 @@ export class IBDWeeklyAnalysisAgent {
         occurrences: item.occurrences
       }))
 
-    const hasMinimalData = foodEntries.length >= 3 && symptomEntries.length >= 1
+    // 修改邏輯：只要有足夠的飲食記錄就可以分析，症狀記錄是可選的
+    // 沒有症狀資料表示健康狀況良好，仍然可以提供飲食建議
+    const hasMinimalData = foodEntries.length >= 3
 
     return {
       payload,
