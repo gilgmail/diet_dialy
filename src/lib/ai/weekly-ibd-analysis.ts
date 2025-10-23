@@ -372,6 +372,7 @@ export class IBDWeeklyAnalysisAgent {
   private anthropic: Anthropic | null
   private readonly config: ClaudeConfig
   private readonly foodEntryService: SupabaseFoodEntriesService
+  private readonly adminClient: ReturnType<typeof createAdminClient>
 
   constructor(config?: Partial<ClaudeConfig>) {
     const apiKey = config?.apiKey ?? process.env.ANTHROPIC_API_KEY ?? ''
@@ -387,7 +388,8 @@ export class IBDWeeklyAnalysisAgent {
     }
 
     this.anthropic = apiKey ? new Anthropic({ apiKey }) : null
-    this.foodEntryService = new SupabaseFoodEntriesService(createAdminClient())
+    this.adminClient = createAdminClient()
+    this.foodEntryService = new SupabaseFoodEntriesService(this.adminClient)
   }
 
   static getPromptTemplates(): Array<PromptRecommendation> {
