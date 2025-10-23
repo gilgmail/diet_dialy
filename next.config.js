@@ -208,6 +208,7 @@ const withPWA = require('next-pwa')({
 const nextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
+  output: 'standalone',
   serverExternalPackages: [],
   eslint: {
     // Allow production builds to complete with ESLint warnings

@@ -1,0 +1,85 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage
+.nyc_output
+playwright-report
+test-results
+
+# Next.js
+.next
+out
+
+# Production
+build
+dist
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+*.log
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Git
+.git
+.gitignore
+
+# Documentation
+docs
+docs_archive_*
+docs_reference_*
+claudedocs
+README.md
+AGENT.md
+
+# Mobile
+DietDailyMobile
+mobile
+
+# Scripts
+scripts
+
+# Tests
+e2e
+__tests__
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Supabase CLI directory (not the lib folder)
+/supabase
+
+# Deployment configs (keep pi_docker folder itself out)
+pi_docker
+
+# Other
+.claude
+.playwright-mcp
+.serena
+.github

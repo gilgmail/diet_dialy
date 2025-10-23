@@ -79,6 +79,28 @@ npm run ios
 npm run android
 \`\`\`
 
+## 🐳 Production Deployment
+
+### Raspberry Pi 5 (Docker)
+
+所有 Raspberry Pi 部署相關檔案位於 `pi_docker/` 資料夾。
+
+**快速部署**：
+```bash
+cd pi_docker
+./deploy-to-pi.sh
+```
+
+**詳細文檔**：[pi_docker/README.md](./pi_docker/README.md)
+
+**目前部署狀態**：
+- **IP**: 10.1.1.85
+- **域名**: gilko.redirectme.net
+- **端口**: 3000
+- **訪問**: http://10.1.1.85:3000
+
+詳細部署說明、管理指令和故障排除請參考 [PI_DEPLOYMENT.md](./PI_DEPLOYMENT.md)。
+
 ## 🏗️ Architecture
 
 \`\`\`

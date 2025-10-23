@@ -1,0 +1,7 @@
+# 排除本地環境配置備份
+.env.production.pi.local
+*.backup
+
+# 排除日誌檔案
+*.log
+logs/
