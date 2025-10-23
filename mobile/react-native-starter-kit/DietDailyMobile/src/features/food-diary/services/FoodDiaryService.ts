@@ -1,4 +1,5 @@
 import { supabase } from '@/shared/api/supabase/client'
+import { appConfig } from '@/shared/config/appConfig'
 import type {
   FoodEntry as FoodEntryRow,
   FoodEntryInsert,
@@ -30,7 +31,9 @@ function mapFoodEntry(entry: FoodEntryRow): FoodEntry {
   return {
     id: entry.id,
     user_id: entry.user_id,
+    food_id: entry.food_id || undefined,
     food_name: entry.food_name,
+    food_category: entry.food_category || undefined,
     meal_type: (entry.meal_type || 'breakfast') as MealType,
     portion_size: extractPortion(entry),
     calories: entry.calories ?? undefined,
@@ -110,11 +113,21 @@ export class FoodDiaryService {
    */
   static async createFoodEntry(userId: string, input: CreateFoodEntryInput) {
     try {
+      if (appConfig.requireDatabaseFood && !input.food_id?.trim()) {
+        throw new Error('請從資料庫選擇食物')
+      }
+
       const portion = input.portion_size?.trim()
+      const trimmedName = input.food_name.trim()
+      if (!trimmedName) {
+        throw new Error('請選擇有效的食物名稱')
+      }
 
       const entry: FoodEntryInsert = {
         user_id: userId,
-        food_name: input.food_name,
+        food_id: input.food_id?.trim() || null,
+        food_name: trimmedName,
+        food_category: input.food_category || null,
         meal_type: input.meal_type,
         amount: input.amount || 1, // Default to 1 serving if not provided
         unit: portion || '份', // Default to '份' (serving) if not provided
@@ -164,6 +177,14 @@ export class FoodDiaryService {
 
       if (input.food_name !== undefined) {
         updatePayload.food_name = input.food_name
+      }
+
+      if (input.food_id !== undefined) {
+        updatePayload.food_id = input.food_id?.trim() || null
+      }
+
+      if (input.food_category !== undefined) {
+        updatePayload.food_category = input.food_category || null
       }
 
       if (input.meal_type !== undefined) {

@@ -12,6 +12,7 @@ import { Button, TextInput, SegmentedButtons, IconButton } from 'react-native-pa
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '@/shared/stores/authStore'
+import { appConfig } from '@/shared/config/appConfig'
 import { useFoodDiary } from '@/features/food-diary/hooks/useFoodDiary'
 import { useSymptomDiary } from '@/features/symptom-diary/hooks/useSymptomDiary'
 import { FoodDiaryService } from '@/features/food-diary/services/FoodDiaryService'
@@ -21,6 +22,7 @@ import {
   type MealType,
   type FoodSearchResult,
   type FoodEntry,
+  type CreateFoodEntryInput,
 } from '@/features/food-diary/types'
 import {
   SEVERITY_LEVELS,
@@ -48,6 +50,7 @@ export function HomeScreen() {
   const { createEntry: createFoodEntry, isCreating: isCreatingFood } = useFoodDiary()
   const { createEntry: createSymptomEntry, isCreating: isCreatingSymptom } =
     useSymptomDiary()
+  const { requireDatabaseFood } = appConfig
 
   // UI state - Default expand food card
   const [expandedCard, setExpandedCard] = useState<'food' | 'symptom' | null>('food')
@@ -56,6 +59,7 @@ export function HomeScreen() {
 
   // Food form state
   const [foodName, setFoodName] = useState('')
+  const [selectedFood, setSelectedFood] = useState<FoodSearchResult | null>(null)
   const [mealType, setMealType] = useState<MealType>(getMealTypeByTime())
   const [recentFoodEntries, setRecentFoodEntries] = useState<FoodEntry[]>([])
 
@@ -95,30 +99,54 @@ export function HomeScreen() {
     }
   }
 
+  const handleFoodInputChange = (text: string) => {
+    setFoodName(text)
+    setSelectedFood(null)
+  }
+
   const handleSelectFood = (food: FoodSearchResult) => {
+    setSelectedFood(food)
     setFoodName(food.name)
   }
 
   const handleFoodSubmit = async () => {
-    if (!foodName.trim()) {
+    const chosenFood = selectedFood
+    const trimmedName = foodName.trim()
+
+    if (!trimmedName) {
       Alert.alert('錯誤', '請輸入食物名稱')
       return
     }
 
+    if (requireDatabaseFood && !chosenFood) {
+      Alert.alert('提醒', '請從資料庫選擇食物')
+      return
+    }
+
     try {
-      const newEntry = await createFoodEntry({
-        food_name: foodName.trim(),
+      const payload: CreateFoodEntryInput = {
+        food_name: trimmedName,
         meal_type: mealType,
         consumed_at: selectedDate.toISOString(),
-      })
+      }
+
+      if (chosenFood) {
+        payload.food_id = chosenFood.id
+        payload.food_category = chosenFood.category
+        payload.calories = chosenFood.calories
+      }
+
+      const newEntry = await createFoodEntry(payload)
 
       if (newEntry) {
         setRecentFoodEntries((prev) => [newEntry, ...prev].slice(0, 5))
       }
 
       setFoodName('')
+      setSelectedFood(null)
       setMealType(getMealTypeByTime())
-      Alert.alert('成功', `已新增「${foodName.trim()}」`)
+      const displayName = chosenFood?.name ?? trimmedName
+      Alert.alert('成功', `已新增「${displayName}」`)
     } catch (error) {
       Alert.alert('錯誤', error instanceof Error ? error.message : '新增失敗')
     }
@@ -260,9 +288,14 @@ export function HomeScreen() {
             <View style={styles.section}>
               <FoodSearchInput
                 value={foodName}
-                onChangeText={setFoodName}
+                onChangeText={handleFoodInputChange}
                 onSelectFood={handleSelectFood}
-                placeholder="搜尋或輸入食物名稱..."
+                placeholder={
+                  requireDatabaseFood
+                    ? '搜尋並選擇資料庫中的食物...'
+                    : '輸入食物名稱...'
+                }
+                requireDatabaseSelection={requireDatabaseFood}
               />
             </View>
 
@@ -292,7 +325,11 @@ export function HomeScreen() {
               mode="contained"
               onPress={handleFoodSubmit}
               loading={isCreatingFood}
-              disabled={isCreatingFood || !foodName.trim()}
+              disabled={
+                isCreatingFood ||
+                !foodName.trim() ||
+                (requireDatabaseFood && !selectedFood)
+              }
               style={styles.submitButton}
               buttonColor={colors.success}
               icon="check"

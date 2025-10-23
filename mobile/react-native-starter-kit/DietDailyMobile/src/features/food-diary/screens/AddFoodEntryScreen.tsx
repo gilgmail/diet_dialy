@@ -8,7 +8,14 @@ import { useAuthStore } from '@/shared/stores/authStore'
 import { FoodDiaryService } from '../services/FoodDiaryService'
 import { colors, typography, spacing } from '@/theme'
 import { useFoodDiary } from '../hooks/useFoodDiary'
-import { MEAL_TYPES, type MealType, type FoodSearchResult, type FoodEntry } from '../types'
+import { appConfig } from '@/shared/config/appConfig'
+import {
+  MEAL_TYPES,
+  type MealType,
+  type FoodSearchResult,
+  type FoodEntry,
+  type CreateFoodEntryInput,
+} from '../types'
 import { FoodSearchInput } from '../components/FoodSearchInput'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { format } from 'date-fns'
@@ -31,6 +38,7 @@ function getMealTypeByTime(): MealType {
 export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
   const { user } = useAuthStore()
   const { createEntry, isCreating } = useFoodDiary()
+  const { requireDatabaseFood } = appConfig
 
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [showDatePicker, setShowDatePicker] = useState(false)
@@ -67,9 +75,16 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
   }, [todayEntries])
 
   const [foodName, setFoodName] = useState('')
+  const [selectedFood, setSelectedFood] = useState<FoodSearchResult | null>(null)
   const [mealType, setMealType] = useState<MealType>(getMealTypeByTime())
 
+  const handleFoodInputChange = (text: string) => {
+    setFoodName(text)
+    setSelectedFood(null)
+  }
+
   const handleSelectFood = (food: FoodSearchResult) => {
+    setSelectedFood(food)
     setFoodName(food.name)
   }
 
@@ -81,17 +96,33 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
   }
 
   const handleSubmit = async () => {
-    if (!foodName.trim()) {
+    const chosenFood = selectedFood
+    const trimmedName = foodName.trim()
+
+    if (!trimmedName) {
       Alert.alert('錯誤', '請輸入食物名稱')
       return
     }
 
+    if (requireDatabaseFood && !chosenFood) {
+      Alert.alert('提醒', '請從資料庫選擇食物')
+      return
+    }
+
     try {
-      const newEntry = await createEntry({
-        food_name: foodName.trim(),
+      const payload: CreateFoodEntryInput = {
+        food_name: trimmedName,
         meal_type: mealType,
         consumed_at: selectedDate.toISOString(),
-      })
+      }
+
+      if (chosenFood) {
+        payload.food_id = chosenFood.id
+        payload.food_category = chosenFood.category
+        payload.calories = chosenFood.calories
+      }
+
+      const newEntry = await createEntry(payload)
 
       // Add to recent entries list
       if (newEntry) {
@@ -100,10 +131,12 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
 
       // Clear input for next entry
       setFoodName('')
+      setSelectedFood(null)
       setMealType(getMealTypeByTime())
 
       // Show success feedback
-      Alert.alert('成功', `已新增「${foodName.trim()}」`)
+      const displayName = chosenFood?.name ?? trimmedName
+      Alert.alert('成功', `已新增「${displayName}」`)
     } catch (error) {
       Alert.alert('錯誤', error instanceof Error ? error.message : '新增失敗')
     }
@@ -188,9 +221,14 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
           <View style={styles.section}>
             <FoodSearchInput
               value={foodName}
-              onChangeText={setFoodName}
+              onChangeText={handleFoodInputChange}
               onSelectFood={handleSelectFood}
-              placeholder="搜尋或輸入食物名稱..."
+              placeholder={
+                requireDatabaseFood
+                  ? '搜尋並選擇資料庫中的食物...'
+                  : '輸入食物名稱...'
+              }
+              requireDatabaseSelection={requireDatabaseFood}
             />
           </View>
 
@@ -212,7 +250,11 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
           mode="contained"
           onPress={handleSubmit}
           loading={isCreating}
-          disabled={isCreating || !foodName.trim()}
+          disabled={
+            isCreating ||
+            !foodName.trim() ||
+            (requireDatabaseFood && !selectedFood)
+          }
           style={styles.floatingButton}
           labelStyle={styles.floatingButtonLabel}
           icon="check"

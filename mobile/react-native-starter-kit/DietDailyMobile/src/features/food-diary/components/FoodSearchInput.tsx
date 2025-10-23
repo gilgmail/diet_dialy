@@ -17,6 +17,7 @@ interface FoodSearchInputProps {
   onChangeText: (text: string) => void
   onSelectFood: (food: FoodSearchResult) => void
   placeholder?: string
+  requireDatabaseSelection?: boolean
 }
 
 export function FoodSearchInput({
@@ -24,6 +25,7 @@ export function FoodSearchInput({
   onChangeText,
   onSelectFood,
   placeholder = '搜尋食物...',
+  requireDatabaseSelection = false,
 }: FoodSearchInputProps) {
   const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -40,6 +42,13 @@ export function FoodSearchInput({
   const handleSearch = useCallback(
     async (query: string) => {
       onChangeText(query)
+
+      // If database selection is not required, don't search
+      if (!requireDatabaseSelection) {
+        setSearchResults([])
+        setShowResults(false)
+        return
+      }
 
       if (query.trim().length < 1) {
         setSearchResults([])
@@ -66,7 +75,7 @@ export function FoodSearchInput({
         setIsSearching(false)
       }
     },
-    [onChangeText]
+    [onChangeText, requireDatabaseSelection]
   )
 
   const handleSelectFood = (food: FoodSearchResult) => {
@@ -103,7 +112,7 @@ export function FoodSearchInput({
         }
       />
 
-      {showResults && searchResults.length > 0 && (
+      {requireDatabaseSelection && showResults && searchResults.length > 0 && (
         <View style={styles.resultsWrapper}>
           <Card style={styles.resultsCard}>
             <ScrollView
@@ -117,13 +126,13 @@ export function FoodSearchInput({
         </View>
       )}
 
-      {showResults && searchResults.length === 0 && !isSearching && value.trim().length > 0 && (
+      {requireDatabaseSelection && showResults && searchResults.length === 0 && !isSearching && value.trim().length > 0 && (
         <View style={styles.resultsWrapper}>
           <Card style={styles.resultsCard}>
             <View style={styles.noResultsContainer}>
               <Text style={styles.noResultsText}>資料庫中沒有「{value}」</Text>
               <Text style={styles.noResultsHint}>
-                沒關係！可以直接使用此名稱記錄
+                請調整關鍵字或選擇其他食物，目前僅支援資料庫中的食物項目
               </Text>
             </View>
           </Card>

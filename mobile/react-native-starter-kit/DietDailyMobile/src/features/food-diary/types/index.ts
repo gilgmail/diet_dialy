@@ -3,7 +3,9 @@
 export interface FoodEntry {
   id: string
   user_id: string
+  food_id?: string
   food_name: string
+  food_category?: string
   meal_type: MealType
   portion_size?: string
   calories?: number
@@ -16,6 +18,7 @@ export interface FoodEntry {
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
 
 export interface CreateFoodEntryInput {
+  food_id?: string
   food_name: string
   meal_type: MealType
   amount?: number // Quantity, defaults to 1
@@ -23,15 +26,18 @@ export interface CreateFoodEntryInput {
   calories?: number
   notes?: string
   consumed_at?: string // ISO date string
+  food_category?: string
 }
 
 export interface UpdateFoodEntryInput {
+  food_id?: string
   food_name?: string
   meal_type?: MealType
   portion_size?: string
   calories?: number
   notes?: string
   consumed_at?: string
+  food_category?: string
 }
 
 // Food Database Item from Supabase (diet_daily_foods table)
