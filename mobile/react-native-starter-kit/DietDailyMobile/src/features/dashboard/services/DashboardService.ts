@@ -10,6 +10,7 @@ import type {
   HealthInsight,
   DashboardData,
   WeeklyAnalysisHistoryItem,
+  WeeklyAnalysisStatus,
 } from '../types'
 
 interface WeeklyIBDAnalysisCard {
@@ -40,6 +41,13 @@ interface WeeklyIBDAnalysisResult {
     endDate: string
     daysCovered: number
   }
+  totals?: {
+    food_entries?: number
+    symptom_entries?: number
+    unique_foods?: number
+    days_without_symptom_logs?: number
+    [key: string]: unknown
+  }
   analysis: WeeklyIBDAnalysisCard
 }
 
@@ -48,6 +56,7 @@ interface WeeklyIBDAnalysisResponse {
   analysis?: WeeklyIBDAnalysisResult
   history?: WeeklyAnalysisHistoryItem[]
   error?: string
+  analysisStatus?: WeeklyAnalysisStatus | null
 }
 
 export class DashboardService {
@@ -91,7 +100,11 @@ export class DashboardService {
       const stats = this.calculateStats(foodEntries, symptomEntries)
       const weeklyTrend = this.calculateWeeklyTrend(foodEntries, symptomEntries)
       const insights = this.generateInsights(stats, weeklyTrend)
-      const { insights: aiInsights, history } = await this.getAIInsights(userId, weeklyTrend)
+      const {
+        insights: aiInsights,
+        history,
+        analysisStatus,
+      } = await this.getAIInsights(userId, weeklyTrend)
 
       const combinedInsights = [...aiInsights, ...insights]
 
@@ -103,6 +116,7 @@ export class DashboardService {
           weeklyTrend,
           insights: combinedInsights,
           analysisHistory: history,
+          analysisStatus,
         },
         error: null,
       }
@@ -338,18 +352,22 @@ export class DashboardService {
   private static async getAIInsights(
     userId: string,
     weeklyTrend: WeeklyTrend
-  ): Promise<{ insights: HealthInsight[]; history: WeeklyAnalysisHistoryItem[] }> {
+  ): Promise<{
+    insights: HealthInsight[]
+    history: WeeklyAnalysisHistoryItem[]
+    analysisStatus: WeeklyAnalysisStatus | null
+  }> {
     try {
       const apiBase = process.env.EXPO_PUBLIC_API_URL
       if (!apiBase) {
         console.log('[DashboardService] EXPO_PUBLIC_API_URL not configured, skip AI insights')
-        return { insights: [], history: [] }
+        return { insights: [], history: [], analysisStatus: null }
       }
 
       const history = await this.fetchAnalysisHistory(apiBase, userId)
 
       if (!weeklyTrend.week.length) {
-        return { insights: [], history }
+        return { insights: [], history, analysisStatus: null }
       }
 
       // Use first day of week as startDate, but use TODAY as endDate to ensure we include all recent data
@@ -384,7 +402,7 @@ export class DashboardService {
 
       if (!response.ok) {
         console.warn('[DashboardService] ❌ AI insight request failed', response.status)
-        return { insights: [], history }
+        return { insights: [], history, analysisStatus: null }
       }
 
       const payload = (await response.json()) as WeeklyIBDAnalysisResponse
@@ -400,13 +418,21 @@ export class DashboardService {
 
       if (!payload.success || !payload.analysis) {
         console.warn('[DashboardService] ⚠️ AI insight response missing analysis', payload.error)
-        return { insights: [], history }
+        return {
+          insights: [],
+          history,
+          analysisStatus: payload.analysisStatus ?? null,
+        }
       }
 
       const aiAnalysis = payload.analysis.analysis
       if (!aiAnalysis) {
         const normalizedHistory = this.normalizeHistory(apiBase, payload.history)
-        return { insights: [], history: normalizedHistory.length ? normalizedHistory : history }
+        return {
+          insights: [],
+          history: normalizedHistory.length ? normalizedHistory : history,
+          analysisStatus: payload.analysisStatus ?? null,
+        }
       }
 
       const timestamp = new Date().toISOString()
@@ -491,10 +517,11 @@ export class DashboardService {
       return {
         insights,
         history: normalizedHistory.length ? normalizedHistory : history,
+        analysisStatus: payload.analysisStatus ?? null,
       }
     } catch (error) {
       console.error('[DashboardService] Failed to load AI insights:', error)
-      return { insights: [], history: [] }
+      return { insights: [], history: [], analysisStatus: null }
     }
   }
 

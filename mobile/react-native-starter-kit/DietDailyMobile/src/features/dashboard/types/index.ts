@@ -69,11 +69,39 @@ export interface WeeklyAnalysisHistoryItem {
   supportiveFoods?: Array<{ food: string; benefits?: string[]; suggestions?: string[] }>
 }
 
+export type WeeklyAnalysisStatusState = 'pending' | 'in_progress' | 'completed' | 'failed'
+
+export type WeeklyAnalysisStatusStepKey =
+  | 'dataset'
+  | 'server_processing'
+  | 'server_response'
+  | 'report_generation'
+
+export interface WeeklyAnalysisStatusStep {
+  key: WeeklyAnalysisStatusStepKey
+  label: string
+  state: WeeklyAnalysisStatusState
+  detail?: string
+  timestamp?: string
+}
+
+export interface WeeklyAnalysisStatus {
+  datasetSummary: {
+    foodEntries: number
+    symptomEntries: number
+    totalRecords: number
+  }
+  steps: WeeklyAnalysisStatusStep[]
+  reportGenerated: boolean
+  lastUpdated?: string
+}
+
 export interface DashboardData {
   stats: DashboardStats
   weeklyTrend: WeeklyTrend
   insights: HealthInsight[]
   analysisHistory?: WeeklyAnalysisHistoryItem[]
+  analysisStatus?: WeeklyAnalysisStatus | null
 }
 
 // Chart Data Types

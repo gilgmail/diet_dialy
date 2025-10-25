@@ -28,6 +28,33 @@ interface WeeklyReportPayload {
   analysis: Record<string, any>
 }
 
+type WeeklyAnalysisStatusState = 'pending' | 'in_progress' | 'completed' | 'failed'
+
+type WeeklyAnalysisStatusStepKey =
+  | 'dataset'
+  | 'server_processing'
+  | 'server_response'
+  | 'report_generation'
+
+interface WeeklyAnalysisStatusStep {
+  key: WeeklyAnalysisStatusStepKey
+  label: string
+  state: WeeklyAnalysisStatusState
+  detail?: string
+  timestamp?: string
+}
+
+interface WeeklyAnalysisStatus {
+  datasetSummary: {
+    foodEntries: number
+    symptomEntries: number
+    totalRecords: number
+  }
+  steps: WeeklyAnalysisStatusStep[]
+  reportGenerated: boolean
+  lastUpdated: string
+}
+
 // Utility functions
 function encodeKey(key: string): string {
   return Buffer.from(key).toString('base64url')
@@ -294,6 +321,72 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const foodEntriesCount = result.totals.food_entries || 0
+    const symptomEntriesCount = result.totals.symptom_entries || 0
+    const totalRecords = foodEntriesCount + symptomEntriesCount
+    const analysisStartedAt = new Date(analysisStartTime).toISOString()
+    const analysisCompletedAt = new Date().toISOString()
+    const reportGenerated = Boolean(result.success && reportInfo)
+
+    const methodDetail =
+      result.method === 'claude_api'
+        ? 'Claude API 完成分析。'
+        : result.method === 'fallback'
+          ? '已使用系統內建規則生成分析。'
+          : '資料不足，提供基礎建議。'
+
+    const reportDetail = reportGenerated
+      ? reportInfo?.message || '報告已建立。'
+      : errorMessage ??
+        (result.method === 'insufficient_data'
+          ? '資料不足，本次未建立報告。'
+          : '此次未成功產生報告。')
+
+    const analysisStatus: WeeklyAnalysisStatus = {
+      datasetSummary: {
+        foodEntries: foodEntriesCount,
+        symptomEntries: symptomEntriesCount,
+        totalRecords,
+      },
+      steps: [
+        {
+          key: 'dataset',
+          label: '整理分析資料',
+          state: totalRecords > 0 ? 'completed' : 'failed',
+          detail:
+            totalRecords > 0
+              ? `目前正在分析 ${totalRecords} 筆資料（飲食 ${foodEntriesCount}、症狀 ${symptomEntriesCount}）。`
+              : '找不到可供分析的飲食與症狀資料。',
+          timestamp: analysisStartedAt,
+        },
+        {
+          key: 'server_processing',
+          label: '伺服器分析中',
+          state: 'completed',
+          detail: `伺服器分析耗時約 ${analysisDuration}s。`,
+          timestamp: analysisCompletedAt,
+        },
+        {
+          key: 'server_response',
+          label: '伺服器回應',
+          state: 'completed',
+          detail: methodDetail,
+          timestamp: analysisCompletedAt,
+        },
+        {
+          key: 'report_generation',
+          label: '是否產生報告',
+          state: reportGenerated ? 'completed' : 'failed',
+          detail: reportDetail,
+          timestamp: analysisCompletedAt,
+        },
+      ],
+      reportGenerated,
+      lastUpdated: analysisCompletedAt,
+    }
+
+    console.log(`[${requestId}] 🧮 分析狀態:`, analysisStatus)
+
     console.log(`[${requestId}] 📤 回傳分析結果`, {
       success: result.success,
       historyCount: updatedHistory.length,
@@ -308,6 +401,7 @@ export async function POST(request: NextRequest) {
         history: updatedHistory,
         reportInfo,
         error: errorMessage,
+        analysisStatus,
       },
       { status: result.success ? 200 : 202 }
     )

@@ -21,6 +21,7 @@ import { DistributionChart } from '../components/DistributionChart'
 import { colors, typography, spacing } from '@/theme'
 import { MEAL_TYPES } from '@/features/food-diary/types'
 import { SEVERITY_LEVELS } from '@/features/symptom-diary/types'
+import type { WeeklyAnalysisStatus, WeeklyAnalysisStatusStep } from '../types'
 
 interface DashboardScreenProps {
   hideHeader?: boolean
@@ -28,10 +29,124 @@ interface DashboardScreenProps {
 
 export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {}) {
   const { user } = useAuth()
-  const { stats, weeklyTrend, insights, analysisHistory, isLoading, refetch } = useDashboard()
+  const {
+    stats,
+    weeklyTrend,
+    insights,
+    analysisHistory,
+    analysisStatus: latestAnalysisStatus,
+    isLoading,
+    refetch,
+  } = useDashboard()
   const [refreshing, setRefreshing] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisCountdown, setAnalysisCountdown] = useState(0)
+  const [analysisStatus, setAnalysisStatus] = useState<WeeklyAnalysisStatus | null>(
+    latestAnalysisStatus ?? null
+  )
+
+  useEffect(() => {
+    if (latestAnalysisStatus) {
+      setAnalysisStatus(latestAnalysisStatus)
+    } else if (!isAnalyzing) {
+      setAnalysisStatus(null)
+    }
+  }, [latestAnalysisStatus, isAnalyzing])
+
+  const formatTimestamp = (value?: string) => {
+    if (!value) {
+      return null
+    }
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) {
+      return null
+    }
+    const year = date.getFullYear()
+    const month = `${date.getMonth() + 1}`.padStart(2, '0')
+    const day = `${date.getDate()}`.padStart(2, '0')
+    const hours = `${date.getHours()}`.padStart(2, '0')
+    const minutes = `${date.getMinutes()}`.padStart(2, '0')
+    return `${year}-${month}-${day} ${hours}:${minutes}`
+  }
+
+  const renderStatusStep = (
+    step: WeeklyAnalysisStatusStep,
+    keyPrefix = ''
+  ) => {
+    const icon =
+      step.state === 'completed'
+        ? '✅'
+        : step.state === 'in_progress'
+          ? '⏳'
+          : step.state === 'failed'
+            ? '⚠️'
+            : '•'
+    const timestamp = formatTimestamp(step.timestamp)
+
+    return (
+      <View key={`${keyPrefix}${step.key}`} style={styles.analysisStatusRow}>
+        <Text style={styles.analysisStatusIcon}>{icon}</Text>
+        <View style={styles.analysisStatusContent}>
+          <Text style={styles.analysisStatusLabel}>{step.label}</Text>
+          {step.detail ? (
+            <Text style={styles.analysisStatusDetail}>{step.detail}</Text>
+          ) : null}
+          {timestamp ? (
+            <Text style={styles.analysisStatusTime}>{timestamp}</Text>
+          ) : null}
+        </View>
+      </View>
+    )
+  }
+
+  const buildInitialStatus = (
+    foodEntries: number,
+    symptomEntries: number
+  ): WeeklyAnalysisStatus => {
+    const totalRecords = foodEntries + symptomEntries
+    const now = new Date().toISOString()
+
+    return {
+      datasetSummary: {
+        foodEntries,
+        symptomEntries,
+        totalRecords,
+      },
+      steps: [
+        {
+          key: 'dataset',
+          label: '整理分析資料',
+          state: totalRecords > 0 ? 'completed' : 'failed',
+          detail:
+            totalRecords > 0
+              ? `目前正在分析 ${totalRecords} 筆資料（飲食 ${foodEntries}、症狀 ${symptomEntries}）。`
+              : '尚未取得足夠的資料。',
+          timestamp: now,
+        },
+        {
+          key: 'server_processing',
+          label: '伺服器分析中',
+          state: 'in_progress',
+          detail: 'AI 正在處理分析，請稍候...',
+          timestamp: now,
+        },
+        {
+          key: 'server_response',
+          label: '伺服器回應',
+          state: 'pending',
+          detail: '等待伺服器回應。',
+        },
+        {
+          key: 'report_generation',
+          label: '是否產生報告',
+          state: 'pending',
+          detail: '完成後會自動更新報告狀態。',
+        },
+      ],
+      reportGenerated: false,
+      lastUpdated: now,
+    }
+  }
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -43,7 +158,54 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     try {
       setIsAnalyzing(true)
       setAnalysisCountdown(20)
-      await refetch()
+      const estimatedFoodEntries =
+        weeklyTrend?.week?.reduce((sum, day) => sum + (day.foodCount || 0), 0) || 0
+      const estimatedSymptomEntries =
+        weeklyTrend?.week?.reduce((sum, day) => sum + (day.symptomCount || 0), 0) || 0
+
+      setAnalysisStatus(buildInitialStatus(estimatedFoodEntries, estimatedSymptomEntries))
+
+      const result = await refetch()
+      if (result.error) {
+        const timestamp = new Date().toISOString()
+        setAnalysisStatus((prev) => {
+          const base = prev ?? buildInitialStatus(estimatedFoodEntries, estimatedSymptomEntries)
+          return {
+            ...base,
+            steps: base.steps.map((step) => {
+              if (step.key === 'server_processing') {
+                return {
+                  ...step,
+                  state: 'failed',
+                  detail: '伺服器分析失敗，請稍後再試。',
+                  timestamp,
+                }
+              }
+              if (step.key === 'server_response') {
+                return {
+                  ...step,
+                  state: 'failed',
+                  detail: result.error?.message || '無法取得伺服器回應。',
+                  timestamp,
+                }
+              }
+              if (step.key === 'report_generation') {
+                return {
+                  ...step,
+                  state: 'failed',
+                  detail: '分析未完成，未產生報告。',
+                  timestamp,
+                }
+              }
+              return step
+            }),
+            reportGenerated: false,
+            lastUpdated: timestamp,
+          }
+        })
+      } else if (result.data) {
+        setAnalysisStatus(result.data.analysisStatus ?? null)
+      }
     } finally {
       setIsAnalyzing(false)
       setAnalysisCountdown(0)
@@ -338,6 +500,22 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
             )}
           </TouchableOpacity>
         </View>
+        {analysisStatus && (
+          <View style={styles.analysisStatusCard}>
+            <Text style={styles.analysisStatusTitle}>最新分析狀態</Text>
+            <Text style={styles.analysisStatusSummary}>
+              {analysisStatus.datasetSummary.totalRecords > 0
+                ? `資料筆數：${analysisStatus.datasetSummary.totalRecords}（飲食 ${analysisStatus.datasetSummary.foodEntries}、症狀 ${analysisStatus.datasetSummary.symptomEntries}）`
+                : '尚未取得可分析資料。'}
+            </Text>
+            {analysisStatus.steps.map((step) => renderStatusStep(step, 'card-'))}
+            {analysisStatus.lastUpdated ? (
+              <Text style={styles.analysisStatusTimestamp}>
+                最後更新：{formatTimestamp(analysisStatus.lastUpdated) ?? analysisStatus.lastUpdated}
+              </Text>
+            ) : null}
+          </View>
+        )}
         {insights.length > 0 ? (
           insights.map((insight) => (
             <InsightCard key={insight.id} insight={insight} />
@@ -435,6 +613,11 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
                 ? `預計還需 ${analysisCountdown} 秒...`
                 : '即將完成，請保持應用程式開啟。'}
             </Text>
+            {analysisStatus?.steps ? (
+              <View style={styles.modalStatusContainer}>
+                {analysisStatus.steps.map((step) => renderStatusStep(step, 'modal-'))}
+              </View>
+            ) : null}
           </View>
         </View>
       </Modal>
@@ -511,6 +694,59 @@ const styles = StyleSheet.create({
     color: colors.surface,
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
+  },
+  analysisStatusCard: {
+    backgroundColor: colors.surface,
+    borderRadius: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  analysisStatusTitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  analysisStatusSummary: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
+  },
+  analysisStatusTimestamp: {
+    marginTop: spacing.sm,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.disabled,
+  },
+  analysisStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  analysisStatusIcon: {
+    fontSize: typography.fontSize.base,
+    marginTop: 2,
+  },
+  analysisStatusContent: {
+    flex: 1,
+  },
+  analysisStatusLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
+  },
+  analysisStatusDetail: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    marginTop: spacing.xs / 2,
+    lineHeight: 20,
+  },
+  analysisStatusTime: {
+    marginTop: spacing.xs / 2,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.disabled,
   },
   statsGrid: {
     gap: spacing.sm,
@@ -650,5 +886,9 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  modalStatusContainer: {
+    width: '100%',
+    marginTop: spacing.sm,
   },
 })
