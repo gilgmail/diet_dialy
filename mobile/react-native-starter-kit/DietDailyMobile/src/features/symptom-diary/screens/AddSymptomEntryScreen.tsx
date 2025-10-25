@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import {
   View,
   Text,
@@ -10,13 +10,13 @@ import {
 } from 'react-native'
 import { TextInput, Button, SegmentedButtons, IconButton } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import { useSymptomDiary } from '../hooks/useSymptomDiary'
 import { colors, typography, spacing } from '@/theme'
 import { SEVERITY_LEVELS, COMMON_SYMPTOMS } from '../types'
 import type { SeverityLevel, SymptomEntry } from '../types'
-import DateTimePicker from '@react-native-community/datetimepicker'
-import { format } from 'date-fns'
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
+import { format, isSameDay } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
 
 export function AddSymptomEntryScreen() {
@@ -35,12 +35,22 @@ export function AddSymptomEntryScreen() {
   const [notes, setNotes] = useState('')
   const [showOptionalFields, setShowOptionalFields] = useState(false)
 
-  const handleDateChange = (event: any, date?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios')
-    if (date) {
+  const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    if (date && event.type !== 'dismissed') {
       setSelectedDate(date)
     }
+
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false)
+    }
   }
+
+  useFocusEffect(
+    useCallback(() => {
+      const now = new Date()
+      setSelectedDate(prev => (isSameDay(prev, now) ? prev : now))
+    }, [])
+  )
 
   const handleSubmit = async () => {
     if (!symptomName.trim()) {
@@ -89,13 +99,13 @@ export function AddSymptomEntryScreen() {
         <View style={styles.datePickerContainer}>
           <TouchableOpacity
             style={styles.dateButton}
-            onPress={() => setShowDatePicker(true)}
+            onPress={() => setShowDatePicker(prev => !prev)}
           >
             <IconButton icon="calendar" size={20} />
             <Text style={styles.dateText}>
               {format(selectedDate, 'yyyy年MM月dd日 (E)', { locale: zhTW })}
             </Text>
-            <IconButton icon="chevron-down" size={20} />
+            <IconButton icon={showDatePicker ? 'chevron-up' : 'chevron-down'} size={20} />
           </TouchableOpacity>
         </View>
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 import { Button, TextInput, SegmentedButtons, IconButton } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useQuery } from '@tanstack/react-query'
+import { useFocusEffect } from '@react-navigation/native'
 import { useAuthStore } from '@/shared/stores/authStore'
 import { appConfig } from '@/shared/config/appConfig'
 import { useFoodDiary } from '@/features/food-diary/hooks/useFoodDiary'
@@ -30,8 +31,8 @@ import {
   type SeverityLevel,
   type SymptomEntry,
 } from '@/features/symptom-diary/types'
-import DateTimePicker from '@react-native-community/datetimepicker'
-import { format } from 'date-fns'
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
+import { format, isSameDay } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
 import { colors, typography, spacing } from '@/theme'
 
@@ -72,8 +73,10 @@ export function HomeScreen() {
   const [recentSymptomEntries, setRecentSymptomEntries] = useState<SymptomEntry[]>([])
 
   // Fetch today's food entries for stats
+  const selectedDateKey = useMemo(() => format(selectedDate, 'yyyy-MM-dd'), [selectedDate])
+
   const { data: todayFoodEntries = [] } = useQuery({
-    queryKey: ['foodEntries', user?.id, selectedDate.toISOString().split('T')[0]],
+    queryKey: ['foodEntries', user?.id, selectedDateKey],
     queryFn: async () => {
       if (!user?.id) return []
       const result = await FoodDiaryService.getFoodEntriesByDate(user.id, selectedDate)
@@ -92,12 +95,23 @@ export function HomeScreen() {
     return stats
   }, [todayFoodEntries])
 
-  const handleDateChange = (event: any, date?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios')
-    if (date) {
+  const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    if (date && event.type !== 'dismissed') {
       setSelectedDate(date)
     }
+
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false)
+    }
   }
+
+  useFocusEffect(
+    useCallback(() => {
+      const now = new Date()
+      setSelectedDate((prev) => (isSameDay(prev, now) ? prev : now))
+      setMealType(getMealTypeByTime())
+    }, [])
+  )
 
   const handleFoodInputChange = (text: string) => {
     setFoodName(text)
@@ -188,12 +202,6 @@ export function HomeScreen() {
     setSymptomName(name)
   }
 
-  // Format meal type buttons - show emoji only, or emoji + label when selected
-  const mealTypeButtons = MEAL_TYPES.map((meal) => ({
-    value: meal.value,
-    label: mealType === meal.value ? `${meal.icon} ${meal.label}` : meal.icon,
-  }))
-
   return (
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       {/* Header */}
@@ -204,12 +212,15 @@ export function HomeScreen() {
 
       {/* Date Picker - Shared */}
       <View style={styles.datePickerContainer}>
-        <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowDatePicker((prev) => !prev)}
+        >
           <IconButton icon="calendar" size={20} />
           <Text style={styles.dateText}>
             {format(selectedDate, 'yyyy年MM月dd日 (E)', { locale: zhTW })}
           </Text>
-          <IconButton icon="chevron-down" size={20} />
+          <IconButton icon={showDatePicker ? 'chevron-up' : 'chevron-down'} size={20} />
         </TouchableOpacity>
       </View>
 

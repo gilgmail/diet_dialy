@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Button, TextInput, SegmentedButtons, Chip, IconButton } from 'react-native-paper'
+import { Button, TextInput, SegmentedButtons, IconButton } from 'react-native-paper'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useQuery } from '@tanstack/react-query'
+import { useFocusEffect } from '@react-navigation/native'
 import { useAuthStore } from '@/shared/stores/authStore'
 import { FoodDiaryService } from '../services/FoodDiaryService'
 import { colors, typography, spacing } from '@/theme'
@@ -17,8 +18,8 @@ import {
   type CreateFoodEntryInput,
 } from '../types'
 import { FoodSearchInput } from '../components/FoodSearchInput'
-import DateTimePicker from '@react-native-community/datetimepicker'
-import { format } from 'date-fns'
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
+import { format, isSameDay } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
 
 type AddFoodEntryScreenProps = NativeStackScreenProps<any, 'AddFoodEntry'>
@@ -45,8 +46,10 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
   const [recentEntries, setRecentEntries] = useState<FoodEntry[]>([])
 
   // Fetch selected date's entries
+  const selectedDateKey = useMemo(() => format(selectedDate, 'yyyy-MM-dd'), [selectedDate])
+
   const { data: todayEntries = [] } = useQuery({
-    queryKey: ['foodEntries', user?.id, selectedDate.toISOString().split('T')[0]],
+    queryKey: ['foodEntries', user?.id, selectedDateKey],
     queryFn: async () => {
       if (!user?.id) return []
       const result = await FoodDiaryService.getFoodEntriesByDate(user.id, selectedDate)
@@ -88,12 +91,23 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
     setFoodName(food.name)
   }
 
-  const handleDateChange = (event: any, date?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios')
-    if (date) {
+  const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    if (date && event.type !== 'dismissed') {
       setSelectedDate(date)
     }
+
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false)
+    }
   }
+
+  useFocusEffect(
+    useCallback(() => {
+      const now = new Date()
+      setSelectedDate(prev => (isSameDay(prev, now) ? prev : now))
+      setMealType(getMealTypeByTime())
+    }, [])
+  )
 
   const handleSubmit = async () => {
     const chosenFood = selectedFood
@@ -159,13 +173,13 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
           <View style={styles.datePickerContainer}>
             <TouchableOpacity
               style={styles.dateButton}
-              onPress={() => setShowDatePicker(true)}
+              onPress={() => setShowDatePicker(prev => !prev)}
             >
               <IconButton icon="calendar" size={20} />
               <Text style={styles.dateText}>
                 {format(selectedDate, 'yyyy年MM月dd日 (E)', { locale: zhTW })}
               </Text>
-              <IconButton icon="chevron-down" size={20} />
+              <IconButton icon={showDatePicker ? 'chevron-up' : 'chevron-down'} size={20} />
             </TouchableOpacity>
           </View>
 
