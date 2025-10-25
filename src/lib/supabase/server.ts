@@ -46,10 +46,64 @@ export function createAdminClient() {
     throw new Error('Missing Supabase service role key')
   }
 
+  // Use native Node.js https module instead of undici to avoid fetch failures in Docker
+  // This is a workaround for: https://github.com/supabase/supabase-js/issues/882
+  const customFetch = async (url: string, options: RequestInit = {}) => {
+    const https = await import('https')
+    const http = await import('http')
+    const urlModule = await import('url')
+
+    return new Promise<Response>((resolve, reject) => {
+      const parsedUrl = new urlModule.URL(url)
+      const protocol = parsedUrl.protocol === 'https:' ? https : http
+
+      // Convert Headers object to plain object if needed
+      let headers: Record<string, string> = {}
+      if (options.headers) {
+        if (options.headers instanceof Headers) {
+          options.headers.forEach((value, key) => {
+            headers[key] = value
+          })
+        } else {
+          headers = options.headers as Record<string, string>
+        }
+      }
+
+      const reqOptions = {
+        method: options.method || 'GET',
+        headers: headers,
+      }
+
+      const req = protocol.request(parsedUrl, reqOptions, (res) => {
+        let data = ''
+        res.on('data', (chunk) => data += chunk)
+        res.on('end', () => {
+          const response = new Response(data, {
+            status: res.statusCode,
+            statusText: res.statusMessage,
+            headers: new Headers(res.headers as HeadersInit)
+          })
+          resolve(response)
+        })
+      })
+
+      req.on('error', reject)
+
+      if (options.body) {
+        req.write(options.body)
+      }
+
+      req.end()
+    })
+  }
+
   return createSupabaseClient(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false
+    },
+    global: {
+      fetch: customFetch as any
     }
   })
 }

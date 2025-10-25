@@ -401,9 +401,31 @@ export class IBDWeeklyAnalysisAgent {
   }
 
   async analyze(userId: string, options: WeeklyAnalysisOptions = {}): Promise<WeeklyIBDAnalysisResult> {
+    console.log('\n========== IBD Weekly Analysis Agent: analyze() ==========')
+    console.log('📋 Input parameters:', {
+      userId: userId.substring(0, 8) + '...',
+      startDate: options.startDate,
+      endDate: options.endDate,
+      promptStyle: options.promptStyle,
+      hasPromptOverride: !!options.promptOverride,
+    })
+
+    console.log('⏰ Resolving timeframe...')
     const timeframe = this.resolveTimeframe(options)
+    console.log('✅ Timeframe resolved:', timeframe)
+
+    console.log('📥 Fetching dataset from database...')
     const dataset = await this.fetchDataset(userId, timeframe)
+
+    console.log('🔨 Building analysis payload...')
     const payload = this.buildAnalysisPayload(dataset, timeframe)
+    console.log('📊 Payload summary:', {
+      hasMinimalData: payload.hasMinimalData,
+      foodEntries: payload.payload.trackingSummary.totalFoodEntries,
+      uniqueFoods: payload.payload.trackingSummary.uniqueFoods,
+      symptomEntries: payload.payload.trackingSummary.totalSymptomEntries,
+      daysWithFoodOnly: payload.payload.trackingSummary.daysWithFoodOnly.length,
+    })
 
     const baseResult: WeeklyIBDAnalysisResult = {
       success: true,
@@ -424,25 +446,59 @@ export class IBDWeeklyAnalysisAgent {
     }
 
     if (!payload.hasMinimalData) {
+      console.warn('⚠️ Insufficient data for analysis!')
+      console.warn('  - Minimum requirement: 3 food entries')
+      console.warn('  - Current food entries:', payload.payload.trackingSummary.totalFoodEntries)
       const insufficient = this.buildFallbackAnalysis(payload, baseResult, true)
       insufficient.method = 'insufficient_data'
       insufficient.success = false
+      console.log('❌ Returning insufficient_data result')
+      console.log('========== IBD Weekly Analysis Agent: analyze() END ==========\n')
       return insufficient
     }
 
     if (!this.anthropic || !this.config.apiKey) {
-      return this.buildFallbackAnalysis(payload, baseResult)
+      console.warn('⚠️ Claude API not configured, using fallback analysis')
+      console.warn('  - Has Anthropic client:', !!this.anthropic)
+      console.warn('  - Has API key:', !!this.config.apiKey)
+      const fallback = this.buildFallbackAnalysis(payload, baseResult)
+      console.log('✅ Returning fallback result')
+      console.log('========== IBD Weekly Analysis Agent: analyze() END ==========\n')
+      return fallback
     }
 
     try {
+      console.log('🤖 Composing prompt for Claude API...')
       const prompt = this.composePrompt(baseResult.prompt_used, payload.payload)
+      console.log('  - Prompt length:', prompt.length, 'characters')
+
+      console.log('📞 Calling Claude API...')
+      const apiStartTime = Date.now()
       const raw = await this.callClaude(prompt)
+      const apiDuration = ((Date.now() - apiStartTime) / 1000).toFixed(2)
+      console.log(`✅ Claude API responded (${apiDuration}s)`)
+      console.log('  - Response length:', raw.length, 'characters')
+
+      console.log('🔍 Parsing Claude response...')
       const parsed = this.parseClaudeResponse(raw, baseResult, payload.payload.dataQuality.warnings)
       parsed.raw_ai_response = raw
+      parsed.method = 'claude_api'
+      console.log('✅ Analysis complete via Claude API')
+      console.log('  - Foods to monitor:', parsed.analysis.foods_to_monitor?.length || 0)
+      console.log('  - Supportive foods:', parsed.analysis.supportive_foods?.length || 0)
+      console.log('  - Symptom trends:', parsed.analysis.symptom_trends?.length || 0)
+      console.log('========== IBD Weekly Analysis Agent: analyze() END ==========\n')
       return parsed
     } catch (error) {
-      console.error('[IBDWeeklyAnalysisAgent] Claude API failed, using fallback:', error)
-      return this.buildFallbackAnalysis(payload, baseResult)
+      console.error('❌ Claude API failed, using fallback:', error)
+      if (error instanceof Error) {
+        console.error('  - Error name:', error.name)
+        console.error('  - Error message:', error.message)
+      }
+      const fallback = this.buildFallbackAnalysis(payload, baseResult)
+      console.log('✅ Returning fallback result after API failure')
+      console.log('========== IBD Weekly Analysis Agent: analyze() END ==========\n')
+      return fallback
     }
   }
 

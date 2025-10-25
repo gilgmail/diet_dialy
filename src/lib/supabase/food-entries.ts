@@ -1,10 +1,23 @@
 // Supabase 食物記錄服務
-import { supabase } from './client'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, FoodEntry, FoodEntryInsert, FoodEntryUpdate } from '@/types/supabase'
 
 export class SupabaseFoodEntriesService {
-  constructor(private readonly client: SupabaseClient<Database> = supabase) {}
+  private client: SupabaseClient<Database>
+
+  constructor(client?: SupabaseClient<Database>) {
+    if (client) {
+      this.client = client
+    } else {
+      // Lazy load browser client only when needed (client-side)
+      if (typeof window === 'undefined') {
+        throw new Error('SupabaseFoodEntriesService requires explicit client on server-side')
+      }
+      // @ts-ignore - dynamic import for browser client
+      const { supabase } = require('./client')
+      this.client = supabase
+    }
+  }
 
   // 建立食物記錄
   async createFoodEntry(entryData: FoodEntryInsert): Promise<FoodEntry | null> {
@@ -331,4 +344,21 @@ export class SupabaseFoodEntriesService {
   }
 }
 
-export const foodEntriesService = new SupabaseFoodEntriesService()
+// Browser-side singleton - uses lazy-loaded browser client
+// Server-side code MUST instantiate with explicit client:
+// const service = new SupabaseFoodEntriesService(createAdminClient())
+let _foodEntriesServiceInstance: SupabaseFoodEntriesService | null = null
+
+export function getFoodEntriesService(): SupabaseFoodEntriesService {
+  if (!_foodEntriesServiceInstance) {
+    _foodEntriesServiceInstance = new SupabaseFoodEntriesService()
+  }
+  return _foodEntriesServiceInstance
+}
+
+// Backward compatibility
+export const foodEntriesService = new Proxy({} as SupabaseFoodEntriesService, {
+  get(target, prop) {
+    return getFoodEntriesService()[prop as keyof SupabaseFoodEntriesService]
+  }
+})

@@ -191,11 +191,22 @@ function validateDateRange(startDate: string, endDate: string): NextResponse | n
 
 // API handlers
 export async function POST(request: NextRequest) {
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  console.log(`\n========== [${requestId}] 週間 AI 分析請求開始 ==========`)
+
   try {
     const body: WeeklyAnalysisRequestBody = await request.json()
+    console.log(`[${requestId}] 收到請求參數:`, {
+      userId: body.userId?.substring(0, 8) + '...',
+      startDate: body.startDate,
+      endDate: body.endDate,
+      promptStyle: body.promptStyle,
+      hasPromptOverride: !!body.promptOverride,
+    })
 
     // Validate userId
     if (!body.userId?.trim()) {
+      console.error(`[${requestId}] ❌ 驗證失敗: 缺少 userId`)
       return NextResponse.json(
         { success: false, error: '缺少 userId，無法取得對應的飲食與症狀資料' },
         { status: 400 }
@@ -220,6 +231,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Run AI analysis
+    console.log(`[${requestId}] 🤖 開始執行 AI 分析...`)
+    const analysisStartTime = Date.now()
     const agent = new IBDWeeklyAnalysisAgent()
     const result = await agent.analyze(body.userId, {
       startDate: body.startDate,
@@ -228,14 +241,32 @@ export async function POST(request: NextRequest) {
       promptOverride: body.promptOverride,
       includePromptRecommendations: body.includePromptRecommendations,
     })
+    const analysisDuration = ((Date.now() - analysisStartTime) / 1000).toFixed(2)
+    console.log(`[${requestId}] ✅ AI 分析完成 (耗時 ${analysisDuration}s):`, {
+      success: result.success,
+      method: result.method,
+      foodEntries: result.totals.food_entries,
+      uniqueFoods: result.totals.unique_foods,
+      symptomEntries: result.totals.symptom_entries,
+      timeframe: `${result.timeframe.startDate} ~ ${result.timeframe.endDate}`,
+    })
 
     // Fetch history (before saving new report to get current count)
+    console.log(`[${requestId}] 📚 取得歷史報告...`)
     const history = await fetchWeeklyHistory(body.userId)
+    console.log(`[${requestId}] 找到 ${history.length} 份歷史報告`)
 
     // Save successful report and prepare response message
     let reportInfo = null
     if (result.success) {
-      await upsertWeeklyReport(body.userId, result)
+      console.log(`[${requestId}] 💾 儲存新報告到 Storage...`)
+      const saveResult = await upsertWeeklyReport(body.userId, result)
+      if (saveResult) {
+        console.log(`[${requestId}] ✅ 報告已儲存: ${saveResult.key}`)
+      } else {
+        console.warn(`[${requestId}] ⚠️ 報告儲存失敗或被跳過`)
+      }
+
       const newReportNumber = 1 // 新報告永遠是 #1 (最新)
       const totalReports = history.length + 1
       reportInfo = {
@@ -247,17 +278,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Refresh history to include new report
+    console.log(`[${requestId}] 🔄 重新載入歷史報告（包含新報告）...`)
     const updatedHistory = result.success ? await fetchWeeklyHistory(body.userId) : history
+    console.log(`[${requestId}] 最終歷史報告數量: ${updatedHistory.length}`)
 
     // Prepare error message if analysis failed
     let errorMessage = null
     if (!result.success) {
       if (result.method === 'insufficient_data') {
         errorMessage = `❌ 資料不足：需要至少 3 筆飲食記錄才能進行分析。目前只有 ${result.totals.food_entries || 0} 筆。`
+        console.warn(`[${requestId}] ⚠️ ${errorMessage}`)
       } else {
         errorMessage = `⚠️ 分析失敗：無法完成 AI 分析，請稍後再試。`
+        console.error(`[${requestId}] ❌ ${errorMessage}`)
       }
     }
+
+    console.log(`[${requestId}] 📤 回傳分析結果`, {
+      success: result.success,
+      historyCount: updatedHistory.length,
+      hasReportInfo: !!reportInfo,
+    })
+    console.log(`========== [${requestId}] 週間 AI 分析請求完成 ==========\n`)
 
     return NextResponse.json(
       {
