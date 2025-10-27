@@ -2,6 +2,8 @@
 
 本文檔說明如何將 Diet Daily Web 應用部署到 Raspberry Pi 5 (IP: gilko.redirectme.net)。
 
+> 若需要在雲端（Render）執行，使服務 24x7 穩定在線，請參考 [`render/README.md`](./render/README.md) 取得對應的 Docker Blueprint 與環境設定步驟。
+
 ## 前置需求
 
 ### 本地機器

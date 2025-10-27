@@ -10,8 +10,12 @@ pi_docker/
 ├── Dockerfile                   # Docker 映像建置配置
 ├── docker-compose.yml           # Docker Compose 編排配置
 ├── .dockerignore               # Docker 建置時排除的檔案
-├── .env.production.pi          # 生產環境變數配置
+├── .env.production.pi          # 生產環境變數配置（Raspberry Pi）
+├── .env.render.example         # Render 部署所需環境變數樣板
 ├── deploy-to-pi.sh             # 自動化部署腳本
+├── render/                     # Render 雲端部署設定
+│   ├── README.md               # Render 部署教學
+│   └── render.yaml             # Render Blueprint 設定檔
 └── DEPLOYMENT.md               # 詳細部署文檔（故障排除等）
 ```
 
@@ -61,6 +65,17 @@ http://gilko.redirectme.net:3000
 ```
 
 ## 📝 詳細步驟
+
+### Render 雲端部署
+
+若需要在雲端（Render）長時間穩定執行，可參考 `render/README.md` 內的說明：
+
+1. 建立 GitHub Repo（例如 `diet_daily_docker`）並推送本目錄。
+2. 依 `.env.render.example` 建立 Render Environment Group。
+3. 透過 `render/render.yaml` Blueprint 或手動方式在 Render 建立 Web Service。
+4. 選擇 Standard 方案確保服務不會睡眠。
+
+部署完成後，記得更新行動 App 的 `EXPO_PUBLIC_API_URL` 指向 Render 產生的網址。
 
 ### 步驟 1：配置環境變數
 

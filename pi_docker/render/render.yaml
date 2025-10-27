@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: diet-daily-web
+    env: docker
+    plan: standard
+    autoDeploy: true
+    dockerfilePath: pi_docker/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: '1'
+      - key: PORT
+        value: 3000
+    envVarGroups:
+      - name: diet-daily-config
+
+envVarGroups:
+  - name: diet-daily-config
+    envVars:
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://your-render-service.onrender.com
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://your-project.supabase.co
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        value: replace-with-supabase-anon-key
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        value: replace-with-supabase-service-role-key
+      - key: NEXTAUTH_URL
+        value: https://your-render-service.onrender.com
+      - key: NEXTAUTH_SECRET
+        value: replace-with-strong-random-string
+      - key: EXPO_PUBLIC_API_URL
+        value: https://your-render-service.onrender.com
+      - key: ANTHROPIC_API_KEY
+        value: optional-anthropic-key
+      - key: CLAUDE_MODEL
+        value: claude-3-5-haiku-20241022
+      - key: CLAUDE_MAX_TOKENS
+        value: '1000'
+      - key: CLAUDE_TEMPERATURE
+        value: '0.3'
+      - key: OPENAI_API_KEY
+        value: optional-openai-key
+      - key: GOOGLE_VISION_API_KEY
+        value: optional-google-vision-key
