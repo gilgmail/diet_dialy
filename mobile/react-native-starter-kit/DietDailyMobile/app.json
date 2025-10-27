@@ -2,7 +2,7 @@
   "expo": {
     "name": "DietDailyMobile",
     "slug": "DietDailyMobile",
-    "version": "1.0.0",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "dietdaily",
@@ -15,7 +15,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.gilko.DietDailyMobile"
+      "bundleIdentifier": "com.gilko.DietDailyMobile",
+      "buildNumber": "7"
     },
     "android": {
       "adaptiveIcon": {

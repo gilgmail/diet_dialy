@@ -12,6 +12,8 @@ import {
 } from 'react-native'
 import { Linking } from 'react-native'
 import { Buffer } from 'buffer'
+import * as FileSystem from 'expo-file-system'
+import * as Sharing from 'expo-sharing'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useDashboard } from '../hooks/useDashboard'
 import { StatCard } from '../components/StatCard'
@@ -44,6 +46,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   const [analysisStatus, setAnalysisStatus] = useState<WeeklyAnalysisStatus | null>(
     latestAnalysisStatus ?? null
   )
+  const [latestReportId, setLatestReportId] = useState<string | null>(null)
 
   useEffect(() => {
     if (latestAnalysisStatus) {
@@ -157,7 +160,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   const handleAIAnalysis = async () => {
     try {
       setIsAnalyzing(true)
-      setAnalysisCountdown(20)
+      setAnalysisCountdown(60)
       const estimatedFoodEntries =
         weeklyTrend?.week?.reduce((sum, day) => sum + (day.foodCount || 0), 0) || 0
       const estimatedSymptomEntries =
@@ -165,47 +168,96 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
 
       setAnalysisStatus(buildInitialStatus(estimatedFoodEntries, estimatedSymptomEntries))
 
-      const result = await refetch()
-      if (result.error) {
-        const timestamp = new Date().toISOString()
-        setAnalysisStatus((prev) => {
-          const base = prev ?? buildInitialStatus(estimatedFoodEntries, estimatedSymptomEntries)
-          return {
-            ...base,
-            steps: base.steps.map((step) => {
-              if (step.key === 'server_processing') {
-                return {
-                  ...step,
-                  state: 'failed',
-                  detail: '伺服器分析失敗，請稍後再試。',
-                  timestamp,
+      // 輪詢機制：每 3 秒檢查一次，最多輪詢 20 次 (60 秒)
+      let attempts = 0
+      const maxAttempts = 20
+      const pollInterval = 3000 // 3 seconds
+
+      const poll = async (): Promise<boolean> => {
+        attempts++
+        console.log(`[Dashboard] Polling attempt ${attempts}/${maxAttempts}`)
+
+        const result = await refetch()
+
+        if (result.error) {
+          const timestamp = new Date().toISOString()
+          setAnalysisStatus((prev) => {
+            const base = prev ?? buildInitialStatus(estimatedFoodEntries, estimatedSymptomEntries)
+            return {
+              ...base,
+              steps: base.steps.map((step) => {
+                if (step.key === 'server_processing') {
+                  return {
+                    ...step,
+                    state: 'failed',
+                    detail: '伺服器分析失敗，請稍後再試。',
+                    timestamp,
+                  }
                 }
-              }
-              if (step.key === 'server_response') {
-                return {
-                  ...step,
-                  state: 'failed',
-                  detail: result.error?.message || '無法取得伺服器回應。',
-                  timestamp,
+                if (step.key === 'server_response') {
+                  return {
+                    ...step,
+                    state: 'failed',
+                    detail: result.error?.message || '無法取得伺服器回應。',
+                    timestamp,
+                  }
                 }
-              }
-              if (step.key === 'report_generation') {
-                return {
-                  ...step,
-                  state: 'failed',
-                  detail: '分析未完成，未產生報告。',
-                  timestamp,
+                if (step.key === 'report_generation') {
+                  return {
+                    ...step,
+                    state: 'failed',
+                    detail: '分析未完成，未產生報告。',
+                    timestamp,
+                  }
                 }
-              }
-              return step
-            }),
-            reportGenerated: false,
-            lastUpdated: timestamp,
+                return step
+              }),
+              reportGenerated: false,
+              lastUpdated: timestamp,
+            }
+          })
+          return false // 停止輪詢
+        }
+
+        if (result.data) {
+          const status = result.data.analysisStatus
+          setAnalysisStatus(status ?? null)
+
+          // 檢查是否完成（所有步驟都是 completed 或 failed）
+          if (status?.steps) {
+            const allCompleted = status.steps.every(
+              (step) => step.state === 'completed' || step.state === 'failed'
+            )
+            if (allCompleted && status.reportGenerated) {
+              console.log('[Dashboard] Analysis completed with report!')
+              return false // 分析完成，停止輪詢
+            }
           }
-        })
-      } else if (result.data) {
-        setAnalysisStatus(result.data.analysisStatus ?? null)
+
+          // 檢查是否有新的分析歷史
+          if (result.data.analysisHistory && result.data.analysisHistory.length > 0) {
+            console.log('[Dashboard] New analysis history detected!')
+            // 標記最新報告
+            setLatestReportId(result.data.analysisHistory[0].id)
+            // 3 秒後清除標記
+            setTimeout(() => setLatestReportId(null), 3000)
+            return false // 有新報告，停止輪詢
+          }
+        }
+
+        // 繼續輪詢
+        if (attempts < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, pollInterval))
+          setAnalysisCountdown(Math.max(0, 60 - attempts * 3))
+          return await poll()
+        }
+
+        // 超時
+        console.warn('[Dashboard] Analysis polling timeout')
+        return false
       }
+
+      await poll()
     } finally {
       setIsAnalyzing(false)
       setAnalysisCountdown(0)
@@ -341,9 +393,28 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   const handleOpenSummaryInSafari = async (item: (typeof analysisHistory)[number]) => {
     try {
       const { html } = composeShareContent(item)
-      const base64 = Buffer.from(html, 'utf8').toString('base64')
-      const dataUrl = `data:text/html;base64,${base64}`
-      await Linking.openURL(dataUrl)
+
+      // iOS Safari 不支援 data: URL，改用檔案系統 + Sharing
+      const fileName = `分析摘要_${item.startDate}_${item.endDate}.html`
+      const fileUri = `${FileSystem.cacheDirectory}${fileName}`
+
+      // 使用新的 File API (Expo SDK 54+)
+      const file = new FileSystem.File(fileUri)
+      await file.write(html)
+
+      // 使用系統分享功能開啟
+      const canShare = await Sharing.isAvailableAsync()
+      if (canShare) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'text/html',
+          dialogTitle: item.title,
+          UTI: 'public.html',
+        })
+      } else {
+        console.warn('[Dashboard] Sharing not available')
+        // fallback: 嘗試直接用瀏覽器開啟（可能失敗）
+        await Linking.openURL(fileUri)
+      }
     } catch (error) {
       console.error('[Dashboard] Failed to open summary:', error)
     }
@@ -532,7 +603,13 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
         <Text style={styles.sectionTitle}>AI 分析報告歷史</Text>
         {analysisHistory.length > 0 ? (
           analysisHistory.map((item) => (
-            <View key={item.id} style={styles.historyCard}>
+            <View
+              key={item.id}
+              style={[
+                styles.historyCard,
+                item.id === latestReportId && styles.historyCardNew
+              ]}
+            >
               <View style={styles.historyHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.historyTitle}>{item.title}</Text>
@@ -795,6 +872,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  historyCardNew: {
+    borderWidth: 2,
+    borderColor: colors.primary[500],
+    backgroundColor: '#EEF2FF',
   },
   historyHeader: {
     flexDirection: 'row',

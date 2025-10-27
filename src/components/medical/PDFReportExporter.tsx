@@ -71,7 +71,6 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
     { title: '醫療建議', enabled: true },
     { title: '附錄：原始數據', enabled: false }
   ]);
-  const reportContentRef = useRef<HTMLDivElement>(null);
 
   // 過濾報告期間的數據 - 加強錯誤處理
   const getFilteredData = () => {
@@ -217,98 +216,178 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
     return recommendations;
   };
 
-  // 新的中文PDF生成方法 - 使用html2canvas將HTML內容轉為圖片
+  // 純文字版中文 PDF - 檔案小且中文保證正確顯示
   const generateChinesePDF = async () => {
-    if (!reportContentRef.current) return;
-
     setIsGenerating(true);
 
     try {
-      // 動態導入 html2canvas
-      const html2canvas = (await import('html2canvas')).default;
-
       // 獲取過濾後的數據
       const data = getFilteredData();
       if (!data || data.healthData.length === 0) {
         alert('無足夠數據生成報告，請確保選定期間內有健康記錄');
+        setIsGenerating(false);
         return;
       }
+
+      const stats = calculateStats(data);
+      if (!stats) {
+        alert('無法計算統計數據');
+        setIsGenerating(false);
+        return;
+      }
+
+      const recommendations = generateRecommendations(stats);
 
       // 創建PDF
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
+      let yPos = 20;
+      const leftMargin = 15;
+      const lineHeight = 7;
 
-      // 將HTML內容轉換為圖片
-      const canvas = await html2canvas(reportContentRef.current, {
-        scale: 2, // 高解析度
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: reportContentRef.current.scrollWidth,
-        height: reportContentRef.current.scrollHeight
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const imgWidth = pageWidth - 20; // 留邊距
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      // 如果內容太長，分頁處理
-      if (imgHeight > pageHeight - 20) {
-        let yPosition = 0;
-        const maxHeightPerPage = pageHeight - 20;
-
-        while (yPosition < imgHeight) {
-          if (yPosition > 0) {
-            pdf.addPage();
-          }
-
-          // 計算當前頁面要顯示的部分
-          const sourceY = (yPosition / imgHeight) * canvas.height;
-          const sourceHeight = Math.min(
-            (maxHeightPerPage / imgHeight) * canvas.height,
-            canvas.height - sourceY
-          );
-
-          // 創建當前頁面的canvas
-          const pageCanvas = document.createElement('canvas');
-          const pageCtx = pageCanvas.getContext('2d');
-          pageCanvas.width = canvas.width;
-          pageCanvas.height = sourceHeight;
-
-          if (pageCtx) {
-            pageCtx.drawImage(
-              canvas,
-              0, sourceY, canvas.width, sourceHeight,
-              0, 0, canvas.width, sourceHeight
-            );
-
-            const pageImgData = pageCanvas.toDataURL('image/png');
-            const currentPageHeight = Math.min(maxHeightPerPage, imgHeight - yPosition);
-
-            pdf.addImage(pageImgData, 'PNG', 10, 10, imgWidth, currentPageHeight);
-          }
-
-          yPosition += maxHeightPerPage;
+      // 輔助函數：檢查是否需要換頁
+      const checkNewPage = (requiredSpace = 10) => {
+        if (yPos + requiredSpace > pageHeight - 20) {
+          pdf.addPage();
+          yPos = 20;
+          return true;
         }
-      } else {
-        // 單頁顯示
-        pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+        return false;
+      };
+
+      // 輔助函數：添加多行文字
+      const addText = (text: string, fontSize = 12, isBold = false) => {
+        pdf.setFontSize(fontSize);
+        const lines = pdf.splitTextToSize(text, pageWidth - 2 * leftMargin);
+        lines.forEach((line: string) => {
+          checkNewPage();
+          pdf.text(line, leftMargin, yPos);
+          yPos += lineHeight;
+        });
+      };
+
+      // 標題
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      const periodText = reportPeriod === '7d' ? '7天' : reportPeriod === '30d' ? '30天' : '90天';
+      pdf.text(`健康追蹤報告 (${periodText})`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 15;
+
+      // 基本資訊
+      if (patientInfo && reportSections[0].enabled) {
+        checkNewPage(30);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('基本資訊', leftMargin, yPos);
+        yPos += lineHeight + 2;
+
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'normal');
+        if (patientInfo.name) {
+          pdf.text(`姓名: ${patientInfo.name}`, leftMargin + 5, yPos);
+          yPos += lineHeight;
+        }
+        if (patientInfo.age) {
+          pdf.text(`年齡: ${patientInfo.age} 歲`, leftMargin + 5, yPos);
+          yPos += lineHeight;
+        }
+        if (patientInfo.conditions && patientInfo.conditions.length > 0) {
+          pdf.text(`現有疾病: ${patientInfo.conditions.join(', ')}`, leftMargin + 5, yPos);
+          yPos += lineHeight;
+        }
+        yPos += 5;
       }
 
-      // 生成文件名
-      const now = new Date();
-      const timestamp = now.toISOString().split('T')[0];
-      const periodText = reportPeriod === '7d' ? '7天' : reportPeriod === '30d' ? '30天' : '90天';
-      const filename = `健康報告_${periodText}_${timestamp}.pdf`;
+      // 健康指標概覽
+      checkNewPage(40);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('健康指標概覽', leftMargin, yPos);
+      yPos += lineHeight + 2;
 
-      // 下載PDF
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`平均症狀嚴重度: ${stats.avgSeverity}/4`, leftMargin + 5, yPos); yPos += lineHeight;
+      pdf.text(`活動影響程度: ${stats.avgActivity}/4`, leftMargin + 5, yPos); yPos += lineHeight;
+      pdf.text(`情緒影響程度: ${stats.avgMood}/4`, leftMargin + 5, yPos); yPos += lineHeight;
+      pdf.text(`睡眠品質: ${stats.avgSleep}/4`, leftMargin + 5, yPos); yPos += lineHeight;
+      pdf.text(`症狀記錄數: ${stats.totalSymptomRecords} 筆`, leftMargin + 5, yPos); yPos += lineHeight;
+      pdf.text(`飲食記錄數: ${stats.totalFoodEntries} 筆`, leftMargin + 5, yPos); yPos += lineHeight;
+      pdf.text(`症狀趨勢: ${stats.trendDirection}`, leftMargin + 5, yPos); yPos += lineHeight;
+      yPos += 5;
+
+      // 主要症狀分析
+      if (stats.topSymptoms.length > 0) {
+        checkNewPage(30);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('主要症狀分析', leftMargin, yPos);
+        yPos += lineHeight + 2;
+
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'normal');
+        stats.topSymptoms.forEach(([symptom, count]: [string, number], index: number) => {
+          checkNewPage();
+          pdf.text(`${index + 1}. ${symptom} (${count} 次)`, leftMargin + 5, yPos);
+          yPos += lineHeight;
+        });
+        yPos += 5;
+      }
+
+      // 高風險食物清單
+      if (stats.uniqueHighRiskFoods.length > 0) {
+        checkNewPage(30);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('高風險食物清單', leftMargin, yPos);
+        yPos += lineHeight + 2;
+
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'normal');
+        stats.uniqueHighRiskFoods.slice(0, 8).forEach((food: string, index: number) => {
+          checkNewPage();
+          pdf.text(`${index + 1}. ${food}`, leftMargin + 5, yPos);
+          yPos += lineHeight;
+        });
+        yPos += 5;
+      }
+
+      // 醫療建議
+      checkNewPage(30);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('醫療建議', leftMargin, yPos);
+      yPos += lineHeight + 2;
+
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      recommendations.forEach((rec: string) => {
+        const lines = pdf.splitTextToSize(`• ${rec}`, pageWidth - 2 * leftMargin - 5);
+        lines.forEach((line: string) => {
+          checkNewPage();
+          pdf.text(line, leftMargin + 5, yPos);
+          yPos += lineHeight;
+        });
+        yPos += 2;
+      });
+
+      // 頁尾
+      pdf.setFontSize(9);
+      pdf.setTextColor(128);
+      const footerY = pageHeight - 10;
+      pdf.text(`報告生成時間: ${new Date().toLocaleString('zh-TW')}`, leftMargin, footerY);
+      pdf.text('免責聲明: 此報告僅供參考，不可替代專業醫療建議', leftMargin, footerY + 5);
+
+      // 生成文件名並下載
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `健康報告_${periodText}_${timestamp}.pdf`;
       pdf.save(filename);
 
-      alert('中文PDF報告已成功生成並下載！');
+      alert('PDF報告已成功生成！檔案小且中文完整顯示。');
 
     } catch (error) {
-      console.error('生成中文PDF時發生錯誤:', error);
+      console.error('生成PDF時發生錯誤:', error);
       alert('生成PDF報告時發生錯誤，請稍後再試');
     } finally {
       setIsGenerating(false);
@@ -746,80 +825,6 @@ Preview successful! Report data integrity is good.
             </ul>
           </div>
         </div>
-      </div>
-
-      {/* 隱藏的中文報告內容，用於PDF生成 */}
-      <div ref={reportContentRef} style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '210mm', padding: '20mm', fontFamily: 'Arial, sans-serif', fontSize: '12px', color: '#000' }}>
-        {(() => {
-          const data = getFilteredData();
-          const stats = calculateStats(data);
-          if (!stats) return null;
-
-          const recommendations = generateRecommendations(stats);
-          return (
-            <div>
-              <h1 style={{ textAlign: 'center', fontSize: '18px', marginBottom: '20px', color: '#2563eb' }}>
-                健康追蹤報告 ({reportPeriod === '7d' ? '7天' : reportPeriod === '30d' ? '30天' : '90天'})
-              </h1>
-
-              {patientInfo && (
-                <div style={{ marginBottom: '20px' }}>
-                  <h2 style={{ fontSize: '16px', marginBottom: '10px', borderBottom: '1px solid #ccc' }}>基本資訊</h2>
-                  {patientInfo.name && <p><strong>姓名:</strong> {patientInfo.name}</p>}
-                  {patientInfo.age && <p><strong>年齡:</strong> {patientInfo.age} 歲</p>}
-                  {patientInfo.conditions && patientInfo.conditions.length > 0 && (
-                    <p><strong>現有疾病:</strong> {patientInfo.conditions.join(', ')}</p>
-                  )}
-                  {patientInfo.medications && patientInfo.medications.length > 0 && (
-                    <p><strong>目前用藥:</strong> {patientInfo.medications.join(', ')}</p>)}
-                </div>
-              )}
-
-              <div style={{ marginBottom: '20px' }}>
-                <h2 style={{ fontSize: '16px', marginBottom: '10px', borderBottom: '1px solid #ccc' }}>健康指標概覽</h2>
-                <p><strong>平均症狀嚴重度:</strong> {stats.avgSeverity}/5</p>
-                <p><strong>活動影響程度:</strong> {stats.avgActivity}/5</p>
-                <p><strong>情緒影響程度:</strong> {stats.avgMood}/5</p>
-                <p><strong>睡眠品質:</strong> {stats.avgSleep}/5</p>
-                <p><strong>總健康記錄數:</strong> {stats.totalHealthRecords} 筆</p>
-                <p><strong>症狀記錄數:</strong> {stats.totalSymptomRecords} 筆</p>
-                <p><strong>飲食記錄數:</strong> {stats.totalFoodEntries} 筆</p>
-                <p><strong>症狀趨勢:</strong> {stats.trendDirection}</p>
-              </div>
-
-              {stats.topSymptoms.length > 0 && (
-                <div style={{ marginBottom: '20px' }}>
-                  <h2 style={{ fontSize: '16px', marginBottom: '10px', borderBottom: '1px solid #ccc' }}>主要症狀分析</h2>
-                  {stats.topSymptoms.map(([symptom, count]: [string, number], index: number) => (
-                    <p key={index}>{index + 1}. {symptom} ({count} 次)</p>
-                  ))}
-                </div>
-              )}
-
-              {stats.uniqueHighRiskFoods.length > 0 && (
-                <div style={{ marginBottom: '20px' }}>
-                  <h2 style={{ fontSize: '16px', marginBottom: '10px', borderBottom: '1px solid #ccc' }}>高風險食物清單</h2>
-                  {stats.uniqueHighRiskFoods.slice(0, 8).map((food: string, index: number) => (
-                    <p key={index}>{index + 1}. {food}</p>
-                  ))}
-                </div>
-              )}
-
-              <div style={{ marginBottom: '20px' }}>
-                <h2 style={{ fontSize: '16px', marginBottom: '10px', borderBottom: '1px solid #ccc' }}>醫療建議</h2>
-                {recommendations.map((rec: string, index: number) => (
-                  <p key={index} style={{ marginBottom: '8px' }}>• {rec}</p>
-                ))}
-              </div>
-
-              <div style={{ marginTop: '30px', fontSize: '10px', color: '#666', textAlign: 'center' }}>
-                <p>此報告由 Diet Daily 健康追蹤系統生成</p>
-                <p>生成時間: {new Date().toLocaleString('zh-TW')}</p>
-                <p>免責聲明: 此報告僅供參考，不可替代專業醫療建議</p>
-              </div>
-            </div>
-          );
-        })()}
       </div>
     </div>
   );
