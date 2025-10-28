@@ -5,9 +5,16 @@
 
 set -e
 
+# Load environment variables from .env file
+if [ -f "$(dirname "$0")/../.env" ]; then
+    set -a
+    source "$(dirname "$0")/../.env"
+    set +a
+fi
+
 # Configuration
-PI_HOST="gilko.redirectme.net"
-PI_USER="${PI_USER:-pi}"
+PI_HOST="${PI_HOST:-10.1.1.85}"
+PI_USER="${PI_USER:-gilko}"
 PROJECT_NAME="diet-daily"
 DEPLOY_DIR="/home/${PI_USER}/${PROJECT_NAME}"
 
