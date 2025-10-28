@@ -140,15 +140,17 @@ async function fetchWeeklyHistory(userId: string, limit = DEFAULT_HISTORY_LIMIT)
         const json = JSON.parse(await download.data.text()) as WeeklyReportPayload
         const analysis = json.analysis || {}
 
+        const reportId = encodeKey(fileKey)
         return {
-          id: encodeKey(fileKey),
+          id: reportId,
           title: `AI 每週分析 ${json.timeframe.startDate} ~ ${json.timeframe.endDate}`,
           createdAt: json.generatedAt,
           startDate: json.timeframe.startDate,
           endDate: json.timeframe.endDate,
           summary: analysis.summary || '',
           followUpActions: analysis.follow_up_actions || [],
-          pdfPath: `/api/ai/weekly-ibd-analysis/${encodeKey(fileKey)}/pdf`,
+          pdfPath: `/api/ai/weekly-ibd-analysis/${reportId}/pdf`,
+          jsonPath: `/api/ai/weekly-ibd-analysis/${reportId}/json`,
           foodsToMonitor: analysis.foods_to_monitor || [],
           supportiveFoods: analysis.supportive_foods || [],
         }
