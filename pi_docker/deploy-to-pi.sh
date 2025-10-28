@@ -71,7 +71,10 @@ ssh ${PI_USER}@${PI_HOST} "mkdir -p ${DEPLOY_DIR}"
 
 # Copy project files to Pi
 echo_info "Copying project files to Raspberry Pi..."
-rsync -avz --exclude-from='.dockerignore' \
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.." || exit 1
+
+rsync -avz --exclude-from='pi_docker/.dockerignore' \
     --exclude='.git' \
     --exclude='node_modules' \
     --exclude='.next' \
