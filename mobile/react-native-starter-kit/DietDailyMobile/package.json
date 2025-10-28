@@ -37,6 +37,7 @@
     "react-native-svg": "15.12.1",
     "react-native-url-polyfill": "^3.0.0",
     "react-native-vector-icons": "^10.3.0",
+    "react-native-webview": "^13.16.0",
     "zod": "^3.25.76",
     "zustand": "^5.0.8"
   },

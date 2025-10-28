@@ -38,7 +38,7 @@ export async function GET(
     pdfDoc.registerFontkit(fontkit)
     const fontPath = join(process.cwd(), 'public', 'fonts', 'NotoSansCJKtc-Regular.otf')
     const fontBytes = await readFile(fontPath)
-    const font = await pdfDoc.embedFont(fontBytes)
+    const font = await pdfDoc.embedFont(fontBytes, { subset: true })
     const page = pdfDoc.addPage([595.28, 841.89])
     const { width, height } = page.getSize()
     let y = height - 72

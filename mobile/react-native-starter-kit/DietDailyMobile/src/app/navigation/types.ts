@@ -19,6 +19,9 @@ export type MainStackParamList = {
   FoodDayDetail: {
     date: string
   }
+  ReportDetail: {
+    htmlContent: string
+  }
 }
 
 export type RootStackParamList = {

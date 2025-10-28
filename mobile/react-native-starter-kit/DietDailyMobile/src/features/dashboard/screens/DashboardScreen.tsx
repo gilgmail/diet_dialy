@@ -10,12 +10,17 @@ import {
   Share,
   Modal,
 } from 'react-native'
-import { Linking } from 'react-native'
+import { Linking, Platform } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { Buffer } from 'buffer'
-import * as FileSystem from 'expo-file-system'
+import { EncodingType, File, Paths } from 'expo-file-system'
+import { getContentUriAsync } from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
+import Constants from 'expo-constants'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useDashboard } from '../hooks/useDashboard'
+import type { MainStackParamList } from '@/app/navigation/types'
 import { StatCard } from '../components/StatCard'
 import { InsightCard } from '../components/InsightCard'
 import { WeeklyChart } from '../components/WeeklyChart'
@@ -31,6 +36,7 @@ interface DashboardScreenProps {
 
 export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {}) {
   const { user } = useAuth()
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
   const {
     stats,
     weeklyTrend,
@@ -47,6 +53,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     latestAnalysisStatus ?? null
   )
   const [latestReportId, setLatestReportId] = useState<string | null>(null)
+  const scrollViewRef = React.useRef<ScrollView>(null)
 
   useEffect(() => {
     if (latestAnalysisStatus) {
@@ -238,9 +245,16 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
           if (result.data.analysisHistory && result.data.analysisHistory.length > 0) {
             console.log('[Dashboard] New analysis history detected!')
             // 標記最新報告
-            setLatestReportId(result.data.analysisHistory[0].id)
-            // 3 秒後清除標記
-            setTimeout(() => setLatestReportId(null), 3000)
+            const newReportId = result.data.analysisHistory[0].id
+            setLatestReportId(newReportId)
+
+            // 滾動到報告歷史區域（延遲確保 UI 已渲染）
+            setTimeout(() => {
+              scrollViewRef.current?.scrollToEnd({ animated: true })
+            }, 500)
+
+            // 5 秒後清除高亮標記
+            setTimeout(() => setLatestReportId(null), 5000)
             return false // 有新報告，停止輪詢
           }
         }
@@ -285,7 +299,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   }
 
   const composeShareContent = (item: (typeof analysisHistory)[number]) => {
-    const title = `${item.title}`
+    const title = item.title
     const summaryText = item.summary ? `<p>${item.summary}</p>` : ''
 
     const foodsToMonitor = (item.foodsToMonitor || [])
@@ -309,25 +323,59 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       })
       .join('')
 
-    const followUps = item.followUpActions
+    // Fix corrupted characters in followUpActions (replace � with 症)
+    const fixedFollowUpActions = item.followUpActions.map((action) => {
+      return action.replace(/��/g, '症').replace(/\uFFFD/g, '症')
+    })
+
+    const followUps = fixedFollowUpActions
       .map((action) => `<li>${action}</li>`)
       .join('')
-
-    const pdfLink = item.pdfPath
-      ? `<p><a href="${item.pdfPath}">下載完整 PDF 報告</a></p>`
-      : ''
 
     const html = `<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <title>${title}</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 分析報告</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif; padding: 24px; line-height: 1.6; }
-    h1 { font-size: 20px; margin-bottom: 8px; }
-    h2 { font-size: 16px; margin-top: 20px; }
-    ul { padding-left: 20px; }
-    a { color: #2563eb; text-decoration: none; }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Heiti TC", sans-serif;
+      padding: 20px;
+      line-height: 1.8;
+      color: #333;
+      background: #fff;
+      font-size: 16px;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+    h2 {
+      font-size: 18px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      color: #2563eb;
+    }
+    p {
+      margin: 8px 0;
+    }
+    ul {
+      padding-left: 24px;
+      margin: 12px 0;
+    }
+    li {
+      margin: 8px 0;
+    }
+    strong {
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -337,7 +385,6 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   ${foodsToMonitor ? `<h2>需留意食物</h2><ul>${foodsToMonitor}</ul>` : ''}
   ${supportiveFoods ? `<h2>建議加強食物</h2><ul>${supportiveFoods}</ul>` : ''}
   ${followUps ? `<h2>下週行動重點</h2><ul>${followUps}</ul>` : ''}
-  ${pdfLink}
 </body>
 </html>`
 
@@ -371,9 +418,6 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       textParts.push('下週行動重點：')
       item.followUpActions.forEach((action) => textParts.push(`• ${action}`))
     }
-    if (item.pdfPath) {
-      textParts.push(`完整 PDF：${item.pdfPath}`)
-    }
 
     return {
       html,
@@ -395,17 +439,26 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       const { html } = composeShareContent(item)
 
       // iOS Safari 不支援 data: URL，改用檔案系統 + Sharing
-      const fileName = `分析摘要_${item.startDate}_${item.endDate}.html`
-      const fileUri = `${FileSystem.cacheDirectory}${fileName}`
+      const sanitizedFileName = `analysis-summary-${item.startDate}-${item.endDate}`.replace(
+        /[^\w.-]/g,
+        '_'
+      )
+      const file = new File(Paths.cache, `${sanitizedFileName}.html`)
+      await file.write(html, { encoding: EncodingType.UTF8 })
 
-      // 使用新的 File API (Expo SDK 54+)
-      const file = new FileSystem.File(fileUri)
-      await file.write(html)
+      let shareUri = file.uri
+      if (Platform.OS === 'android') {
+        try {
+          shareUri = await getContentUriAsync(file.uri)
+        } catch (androidError) {
+          console.warn('[Dashboard] Unable to convert file URI for Android sharing', androidError)
+        }
+      }
 
       // 使用系統分享功能開啟
       const canShare = await Sharing.isAvailableAsync()
       if (canShare) {
-        await Sharing.shareAsync(fileUri, {
+        await Sharing.shareAsync(shareUri, {
           mimeType: 'text/html',
           dialogTitle: item.title,
           UTI: 'public.html',
@@ -413,22 +466,18 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       } else {
         console.warn('[Dashboard] Sharing not available')
         // fallback: 嘗試直接用瀏覽器開啟（可能失敗）
-        await Linking.openURL(fileUri)
+        await Linking.openURL(file.uri)
       }
     } catch (error) {
       console.error('[Dashboard] Failed to open summary:', error)
     }
   }
 
-  const handleSharePdf = async (item: (typeof analysisHistory)[number]) => {
-    if (!item.pdfPath) {
-      return
-    }
-    try {
-      await Share.share({ message: `${item.title}\n${item.pdfPath}` })
-    } catch (error) {
-      console.error('[Dashboard] Failed to share PDF:', error)
-    }
+  const handleViewReport = (item: (typeof analysisHistory)[number]) => {
+    const { html } = composeShareContent(item)
+    // 使用 base64 編碼來避免 URL 參數傳遞時的編碼問題
+    const base64Html = Buffer.from(html, 'utf-8').toString('base64')
+    navigation.navigate('ReportDetail', { htmlContent: base64Html })
   }
 
   if (isLoading && !stats) {
@@ -466,6 +515,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   return (
     <>
       <ScrollView
+      ref={scrollViewRef}
       style={styles.container}
       refreshControl={
         <RefreshControl
@@ -612,10 +662,28 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
             >
               <View style={styles.historyHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.historyTitle}>{item.title}</Text>
+                  <View style={styles.historyTitleRow}>
+                    <Text style={styles.historyTitle}>{item.title}</Text>
+                    {item.id === latestReportId && (
+                      <View style={styles.newBadge}>
+                        <Text style={styles.newBadgeText}>最新</Text>
+                      </View>
+                    )}
+                  </View>
                   <Text style={styles.historySubtitle}>
                     {`${item.startDate} ~ ${item.endDate}`}
                   </Text>
+                  {item.createdAt && (
+                    <Text style={styles.historyTimestamp}>
+                      產出時間：{new Date(item.createdAt).toLocaleString('zh-TW', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </Text>
+                  )}
                   <Text style={styles.historySummary} numberOfLines={3}>
                     {item.summary || '這份報告包含腸道健康的重點洞察。'}
                   </Text>
@@ -624,30 +692,15 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
               <View style={styles.historyActions}>
                 <TouchableOpacity
                   style={styles.historyButton}
-                  onPress={() => handleOpenPdf(item.pdfPath)}
+                  onPress={() => handleViewReport(item)}
                 >
-                  <Text style={styles.historyButtonText}>下載 PDF</Text>
+                  <Text style={styles.historyButtonText}>查看完整報告</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.historyButton, styles.historyButtonSecondary]}
                   onPress={() => handleShareAnalysis(item)}
                 >
                   <Text style={styles.historyButtonSecondaryText}>分享摘要</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.historyActions}
-              >
-                <TouchableOpacity
-                  style={[styles.historyButton, styles.historyButtonSecondary]}
-                  onPress={() => handleOpenSummaryInSafari(item)}
-                >
-                  <Text style={styles.historyButtonSecondaryText}>Safari 檢視摘要</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.historyButton, styles.historyButtonTertiary]}
-                  onPress={() => handleSharePdf(item)}
-                >
-                  <Text style={styles.historyButtonTertiaryText}>分享 PDF 連結</Text>
                 </TouchableOpacity>
               </View>
               {item.followUpActions.length > 0 && (
@@ -678,6 +731,13 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
           </Text>
         </View>
       )}
+
+      {/* Version Info */}
+      <View style={styles.versionContainer}>
+        <Text style={styles.versionText}>
+          v{Constants.expoConfig?.version} ({Platform.OS === 'ios' ? `Build ${Constants.expoConfig?.ios?.buildNumber}` : `Build ${Constants.expoConfig?.android?.versionCode || 'N/A'}`})
+        </Text>
+      </View>
       </ScrollView>
 
       <Modal visible={isAnalyzing} transparent animationType="fade">
@@ -883,15 +943,37 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     gap: spacing.sm,
   },
+  historyTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
   historyTitle: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
   },
+  newBadge: {
+    backgroundColor: colors.primary[500],
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 2,
+    borderRadius: 12,
+  },
+  newBadgeText: {
+    color: colors.surface,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+  },
   historySubtitle: {
     fontSize: typography.fontSize.xs,
     color: colors.text.secondary,
     marginTop: spacing.xs,
+  },
+  historyTimestamp: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.disabled,
+    marginTop: spacing.xs / 2,
   },
   historySummary: {
     fontSize: typography.fontSize.sm,
@@ -972,5 +1054,14 @@ const styles = StyleSheet.create({
   modalStatusContainer: {
     width: '100%',
     marginTop: spacing.sm,
+  },
+  versionContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
+  versionText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.disabled,
   },
 })

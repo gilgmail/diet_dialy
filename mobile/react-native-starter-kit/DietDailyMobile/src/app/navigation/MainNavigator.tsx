@@ -6,6 +6,7 @@ import { Button } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { DashboardScreen } from '@/features/dashboard/screens/DashboardScreen'
+import { ReportDetailScreen } from '@/features/dashboard/screens/ReportDetailScreen'
 import { FoodDiaryScreen } from '@/features/food-diary/screens/FoodDiaryScreen'
 import { FoodDayDetailScreen } from '@/features/food-diary/screens/FoodDayDetailScreen'
 import { AddFoodEntryScreen } from '@/features/food-diary/screens/AddFoodEntryScreen'
@@ -44,7 +45,9 @@ function ProfileScreen() {
           登出
         </Button>
       </View>
-      <DashboardScreen hideHeader={true} />
+      <View style={styles.dashboardWrapper}>
+        <DashboardScreen hideHeader={true} />
+      </View>
     </View>
   )
 }
@@ -151,6 +154,18 @@ export function MainNavigator() {
           headerTintColor: colors.text.primary,
         }}
       />
+      <Stack.Screen
+        name="ReportDetail"
+        component={ReportDetailScreen}
+        options={{
+          headerShown: true,
+          title: 'AI 分析報告',
+          headerStyle: {
+            backgroundColor: colors.surface,
+          },
+          headerTintColor: colors.text.primary,
+        }}
+      />
     </Stack.Navigator>
   )
 }
@@ -170,6 +185,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  dashboardWrapper: {
+    flex: 1,
   },
   profileHeaderLeft: {
     flex: 1,
