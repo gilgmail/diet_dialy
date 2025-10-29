@@ -12,11 +12,15 @@ RUN npm ci && npm cache clean --force
 
 # Rebuild the source code only when needed
 FROM base AS builder
+
+# Accept build arguments
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG SUPABASE_SERVICE_ROLE_KEY
+ARG ANTHROPIC_API_KEY
+
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-
-# Copy environment file BEFORE copying source code
-COPY pi_docker/.env.production.pi ./.env.production.local
 
 # Copy source code
 COPY . .
@@ -24,6 +28,10 @@ COPY . .
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
+ENV ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY
 
 # Build Next.js application
 RUN npm run build
