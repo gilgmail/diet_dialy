@@ -111,7 +111,7 @@ scp .env.production.pi ${PI_USER}@${PI_HOST}:${DEPLOY_DIR}/.env.production.pi
 
 # Build and start Docker containers on Pi
 echo_info "Building and starting Docker containers on Raspberry Pi..."
-ssh ${PI_USER}@${PI_HOST} "cd ${DEPLOY_DIR} && docker compose down && docker compose build && docker compose up -d"
+ssh ${PI_USER}@${PI_HOST} "cd ${DEPLOY_DIR}/pi_docker && docker compose down && docker compose build && docker compose up -d"
 
 # Wait for container to be healthy
 echo_info "Waiting for application to start..."
@@ -119,7 +119,7 @@ sleep 10
 
 # Check container status
 echo_info "Checking container status..."
-ssh ${PI_USER}@${PI_HOST} "cd ${DEPLOY_DIR} && docker compose ps"
+ssh ${PI_USER}@${PI_HOST} "cd ${DEPLOY_DIR}/pi_docker && docker compose ps"
 
 # Test application
 echo_info "Testing application..."
@@ -128,13 +128,13 @@ if ssh ${PI_USER}@${PI_HOST} "curl -f http://localhost:3000 > /dev/null 2>&1"; t
     echo_info "Access your app at: http://gilko.redirectme.net:3000"
 else
     echo_error "Application health check failed. Checking logs..."
-    ssh ${PI_USER}@${PI_HOST} "cd ${DEPLOY_DIR} && docker compose logs --tail=50"
+    ssh ${PI_USER}@${PI_HOST} "cd ${DEPLOY_DIR}/pi_docker && docker compose logs --tail=50"
     exit 1
 fi
 
 # Show logs
 echo_info "Recent logs:"
-ssh ${PI_USER}@${PI_HOST} "cd ${DEPLOY_DIR} && docker compose logs --tail=20"
+ssh ${PI_USER}@${PI_HOST} "cd ${DEPLOY_DIR}/pi_docker && docker compose logs --tail=20"
 
 echo ""
 echo_info "================================================"
@@ -143,8 +143,8 @@ echo_info "================================================"
 echo_info "Application URL: http://gilko.redirectme.net:3000"
 echo_info ""
 echo_info "Useful commands:"
-echo_info "  View logs:    ssh ${PI_USER}@${PI_HOST} 'cd ${DEPLOY_DIR} && docker compose logs -f'"
-echo_info "  Restart:      ssh ${PI_USER}@${PI_HOST} 'cd ${DEPLOY_DIR} && docker compose restart'"
-echo_info "  Stop:         ssh ${PI_USER}@${PI_HOST} 'cd ${DEPLOY_DIR} && docker compose down'"
-echo_info "  Status:       ssh ${PI_USER}@${PI_HOST} 'cd ${DEPLOY_DIR} && docker compose ps'"
+echo_info "  View logs:    ssh ${PI_USER}@${PI_HOST} 'cd ${DEPLOY_DIR}/pi_docker && docker compose logs -f'"
+echo_info "  Restart:      ssh ${PI_USER}@${PI_HOST} 'cd ${DEPLOY_DIR}/pi_docker && docker compose restart'"
+echo_info "  Stop:         ssh ${PI_USER}@${PI_HOST} 'cd ${DEPLOY_DIR}/pi_docker && docker compose down'"
+echo_info "  Status:       ssh ${PI_USER}@${PI_HOST} 'cd ${DEPLOY_DIR}/pi_docker && docker compose ps'"
 echo_info "================================================"
