@@ -3,8 +3,8 @@ version: '3.8'
 services:
   web:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: pi_docker/Dockerfile
     container_name: diet-daily-web
     restart: unless-stopped
     ports:
@@ -13,7 +13,7 @@ services:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
     env_file:
-      - .env.production.pi
+      - pi_docker/.env.production.pi
     networks:
       - diet-daily-network
     healthcheck:
