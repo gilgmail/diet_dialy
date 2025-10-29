@@ -14,10 +14,12 @@ RUN npm ci && npm cache clean --force
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
 
-# Copy environment file for build
-COPY pi_docker/.env.production.pi ./.env.production
+# Copy environment file BEFORE copying source code
+COPY pi_docker/.env.production.pi ./.env.production.local
+
+# Copy source code
+COPY . .
 
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
