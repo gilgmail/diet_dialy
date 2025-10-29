@@ -8,6 +8,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+RUN ls -la && echo "=== Files in current directory ===" && cat package.json | head -5 && echo "=== Checking for lock file ===" && ls -la package-lock.json || echo "package-lock.json NOT FOUND"
 RUN npm ci && npm cache clean --force
 
 # Rebuild the source code only when needed
