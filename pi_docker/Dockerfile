@@ -7,9 +7,7 @@ RUN apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 
 # Copy package files
-RUN echo "=== DEBUG: Before COPY ===" && ls -la || true
 COPY package*.json ./
-RUN echo "=== DEBUG: After COPY ===" && ls -la && echo "=== package.json content ===" && cat package.json | head -5 && echo "=== Checking for lock file ===" && (ls -la package-lock.json && echo "FOUND package-lock.json") || echo "ERROR: package-lock.json NOT FOUND"
 RUN npm ci && npm cache clean --force
 
 # Rebuild the source code only when needed
