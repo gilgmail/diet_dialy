@@ -18,7 +18,7 @@ services:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
     env_file:
-      - pi_docker/.env.production.pi
+      - .env.production.pi
     networks:
       - diet-daily-network
     healthcheck:
