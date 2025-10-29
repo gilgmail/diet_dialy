@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
 import { foodsService } from '@/lib/supabase/foods'
 import { MultiConditionScorer } from '@/lib/ai/multi-condition-scorer'
+import { summarizeMultiConditionAnalysis } from '@/lib/ai/analysis-summary'
 import FilteredAIAnalysis from '@/components/ai/FilteredAIAnalysis'
 import AdminAIAnalysis from '@/components/ai/AdminAIAnalysis'
 import type { Food, FoodInsert, FoodUpdate } from '@/types/supabase'
@@ -335,6 +336,8 @@ export default function FoodDatabasePage() {
       setAiAnalysisResult(analysisResult)
 
       if (analysisResult.success) {
+        const summary = summarizeMultiConditionAnalysis(analysisResult)
+
         // 更新資料庫 - 保存完整的多條件分析結果
         const saveResponse = await fetch('/api/foods/save-demo-food', {
           method: 'POST',
@@ -371,6 +374,8 @@ export default function FoodDatabasePage() {
               general_analysis: analysisResult.general_analysis,
               timestamp: analysisResult.timestamp
             },
+            nutritional_highlights: summary.highlights,
+            risk_factors: summary.risks,
             scoring_method: analysisResult.general_analysis.method
           })
         })
@@ -388,8 +393,12 @@ export default function FoodDatabasePage() {
             ibd_scored_at: analysisResult.timestamp,
             ibd_scorer_version: 'v3.0-multi-condition-ai',
             ai_analysis: {
+              nutritional_highlights: summary.highlights,
+              risk_factors: summary.risks,
               multi_condition_analysis: analysisResult,
-              scoring_method: analysisResult.general_analysis.method
+              scoring_method: analysisResult.general_analysis.method,
+              confidence_level: `${(analysisResult.general_analysis.confidence * 100).toFixed(0)}%`,
+              analysis_timestamp: analysisResult.timestamp
             }
           }
 

@@ -3,7 +3,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { foodsService } from '@/lib/supabase/foods'
+import FilteredAIAnalysis from '@/components/ai/FilteredAIAnalysis'
+import { summarizeMultiConditionAnalysis } from '@/lib/ai/analysis-summary'
 import type { Food } from '@/types/supabase'
+import type { MultiConditionResult } from '@/lib/ai/multi-condition-scorer'
+import type { FilteredAnalysisResult } from '@/lib/medical-access-control'
 import {
   Search,
   Filter,
@@ -145,49 +149,89 @@ export default function FoodsPage() {
     }
   }
 
-  const getAIAnalysisDisplay = (food: Food): { highlights: string[], risks: string[], hasData: boolean } => {
+  interface AIAnalysisDisplay {
+    highlights: string[]
+    risks: string[]
+    hasData: boolean
+    multiCondition?: MultiConditionResult | null
+  }
+
+  const getAIAnalysisDisplay = (food: Food): AIAnalysisDisplay => {
     try {
       // Try to get AI analysis data from different possible sources
       const aiAnalysis = food.ai_analysis as any
       const medicalScores = food.medical_scores as any
 
-      let highlights: string[] = []
-      let risks: string[] = []
+      const highlights = new Set<string>()
+      const risks = new Set<string>()
+
+      const possibleMultiConditionSources = [
+        aiAnalysis?.multi_condition_analysis,
+        aiAnalysis?.multiConditionAnalysis,
+        aiAnalysis?.detailed_reasoning?.multi_condition_analysis,
+        aiAnalysis?.multi_condition_analysis?.multi_condition_analysis,
+        aiAnalysis
+      ]
+
+      let multiCondition: MultiConditionResult | null = null
+      for (const candidate of possibleMultiConditionSources) {
+        if (
+          candidate &&
+          typeof candidate === 'object' &&
+          Array.isArray((candidate as MultiConditionResult).conditions)
+        ) {
+          multiCondition = candidate as MultiConditionResult
+          break
+        }
+      }
 
       // Check if we have AI analysis data with nutritional highlights and risk factors
       if (aiAnalysis && typeof aiAnalysis === 'object') {
         if (Array.isArray(aiAnalysis.nutritional_highlights)) {
-          highlights = aiAnalysis.nutritional_highlights
+          aiAnalysis.nutritional_highlights.forEach((item: string) => highlights.add(item))
         }
         if (Array.isArray(aiAnalysis.risk_factors)) {
-          risks = aiAnalysis.risk_factors
+          aiAnalysis.risk_factors.forEach((item: string) => risks.add(item))
+        }
+        if (Array.isArray(aiAnalysis?.detailed_reasoning?.nutritional_strengths)) {
+          aiAnalysis.detailed_reasoning.nutritional_strengths.forEach((item: string) => highlights.add(item))
+        }
+        if (Array.isArray(aiAnalysis?.detailed_reasoning?.potential_risks)) {
+          aiAnalysis.detailed_reasoning.potential_risks.forEach((item: string) => risks.add(item))
         }
       }
 
+      if (multiCondition) {
+        const summary = summarizeMultiConditionAnalysis(multiCondition)
+        summary.highlights.forEach(item => highlights.add(item))
+        summary.risks.forEach(item => risks.add(item))
+      }
+
       // Fallback: Generate basic analysis from medical scores if no AI analysis
-      if (highlights.length === 0 && risks.length === 0 && medicalScores && typeof medicalScores === 'object') {
+      if (highlights.size === 0 && risks.size === 0 && medicalScores && typeof medicalScores === 'object') {
         const ibdScore = medicalScores.ibd_score || 3
         const chenoSafety = medicalScores.chemo_safety || 'caution'
         const fodmapLevel = medicalScores.fodmap_level || 'medium'
 
         // Generate highlights based on positive scores
-        if (ibdScore === 1) highlights.push('IBD友善食物')
-        if (chenoSafety === 'safe') highlights.push('化療期安全')
-        if (fodmapLevel === 'low') highlights.push('低FODMAP食物')
+        if (ibdScore === 1) highlights.add('IBD友善食物')
+        if (chenoSafety === 'safe') highlights.add('化療期安全')
+        if (fodmapLevel === 'low') highlights.add('低FODMAP食物')
 
         // Generate risks based on negative scores
-        if (ibdScore === 4) risks.push('IBD高風險')
-        if (chenoSafety === 'avoid') risks.push('化療期應避免')
-        if (fodmapLevel === 'high') risks.push('高FODMAP成分')
+        if (ibdScore === 4) risks.add('IBD高風險')
+        if (chenoSafety === 'avoid') risks.add('化療期應避免')
+        if (fodmapLevel === 'high') risks.add('高FODMAP成分')
       }
 
       return {
-        highlights,
-        risks,
-        hasData: highlights.length > 0 || risks.length > 0
+        highlights: Array.from(highlights),
+        risks: Array.from(risks),
+        hasData: highlights.size > 0 || risks.size > 0 || !!multiCondition,
+        multiCondition
       }
     } catch {
-      return { highlights: [], risks: [], hasData: false }
+      return { highlights: [], risks: [], hasData: false, multiCondition: null }
     }
   }
 
@@ -257,6 +301,17 @@ export default function FoodsPage() {
 
     const analysis = getAIAnalysisDisplay(selectedFoodForDetail)
     const score = getMedicalScore(selectedFoodForDetail)
+    const normalizedScore = Math.max(1, Math.min(5, Math.round(score))) as 1 | 2 | 3 | 4 | 5
+    const multiConditionResult = analysis.multiCondition ?? null
+    const filteredAnalysisResult: FilteredAnalysisResult | null = multiConditionResult ? {
+      success: multiConditionResult.success !== false,
+      food_name: multiConditionResult.food_name || selectedFoodForDetail.name,
+      overall_score: multiConditionResult.overall_score ?? normalizedScore,
+      visible_conditions: multiConditionResult.conditions || [],
+      allergen_analysis: multiConditionResult.allergen_analysis,
+      general_analysis: multiConditionResult.general_analysis,
+      access_level: 'basic'
+    } : null
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -335,6 +390,15 @@ export default function FoodsPage() {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {filteredAnalysisResult && (
+                    <div className="pt-2">
+                      <FilteredAIAnalysis
+                        result={filteredAnalysisResult}
+                        showPermissionInfo={false}
+                      />
                     </div>
                   )}
                 </div>

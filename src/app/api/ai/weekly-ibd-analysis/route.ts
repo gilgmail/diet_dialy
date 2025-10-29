@@ -26,6 +26,11 @@ interface WeeklyReportPayload {
   totals: Record<string, any>
   prompt: string
   analysis: Record<string, any>
+  datasetSummary: {
+    foodEntries: number
+    symptomEntries: number
+    totalRecords: number
+  }
 }
 
 type WeeklyAnalysisStatusState = 'pending' | 'in_progress' | 'completed' | 'failed'
@@ -89,6 +94,13 @@ async function upsertWeeklyReport(
 
     const { timeframe } = analysis
     const key = `${userId}/${timeframe.startDate}_${timeframe.endDate}_${Date.now()}.json`
+    const foodEntries = analysis.totals?.food_entries ?? 0
+    const symptomEntries = analysis.totals?.symptom_entries ?? 0
+    const datasetSummary = {
+      foodEntries,
+      symptomEntries,
+      totalRecords: foodEntries + symptomEntries,
+    }
 
     const payload: WeeklyReportPayload = {
       userId,
@@ -98,6 +110,7 @@ async function upsertWeeklyReport(
       totals: analysis.totals,
       prompt: analysis.prompt_used,
       analysis: analysis.analysis,
+      datasetSummary,
     }
 
     const { error } = await admin.storage
@@ -139,6 +152,12 @@ async function fetchWeeklyHistory(userId: string, limit = DEFAULT_HISTORY_LIMIT)
 
         const json = JSON.parse(await download.data.text()) as WeeklyReportPayload
         const analysis = json.analysis || {}
+        const datasetSummary = json.datasetSummary || {
+          foodEntries: json.totals?.food_entries ?? 0,
+          symptomEntries: json.totals?.symptom_entries ?? 0,
+          totalRecords:
+            (json.totals?.food_entries ?? 0) + (json.totals?.symptom_entries ?? 0),
+        }
 
         const reportId = encodeKey(fileKey)
         return {
@@ -153,6 +172,7 @@ async function fetchWeeklyHistory(userId: string, limit = DEFAULT_HISTORY_LIMIT)
           jsonPath: `/api/ai/weekly-ibd-analysis/${reportId}/json`,
           foodsToMonitor: analysis.foods_to_monitor || [],
           supportiveFoods: analysis.supportive_foods || [],
+          datasetSummary,
         }
       })
     )

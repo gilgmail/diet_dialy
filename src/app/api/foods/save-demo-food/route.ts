@@ -5,6 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { summarizeMultiConditionAnalysis } from '@/lib/ai/analysis-summary'
+import type { MultiConditionResult } from '@/lib/ai/multi-condition-scorer'
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,6 +42,57 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    const nowIso = new Date().toISOString()
+    const multiConditionAnalysis =
+      (foodData.multi_condition_analysis || foodData.multiConditionAnalysis) as MultiConditionResult | undefined
+    const summaryFromMultiCondition = summarizeMultiConditionAnalysis(multiConditionAnalysis)
+    const fallbackHighlights = Array.isArray(foodData.nutritional_highlights)
+      ? foodData.nutritional_highlights
+      : Array.isArray(foodData.nutritionalHighlights)
+        ? foodData.nutritionalHighlights
+        : []
+    const fallbackRisks = Array.isArray(foodData.risk_factors)
+      ? foodData.risk_factors
+      : Array.isArray(foodData.riskFactors)
+        ? foodData.riskFactors
+        : []
+    const combinedHighlights = Array.from(new Set([
+      ...fallbackHighlights,
+      ...summaryFromMultiCondition.highlights
+    ]))
+    const combinedRisks = Array.from(new Set([
+      ...fallbackRisks,
+      ...summaryFromMultiCondition.risks
+    ]))
+    const analysisTimestamp = foodData.ibd_scored_at || foodData.analysis_timestamp || nowIso
+    const rawConfidence =
+      typeof foodData.ibd_confidence === 'number'
+        ? foodData.ibd_confidence
+        : typeof foodData.confidence === 'number'
+          ? foodData.confidence
+          : null
+    const confidenceLevel =
+      rawConfidence !== null
+        ? `${Math.round(rawConfidence * 100)}%`
+        : (typeof foodData.confidence_level === 'string' ? foodData.confidence_level : '95%')
+    const scoringMethod = foodData.scoring_method || 'enhanced_ai'
+    const aiAnalysisPayload = {
+      nutritional_highlights: combinedHighlights,
+      risk_factors: combinedRisks,
+      scoring_method: scoringMethod,
+      confidence_level: confidenceLevel,
+      analysis_timestamp: analysisTimestamp,
+      multi_condition_analysis: multiConditionAnalysis || null,
+      detailed_reasoning: {
+        score_breakdown: foodData.ibd_reasoning || [],
+        professional_recommendations: foodData.ibd_recommendations || '',
+        special_warnings: foodData.ibd_warning || null,
+        nutritional_strengths: combinedHighlights,
+        potential_risks: combinedRisks,
+        multi_condition_summary: summaryFromMultiCondition
+      }
+    }
+
     // 檢查食物是否已存在（檢查所有狀態，不只是 pending）
     const { data: existingFood } = await supabase
       .from('diet_daily_foods')
@@ -66,24 +119,11 @@ export async function POST(request: NextRequest) {
           ibd_recommendations: foodData.ibd_recommendations || '',
           ibd_confidence: foodData.ibd_confidence || 0,
           ibd_warning: foodData.ibd_warning,
-          ibd_scored_at: foodData.ibd_scored_at || new Date().toISOString(),
-          ibd_scorer_version: foodData.ibd_scorer_version || 'v2.0-enhanced-ai',
+          ibd_scored_at: analysisTimestamp,
+          ibd_scorer_version: foodData.ibd_scorer_version || (multiConditionAnalysis ? 'v3.0-multi-condition-ai' : 'v2.0-enhanced-ai'),
           // 擴展 AI 分析欄位（使用 JSON 欄位儲存詳細數據）
-          ai_analysis: {
-            nutritional_highlights: foodData.nutritional_highlights || [],
-            risk_factors: foodData.risk_factors || [],
-            scoring_method: foodData.scoring_method || 'enhanced_ai',
-            confidence_level: foodData.ibd_confidence ? `${(foodData.ibd_confidence * 100).toFixed(0)}%` : '95%',
-            analysis_timestamp: foodData.ibd_scored_at || new Date().toISOString(),
-            detailed_reasoning: {
-              score_breakdown: foodData.ibd_reasoning || [],
-              professional_recommendations: foodData.ibd_recommendations || '',
-              special_warnings: foodData.ibd_warning || null,
-              nutritional_strengths: foodData.nutritional_highlights || [],
-              potential_risks: foodData.risk_factors || []
-            }
-          },
-          updated_at: new Date().toISOString()
+          ai_analysis: aiAnalysisPayload,
+          updated_at: nowIso
         })
         .eq('id', existingFood.id)
         .select()
@@ -124,26 +164,13 @@ export async function POST(request: NextRequest) {
           ibd_recommendations: foodData.ibd_recommendations || '',
           ibd_confidence: foodData.ibd_confidence || 0,
           ibd_warning: foodData.ibd_warning,
-          ibd_scored_at: foodData.ibd_scored_at || new Date().toISOString(),
-          ibd_scorer_version: foodData.ibd_scorer_version || 'v2.0-enhanced-ai',
+          ibd_scored_at: analysisTimestamp,
+          ibd_scorer_version: foodData.ibd_scorer_version || (multiConditionAnalysis ? 'v3.0-multi-condition-ai' : 'v2.0-enhanced-ai'),
           // 擴展 AI 分析欄位（使用 JSON 欄位儲存詳細數據）
-          ai_analysis: {
-            nutritional_highlights: foodData.nutritional_highlights || [],
-            risk_factors: foodData.risk_factors || [],
-            scoring_method: foodData.scoring_method || 'enhanced_ai',
-            confidence_level: foodData.ibd_confidence ? `${(foodData.ibd_confidence * 100).toFixed(0)}%` : '95%',
-            analysis_timestamp: foodData.ibd_scored_at || new Date().toISOString(),
-            detailed_reasoning: {
-              score_breakdown: foodData.ibd_reasoning || [],
-              professional_recommendations: foodData.ibd_recommendations || '',
-              special_warnings: foodData.ibd_warning || null,
-              nutritional_strengths: foodData.nutritional_highlights || [],
-              potential_risks: foodData.risk_factors || []
-            }
-          },
+          ai_analysis: aiAnalysisPayload,
           verification_status: 'pending', // 標記為測試數據
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          created_at: nowIso,
+          updated_at: nowIso
         })
         .select()
         .single()
