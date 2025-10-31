@@ -113,6 +113,38 @@ describe('Multi-Condition Scorer', () => {
     });
   });
 
+  describe('組合食物解析', () => {
+    test('應將含分隔符號的食物名稱拆解並彙整分析結果', async () => {
+      const scorer = new MultiConditionScorer();
+
+      const result = await scorer.scoreFoodForConditions(
+        {
+          name: '雞肉飯, 炒青菜',
+          category: '便當',
+          calories: 520,
+          protein: 30,
+          fat: 12,
+          carbohydrates: 60
+        },
+        [
+          { type: 'IBD', severity: 'moderate' },
+          { type: 'IBS', severity: 'moderate' }
+        ]
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.food_name).toBe('雞肉飯, 炒青菜');
+      expect(result.conditions.length).toBeGreaterThanOrEqual(2);
+      expect(result.general_analysis.reasoning[0]).toContain('組合食材');
+
+      result.conditions.forEach(condition => {
+        expect(condition.reasoning[0]).toContain('組合食材');
+        expect(condition.score).toBeGreaterThanOrEqual(1);
+        expect(condition.score).toBeLessThanOrEqual(5);
+      });
+    });
+  });
+
   // 未來擴展測試 (Phase 2)
   describe.skip('高級功能測試 (Phase 2)', () => {
     test('個人化評分邏輯', () => {

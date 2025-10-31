@@ -33,5 +33,55 @@
       "fructans": "low",
       "galactans": "moderate"
     }
+  },
+  "153d4a58-8406-4304-b5b1-1fd9ee433aa6": {
+    "id": "profile_153d4a58-8406-4304-b5b1-1fd9ee433aa6",
+    "userId": "153d4a58-8406-4304-b5b1-1fd9ee433aa6",
+    "allergies": [
+      "nuts"
+    ],
+    "medications": [
+      {
+        "id": "med-mesalazine",
+        "name": "Mesalazine",
+        "dosage": "1g",
+        "frequency": "twice daily",
+        "startDate": "2024-12-01T00:00:00.000Z",
+        "purpose": "IBD symptom control",
+        "sideEffects": [
+          "nausea"
+        ],
+        "isActive": true
+      }
+    ],
+    "dietaryRestrictions": [
+      "low_fodmap",
+      "low_fat"
+    ],
+    "createdAt": "2025-02-17T08:00:00.000Z",
+    "updatedAt": "2025-02-17T08:00:00.000Z",
+    "primary_condition": "ibd",
+    "secondary_conditions": [
+      "ibs"
+    ],
+    "known_allergies": [
+      "nuts"
+    ],
+    "personal_triggers": [
+      "fried_food",
+      "high_fiber"
+    ],
+    "current_phase": "remission",
+    "current_side_effects": [],
+    "lactose_intolerant": false,
+    "fiber_sensitive": true,
+    "allergy_severity_levels": {
+      "nuts": "moderate"
+    },
+    "ibs_subtype": "ibs_d",
+    "fodmap_tolerance": {
+      "fructans": "medium",
+      "polyols": "low"
+    }
   }
 }

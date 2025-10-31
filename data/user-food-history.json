@@ -383,12 +383,136 @@
           "清蒸魚",
           "豆腐"
         ],
-        "medicalReason": " 含有IBD高風險因子，可能引發急性症狀",
-        "urgency": "medium"
+      "medicalReason": " 含有IBD高風險因子，可能引發急性症狀",
+      "urgency": "medium"
+    },
+    "tags": [],
+    "createdAt": "2025-09-15T18:22:43.400Z",
+    "updatedAt": "2025-09-15T18:22:43.400Z"
+    },
+    {
+      "id": "f3f9d7c1-7c92-4b7a-9f25-4c1a45da1c10",
+      "userId": "153d4a58-8406-4304-b5b1-1fd9ee433aa6",
+      "foodId": "d2a5b3f6-2bd5-4f67-9a74-6b1d2d41e9ab",
+      "foodData": {
+        "id": "d2a5b3f6-2bd5-4f67-9a74-6b1d2d41e9ab",
+        "name_zh": "雞肉飯, 炒青菜",
+        "name_en": "Chicken Rice with Stir-fried Greens",
+        "category": "combo",
+        "medical_scores": {
+          "ibd_score": 3,
+          "ibd_risk_factors": [
+            "moderate fat"
+          ],
+          "chemo_safety": "safe",
+          "major_allergens": [],
+          "fodmap_level": "medium"
+        },
+        "availability": {
+          "taiwan": true,
+          "hong_kong": true,
+          "seasonal": null
+        },
+        "cooking_methods": [
+          "煮",
+          "炒"
+        ],
+        "alternatives": [],
+        "created": "2025-02-18T08:00:00.000Z",
+        "medical_validated": false
       },
-      "tags": [],
-      "createdAt": "2025-09-15T18:22:43.400Z",
-      "updatedAt": "2025-09-15T18:22:43.400Z"
+      "consumedAt": "2025-02-17T12:30:00.000Z",
+      "portion": {
+        "amount": 1,
+        "unit": "bento"
+      },
+      "medicalScore": {
+        "score": 3,
+        "level": "中等",
+        "emoji": "😐",
+        "riskFactors": [
+          "可能含有中度油脂"
+        ],
+        "recommendations": [
+          "若為IBD患者，建議酌量食用並搭配蔬菜",
+          "留意調味醬料的油脂與辛香料"
+        ],
+        "alternatives": [
+          "清蒸雞胸肉",
+          "燙青菜"
+        ],
+        "medicalReason": "組合餐點依烹調方式不同，整體風險為中等",
+        "urgency": "low"
+      },
+      "notes": "午餐外食",
+      "tags": [
+        "combo-test"
+      ],
+      "createdAt": "2025-02-17T12:30:00.000Z",
+      "updatedAt": "2025-02-17T12:30:00.000Z"
+    },
+    {
+      "id": "9c2c35f0-5d74-45d4-b070-bdb1bdae0eaf",
+      "userId": "153d4a58-8406-4304-b5b1-1fd9ee433aa6",
+      "foodId": "4f7c3e22-0f74-4f0f-8b4d-1e27a4c23b65",
+      "foodData": {
+        "id": "4f7c3e22-0f74-4f0f-8b4d-1e27a4c23b65",
+        "name_zh": "燕麥粥、藍莓、堅果",
+        "name_en": "Oatmeal with Blueberries and Nuts",
+        "category": "breakfast",
+        "medical_scores": {
+          "ibd_score": 4,
+          "ibd_risk_factors": [
+            "high fiber"
+          ],
+          "chemo_safety": "safe",
+          "major_allergens": [
+            "nuts"
+          ],
+          "fodmap_level": "medium"
+        },
+        "availability": {
+          "taiwan": true,
+          "hong_kong": true,
+          "seasonal": false
+        },
+        "cooking_methods": [
+          "煮"
+        ],
+        "alternatives": [],
+        "created": "2025-02-18T08:05:00.000Z",
+        "medical_validated": false
+      },
+      "consumedAt": "2025-02-18T08:15:00.000Z",
+      "portion": {
+        "amount": 1,
+        "unit": "bowl"
+      },
+      "medicalScore": {
+        "score": 4,
+        "level": "良好",
+        "emoji": "👍",
+        "riskFactors": [
+          "堅果可能引發過敏",
+          "纖維含量偏高，需評估腸胃耐受度"
+        ],
+        "recommendations": [
+          "若腸胃敏感，可減少堅果或改成浸泡燕麥",
+          "搭配水分攝取以避免脹氣"
+        ],
+        "alternatives": [
+          "香蕉燕麥粥",
+          "低脂優格配果泥"
+        ],
+        "medicalReason": "整體營養均衡，細部成分需依個人狀況調整",
+        "urgency": "low"
+      },
+      "notes": "早餐自煮",
+      "tags": [
+        "combo-test"
+      ],
+      "createdAt": "2025-02-18T08:15:00.000Z",
+      "updatedAt": "2025-02-18T08:15:00.000Z"
     }
   ],
   "metadata": {
