@@ -194,27 +194,39 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
           )}
 
           {/* Today's Statistics */}
-          <View style={styles.statsContainer}>
-            <Text style={styles.statsTitle}>本日已記錄</Text>
+          <TouchableOpacity
+            style={styles.statsContainer}
+            onPress={() => navigation.navigate('FoodDayDetail', { date: selectedDateKey })}
+            activeOpacity={0.7}
+          >
+            <View style={styles.statsHeader}>
+              <Text style={styles.statsTitle}>本日已記錄</Text>
+              <IconButton icon="chevron-right" size={20} />
+            </View>
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
                 <Text style={styles.statIcon}>🌅</Text>
                 <Text style={styles.statCount}>{todayStats.breakfast}</Text>
+                <Text style={styles.statLabel}>早餐</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={styles.statIcon}>☀️</Text>
                 <Text style={styles.statCount}>{todayStats.lunch}</Text>
+                <Text style={styles.statLabel}>午餐</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={styles.statIcon}>🌙</Text>
                 <Text style={styles.statCount}>{todayStats.dinner}</Text>
+                <Text style={styles.statLabel}>晚餐</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={styles.statIcon}>🍪</Text>
                 <Text style={styles.statCount}>{todayStats.snack}</Text>
+                <Text style={styles.statLabel}>點心</Text>
               </View>
             </View>
-          </View>
+            <Text style={styles.statsHint}>點擊查看詳情並編輯餐別</Text>
+          </TouchableOpacity>
 
           {/* Recent Entries */}
           {recentEntries.length > 0 && (
@@ -243,16 +255,6 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
                   : '輸入食物名稱...'
               }
               requireDatabaseSelection={requireDatabaseFood}
-            />
-          </View>
-
-          {/* Meal Type */}
-          <View style={styles.section}>
-            <SegmentedButtons
-              value={mealType}
-              onValueChange={value => setMealType(value as MealType)}
-              buttons={mealTypeButtons}
-              style={styles.segmentedButtons}
             />
           </View>
         </View>
@@ -341,16 +343,24 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  statsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
   },
   statsTitle: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.secondary,
-    marginBottom: spacing.md,
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    marginBottom: spacing.sm,
   },
   statItem: {
     alignItems: 'center',
@@ -363,6 +373,17 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
+    marginBottom: spacing.xs / 2,
+  },
+  statLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+  },
+  statsHint: {
+    fontSize: typography.fontSize.xs,
+    color: colors.primary[500],
+    textAlign: 'center',
+    marginTop: spacing.xs,
   },
   section: {
     marginBottom: spacing.lg,

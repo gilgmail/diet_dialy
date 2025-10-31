@@ -53,6 +53,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     latestAnalysisStatus ?? null
   )
   const [latestReportId, setLatestReportId] = useState<string | null>(null)
+  const [showAllReports, setShowAllReports] = useState(false)
   const scrollViewRef = React.useRef<ScrollView>(null)
 
   useEffect(() => {
@@ -535,52 +536,24 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
         </View>
       )}
 
-      {/* Quick Stats - Optimized Layout */}
+      {/* Quick Stats - Compact Combined Layout */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>今日概況</Text>
-        <View style={styles.statsCompactRow}>
-          <View style={styles.statCompactItem}>
-            <StatCard
-              icon="food-apple"
-              iconColor="#10B981"
-              label="今日飲食"
-              value={stats?.todayFoodEntries || 0}
-              subtitle="筆記錄"
-            />
+        <View style={styles.statsSuperCompactGrid}>
+          <View style={styles.statsSuperCompactItem}>
+            <Text style={styles.statsSuperCompactLabel}>今日飲食</Text>
+            <Text style={styles.statsSuperCompactValue}>{stats?.todayFoodEntries || 0}</Text>
           </View>
-          <View style={styles.statCompactItem}>
-            <StatCard
-              icon="medical-bag"
-              iconColor="#EF4444"
-              label="症狀"
-              value={stats?.todaySymptomEntries || 0}
-              subtitle="筆記錄"
-            />
+          <View style={styles.statsSuperCompactItem}>
+            <Text style={styles.statsSuperCompactLabel}>今日症狀</Text>
+            <Text style={styles.statsSuperCompactValue}>{stats?.todaySymptomEntries || 0}</Text>
           </View>
-        </View>
-      </View>
-
-      {/* Weekly Stats */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>本週數據</Text>
-        <View style={styles.statsCompactRow}>
-          <View style={styles.statCompactItem}>
-            <StatCard
-              icon="calendar-week"
-              iconColor={colors.primary[500]}
-              label="本週飲食"
-              value={stats?.weekFoodEntries || 0}
-              subtitle="筆記錄"
-            />
+          <View style={styles.statsSuperCompactItem}>
+            <Text style={styles.statsSuperCompactLabel}>本週飲食</Text>
+            <Text style={styles.statsSuperCompactValue}>{stats?.weekFoodEntries || 0}</Text>
           </View>
-          <View style={styles.statCompactItem}>
-            <StatCard
-              icon="chart-line"
-              iconColor="#8B5CF6"
-              label="本週症狀"
-              value={stats?.weekSymptomEntries || 0}
-              subtitle="筆記錄"
-            />
+          <View style={styles.statsSuperCompactItem}>
+            <Text style={styles.statsSuperCompactLabel}>本週症狀</Text>
+            <Text style={styles.statsSuperCompactValue}>{stats?.weekSymptomEntries || 0}</Text>
           </View>
         </View>
       </View>
@@ -621,22 +594,6 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
             )}
           </TouchableOpacity>
         </View>
-        {analysisStatus && (
-          <View style={styles.analysisStatusCard}>
-            <Text style={styles.analysisStatusTitle}>最新分析狀態</Text>
-            <Text style={styles.analysisStatusSummary}>
-              {analysisStatus.datasetSummary.totalRecords > 0
-                ? `資料筆數：${analysisStatus.datasetSummary.totalRecords}（飲食 ${analysisStatus.datasetSummary.foodEntries}、症狀 ${analysisStatus.datasetSummary.symptomEntries}）`
-                : '尚未取得可分析資料。'}
-            </Text>
-            {analysisStatus.steps.map((step) => renderStatusStep(step, 'card-'))}
-            {analysisStatus.lastUpdated ? (
-              <Text style={styles.analysisStatusTimestamp}>
-                最後更新：{formatTimestamp(analysisStatus.lastUpdated) ?? analysisStatus.lastUpdated}
-              </Text>
-            ) : null}
-          </View>
-        )}
         {insights.length > 0 ? (
           insights.map((insight) => (
             <InsightCard key={insight.id} insight={insight} />
@@ -652,68 +609,136 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>AI 分析報告歷史</Text>
         {analysisHistory.length > 0 ? (
-          analysisHistory.map((item) => (
-            <View
-              key={item.id}
-              style={[
-                styles.historyCard,
-                item.id === latestReportId && styles.historyCardNew
-              ]}
-            >
-              <View style={styles.historyHeader}>
-                <View style={{ flex: 1 }}>
-                  <View style={styles.historyTitleRow}>
+          <>
+            {analysisHistory.slice(0, 2).map((item) => (
+              <View
+                key={item.id}
+                style={[
+                  styles.historyCard,
+                  item.id === latestReportId && styles.historyCardNew
+                ]}
+              >
+                <View style={styles.historyHeader}>
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.historyTitleRow}>
+                      <Text style={styles.historyTitle}>{item.title}</Text>
+                      {item.id === latestReportId && (
+                        <View style={styles.newBadge}>
+                          <Text style={styles.newBadgeText}>最新</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.historySubtitle}>
+                      {`${item.startDate} ~ ${item.endDate}`}
+                    </Text>
+                    {item.createdAt && (
+                      <Text style={styles.historyTimestamp}>
+                        產出時間：{new Date(item.createdAt).toLocaleString('zh-TW', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </Text>
+                    )}
+                    <Text style={styles.historySummary} numberOfLines={3}>
+                      {item.summary || '這份報告包含腸道健康的重點洞察。'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.historyActions}>
+                  <TouchableOpacity
+                    style={styles.historyButton}
+                    onPress={() => handleViewReport(item)}
+                  >
+                    <Text style={styles.historyButtonText}>查看完整報告</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.historyButton, styles.historyButtonSecondary]}
+                    onPress={() => handleShareAnalysis(item)}
+                  >
+                    <Text style={styles.historyButtonSecondaryText}>分享摘要</Text>
+                  </TouchableOpacity>
+                </View>
+                {item.followUpActions.length > 0 && (
+                  <View style={styles.historyFollowUps}>
+                    {item.followUpActions.slice(0, 2).map((action, index) => (
+                      <Text key={`${item.id}-follow-${index}`} style={styles.historyFollowUpText}>
+                        • {action}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ))}
+
+            {/* Show collapsed older reports if more than 2 */}
+            {analysisHistory.length > 2 && !showAllReports && (
+              <TouchableOpacity
+                style={styles.expandButton}
+                onPress={() => setShowAllReports(true)}
+              >
+                <Text style={styles.expandButtonText}>
+                  還有 {analysisHistory.length - 2} 週的報告
+                </Text>
+                <Text style={styles.expandButtonIcon}>▼</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Show remaining reports when expanded */}
+            {showAllReports && analysisHistory.slice(2).map((item) => (
+              <View
+                key={item.id}
+                style={styles.historyCard}
+              >
+                <View style={styles.historyHeader}>
+                  <View style={{ flex: 1 }}>
                     <Text style={styles.historyTitle}>{item.title}</Text>
-                    {item.id === latestReportId && (
-                      <View style={styles.newBadge}>
-                        <Text style={styles.newBadgeText}>最新</Text>
-                      </View>
+                    <Text style={styles.historySubtitle}>
+                      {`${item.startDate} ~ ${item.endDate}`}
+                    </Text>
+                    {item.createdAt && (
+                      <Text style={styles.historyTimestamp}>
+                        產出時間：{new Date(item.createdAt).toLocaleString('zh-TW', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </Text>
                     )}
                   </View>
-                  <Text style={styles.historySubtitle}>
-                    {`${item.startDate} ~ ${item.endDate}`}
-                  </Text>
-                  {item.createdAt && (
-                    <Text style={styles.historyTimestamp}>
-                      產出時間：{new Date(item.createdAt).toLocaleString('zh-TW', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </Text>
-                  )}
-                  <Text style={styles.historySummary} numberOfLines={3}>
-                    {item.summary || '這份報告包含腸道健康的重點洞察。'}
-                  </Text>
+                </View>
+                <View style={styles.historyActions}>
+                  <TouchableOpacity
+                    style={styles.historyButton}
+                    onPress={() => handleViewReport(item)}
+                  >
+                    <Text style={styles.historyButtonText}>查看報告</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.historyButton, styles.historyButtonSecondary]}
+                    onPress={() => handleShareAnalysis(item)}
+                  >
+                    <Text style={styles.historyButtonSecondaryText}>分享</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-              <View style={styles.historyActions}>
-                <TouchableOpacity
-                  style={styles.historyButton}
-                  onPress={() => handleViewReport(item)}
-                >
-                  <Text style={styles.historyButtonText}>查看完整報告</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.historyButton, styles.historyButtonSecondary]}
-                  onPress={() => handleShareAnalysis(item)}
-                >
-                  <Text style={styles.historyButtonSecondaryText}>分享摘要</Text>
-                </TouchableOpacity>
-              </View>
-              {item.followUpActions.length > 0 && (
-                <View style={styles.historyFollowUps}>
-                  {item.followUpActions.slice(0, 2).map((action, index) => (
-                    <Text key={`${item.id}-follow-${index}`} style={styles.historyFollowUpText}>
-                      • {action}
-                    </Text>
-                  ))}
-                </View>
-              )}
-            </View>
-          ))
+            ))}
+
+            {/* Collapse button */}
+            {showAllReports && analysisHistory.length > 2 && (
+              <TouchableOpacity
+                style={styles.collapseButton}
+                onPress={() => setShowAllReports(false)}
+              >
+                <Text style={styles.expandButtonText}>收起舊報告</Text>
+                <Text style={styles.expandButtonIcon}>▲</Text>
+              </TouchableOpacity>
+            )}
+          </>
         ) : (
           <Text style={styles.emptyInsightText}>
             尚未建立 AI 報告歷史。執行「一週 AI 分析」後，報告會自動儲存於此。
@@ -898,6 +923,31 @@ const styles = StyleSheet.create({
   statCompactItem: {
     flex: 1,
   },
+  statsSuperCompactGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: spacing.md,
+  },
+  statsSuperCompactItem: {
+    width: '48%',
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    padding: spacing.md,
+    alignItems: 'center',
+  },
+  statsSuperCompactLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
+  },
+  statsSuperCompactValue: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary[600],
+  },
   emptyContainer: {
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
@@ -1023,6 +1073,40 @@ const styles = StyleSheet.create({
   },
   historyFollowUpText: {
     fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+  },
+  expandButton: {
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  collapseButton: {
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: spacing.sm,
+    marginTop: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  expandButtonText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    fontWeight: typography.fontWeight.medium,
+  },
+  expandButtonIcon: {
+    fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
   },
   modalOverlay: {
