@@ -261,23 +261,28 @@ export function HomeScreen() {
             <View style={styles.statsContainer}>
               <Text style={styles.statsTitle}>本日已記錄</Text>
               <View style={styles.statsRow}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statIcon}>🌅</Text>
-                  <Text style={styles.statCount}>{todayStats.breakfast}</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statIcon}>☀️</Text>
-                  <Text style={styles.statCount}>{todayStats.lunch}</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statIcon}>🌙</Text>
-                  <Text style={styles.statCount}>{todayStats.dinner}</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statIcon}>🍪</Text>
-                  <Text style={styles.statCount}>{todayStats.snack}</Text>
-                </View>
+                {MEAL_TYPES.map((meal) => {
+                  const isSelected = mealType === meal.value
+                  const count = todayStats[meal.value as keyof typeof todayStats] ?? 0
+                  return (
+                    <TouchableOpacity
+                      key={meal.value}
+                      style={[styles.statItem, isSelected && styles.statItemSelected]}
+                      onPress={() => setMealType(meal.value)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.statIcon}>{meal.icon}</Text>
+                      <Text style={styles.statCount}>{count}</Text>
+                      {isSelected && (
+                        <View style={styles.statBadge}>
+                          <Text style={styles.statBadgeText}>{meal.label}</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  )
+                })}
               </View>
+              <Text style={styles.statsHint}>點擊圖示選擇餐別</Text>
             </View>
 
             {/* Recent Entries */}
@@ -308,27 +313,6 @@ export function HomeScreen() {
                 }
                 requireDatabaseSelection={requireDatabaseFood}
               />
-            </View>
-
-            {/* Meal Type */}
-            <View style={styles.section}>
-              <View style={styles.mealTypeGrid}>
-                {MEAL_TYPES.map((meal) => (
-                  <TouchableOpacity
-                    key={meal.value}
-                    style={[
-                      styles.mealTypeButton,
-                      mealType === meal.value && styles.mealTypeButtonActive,
-                    ]}
-                    onPress={() => setMealType(meal.value)}
-                  >
-                    <Text style={styles.mealTypeEmoji}>{meal.icon}</Text>
-                    {mealType === meal.value && (
-                      <Text style={styles.mealTypeLabel}>{meal.label}</Text>
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
             </View>
 
             {/* Submit Button */}
@@ -633,19 +617,48 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
   statItem: {
+    flex: 1,
     alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  statItemSelected: {
+    borderColor: colors.success,
+    backgroundColor: colors.success + '10',
   },
   statIcon: {
-    fontSize: 20,
+    fontSize: 24,
     marginBottom: spacing.xs,
   },
   statCount: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
+  },
+  statBadge: {
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 2,
+    borderRadius: 999,
+    backgroundColor: colors.success + '20',
+  },
+  statBadgeText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.success,
+  },
+  statsHint: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
   recentEntriesContainer: {
     backgroundColor: colors.primary[50],
@@ -723,37 +736,6 @@ const styles = StyleSheet.create({
   },
   segmentedButtons: {
     backgroundColor: colors.surface,
-  },
-  mealTypeGrid: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    justifyContent: 'space-between',
-  },
-  mealTypeButton: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    borderWidth: 2,
-    borderColor: colors.border,
-    minHeight: 60,
-    gap: spacing.xs,
-  },
-  mealTypeButtonActive: {
-    backgroundColor: colors.success + '10',
-    borderColor: colors.success,
-  },
-  mealTypeEmoji: {
-    fontSize: 24,
-  },
-  mealTypeLabel: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.success,
   },
   submitButton: {
     marginTop: spacing.md,

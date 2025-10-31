@@ -127,30 +127,28 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
         {
           key: 'dataset',
           label: '整理分析資料',
-          state: totalRecords > 0 ? 'completed' : 'failed',
+          state: totalRecords > 0 ? 'in_progress' : 'failed',
           detail:
             totalRecords > 0
               ? `目前正在分析 ${totalRecords} 筆資料（飲食 ${foodEntries}、症狀 ${symptomEntries}）。`
               : '尚未取得足夠的資料。',
-          timestamp: now,
         },
         {
           key: 'server_processing',
           label: '伺服器分析中',
           state: 'in_progress',
           detail: 'AI 正在處理分析，請稍候...',
-          timestamp: now,
         },
         {
           key: 'server_response',
           label: '伺服器回應',
-          state: 'pending',
+          state: 'in_progress',
           detail: '等待伺服器回應。',
         },
         {
           key: 'report_generation',
           label: '是否產生報告',
-          state: 'pending',
+          state: 'in_progress',
           detail: '完成後會自動更新報告狀態。',
         },
       ],
