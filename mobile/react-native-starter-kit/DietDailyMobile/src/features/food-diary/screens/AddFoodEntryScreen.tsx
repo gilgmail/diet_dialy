@@ -193,40 +193,75 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
             />
           )}
 
-          {/* Today's Statistics */}
-          <TouchableOpacity
-            style={styles.statsContainer}
-            onPress={() => navigation.navigate('FoodDayDetail', { date: selectedDateKey })}
-            activeOpacity={0.7}
-          >
+          {/* Today's Statistics & Meal Type Selector */}
+          <View style={styles.statsContainer}>
             <View style={styles.statsHeader}>
-              <Text style={styles.statsTitle}>本日已記錄</Text>
-              <IconButton icon="chevron-right" size={20} />
+              <Text style={styles.statsTitle}>本日已記錄 · 選擇餐別</Text>
             </View>
             <View style={styles.statsRow}>
-              <View style={styles.statItem}>
+              <TouchableOpacity
+                style={[
+                  styles.statItem,
+                  mealType === 'breakfast' && styles.statItemSelected
+                ]}
+                onPress={() => setMealType('breakfast')}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.statIcon}>🌅</Text>
                 <Text style={styles.statCount}>{todayStats.breakfast}</Text>
-                <Text style={styles.statLabel}>早餐</Text>
-              </View>
-              <View style={styles.statItem}>
+                <Text style={[
+                  styles.statLabel,
+                  mealType === 'breakfast' && styles.statLabelSelected
+                ]}>早餐</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.statItem,
+                  mealType === 'lunch' && styles.statItemSelected
+                ]}
+                onPress={() => setMealType('lunch')}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.statIcon}>☀️</Text>
                 <Text style={styles.statCount}>{todayStats.lunch}</Text>
-                <Text style={styles.statLabel}>午餐</Text>
-              </View>
-              <View style={styles.statItem}>
+                <Text style={[
+                  styles.statLabel,
+                  mealType === 'lunch' && styles.statLabelSelected
+                ]}>午餐</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.statItem,
+                  mealType === 'dinner' && styles.statItemSelected
+                ]}
+                onPress={() => setMealType('dinner')}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.statIcon}>🌙</Text>
                 <Text style={styles.statCount}>{todayStats.dinner}</Text>
-                <Text style={styles.statLabel}>晚餐</Text>
-              </View>
-              <View style={styles.statItem}>
+                <Text style={[
+                  styles.statLabel,
+                  mealType === 'dinner' && styles.statLabelSelected
+                ]}>晚餐</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.statItem,
+                  mealType === 'snack' && styles.statItemSelected
+                ]}
+                onPress={() => setMealType('snack')}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.statIcon}>🍪</Text>
                 <Text style={styles.statCount}>{todayStats.snack}</Text>
-                <Text style={styles.statLabel}>點心</Text>
-              </View>
+                <Text style={[
+                  styles.statLabel,
+                  mealType === 'snack' && styles.statLabelSelected
+                ]}>點心</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.statsHint}>點擊查看詳情並編輯餐別</Text>
-          </TouchableOpacity>
+            <Text style={styles.statsHint}>點擊選擇餐別</Text>
+          </View>
 
           {/* Recent Entries */}
           {recentEntries.length > 0 && (
@@ -364,6 +399,14 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: 'center',
+    padding: spacing.sm,
+    borderRadius: 8,
+    flex: 1,
+  },
+  statItemSelected: {
+    backgroundColor: colors.primary[100],
+    borderWidth: 2,
+    borderColor: colors.primary[500],
   },
   statIcon: {
     fontSize: 24,
@@ -378,6 +421,10 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: typography.fontSize.xs,
     color: colors.text.secondary,
+  },
+  statLabelSelected: {
+    color: colors.primary[700],
+    fontWeight: typography.fontWeight.semibold,
   },
   statsHint: {
     fontSize: typography.fontSize.xs,
