@@ -6,10 +6,13 @@ export class SupabaseAuthService {
 
   // Google OAuth 登入
   async signInWithGoogle() {
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin).replace(/\/+$/, '')
+    const redirectTo = `${baseUrl}/auth/callback`
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
