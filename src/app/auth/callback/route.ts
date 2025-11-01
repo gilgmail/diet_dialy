@@ -6,12 +6,18 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const error = requestUrl.searchParams.get('error')
-  const origin = requestUrl.origin
+  const configuredBase =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXTAUTH_URL ||
+    process.env.VERCEL_URL ||
+    requestUrl.origin
+
+  const normalizedBase = configuredBase.replace(/\/+$/, '')
 
   // Handle OAuth errors
   if (error) {
     console.error('OAuth error:', error)
-    return NextResponse.redirect(`${origin}/?auth_error=${encodeURIComponent(error)}`)
+    return NextResponse.redirect(`${normalizedBase}/?auth_error=${encodeURIComponent(error)}`)
   }
 
   if (code) {
@@ -41,7 +47,7 @@ export async function GET(request: NextRequest) {
 
       if (error) {
         console.error('Auth callback error:', error)
-        return NextResponse.redirect(`${origin}/?auth_error=${encodeURIComponent(error.message)}`)
+        return NextResponse.redirect(`${normalizedBase}/?auth_error=${encodeURIComponent(error.message)}`)
       }
 
       // 確保用戶已經登入並獲得 session
@@ -83,17 +89,17 @@ export async function GET(request: NextRequest) {
         }
 
         // 登入成功，重定向到設定頁面
-        return NextResponse.redirect(`${origin}/settings?auth_success=true`)
+        return NextResponse.redirect(`${normalizedBase}/settings?auth_success=true`)
       }
 
       // Session 創建失敗
-      return NextResponse.redirect(`${origin}/?auth_error=session_creation_failed`)
+      return NextResponse.redirect(`${normalizedBase}/?auth_error=session_creation_failed`)
     } catch (error) {
       console.error('Unexpected auth error:', error)
-      return NextResponse.redirect(`${origin}/?auth_error=unexpected_error`)
+      return NextResponse.redirect(`${normalizedBase}/?auth_error=unexpected_error`)
     }
   }
 
   // 沒有授權碼，重定向到首頁
-  return NextResponse.redirect(`${origin}/`)
+  return NextResponse.redirect(`${normalizedBase}/`)
 }
