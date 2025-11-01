@@ -111,7 +111,11 @@ scp .env.production.pi ${PI_USER}@${PI_HOST}:${DEPLOY_DIR}/.env.production.pi
 
 # Build and start Docker containers on Pi
 echo_info "Building and starting Docker containers on Raspberry Pi..."
-ssh ${PI_USER}@${PI_HOST} "cd ${DEPLOY_DIR}/pi_docker && set -a && source .env.production.pi && set +a && docker compose down && docker compose build && docker compose up -d"
+ssh ${PI_USER}@${PI_HOST} "cd ${DEPLOY_DIR}/pi_docker && \
+  set -a && source .env.production.pi && set +a && \
+  (docker compose down --remove-orphans || true) && \
+  (docker rm -f diet-daily-web >/dev/null 2>&1 || true) && \
+  docker compose build && docker compose up -d"
 
 # Wait for container to be healthy
 echo_info "Waiting for application to start..."

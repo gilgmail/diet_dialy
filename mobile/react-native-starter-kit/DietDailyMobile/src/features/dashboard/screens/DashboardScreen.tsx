@@ -57,9 +57,13 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   const scrollViewRef = React.useRef<ScrollView>(null)
 
   useEffect(() => {
+    if (isAnalyzing) {
+      return
+    }
+
     if (latestAnalysisStatus) {
       setAnalysisStatus(latestAnalysisStatus)
-    } else if (!isAnalyzing) {
+    } else {
       setAnalysisStatus(null)
     }
   }, [latestAnalysisStatus, isAnalyzing])
@@ -132,6 +136,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
             totalRecords > 0
               ? `目前正在分析 ${totalRecords} 筆資料（飲食 ${foodEntries}、症狀 ${symptomEntries}）。`
               : '尚未取得足夠的資料。',
+          timestamp: totalRecords > 0 ? undefined : now,
         },
         {
           key: 'server_processing',
@@ -154,6 +159,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       ],
       reportGenerated: false,
       lastUpdated: now,
+      analysisVersion: '等待伺服器更新',
     }
   }
 
@@ -322,6 +328,62 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       })
       .join('')
 
+    const reasoningTrace = (item.reasoningTrace || []).map((note) => `<li>${note}</li>`).join('')
+    const evidenceNotes = (item.evidenceNotes || []).map((note) => `<li>${note}</li>`).join('')
+
+    const dailySections = (item.dailyFoodBreakdown || [])
+      .slice(0, 3)
+      .map((day) => {
+        const meals = (day.meals || [])
+          .slice(0, 2)
+          .map((meal) => {
+            const foods = (meal.foods || [])
+              .slice(0, 3)
+              .map((food) => {
+                const tags: string[] = []
+                if (food.suitability) {
+                  tags.push(`評估：${food.suitability}`)
+                }
+                if (food.reasoning?.length) {
+                  tags.push(`理由：${food.reasoning.join('；')}`)
+                }
+                if (food.symptom_links?.length) {
+                  tags.push(`症狀連結：${food.symptom_links.join('；')}`)
+                }
+                if (food.notes?.length) {
+                  tags.push(`備註：${food.notes.join('；')}`)
+                }
+                const detail = tags.length ? `（${tags.join('；')}）` : ''
+                return `<li>${food.name}${detail}</li>`
+              })
+              .join('')
+
+            return foods
+              ? `<h4>${meal.meal || '未標註餐別'}</h4><ul>${foods}</ul>`
+              : `<h4>${meal.meal || '未標註餐別'}</h4><p>此餐僅記錄食物名稱，缺少詳述。</p>`
+          })
+          .join('')
+
+        const daySummary = day.day_summary ? `<p>${day.day_summary}</p>` : ''
+        return `<article><h3>📅 ${day.date || '未提供日期'}</h3>${daySummary}${meals || '<p>未提供餐點詳情。</p>'}</article>`
+      })
+      .join('')
+
+    const hasMoreDaily =
+      (item.dailyFoodBreakdown?.length || 0) > 3
+        ? `<p><em>更多每日詳情請於完整報告查看。</em></p>`
+        : ''
+
+    const nextStepsMaintain = (item.nextSteps?.maintain || [])
+      .map((step) => `<li>${step}</li>`)
+      .join('')
+    const nextStepsMonitor = (item.nextSteps?.monitor || [])
+      .map((step) => `<li>${step}</li>`)
+      .join('')
+    const nextStepsExperiments = (item.nextSteps?.experiments || [])
+      .map((step) => `<li>${step}</li>`)
+      .join('')
+
     // Fix corrupted characters in followUpActions (replace � with 症)
     const fixedFollowUpActions = item.followUpActions.map((action) => {
       return action.replace(/��/g, '症').replace(/\uFFFD/g, '症')
@@ -330,6 +392,31 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     const followUps = fixedFollowUpActions
       .map((action) => `<li>${action}</li>`)
       .join('')
+
+    const reasoningHtml = reasoningTrace ? `<h2>推論重點</h2><ol>${reasoningTrace}</ol>` : ''
+    const evidenceHtml = evidenceNotes ? `<h2>資料證據</h2><ul>${evidenceNotes}</ul>` : ''
+    const dailyHtml = dailySections
+      ? `<h2>每日餐點解析</h2>${dailySections}${hasMoreDaily}`
+      : ''
+    const nextStepsHtml =
+      nextStepsMaintain || nextStepsMonitor || nextStepsExperiments
+        ? `<h2>下週調整計畫</h2>
+            ${
+              nextStepsMaintain
+                ? `<h3>維持策略</h3><ul>${nextStepsMaintain}</ul>`
+                : ''
+            }
+            ${
+              nextStepsMonitor
+                ? `<h3>監測提醒</h3><ul>${nextStepsMonitor}</ul>`
+                : ''
+            }
+            ${
+              nextStepsExperiments
+                ? `<h3>實驗/調整</h3><ul>${nextStepsExperiments}</ul>`
+                : ''
+            }`
+        : ''
 
     const html = `<!DOCTYPE html>
 <html lang="zh-Hant">
@@ -383,7 +470,11 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   ${summaryText}
   ${foodsToMonitor ? `<h2>需留意食物</h2><ul>${foodsToMonitor}</ul>` : ''}
   ${supportiveFoods ? `<h2>建議加強食物</h2><ul>${supportiveFoods}</ul>` : ''}
+  ${reasoningHtml}
+  ${dailyHtml}
+  ${nextStepsHtml}
   ${followUps ? `<h2>下週行動重點</h2><ul>${followUps}</ul>` : ''}
+  ${evidenceHtml}
 </body>
 </html>`
 
@@ -413,9 +504,51 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
         textParts.push(`• ${food.food}${parts.length ? `（${parts.join('；')}）` : ''}`)
       })
     }
+    if (item.reasoningTrace?.length) {
+      textParts.push('推論重點：')
+      item.reasoningTrace.slice(0, 3).forEach((note) => textParts.push(`• ${note}`))
+      if (item.reasoningTrace.length > 3) {
+        textParts.push(`（其餘 ${item.reasoningTrace.length - 3} 項請於完整報告查看）`)
+      }
+    }
+    if (item.dailyFoodBreakdown?.length) {
+      const firstDay = item.dailyFoodBreakdown[0]
+      textParts.push(`每日餐點：${firstDay.date}${firstDay.day_summary ? `－${firstDay.day_summary}` : ''}`)
+      if (firstDay.meals?.length) {
+        const meal = firstDay.meals[0]
+        const foods = (meal.foods || [])
+          .slice(0, 3)
+          .map((food) => `${food.name}${food.suitability ? `（${food.suitability}）` : ''}`)
+        if (foods.length) {
+          textParts.push(`• ${meal.meal || '未標註餐別'}：${foods.join('、')}`)
+        }
+      }
+      if (item.dailyFoodBreakdown.length > 1) {
+        textParts.push('（更多日子請於完整報告查看）')
+      }
+    }
+    if (item.nextSteps) {
+      const { maintain = [], monitor = [], experiments = [] } = item.nextSteps
+      if (maintain.length) {
+        textParts.push('維持策略：')
+        maintain.slice(0, 2).forEach((step) => textParts.push(`• ${step}`))
+      }
+      if (monitor.length) {
+        textParts.push('監測提醒：')
+        monitor.slice(0, 2).forEach((step) => textParts.push(`• ${step}`))
+      }
+      if (experiments.length) {
+        textParts.push('實驗/調整：')
+        experiments.slice(0, 2).forEach((step) => textParts.push(`• ${step}`))
+      }
+    }
     if (item.followUpActions.length) {
       textParts.push('下週行動重點：')
       item.followUpActions.forEach((action) => textParts.push(`• ${action}`))
+    }
+    if (item.evidenceNotes?.length) {
+      textParts.push('資料證據：')
+      item.evidenceNotes.slice(0, 3).forEach((note) => textParts.push(`• ${note}`))
     }
 
     return {
@@ -477,6 +610,111 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     // 使用 base64 編碼來避免 URL 參數傳遞時的編碼問題
     const base64Html = Buffer.from(html, 'utf-8').toString('base64')
     navigation.navigate('ReportDetail', { htmlContent: base64Html })
+  }
+
+  const renderReportHighlights = (item: (typeof analysisHistory)[number]) => {
+    const reasoning = item.reasoningTrace || []
+    const evidence = item.evidenceNotes || []
+    const daily = item.dailyFoodBreakdown || []
+    const nextSteps = item.nextSteps || { maintain: [], monitor: [], experiments: [] }
+
+    const firstDay = daily[0]
+    const firstMeal = firstDay?.meals?.[0]
+    const firstFoods = firstMeal?.foods?.slice(0, 2) || []
+    const hasNextSteps =
+      (nextSteps.maintain?.length || 0) > 0 ||
+      (nextSteps.monitor?.length || 0) > 0 ||
+      (nextSteps.experiments?.length || 0) > 0
+
+    if (
+      reasoning.length === 0 &&
+      !firstDay &&
+      !hasNextSteps &&
+      evidence.length === 0
+    ) {
+      return null
+    }
+
+    return (
+      <View style={styles.historyHighlights}>
+        {reasoning.length > 0 ? (
+          <View style={styles.historyDetailSection}>
+            <Text style={styles.historyDetailTitle}>推論重點</Text>
+            {reasoning.slice(0, 2).map((note, index) => (
+              <Text key={`${item.id}-reason-${index}`} style={styles.historyDetailText}>
+                • {note}
+              </Text>
+            ))}
+            {reasoning.length > 2 && (
+              <Text style={styles.historyDetailMore}>
+                其餘 {reasoning.length - 2} 項請於完整報告查看
+              </Text>
+            )}
+          </View>
+        ) : null}
+
+        {firstDay ? (
+          <View style={styles.historyDetailSection}>
+            <Text style={styles.historyDetailTitle}>每日餐點亮點</Text>
+            <Text style={styles.historyDetailText}>
+              📅 {firstDay.date}：{firstDay.day_summary || '當日未提供摘要。'}
+            </Text>
+            {firstFoods.length > 0 ? (
+              <Text style={styles.historyDetailText}>
+                🍽 {firstMeal?.meal || '未標註餐別'}：{' '}
+                {firstFoods
+                  .map((food) =>
+                    `${food.name}${food.suitability ? `（${food.suitability}）` : ''}`
+                  )
+                  .join('、')}
+              </Text>
+            ) : null}
+            {daily.length > 1 && (
+              <Text style={styles.historyDetailMore}>
+                另外 {daily.length - 1} 天的細節請於完整報告查看
+              </Text>
+            )}
+          </View>
+        ) : null}
+
+        {hasNextSteps ? (
+          <View style={styles.historyDetailSection}>
+            <Text style={styles.historyDetailTitle}>下週調整計畫</Text>
+            {nextSteps.maintain?.slice(0, 2).map((step, index) => (
+              <Text key={`${item.id}-maintain-${index}`} style={styles.historyDetailText}>
+                ✅ {step}
+              </Text>
+            ))}
+            {nextSteps.monitor?.slice(0, 2).map((step, index) => (
+              <Text key={`${item.id}-monitor-${index}`} style={styles.historyDetailText}>
+                👀 {step}
+              </Text>
+            ))}
+            {nextSteps.experiments?.slice(0, 2).map((step, index) => (
+              <Text key={`${item.id}-experiment-${index}`} style={styles.historyDetailText}>
+                🧪 {step}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+
+        {evidence.length > 0 ? (
+          <View style={styles.historyDetailSection}>
+            <Text style={styles.historyDetailTitle}>資料證據</Text>
+            {evidence.slice(0, 2).map((note, index) => (
+              <Text key={`${item.id}-evidence-${index}`} style={styles.historyDetailText}>
+                • {note}
+              </Text>
+            ))}
+            {evidence.length > 2 && (
+              <Text style={styles.historyDetailMore}>
+                更多證據詳見完整報告
+              </Text>
+            )}
+          </View>
+        ) : null}
+      </View>
+    )
   }
 
   if (isLoading && !stats) {
@@ -640,6 +878,11 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
                         })}
                       </Text>
                     )}
+                    {item.analysisVersion ? (
+                      <Text style={styles.historyVersion}>
+                        分析版本：{item.analysisVersion}
+                      </Text>
+                    ) : null}
                     <Text style={styles.historySummary} numberOfLines={3}>
                       {item.summary || '這份報告包含腸道健康的重點洞察。'}
                     </Text>
@@ -668,6 +911,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
                     ))}
                   </View>
                 )}
+                {renderReportHighlights(item)}
               </View>
             ))}
 
@@ -707,6 +951,11 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
                         })}
                       </Text>
                     )}
+                    {item.analysisVersion ? (
+                      <Text style={styles.historyVersion}>
+                        分析版本：{item.analysisVersion}
+                      </Text>
+                    ) : null}
                   </View>
                 </View>
                 <View style={styles.historyActions}>
@@ -723,6 +972,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
                     <Text style={styles.historyButtonSecondaryText}>分享</Text>
                   </TouchableOpacity>
                 </View>
+                {renderReportHighlights(item)}
               </View>
             ))}
 
@@ -773,6 +1023,11 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
                 ? `預計還需 ${analysisCountdown} 秒...`
                 : '即將完成，請保持應用程式開啟。'}
             </Text>
+            {analysisStatus?.analysisVersion ? (
+              <Text style={styles.modalTextSmall}>
+                分析版本：{analysisStatus.analysisVersion}
+              </Text>
+            ) : null}
             {analysisStatus?.steps ? (
               <View style={styles.modalStatusContainer}>
                 {analysisStatus.steps.map((step) => renderStatusStep(step, 'modal-'))}
@@ -1023,6 +1278,11 @@ const styles = StyleSheet.create({
     color: colors.text.disabled,
     marginTop: spacing.xs / 2,
   },
+  historyVersion: {
+    fontSize: typography.fontSize.xs,
+    color: colors.primary[500],
+    marginTop: spacing.xs / 2,
+  },
   historySummary: {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
@@ -1072,6 +1332,32 @@ const styles = StyleSheet.create({
   historyFollowUpText: {
     fontSize: typography.fontSize.xs,
     color: colors.text.secondary,
+  },
+  historyHighlights: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: spacing.sm,
+    gap: spacing.sm,
+  },
+  historyDetailSection: {
+    gap: spacing.xs,
+  },
+  historyDetailTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  historyDetailText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+    lineHeight: 20,
+  },
+  historyDetailMore: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.disabled,
   },
   expandButton: {
     backgroundColor: colors.surface,
@@ -1132,6 +1418,11 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  modalTextSmall: {
+    fontSize: typography.fontSize.xs,
+    color: colors.primary[500],
+    textAlign: 'center',
   },
   modalStatusContainer: {
     width: '100%',

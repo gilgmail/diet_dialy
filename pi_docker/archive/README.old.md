@@ -70,7 +70,7 @@ http://gilko.redirectme.net:3000
 
 若需要在雲端（Render）長時間穩定執行，可參考 `render/README.md` 內的說明：
 
-1. 建立 GitHub Repo（例如 `diet_daily_docker`）並推送本目錄。
+1. 建立 GitHub Repo（例如 `diet-daily`）並推送本目錄。
 2. 依 `.env.render.example` 建立 Render Environment Group。
 3. 透過 `render/render.yaml` Blueprint 或手動方式在 Render 建立 Web Service。
 4. 選擇 Standard 方案確保服務不會睡眠。

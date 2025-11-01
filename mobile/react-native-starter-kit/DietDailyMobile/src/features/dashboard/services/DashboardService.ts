@@ -30,12 +30,34 @@ interface WeeklyIBDAnalysisCard {
   gut_health_recommendations?: string[]
   warning_signs?: string[]
   follow_up_actions?: string[]
+  reasoning_trace?: string[]
+  evidence_notes?: string[]
+  daily_food_breakdown?: Array<{
+    date?: string
+    day_summary?: string
+    meals?: Array<{
+      meal?: string
+      foods?: Array<{
+        name?: string
+        suitability?: string
+        reasoning?: string[]
+        symptom_links?: string[]
+        notes?: string[]
+      }>
+    }>
+  }>
+  next_steps?: {
+    maintain?: string[]
+    monitor?: string[]
+    experiments?: string[]
+  }
 }
 
 interface WeeklyIBDAnalysisResult {
   success: boolean
   method: 'claude_api' | 'fallback' | 'insufficient_data'
   prompt_used: string
+  analysis_version?: string
   timeframe: {
     startDate: string
     endDate: string
@@ -370,6 +392,19 @@ export class DashboardService {
         return { insights: [], history, analysisStatus: null }
       }
 
+      const logInChunks = (label: string, content: string) => {
+        if (!content) {
+          console.log(label, '(empty)')
+          return
+        }
+        const text = String(content)
+        const chunkSize = 900
+        console.log(label)
+        for (let i = 0; i < text.length; i += chunkSize) {
+          console.log(text.slice(i, i + chunkSize))
+        }
+      }
+
       // Use first day of week as startDate, but use TODAY as endDate to ensure we include all recent data
       const startDate = this.formatDate(weeklyTrend.week[0]?.date)
       const today = new Date()
@@ -381,6 +416,15 @@ export class DashboardService {
       console.log('  📅 endDate:', endDate)
       console.log('  📊 weeklyTrend length:', weeklyTrend.week.length)
       console.log('  👤 userId:', userId)
+      console.log(
+        '[DashboardService] 🍱 Weekly diet snapshot:',
+        weeklyTrend.week.map((day) => ({
+          date: day.date,
+          foodCount: day.foodCount,
+          symptomCount: day.symptomCount,
+          totalCalories: day.totalCalories,
+        }))
+      )
 
       const normalizedBase = apiBase.replace(/\/+$/, '')
       const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
@@ -415,6 +459,9 @@ export class DashboardService {
       console.log('  ❤️ symptom entries:', payload.analysis?.totals?.symptom_entries)
       console.log('  📅 timeframe:', payload.analysis?.timeframe)
       console.log('  📚 history count:', payload.history?.length)
+      if (payload.analysis?.analysis_version) {
+        console.log('  🏷️ analysis version:', payload.analysis.analysis_version)
+      }
 
       if (!payload.success || !payload.analysis) {
         console.warn('[DashboardService] ⚠️ AI insight response missing analysis', payload.error)
@@ -432,6 +479,15 @@ export class DashboardService {
           insights: [],
           history: normalizedHistory.length ? normalizedHistory : history,
           analysisStatus: payload.analysisStatus ?? null,
+        }
+      }
+
+      if (payload.analysis.prompt_used) {
+        logInChunks('[DashboardService] 🧠 AI prompt used (full):', payload.analysis.prompt_used)
+
+        const datasetMatch = payload.analysis.prompt_used.match(/```json\s*([\s\S]+?)\s*```/)
+        if (datasetMatch) {
+          logInChunks('[DashboardService] 🍱 Dataset provided to AI:', datasetMatch[1])
         }
       }
 

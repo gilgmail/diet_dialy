@@ -5,6 +5,9 @@ import { createAdminClient } from '@/lib/supabase/server'
 import type { FoodEntry } from '@/types/supabase'
 import type { DailySymptomEntry, CoreSymptomScores } from '@/types/medical'
 
+// 更新版本時務必同步調整行動端顯示與報告標註
+export const WEEKLY_ANALYSIS_VERSION = '2025.02.09.0'
+
 interface ClaudeConfig {
   apiKey: string
   model: string
@@ -33,6 +36,42 @@ interface AggregatedFoodImpact {
   severityRecords: SeverityRecord[]
   correlatedSymptoms: Record<string, number>
   notes: Set<string>
+}
+
+type FoodSuitabilityLevel = 'supportive' | 'neutral' | 'watch' | 'avoid'
+
+interface DailyFoodLog {
+  date: string
+  meals: Array<{
+    meal: string
+    foods: string[]
+  }>
+  symptomSummary?: {
+    severity: number | null
+    keySymptoms: string[]
+    notes?: string | null
+  } | null
+}
+
+interface DailyFoodAssessment {
+  date: string
+  day_summary?: string
+  meals: Array<{
+    meal: string
+    foods: Array<{
+      name: string
+      suitability: FoodSuitabilityLevel
+      reasoning: string[]
+      symptom_links: string[]
+      notes: string[]
+    }>
+  }>
+}
+
+interface NextStepPlan {
+  maintain: string[]
+  monitor: string[]
+  experiments: string[]
 }
 
 interface WeeklyAnalysisPayload {
@@ -82,6 +121,7 @@ interface WeeklyAnalysisPayload {
     warnings: string[]
     missingSymptomDates: string[]
   }
+  dailyBreakdown: DailyFoodLog[]
 }
 
 export interface WeeklyAnalysisOptions {
@@ -97,6 +137,7 @@ export interface WeeklyIBDAnalysisResult {
   method: 'claude_api' | 'fallback' | 'insufficient_data'
   prompt_used: string
   timeframe: Timeframe
+  analysis_version: string
   totals: {
     food_entries: number
     unique_foods: number
@@ -126,6 +167,10 @@ export interface WeeklyIBDAnalysisResult {
     warning_signs: string[]
     data_quality_notes: string[]
     follow_up_actions: string[]
+    reasoning_trace: string[]
+    evidence_notes: string[]
+    daily_food_breakdown: DailyFoodAssessment[]
+    next_steps: NextStepPlan
   }
   raw_ai_response?: string
   prompt_recommendations?: Array<PromptRecommendation>
@@ -163,6 +208,10 @@ interface ClaudeAnalysisResponse {
   warning_signs?: unknown
   data_quality_notes?: unknown
   follow_up_actions?: unknown
+  reasoning_trace?: unknown
+  evidence_notes?: unknown
+  daily_food_breakdown?: unknown
+  next_steps?: unknown
 }
 
 type MonitorItem = NonNullable<ClaudeAnalysisResponse['foods_to_monitor']>[number]
@@ -173,62 +222,330 @@ const PROMPT_VARIANTS = {
   balanced: {
     label: '綜合分析營養師',
     description: '平衡評估營養亮點、潛在風險與腸道修復策略的全面分析。',
-    prompt: `你是一位擁有 20 年臨床經驗的資深營養師與胃腸科合作夥伴，專精於 IBD（發炎性腸道疾病）患者的營養療法。你熟悉克隆氏症與潰瘍性結腸炎的臨床變化、FODMAP 理論、抗發炎飲食、腸道黏膜修復策略與藥物-營養交互作用。
+    prompt: `你是一位擁有 20 年臨床經驗的資深 IBD 營養師，專精於發炎性腸道疾病的營養療法。你必須提供具體、有深度的營養分析，避免泛泛而談。
 
-情境重點：
-- 週期資料可能幾乎沒有症狀紀錄，這通常代表患者本週維持穩定；請以正向角度解讀，而非要求補寫。
-- 即使症狀筆數為 0，也要從飲食紀錄中找出營養亮點、潛在風險與可加強的日常習慣。
-- 若 \`trackingSummary.daysWithFoodOnly\` 有內容，視為「僅記錄飲食的日子」。可溫和鼓勵補充，但避免責備或強迫語氣。
+## 核心專業能力
+- **FODMAP 分析**：識別高 FODMAP 食物（乳糖、果糖、山梨醇、果聚糖、半乳寡糖）的具體風險
+- **抗發炎營養**：Omega-3（EPA/DHA）、薑黃素、多酚類、維生素 D 的評估
+- **腸道黏膜修復**：麩醯胺酸、鋅、維生素 A、短鏈脂肪酸（丁酸）的來源
+- **微量元素**：鐵、鈣、鎂、維生素 B12 的缺乏風險評估
+- **纖維管理**：可溶性 vs 不溶性纖維、發酵食品的適當性
 
-數據量評估原則：
-- 若飲食記錄 < 10 筆或症狀記錄 < 3 筆，在分析中明確說明「資料量有限，建議為初步參考」。
-- 數據少時，避免過度推斷因果關係，多提供一般性的 IBD 飲食原則。
-- 對於罕見食物（出現 < 2 次），標記為「觀察中」而非直接判斷風險等級。
+## 分析原則（重要！）
+1. **不要過度歸咎症狀 - 時間關聯非常重要**：
+   - 症狀出現 ≠ 當日所有食物都有問題
+   - 必須區分：真正的誘發因子 vs 無關的食物
+   - **延遲反應邏輯**（關鍵！）：
+     * 早上症狀 → 可能受「前一天晚餐」或「前一天整體飲食」影響
+     * 中午症狀 → 可能受「當天早餐」或「前一天晚餐」影響
+     * 晚上症狀 → 可能受「當天午餐」或「當天早餐累積」影響
+     * 隔夜症狀 → 通常受「前一天晚餐」影響最大
+   - **不應歸咎的情況**：
+     * 今天早餐 ≠ 昨天的症狀（時間不符）
+     * 症狀前 2-4 小時內攝取的食物，才有直接關聯
+     * 症狀前 6-24 小時內攝取的食物，才有延遲關聯
+   - 考慮累積效應（連續幾天的飲食模式）
 
-請整合以下分析：
-1. 以 2-4 句總結整體狀況，肯定維持健康的亮點，並點出仍需注意的風險或調整方向。
-2. 找出可能誘發症狀或造成腸道負擔的食物、組合或用餐習慣，提出具體調整建議。
-3. 彙整有助症狀緩解、腸道修復或營養補強的食物與良好模式，說明如何持續強化。
-4. 描述症狀趨勢：若無症狀紀錄，明確註記「本週未記錄症狀，視為穩定期」，並給出維持穩定的建議；若有症狀，說明趨勢與關鍵時點。
-5. 提供下一週可執行的飲食或生活習慣調整步驟，兼顧維持亮點與降低風險。`
+2. **營養亮點必須具體**：
+   - ✅ 正確：「糙米提供可溶性纖維與短鏈脂肪酸前驅物，有助腸道黏膜修復」
+   - ❌ 錯誤：「糙米是好的選擇」
+   - ✅ 正確：「鮭魚富含 EPA/DHA（每 100g 約 2.5g），具抗發炎效果」
+   - ❌ 錯誤：「鮭魚很健康」
+
+3. **風險評估必須有證據支持**：
+   - 標註為「需注意」時，必須說明：
+     * 該食物的哪個成分可能有問題（FODMAP？纖維類型？刺激性？）
+     * 與症狀的時間關聯性（同日？次日？）
+     * 症狀嚴重度與頻率
+   - 如果食物與症狀日重疊，但沒有明確證據，應標註為「觀察中」而非「高風險」
+
+4. **數據限制誠實說明**：
+   - 飲食記錄 < 15 筆：說明「樣本有限，建議僅供參考」
+   - 症狀記錄 < 3 筆：說明「症狀數據不足，以一般 IBD 飲食原則為主」
+   - 食物出現 < 2 次：標註「樣本數不足，需持續觀察」
+
+## 分析架構（必須完整執行）
+
+### summary（2-4 句話）
+- 第一句：整體營養均衡性（三大營養素、微量元素、纖維）
+- 第二句：本週營養亮點（至少 2-3 個具體例子）
+- 第三句：需調整的風險（具體食物 + 原因）
+- 第四句：症狀趨勢總結
+
+### foods_to_monitor（每個食物必須有清楚理由）
+評估標準：
+- **high**：該食物在高症狀日出現 ≥2 次 且 症狀嚴重度 ≥3 且 具明確 IBD 風險成分
+- **moderate**：該食物在高症狀日出現 1 次 或 症狀嚴重度 2-3 或 屬已知刺激性食物
+- **watch**：該食物與症狀日重疊但無明確證據，或為高 FODMAP 但未見明顯症狀
+
+對於每個食物，必須說明：
+1. 具體的營養成分風險（例：高果聚糖、不溶性纖維、乳糖、刺激性化合物）
+2. 與症狀的時間關聯（哪幾天？症狀嚴重度？）
+3. 建議的調整方式（減量、調整烹調、替代食物）
+
+### supportive_foods（必須有營養學依據）
+不要只列出「沒問題的食物」，而要找出：
+1. **真正有益的食物**：
+   - 抗發炎：富含 Omega-3 的魚類、薑黃、綠茶
+   - 黏膜修復：骨湯、南瓜、紅蘿蔔
+   - 益生元：香蕉、燕麥、地瓜
+   - 低 FODMAP 且營養密度高的食物
+
+2. **每個食物說明**：
+   - 具體營養成分（維生素、礦物質、特殊化合物）
+   - 對 IBD 的具體益處（抗發炎、修復、平衡菌群）
+   - 建議的搭配或份量
+
+### symptom_trends（具體的模式分析）
+不要只說「有症狀」或「沒症狀」，要分析：
+1. **時間模式**：週初 vs 週末？連續性 vs 間歇性？
+2. **誘發模式**：餐後即刻？延遲 6-12 小時？隔夜？
+3. **飲食組合**：是否與特定餐次組合有關？
+4. **累積效應**：連續攝取某類食物後症狀加重？
+
+### gut_health_recommendations（可執行的營養策略）
+提供 3-5 個具體、可量化的建議：
+- ✅ 正確：「增加富含 Omega-3 的魚類至每週 2-3 次（鮭魚、鯖魚、秋刀魚）」
+- ❌ 錯誤：「多吃魚」
+- ✅ 正確：「將白米替換為糙米（比例 1:1 混合），逐步增加纖維耐受度」
+- ❌ 錯誤：「增加纖維攝取」
+
+## 重要提醒
+- 如果本週症狀少或無，不要勉強找問題，應該肯定飲食策略的成功
+- 如果數據不足，誠實說明，不要過度推測
+- 每個建議都要有營養學或臨床證據支持
+- 避免使用「可能」「也許」等模糊詞彙，改用「觀察到」「數據顯示」「建議關注」`
   },
   flare_focus: {
     label: '症狀誘發偵測專家',
     description: '強調找到誘發 flare 的高風險食物與時間點。',
-    prompt: `你是一位擁有 22 年臨床經驗、專攻 IBD flare 預防的臨床營養師。你的重點是偵測觸發腹痛、腹瀉、血便與腹脹的飲食模式，並提出立即可執行的降風險策略。
+    prompt: `你是一位擁有 22 年臨床經驗、專攻 IBD flare 預防的臨床營養師。你的專長是精確識別誘發症狀的食物與飲食模式。
 
-情境重點：
-- 若本週沒有症狀紀錄，視為未出現 flare，請仍舊分析飲食紀錄中可能埋藏的風險因子，給出預防性建議。
-- 當 \`trackingSummary.daysWithFoodOnly\` 有內容時，理解為僅記錄飲食的日子，可用溫和語氣提醒維持觀察。
+## 核心專業能力
+- **症狀觸發因子識別**：FODMAP、乳糖、麩質、辛辣物、酒精、咖啡因
+- **時間關聯分析**：即刻反應（0-2h）、延遲反應（6-24h）、累積效應（2-3天）
+- **劑量效應評估**：少量安全但大量觸發的食物識別
+- **組合效應分析**：單一食物安全但組合後觸發症狀的模式
+- **烹調方式影響**：油炸、高溫、生食的風險差異
 
-數據量評估原則：
-- 若症狀記錄 < 3 筆，說明「症狀數據有限，以下為預防性風險評估」。
-- 避免在數據不足時過度斷言因果關係，改為提供「潛在風險觀察指標」。
-- 對於僅出現 1-2 次的食物，標記為「需持續觀察」而非「高風險」。
+## 症狀嚴重度分級標準
+- **輕度（1-2分）**：輕微不適，不影響日常活動
+- **中度（3分）**：明顯不適，影響部分活動
+- **重度（4-5分）**：嚴重不適，需休息或就醫
 
-請聚焦於：
-1. 症狀惡化日與當日飲食之間的因果線索；若無症狀，指出潛在誘發風險與預警指標。
-2. 高風險烹調方式、份量、進食時段或餐次組合，提供具體調整與替代方案。
-3. 下一步監測計畫與可立即實施的降風險策略，協助患者維持穩定。`
+## 風險評估原則（嚴格執行！）
+
+### high risk（高風險）- 必須同時滿足：
+1. 該食物在「重度症狀日」（嚴重度 ≥3）出現 ≥2 次
+2. 時間關聯明確（同日或次日出現症狀）
+3. 該食物具有已知 IBD 觸發特性（高 FODMAP、刺激性、難消化）
+4. 排除其他明顯混雜因素
+
+### moderate risk（中度風險）：
+1. 該食物在症狀日出現，但僅 1 次
+2. 或：該食物出現多次，但症狀為輕-中度（2-3分）
+3. 或：該食物屬已知刺激性，但本週樣本不足
+
+### watch（觀察）：
+1. 該食物與症狀日重疊，但缺乏明確證據
+2. 或：該食物為高 FODMAP 但本週未見明顯症狀
+3. 或：食物出現次數 < 2 次，樣本不足
+
+### 不應列入監測（重要！）：
+- 在低症狀日或無症狀日出現的食物
+- 症狀日出現但該食物為低風險類型（如白飯、香蕉、煮熟蔬菜）
+- 時間關聯不合理（例如症狀出現在攝取前）
+
+## 分析架構
+
+### foods_to_monitor（必須有充分證據）
+對於每個列入的食物，必須提供：
+
+1. **風險成分分析**：
+   - FODMAP 類型（果聚糖？乳糖？山梨醇？）
+   - 纖維類型（不溶性纖維含量高？）
+   - 刺激性物質（辣椒素？咖啡因？酒精？）
+   - 脂肪含量（高脂肪延緩胃排空？）
+
+2. **症狀時間線**：
+   - 列出具體日期與症狀嚴重度
+   - 說明時間關聯（餐後多久出現症狀？）
+   - 考慮延遲反應（隔夜或次日症狀）
+
+3. **調整建議**（必須具體可執行）：
+   - ✅ 正確：「將洋蔥份量減少至 30g 以下，或改用蔥白（低 FODMAP）替代」
+   - ❌ 錯誤：「少吃洋蔥」
+   - ✅ 正確：「將牛奶替換為無乳糖牛奶或杏仁奶，觀察 3-5 天」
+   - ❌ 錯誤：「避免乳製品」
+
+### supportive_foods（本週表現良好的食物）
+列出在「低症狀日」或「無症狀日」出現的食物，且：
+1. 該食物具有營養價值（不只是中性）
+2. 該食物為低 FODMAP 或已知對 IBD 友善
+3. 建議如何維持或增加攝取
+
+### symptom_trends（模式識別）
+分析以下模式：
+1. **累積效應**：連續攝取某食物後症狀加重？
+2. **時段效應**：早餐 vs 晚餐的差異？
+3. **組合效應**：特定食物組合觸發症狀？
+4. **劑量效應**：少量安全但大量觸發？
+
+### 監測計畫（具體的實驗設計）
+提供 2-3 個可執行的測試：
+- ✅ 正確：「下週一、三、五暫停食用大蒜，對比週二、四、六的症狀，建立因果關係」
+- ❌ 錯誤：「減少刺激性食物」
+
+## 重要提醒
+- 如果本週症狀少，不要勉強將所有食物標記為風險
+- 必須區分「真正的誘發因子」vs「剛好在症狀日出現的無辜食物」
+- 如果證據不足，誠實說明「需更多數據」，不要過度推測
+- 避免將安全食物（白飯、香蕉、雞肉）標記為風險，除非有明確證據`
   },
   gut_healing: {
     label: '腸道修復教練',
     description: '偏重腸道修復、抗發炎與營養補強策略。',
-    prompt: `你是一位擁有 25 年臨床經驗的腸道修復營養師，擅長設計抗發炎、低刺激且營養密度高的飲食策略，協助 IBD 患者維持緩解期並修復腸黏膜。
+    prompt: `你是一位擁有 25 年臨床經驗的腸道修復營養師，專精於 IBD 患者的黏膜修復與抗發炎營養策略。你的目標是協助患者維持緩解期並優化腸道健康。
 
-情境重點：
-- 若症狀紀錄為零或很少，視為本週維持緩解期。請肯定現有亮點，提供強化腸道的策略。
-- \`trackingSummary.daysWithFoodOnly\` 表示僅有飲食紀錄的日子，可溫和鼓勵持續觀察。
+## 核心專業能力
+- **抗發炎營養素**：Omega-3（EPA/DHA 比例）、薑黃素、槲皮素、多酚類、維生素 D
+- **黏膜修復關鍵**：麩醯胺酸、鋅、維生素 A、短鏈脂肪酸（丁酸）、骨膠原
+- **益生元與益生菌**：低 FODMAP 益生元、耐受性發酵食品、菌株選擇
+- **微量元素補充**：鐵、鈣、鎂、維生素 B12、葉酸的食物來源
+- **纖維優化**：可溶性纖維 vs 不溶性纖維的比例、發酵性纖維的漸進增加
 
-數據量評估原則：
-- 若飲食記錄 < 10 筆，說明「飲食樣本較少，建議為一般性腸道保健原則」。
-- 對於營養補強建議，基於實際記錄的食物，避免推薦數據中未出現的食物類別。
-- 若數據顯示營養單一，溫和建議增加多樣性，但避免過度批評。
+## 腸道修復營養階層
 
-請針對提供的資料：
-1. 找出最需限制或調整的食品與烹調方式，以降低腸道刺激或潛在風險。
-2. 梳理有助修復（Omega-3、可溶性纖維、發酵食品等）的正面飲食，建議如何保留、搭配或增強。
-3. 給出下一週可執行的腸道保護與營養補強步驟，讓患者知道如何維持穩定並持續進步。`
+### 第一優先：抗發炎
+評估本週是否攝取足夠的抗發炎食物：
+- **Omega-3 魚類**：鮭魚、鯖魚、秋刀魚（目標：每週 2-3 次）
+- **薑黃素來源**：薑黃（需搭配黑胡椒增加吸收）
+- **多酚類**：綠茶、藍莓、石榴、特級初榨橄欖油
+- **維生素 D**：蛋黃、香菇（日曬）、強化食品
+
+### 第二優先：黏膜修復
+評估本週是否攝取修復營養素：
+- **麩醯胺酸**：骨湯、雞肉、魚類、蛋白
+- **鋅**：牡蠣、南瓜籽、雞肉、鷹嘴豆
+- **維生素 A**：南瓜、紅蘿蔔、地瓜、蛋黃
+- **短鏈脂肪酸前驅物**：燕麥、香蕉、煮熟的馬鈴薯（抗性澱粉）
+
+### 第三優先：腸道菌群
+評估本週是否支持有益菌群：
+- **低 FODMAP 益生元**：香蕉（成熟）、燕麥、地瓜、藍莓
+- **耐受性發酵食品**：優格（如能耐受乳糖）、味噌、醃黃瓜
+- **多樣性植物性食物**：目標每週 20-30 種不同蔬果
+
+### 第四優先：微量元素
+評估潛在缺乏風險：
+- **鐵**：紅肉、肝臟、菠菜（搭配維生素 C）
+- **鈣**：優格、硬豆腐、芝麻、小魚乾
+- **B12**：肉類、蛋類、強化食品
+- **鎂**：堅果、深綠色蔬菜、全穀類
+
+## 分析架構
+
+### summary（正向 + 改善方向）
+1. **肯定本週亮點**：具體說明做得好的營養策略
+2. **指出改善空間**：哪些營養素不足？哪些食物可能刺激腸道？
+3. **整體評估**：目前處於哪個修復階段？緩解期穩定性如何？
+
+### foods_to_monitor（降低刺激）
+只列出可能影響腸道修復的食物：
+1. **高 FODMAP 且症狀相關**
+2. **不溶性纖維過多**（可能刺激發炎腸段）
+3. **加工食品、精製糖**（促進發炎）
+4. **高脂肪食物**（延緩消化、增加腸道負擔）
+
+對於每個食物提供：
+- 為何可能妨礙修復（具體機制）
+- 建議的替代食物（營養等值但更友善）
+- 如何調整烹調方式
+
+### supportive_foods（積極促進修復）
+列出本週表現優秀的食物，並說明：
+1. **具體營養成分**（例：鮭魚提供 EPA 1.5g + DHA 1.0g / 100g）
+2. **修復機制**（抗發炎？黏膜修復？菌群支持？）
+3. **如何優化**：
+   - 增加頻率（每週幾次？）
+   - 搭配建議（薑黃 + 黑胡椒、維生素 C + 鐵）
+   - 份量建議（具體克數或份數）
+
+### gut_health_recommendations（階段性策略）
+提供 3-5 個具體、可量化的營養強化計畫：
+
+**抗發炎強化**：
+- ✅ 正確：「增加 Omega-3 魚類至每週 3 次（每次 100-150g），選擇鮭魚、鯖魚或秋刀魚」
+- ❌ 錯誤：「多吃魚」
+
+**纖維優化**：
+- ✅ 正確：「將白米與糙米混合（比例 2:1），每週增加糙米比例至 1:1，觀察耐受度」
+- ❌ 錯誤：「增加纖維」
+
+**益生元補充**：
+- ✅ 正確：「每日攝取 1 根中等大小的成熟香蕉（低 FODMAP 益生元）+ 40g 燕麥片」
+- ❌ 錯誤：「吃益生元食物」
+
+**微量元素補充**：
+- ✅ 正確：「每週攝取 2-3 次紅肉（每次 80-100g）或肝臟（50g），搭配富含維生素 C 的柳橙汁以增加鐵吸收」
+- ❌ 錯誤：「補充鐵質」
+
+### symptom_trends（修復進展評估）
+分析本週是否處於：
+1. **穩定緩解期**：症狀少且輕微，可積極補充營養
+2. **輕微波動期**：偶有症狀，需維持低刺激飲食
+3. **修復停滯期**：症狀未改善，需調整營養策略
+
+### 下週修復計畫（具體行動）
+設計 3-5 個可執行步驟：
+1. **每日固定**：例如「每早餐攝取 40g 燕麥 + 10 顆藍莓」
+2. **每週目標**：例如「每週 3 次魚類（2 次鮭魚、1 次鯖魚）」
+3. **逐步增加**：例如「第 1-3 天維持現狀，第 4-7 天增加地瓜 50g」
+4. **監測指標**：例如「記錄排便頻率、腹脹程度，評估纖維耐受度」
+
+## 重要原則
+- 修復需要時間，建議漸進式調整（每週 1-2 個改變）
+- 優先維持穩定，避免激進改變觸發症狀
+- 基於實際記錄的食物提建議，不推薦數據中未出現的食物類別
+- 如果本週表現優秀，大力肯定，提供維持策略而非批評
+- 所有建議都要有營養學證據支持（標註關鍵營養素及含量）
+
+## 報告架構要求
+- **Summary**：以結論口吻撰寫 3-5 句，引用 dataset 內的日期與指標。
+- **Reasoning Trace**：逐條說明推論邏輯，包含症狀和飲食的關聯時間窗。
+- **Daily Food Breakdown**：每日逐餐列出食物的適合度，標記 supportive / neutral / watch / avoid 並給出依據。
+- **Evidence Notes**：列出任何被引用的資料欄位（如 trackingSummary、foodImpacts、symptomOverview）。
+- **Next Steps**：區分維持、監測、實驗三大類，指示份量與觀察指標。
+
+請強調所有建議均可追溯資料來源，必要時引用 flareDays、stableDays、mealTypes、sampleNotes 等欄位。`
+  },
+  clinical_trace: {
+    label: '臨床深度推論',
+    description: '強調完整推論鏈與證據引用，適合專業醫療審閱的詳細報告。',
+    prompt: `你是一位長期與腸胃科團隊合作的臨床營養師，專精 IBD 個案分析。請建立可供醫師、營養師共同審閱的詳細報告。
+
+核心要求：
+1. 任何結論都要引用 dataset 中的具體欄位（日期、症狀嚴重度、飲食份量、mealTypes、sampleNotes）。
+2. 在 \`reasoning_trace\` 中，逐步呈現推論：觀察 → 假設 → 佐證 → 建議。每個步驟至少引用一個資料點。
+3. 在 \`foods_to_monitor\` 與 \`supportive_foods\`，提供營養素含量、臨床研究依據或指南（可描述等級，如「實務經驗」或「系統性綜述」）。
+4. \`daily_food_breakdown\` 需覆蓋每一天；若某餐未紀錄，仍要標註該餐缺資料並提醒補記。
+5. \`next_steps\` 應列出監測指標（如排便頻率、腹痛 0-5 分、體重變化），方便後續隨訪。
+
+語氣專業、具體，可直接納入病歷紀錄。`
+  },
+  daily_breakdown: {
+    label: '逐日餐點解析',
+    description: '聚焦每天每餐的食物亮點與風險，適合用於病患日常回顧與教育。',
+    prompt: `你是一位擅長病患教育的 IBD 營養教練，需將資料轉化為每日具體指引。
+
+請特別注意：
+- summary 僅需 3-4 句，重點是整週趨勢與下一步行動。
+- daily_food_breakdown 是核心：針對每一天至少列出早餐、午餐、晚餐（或資料中的 mealTypes）。若無資料，請註記「未紀錄」並給出提醒。
+- foods_to_monitor 與 supportive_foods 要連結到 daily_food_breakdown，指出在哪些日期與餐次出現。
+- evidence_notes 請加入「資料來源提醒」，例如「依據 foodImpacts[0].severity.highDays」。
+- next_steps 的 maintain 與 monitor 要對應到每日餐點建議，experiments 則提出可在未來 3-7 天嘗試的微調（例如份量 +10g、烹調方式改變）。
+
+請以緊湊但具體的語氣撰寫，便於病患快速理解每日重點。`
   }
 } as const
 
@@ -351,6 +668,17 @@ function pickDates(records: SeverityRecord[], limit: number, minSeverity: number
     .map((record) => record.date)
 }
 
+function splitFoodName(foodName: string): string[] {
+  // Split by common punctuation separators used in food entries
+  // Supports: comma (both half-width and full-width), semicolon, slash, plus, ampersand, Chinese comma, space
+  const separatorPattern = /[,，;；/+&、\s]+/
+
+  return foodName
+    .split(separatorPattern)
+    .map(item => item.trim())
+    .filter(item => item.length > 0)
+}
+
 function summarizeMealTypes(mealTypes: Record<string, number>): Record<string, number> {
   const summary: Record<string, number> = {}
   Object.entries(mealTypes)
@@ -370,7 +698,15 @@ function defaultAnalysisSection(dataQualityWarnings: string[]): WeeklyIBDAnalysi
     gut_health_recommendations: [],
     warning_signs: [],
     data_quality_notes: [...dataQualityWarnings],
-    follow_up_actions: []
+    follow_up_actions: [],
+    reasoning_trace: [],
+    evidence_notes: [],
+    daily_food_breakdown: [],
+    next_steps: {
+      maintain: [],
+      monitor: [],
+      experiments: []
+    }
   }
 }
 
@@ -404,6 +740,94 @@ function normalizeRiskLevel(value: unknown): RiskLevel {
   return 'watch'
 }
 
+function normalizeSuitability(value: unknown): FoodSuitabilityLevel {
+  if (typeof value !== 'string') {
+    return 'neutral'
+  }
+  const normalized = value.toLowerCase().trim() as FoodSuitabilityLevel
+  if (normalized === 'supportive' || normalized === 'neutral' || normalized === 'watch' || normalized === 'avoid') {
+    return normalized
+  }
+  return 'neutral'
+}
+
+function normalizeDailyFoodBreakdown(value: unknown): DailyFoodAssessment[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const result: DailyFoodAssessment[] = []
+
+  value.forEach((item) => {
+    if (!isPlainRecord(item)) {
+      return
+    }
+
+    const rawDate = typeof item.date === 'string' ? item.date.trim() : ''
+    if (!rawDate) {
+      return
+    }
+
+    const daySummary =
+      typeof item.day_summary === 'string' && item.day_summary.trim().length > 0
+        ? item.day_summary
+        : undefined
+
+    const meals = Array.isArray(item.meals) ? item.meals : []
+    const normalizedMeals = meals
+      .filter((meal): meal is Record<string, unknown> => isPlainRecord(meal))
+      .map((meal) => {
+        const mealName =
+          typeof meal.meal === 'string' && meal.meal.trim().length > 0
+            ? meal.meal
+            : 'unspecified'
+        const foods = Array.isArray(meal.foods) ? meal.foods : []
+        const normalizedFoods = foods
+          .filter((food): food is Record<string, unknown> => isPlainRecord(food))
+          .map((food) => ({
+            name: typeof food.name === 'string' ? food.name : '',
+            suitability: normalizeSuitability(food.suitability),
+            reasoning: normalizeStringArray(food.reasoning),
+            symptom_links: normalizeStringArray(food.symptom_links),
+            notes: normalizeStringArray(food.notes)
+          }))
+          .filter((food) => food.name.trim().length > 0)
+
+        return {
+          meal: mealName,
+          foods: normalizedFoods
+        }
+      })
+      .filter((meal) => meal.foods.length > 0)
+
+    result.push({
+      date: rawDate,
+      day_summary: daySummary,
+      meals: normalizedMeals
+    })
+  })
+
+  return result
+}
+
+function normalizeNextSteps(value: unknown): NextStepPlan {
+  const base: NextStepPlan = {
+    maintain: [],
+    monitor: [],
+    experiments: []
+  }
+
+  if (!isPlainRecord(value)) {
+    return base
+  }
+
+  return {
+    maintain: normalizeStringArray(value.maintain),
+    monitor: normalizeStringArray(value.monitor),
+    experiments: normalizeStringArray(value.experiments)
+  }
+}
+
 export class IBDWeeklyAnalysisAgent {
   private anthropic: Anthropic | null
   private readonly config: ClaudeConfig
@@ -412,8 +836,8 @@ export class IBDWeeklyAnalysisAgent {
 
   constructor(config?: Partial<ClaudeConfig>) {
     const apiKey = config?.apiKey ?? process.env.ANTHROPIC_API_KEY ?? ''
-    const model = config?.model ?? process.env.CLAUDE_MODEL ?? 'claude-3-5-haiku-20241022'
-    const maxTokens = config?.maxTokens ?? Number(process.env.CLAUDE_MAX_TOKENS ?? '1400')
+    const model = config?.model ?? process.env.CLAUDE_MODEL ?? 'claude-3-5-sonnet-latest'
+    const maxTokens = config?.maxTokens ?? Number(process.env.CLAUDE_MAX_TOKENS ?? '4096')
     const temperature = config?.temperature ?? Number(process.env.CLAUDE_TEMPERATURE ?? '0.3')
 
     this.config = {
@@ -455,6 +879,8 @@ export class IBDWeeklyAnalysisAgent {
 
     console.log('🔨 Building analysis payload...')
     const payload = this.buildAnalysisPayload(dataset, timeframe)
+    const promptTemplate = this.resolvePrompt(options)
+    const fullPrompt = this.composePrompt(promptTemplate, payload.payload)
     console.log('📊 Payload summary:', {
       hasMinimalData: payload.hasMinimalData,
       foodEntries: payload.payload.trackingSummary.totalFoodEntries,
@@ -466,8 +892,9 @@ export class IBDWeeklyAnalysisAgent {
     const baseResult: WeeklyIBDAnalysisResult = {
       success: true,
       method: 'fallback',
-      prompt_used: this.resolvePrompt(options),
+      prompt_used: fullPrompt,
       timeframe,
+      analysis_version: WEEKLY_ANALYSIS_VERSION,
       totals: {
         food_entries: payload.payload.trackingSummary.totalFoodEntries,
         unique_foods: payload.payload.trackingSummary.uniqueFoods,
@@ -505,7 +932,7 @@ export class IBDWeeklyAnalysisAgent {
 
     try {
       console.log('🤖 Composing prompt for Claude API...')
-      const prompt = this.composePrompt(baseResult.prompt_used, payload.payload)
+      const prompt = baseResult.prompt_used
       console.log('  - Prompt length:', prompt.length, 'characters')
 
       console.log('📞 Calling Claude API...')
@@ -638,57 +1065,71 @@ export class IBDWeeklyAnalysisAgent {
 
     foodEntries.forEach((entry) => {
       const date = toDateOnly(entry.consumed_at)
-      const dayFoods = foodsByDate.get(date) ?? []
-      dayFoods.push({ name: entry.food_name, mealType: entry.meal_type })
-      foodsByDate.set(date, dayFoods)
+      const originalFoodName = entry.food_name?.trim() || '未命名食物'
 
-      const key = entry.food_name?.trim() || '未命名食物'
-      uniqueFoodNames.add(key)
+      // Split food name by punctuation to analyze each food item separately
+      const individualFoods = splitFoodName(originalFoodName)
 
-      if (!foodImpactsMap.has(key)) {
-        foodImpactsMap.set(key, {
-          food: key,
-          occurrences: 0,
-          mealTypes: {},
-          lastConsumedAt: entry.consumed_at,
-          severityRecords: [],
-          correlatedSymptoms: {},
-          notes: new Set<string>()
-        })
+      // If splitting resulted in empty array, use original name
+      const foodsToProcess = individualFoods.length > 0 ? individualFoods : [originalFoodName]
+
+      // Debug log for food splitting
+      if (individualFoods.length > 1) {
+        console.log(`[buildAnalysisPayload] 🍽️ Split food: "${originalFoodName}" → [${individualFoods.map(f => `"${f}"`).join(', ')}]`)
       }
 
-      const record = foodImpactsMap.get(key)!
-      record.occurrences += 1
-      record.lastConsumedAt = !record.lastConsumedAt || record.lastConsumedAt < entry.consumed_at
-        ? entry.consumed_at
-        : record.lastConsumedAt
+      foodsToProcess.forEach((foodName) => {
+        const dayFoods = foodsByDate.get(date) ?? []
+        dayFoods.push({ name: foodName, mealType: entry.meal_type })
+        foodsByDate.set(date, dayFoods)
 
-      const mealType = entry.meal_type || 'unspecified'
-      record.mealTypes[mealType] = (record.mealTypes[mealType] || 0) + 1
+        uniqueFoodNames.add(foodName)
 
-      const symptomEntry = symptomByDate.get(date)
-      if (symptomEntry) {
-        const severity = computeSeverity(symptomEntry)
-        if (severity !== null) {
-          const related = Array.isArray(symptomEntry.related_food_entries)
-            ? symptomEntry.related_food_entries.includes(entry.id)
-            : false
-          const keySymptoms = extractHighSymptoms(symptomEntry)
-          record.severityRecords.push({
-            date,
-            severity,
-            keySymptoms,
-            related
-          })
-          keySymptoms.forEach((symptom) => {
-            record.correlatedSymptoms[symptom] = (record.correlatedSymptoms[symptom] || 0) + 1
+        if (!foodImpactsMap.has(foodName)) {
+          foodImpactsMap.set(foodName, {
+            food: foodName,
+            occurrences: 0,
+            mealTypes: {},
+            lastConsumedAt: entry.consumed_at,
+            severityRecords: [],
+            correlatedSymptoms: {},
+            notes: new Set<string>()
           })
         }
-      }
 
-      if (entry.notes) {
-        record.notes.add(entry.notes)
-      }
+        const record = foodImpactsMap.get(foodName)!
+        record.occurrences += 1
+        record.lastConsumedAt = !record.lastConsumedAt || record.lastConsumedAt < entry.consumed_at
+          ? entry.consumed_at
+          : record.lastConsumedAt
+
+        const mealType = entry.meal_type || 'unspecified'
+        record.mealTypes[mealType] = (record.mealTypes[mealType] || 0) + 1
+
+        const symptomEntry = symptomByDate.get(date)
+        if (symptomEntry) {
+          const severity = computeSeverity(symptomEntry)
+          if (severity !== null) {
+            const related = Array.isArray(symptomEntry.related_food_entries)
+              ? symptomEntry.related_food_entries.includes(entry.id)
+              : false
+            const keySymptoms = extractHighSymptoms(symptomEntry)
+            record.severityRecords.push({
+              date,
+              severity,
+              keySymptoms,
+              related
+            })
+            keySymptoms.forEach((symptom) => {
+              record.correlatedSymptoms[symptom] = (record.correlatedSymptoms[symptom] || 0) + 1
+            })
+          }
+        }
+
+        if (entry.notes) {
+          record.notes.add(entry.notes)
+        }
+      })
     })
 
     const daysWithFoodOnly = Array.from(new Set(foodEntries.map((entry) => toDateOnly(entry.consumed_at)))).filter(
@@ -800,6 +1241,45 @@ export class IBDWeeklyAnalysisAgent {
       dataQualityWarnings.push('症狀紀錄少於 3 筆，趨勢判斷可信度偏低。')
     }
 
+    const allDates = new Set<string>([
+      ...foodsByDate.keys(),
+      ...Array.from(symptomByDate.keys())
+    ])
+
+    const dailyBreakdown: DailyFoodLog[] = Array.from(allDates)
+      .sort()
+      .map((date) => {
+        const mealsMap = new Map<string, string[]>()
+        const foods = foodsByDate.get(date) ?? []
+        foods.forEach((item) => {
+          const key = item.mealType && item.mealType.trim().length > 0 ? item.mealType : 'unspecified'
+          const mealFoods = mealsMap.get(key) ?? []
+          mealFoods.push(item.name)
+          mealsMap.set(key, mealFoods)
+        })
+
+        const symptomEntry = symptomByDate.get(date)
+        let notes: string | null = null
+        if (symptomEntry && 'notes' in symptomEntry && typeof symptomEntry.notes === 'string') {
+          notes = symptomEntry.notes
+        }
+
+        return {
+          date,
+          meals: Array.from(mealsMap.entries()).map(([meal, mealFoods]) => ({
+            meal,
+            foods: Array.from(new Set(mealFoods))
+          })),
+          symptomSummary: symptomEntry
+            ? {
+                severity: computeSeverity(symptomEntry),
+                keySymptoms: extractHighSymptoms(symptomEntry),
+                notes
+              }
+            : null
+        }
+      })
+
     const payload: WeeklyAnalysisPayload = {
       timeframe,
       trackingSummary: {
@@ -825,7 +1305,8 @@ export class IBDWeeklyAnalysisAgent {
       dataQuality: {
         warnings: dataQualityWarnings,
         missingSymptomDates: daysWithFoodOnly.slice(0, 10)
-      }
+      },
+      dailyBreakdown
     }
 
     const highRiskFoods = sortedFoodImpacts
@@ -854,6 +1335,22 @@ export class IBDWeeklyAnalysisAgent {
     // 沒有症狀資料表示健康狀況良好，仍然可以提供飲食建議
     const hasMinimalData = foodEntries.length >= 3
 
+    // Debug log for analysis payload summary
+    console.log('[buildAnalysisPayload] 📊 Analysis payload summary:')
+    console.log(`  📅 Date range: ${timeframe.startDate} ~ ${timeframe.endDate} (${timeframe.daysCovered} days)`)
+    console.log(`  🍽️ Total food entries: ${foodEntries.length}`)
+    console.log(`  🆔 Unique foods: ${uniqueFoodNames.size}`)
+    console.log(`  💊 Symptom entries: ${symptomEntries.length}`)
+    console.log(`  ⚠️ High-risk foods: ${highRiskFoods.length}`)
+    console.log(`  ✅ Protective foods: ${protectiveFoods.length}`)
+
+    if (highRiskFoods.length > 0) {
+      console.log('  📋 High-risk food list:')
+      highRiskFoods.forEach(f => {
+        console.log(`    - ${f.food} (severity: ${f.severity.toFixed(2)}, dates: ${f.dates.join(', ')})`)
+      })
+    }
+
     return {
       payload,
       hasMinimalData,
@@ -874,21 +1371,21 @@ export class IBDWeeklyAnalysisAgent {
 2. 回覆必須是有效的 JSON，且不得包含多餘文字。
 3. JSON 結構固定如下：
 {
-  "summary": "總結 (2-4 句，指出整體情況與關鍵風險)",
+  "summary": "結論 (3-5 句，明確指出整體狀態、成功亮點與急迫風險，務必引用日期或數據佐證)",
   "foods_to_monitor": [
     {
       "food": "食物名稱",
       "risk_level": "high | moderate | watch",
-      "reasoning": ["1-2 個臨床判斷依據"],
-      "recommended_actions": ["1-2 個具體調整建議"],
-      "supporting_days": ["YYYY-MM-DD", "..."]
+      "reasoning": ["列出 2-3 個具體證據 (日期/症狀/份量)"],
+      "recommended_actions": ["列出最優先的控制措施 (份量/搭配/頻率)"],
+      "supporting_days": ["YYYY-MM-DD", "... (依據日期至少 1 筆)"]
     }
   ],
   "supportive_foods": [
     {
       "food": "可強化的食物",
-      "benefits": ["臨床益處"],
-      "suggestions": ["如何保留或搭配"]
+      "benefits": ["臨床益處 (含營養素或機制)"],
+      "suggestions": ["如何保留或搭配 (份量/時段)"]
     }
   ],
   "symptom_trends": [
@@ -901,10 +1398,40 @@ export class IBDWeeklyAnalysisAgent {
   "gut_health_recommendations": ["腸道修復/抗發炎建議"],
   "warning_signs": ["需提醒的風險訊號"],
   "data_quality_notes": ["如有資料限制請說明"],
-  "follow_up_actions": ["患者下週可執行的 2-3 個步驟"]
+  "follow_up_actions": ["患者下週可執行的 2-3 個步驟"],
+  "reasoning_trace": ["逐條說明判斷過程，務必引用資料中的日期、症狀或份量"],
+  "evidence_notes": ["列出使用到的關鍵資料欄位或指標，協助日後稽核"],
+  "daily_food_breakdown": [
+    {
+      "date": "YYYY-MM-DD",
+      "day_summary": "當日整體評估與提醒",
+      "meals": [
+        {
+          "meal": "breakfast | lunch | dinner | snack | unspecified",
+          "foods": [
+            {
+              "name": "食物名稱",
+              "suitability": "supportive | neutral | watch | avoid",
+              "reasoning": ["指出評估依據或營養亮點/風險"],
+              "symptom_links": ["與症狀的時間或嚴重度關聯；若無請回傳空陣列"],
+              "notes": ["其他行動建議，可為空陣列"]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "next_steps": {
+    "maintain": ["已證實穩定的策略，務必列出份量或頻率"],
+    "monitor": ["需密切追蹤的食物或習慣，註明依據"],
+    "experiments": ["建議循序漸進測試的調整，包含觀察指標"]
+  }
 }
 
 請務必嚴格遵守以上 JSON 格式。
+所有欄位都不可省略；若資料不足，請使用空字串或空陣列表示，切勿刪除欄位。
+輸出必須具體引用 dataset 中的日期、症狀嚴重度、mealTypes、sampleNotes、foodImpacts、dailyBreakdown 等資訊。
+務必提供詳盡內容（尤其是 reasoning_trace 與 daily_food_breakdown），讓醫療團隊可直接引用。
 
 週期資料：
 \u0060\u0060\u0060json
@@ -931,15 +1458,18 @@ ${dataset}
 
     const validModels = [
       'claude-3-5-haiku-20241022',
+      'claude-3-5-haiku-latest',
       'claude-3-5-sonnet-20241022',
       'claude-3-5-sonnet-latest',
-      'claude-3-haiku-20240307'
+      'claude-3-haiku-20240307',
+      'claude-sonnet-4-20250514',
+      'claude-sonnet-4-5-20250929'
     ]
 
     let modelToUse = this.config.model
     if (!validModels.includes(modelToUse)) {
-      console.warn(`[IBDWeeklyAnalysisAgent] Model ${modelToUse} not in allowlist, fallback to claude-3-5-haiku-20241022`)
-      modelToUse = 'claude-3-5-haiku-20241022'
+      console.warn(`[IBDWeeklyAnalysisAgent] Model ${modelToUse} not in allowlist, fallback to claude-3-5-sonnet-latest`)
+      modelToUse = 'claude-3-5-sonnet-latest'
     }
 
     const response = await this.anthropic.messages.create({
@@ -971,8 +1501,20 @@ ${dataset}
     baseResult: WeeklyIBDAnalysisResult,
     dataQualityWarnings: string[]
   ): WeeklyIBDAnalysisResult {
+    // Debug log for raw Claude response
+    console.log('[parseClaudeResponse] 🤖 Claude API raw response:')
+    console.log('  📏 Response length:', raw.length, 'characters')
+    console.log('  📄 First 500 chars:', raw.substring(0, 500))
+
     try {
       const parsed = JSON.parse(raw) as ClaudeAnalysisResponse
+
+      // Debug log for parsed structure
+      console.log('[parseClaudeResponse] ✅ Successfully parsed JSON')
+      console.log('  📋 Summary length:', parsed.summary?.length || 0)
+      console.log('  ⚠️ Foods to monitor:', parsed.foods_to_monitor?.length || 0)
+      console.log('  ✅ Supportive foods:', parsed.supportive_foods?.length || 0)
+      console.log('  📈 Symptom trends:', parsed.symptom_trends?.length || 0)
 
       const foodsToMonitor = Array.isArray(parsed.foods_to_monitor)
         ? parsed.foods_to_monitor
@@ -1013,6 +1555,10 @@ ${dataset}
         ...normalizeStringArray(parsed.data_quality_notes)
       ]
       const followUpActions = normalizeStringArray(parsed.follow_up_actions)
+      const reasoningTrace = normalizeStringArray(parsed.reasoning_trace)
+      const evidenceNotes = normalizeStringArray(parsed.evidence_notes)
+      const dailyFoodBreakdown = normalizeDailyFoodBreakdown(parsed.daily_food_breakdown)
+      const nextSteps = normalizeNextSteps(parsed.next_steps)
 
       const result: WeeklyIBDAnalysisResult = {
         ...baseResult,
@@ -1025,9 +1571,31 @@ ${dataset}
           gut_health_recommendations: gutRecommendations,
           warning_signs: warningSigns,
           data_quality_notes: dataQualityNotes,
-          follow_up_actions: followUpActions
+          follow_up_actions: followUpActions,
+          reasoning_trace: reasoningTrace,
+          evidence_notes: evidenceNotes,
+          daily_food_breakdown: dailyFoodBreakdown,
+          next_steps: nextSteps
         }
       }
+
+      // Debug log for final analysis result
+      console.log('[parseClaudeResponse] 📊 Final analysis result:')
+      console.log('  📝 Summary:', result.analysis.summary?.substring(0, 100) + '...')
+      console.log('  ⚠️ Foods to monitor:')
+      foodsToMonitor.forEach(f => {
+        console.log(`    - ${f.food} (${f.risk_level}): ${f.reasoning[0] || 'no reason'}`)
+      })
+      console.log('  ✅ Supportive foods:')
+      supportiveFoods.forEach(f => {
+        console.log(`    - ${f.food}: ${f.benefits[0] || 'no benefit'}`)
+      })
+      console.log('  💡 Gut health recommendations:', gutRecommendations.length)
+      console.log('  ⚠️ Warning signs:', warningSigns.length)
+      console.log('  📋 Follow-up actions:', followUpActions.length)
+      console.log('  🧠 Reasoning trace steps:', reasoningTrace.length)
+      console.log('  📚 Evidence notes:', evidenceNotes.length)
+      console.log('  🍽️ Daily food breakdown entries:', dailyFoodBreakdown.length)
 
       return result
     } catch (error) {
@@ -1064,7 +1632,8 @@ ${dataset}
             dataQuality: {
               warnings: dataQualityWarnings,
               missingSymptomDates: []
-            }
+            },
+            dailyBreakdown: []
           },
           hasMinimalData: true,
           highRiskFoods: [],
@@ -1086,6 +1655,8 @@ ${dataset}
     insufficient: boolean = false
   ): WeeklyIBDAnalysisResult {
     const { payload: data, highRiskFoods, protectiveFoods } = payload
+    const highRiskMap = new Map(highRiskFoods.map((item) => [item.food, item]))
+    const protectiveMap = new Map(protectiveFoods.map((item) => [item.food, item]))
 
     const summaryParts: string[] = []
     if (insufficient) {
@@ -1194,6 +1765,144 @@ ${dataset}
       followUpActions.push('保持並增加有益食物的攝取，有助於維持腸道穩定。')
     }
 
+    const dailyFoodBreakdown: DailyFoodAssessment[] = (data.dailyBreakdown || []).map((day) => {
+      const daySummaryParts: string[] = []
+      const symptom = day.symptomSummary ?? undefined
+
+      if (symptom && symptom.severity !== null && symptom.severity !== undefined) {
+        const severityText = symptom.severity.toFixed(2)
+        const symptomText =
+          symptom.keySymptoms && symptom.keySymptoms.length > 0
+            ? `症狀焦點：${symptom.keySymptoms.join('、')}`
+            : '症狀以整體感受為主'
+        daySummaryParts.push(`同日症狀嚴重度 ${severityText}，${symptomText}。`)
+      } else {
+        daySummaryParts.push('當日未紀錄症狀，建議補登以利追蹤。')
+      }
+
+      if (!day.meals || day.meals.length === 0) {
+        daySummaryParts.push('未紀錄任何餐點內容。')
+      }
+
+      const meals = (day.meals || [])
+        .map((meal) => {
+          const mealName = meal.meal || 'unspecified'
+          const uniqueFoods = Array.from(
+            new Set((meal.foods || []).map((foodName) => foodName.trim()).filter((name) => name.length > 0))
+          )
+
+          const foods = uniqueFoods.map((foodName) => {
+            const reasoning = new Set<string>()
+            const symptomLinks = new Set<string>()
+            const notes = new Set<string>()
+            let suitability: FoodSuitabilityLevel = 'neutral'
+
+            const highRisk = highRiskMap.get(foodName)
+            if (highRisk) {
+              suitability = highRisk.severity >= 3.5 ? 'avoid' : 'watch'
+              if (highRisk.dates.length > 0) {
+                reasoning.add(`在 ${highRisk.dates.join('、')} 等症狀加劇日出現，嚴重度約 ${highRisk.severity.toFixed(1)}。`)
+                highRisk.dates.forEach((date) => symptomLinks.add(`${date} 症狀加劇`))
+              } else {
+                reasoning.add('與症狀加劇日同時出現，建議暫時減量或停用觀察。')
+              }
+            }
+
+            const supportive = protectiveMap.get(foodName)
+            if (supportive && !highRisk) {
+              suitability = 'supportive'
+              reasoning.add(`過去 ${supportive.occurrences} 次紀錄均未見症狀惡化（平均嚴重度 ${supportive.severity.toFixed(1)}）。`)
+              notes.add('建議維持既有份量與搭配方式。')
+            }
+
+            if (!highRisk && !supportive) {
+              reasoning.add('目前資料量有限，未觀察到明顯風險或益處，建議持續觀察。')
+            }
+
+            if (symptom && symptom.severity !== null && symptom.severity !== undefined) {
+              const severityText = symptom.severity.toFixed(2)
+              if (symptom.keySymptoms && symptom.keySymptoms.length > 0) {
+                symptomLinks.add(`同日症狀：${symptom.keySymptoms.join('、')} (嚴重度 ${severityText})`)
+              } else {
+                symptomLinks.add(`同日整體症狀嚴重度 ${severityText}`)
+              }
+            } else {
+              notes.add('缺少當日症狀紀錄，建議紀錄感受以建立關聯。')
+            }
+
+            return {
+              name: foodName,
+              suitability,
+              reasoning: Array.from(reasoning),
+              symptom_links: Array.from(symptomLinks),
+              notes: Array.from(notes)
+            }
+          })
+
+          return {
+            meal: mealName,
+            foods
+          }
+        })
+        .filter((meal) => meal.foods.length > 0)
+
+      const daySummary = daySummaryParts.join(' ')
+
+      return {
+        date: day.date,
+        day_summary: daySummary.trim().length > 0 ? daySummary : undefined,
+        meals
+      }
+    }).filter((entry) => entry.meals.length > 0 || (entry.day_summary && entry.day_summary.trim().length > 0))
+
+    const reasoningTrace: string[] = [
+      `資料來源：${data.trackingSummary.totalFoodEntries} 筆飲食、${data.trackingSummary.totalSymptomEntries} 筆症狀紀錄。`,
+      highRiskFoods.length > 0
+        ? `辨識 ${highRiskFoods.length} 項疑似誘發食物，依據 foodImpacts 與症狀重疊日推估嚴重度。`
+        : '本週未偵測到明顯高風險食物。'
+    ]
+
+    if (protectiveFoods.length > 0) {
+      reasoningTrace.push(`發現 ${protectiveFoods.length} 項可支援腸道穩定的食物，依據低平均嚴重度與高出現次數推論。`)
+    }
+    if (data.dataQuality.warnings.length > 0) {
+      reasoningTrace.push(`資料限制：${data.dataQuality.warnings.join('、')}。`)
+    }
+    if (data.symptomOverview.trendNotes.length > 0) {
+      reasoningTrace.push(`症狀趨勢：${data.symptomOverview.trendNotes.join('；')}`)
+    }
+
+    const evidenceNotes: string[] = [
+      `trackingSummary.uniqueFoods=${data.trackingSummary.uniqueFoods}`,
+      `trackingSummary.daysWithFoodOnly=${data.trackingSummary.daysWithFoodOnly.length}`
+    ]
+    data.foodImpacts.slice(0, 3).forEach((impact) => {
+      evidenceNotes.push(
+        `foodImpacts.${impact.food}: 次數 ${impact.occurrences}, 平均嚴重度 ${impact.severity.average ?? '無'}, 關聯症狀 ${impact.correlatedSymptoms.join('、') || '無'}`
+      )
+    })
+    evidenceNotes.push(...data.dataQuality.warnings)
+
+    const nextSteps: NextStepPlan = {
+      maintain: supportiveFoods.map(
+        (item) => `${item.food}：維持目前攝取頻率，保持其對腸道穩定的貢獻。`
+      ),
+      monitor: foodsToMonitor.map(
+        (item) => `${item.food}：下週持續紀錄份量與症狀，在 ${item.supporting_days.join('、') || '症狀日'} **特別留意**。`
+      ),
+      experiments: []
+    }
+
+    if (foodsToMonitor.length > 0) {
+      nextSteps.experiments.push(`將 ${foodsToMonitor[0].food} 份量減半，再觀察 3-5 天後的腹痛與排便變化。`)
+    }
+    if (data.dataQuality.missingSymptomDates.length > 0) {
+      nextSteps.experiments.push('設定每日固定時段補寫症狀紀錄，以提升下週分析精準度。')
+    }
+    if (nextSteps.experiments.length === 0) {
+      nextSteps.experiments.push('選擇一項新食物或烹調方式，少量測試並搭配症狀紀錄。')
+    }
+
     return {
       ...baseResult,
       method: insufficient ? 'insufficient_data' : 'fallback',
@@ -1205,7 +1914,11 @@ ${dataset}
         gut_health_recommendations: gutRecommendations,
         warning_signs: warningSigns,
         data_quality_notes: data.dataQuality.warnings,
-        follow_up_actions: followUpActions
+        follow_up_actions: followUpActions,
+        reasoning_trace: reasoningTrace,
+        evidence_notes: evidenceNotes,
+        daily_food_breakdown: dailyFoodBreakdown,
+        next_steps: nextSteps
       }
     }
   }

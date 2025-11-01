@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Buffer } from 'node:buffer'
-import { IBDWeeklyAnalysisAgent, type PromptVariantKey } from '@/lib/ai/weekly-ibd-analysis'
+import {
+  IBDWeeklyAnalysisAgent,
+  type PromptVariantKey,
+  WEEKLY_ANALYSIS_VERSION,
+} from '@/lib/ai/weekly-ibd-analysis'
 import { createAdminClient } from '@/lib/supabase/server'
 
 // Constants
@@ -23,6 +27,7 @@ interface WeeklyReportPayload {
   timeframe: { startDate: string; endDate: string }
   generatedAt: string
   method: string
+  analysisVersion?: string
   totals: Record<string, any>
   prompt: string
   analysis: Record<string, any>
@@ -58,6 +63,7 @@ interface WeeklyAnalysisStatus {
   steps: WeeklyAnalysisStatusStep[]
   reportGenerated: boolean
   lastUpdated: string
+  analysisVersion: string
 }
 
 // Utility functions
@@ -107,6 +113,7 @@ async function upsertWeeklyReport(
       timeframe,
       generatedAt: new Date().toISOString(),
       method: analysis.method,
+      analysisVersion: WEEKLY_ANALYSIS_VERSION,
       totals: analysis.totals,
       prompt: analysis.prompt_used,
       analysis: analysis.analysis,
@@ -158,6 +165,10 @@ async function fetchWeeklyHistory(userId: string, limit = DEFAULT_HISTORY_LIMIT)
           totalRecords:
             (json.totals?.food_entries ?? 0) + (json.totals?.symptom_entries ?? 0),
         }
+        const analysisVersion =
+          typeof json.analysisVersion === 'string'
+            ? json.analysisVersion
+            : 'legacy'
 
         const reportId = encodeKey(fileKey)
         return {
@@ -172,6 +183,15 @@ async function fetchWeeklyHistory(userId: string, limit = DEFAULT_HISTORY_LIMIT)
           jsonPath: `/api/ai/weekly-ibd-analysis/${reportId}/json`,
           foodsToMonitor: analysis.foods_to_monitor || [],
           supportiveFoods: analysis.supportive_foods || [],
+          reasoningTrace: analysis.reasoning_trace || [],
+          evidenceNotes: analysis.evidence_notes || [],
+          dailyFoodBreakdown: analysis.daily_food_breakdown || [],
+          nextSteps: analysis.next_steps || {
+            maintain: [],
+            monitor: [],
+            experiments: []
+          },
+          analysisVersion,
           datasetSummary,
         }
       })
@@ -405,6 +425,7 @@ export async function POST(request: NextRequest) {
       ],
       reportGenerated,
       lastUpdated: analysisCompletedAt,
+      analysisVersion: WEEKLY_ANALYSIS_VERSION,
     }
 
     console.log(`[${requestId}] 🧮 分析狀態:`, analysisStatus)
@@ -424,6 +445,7 @@ export async function POST(request: NextRequest) {
         reportInfo,
         error: errorMessage,
         analysisStatus,
+        analysisVersion: WEEKLY_ANALYSIS_VERSION,
       },
       { status: result.success ? 200 : 202 }
     )
@@ -447,7 +469,11 @@ export async function GET(request: NextRequest) {
   if (userId) {
     const limit = Number(searchParams.get('limit')) || 10
     const history = await fetchWeeklyHistory(userId, limit)
-    return NextResponse.json({ success: true, history })
+    return NextResponse.json({
+      success: true,
+      history,
+      analysisVersion: WEEKLY_ANALYSIS_VERSION,
+    })
   }
 
   // Return API metadata
@@ -457,5 +483,6 @@ export async function GET(request: NextRequest) {
     description: '提供給 IBD 病患的每週飲食/症狀整合分析，找出高風險食物與腸道修復策略。',
     defaultPrompt: IBDWeeklyAnalysisAgent.getDefaultPrompt(),
     availablePromptStyles: prompts,
+    analysisVersion: WEEKLY_ANALYSIS_VERSION,
   })
 }

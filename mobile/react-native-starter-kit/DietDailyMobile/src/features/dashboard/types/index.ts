@@ -67,6 +67,28 @@ export interface WeeklyAnalysisHistoryItem {
   followUpActions: string[]
   foodsToMonitor?: Array<{ food: string; risk_level?: string; reasoning?: string[]; recommended_actions?: string[] }>
   supportiveFoods?: Array<{ food: string; benefits?: string[]; suggestions?: string[] }>
+  reasoningTrace?: string[]
+  evidenceNotes?: string[]
+  dailyFoodBreakdown?: Array<{
+    date?: string
+    day_summary?: string
+    meals?: Array<{
+      meal?: string
+      foods?: Array<{
+        name?: string
+        suitability?: string
+        reasoning?: string[]
+        symptom_links?: string[]
+        notes?: string[]
+      }>
+    }>
+  }>
+  nextSteps?: {
+    maintain?: string[]
+    monitor?: string[]
+    experiments?: string[]
+  }
+  analysisVersion?: string
 }
 
 export type WeeklyAnalysisStatusState = 'pending' | 'in_progress' | 'completed' | 'failed'
@@ -93,6 +115,7 @@ export interface WeeklyAnalysisStatus {
   }
   steps: WeeklyAnalysisStatusStep[]
   reportGenerated: boolean
+  analysisVersion?: string
   lastUpdated?: string
 }
 

@@ -63,7 +63,10 @@ export async function GET(
     drawText('Diet Daily - IBD 每週 AI 分析報告', { size: 20, lineGap: 8 })
     drawText(`報告標題：AI 每週分析 ${payload.timeframe.startDate} ~ ${payload.timeframe.endDate}`)
     drawText(`分析期間：${payload.timeframe.startDate} ~ ${payload.timeframe.endDate}`)
+    const analysisVersion =
+      typeof payload.analysisVersion === 'string' ? payload.analysisVersion : 'legacy'
     drawText(`產出時間：${new Date(payload.generatedAt).toLocaleString('zh-TW')}`)
+    drawText(`分析版本：${analysisVersion}`)
 
     if (payload.analysis?.summary) {
       drawTitle('核心摘要')
@@ -75,6 +78,46 @@ export async function GET(
         page.drawText('…', { x: width - 60, y: 40, size: 12, font })
         y = height - 72
       }
+    }
+
+    if (Array.isArray(payload.analysis?.reasoning_trace) && payload.analysis.reasoning_trace.length) {
+      drawTitle('判斷推論')
+      payload.analysis.reasoning_trace.forEach((item: any, index: number) => {
+        ensureSpace(40)
+        drawText(`${index + 1}. ${String(item)}`)
+      })
+    }
+
+    if (Array.isArray(payload.analysis?.daily_food_breakdown) && payload.analysis.daily_food_breakdown.length) {
+      drawTitle('每日餐點解析')
+      payload.analysis.daily_food_breakdown.forEach((day: any) => {
+        ensureSpace(80)
+        drawText(`📅 ${day.date ?? '未提供日期'}`)
+        if (day.day_summary) {
+          drawText(`摘要：${day.day_summary}`, { size: 10 })
+        }
+        if (Array.isArray(day.meals)) {
+          day.meals.forEach((meal: any) => {
+            ensureSpace(60)
+            drawText(`  🍽️ ${meal.meal ?? '未標註餐別'}`, { size: 11 })
+            if (Array.isArray(meal.foods)) {
+              meal.foods.forEach((food: any) => {
+                ensureSpace(60)
+                drawText(`    • ${food.name ?? '未命名食物'}（${food.suitability ?? 'neutral'}）`, { size: 10 })
+                if (Array.isArray(food.reasoning) && food.reasoning.length) {
+                  drawText(`      理由：${food.reasoning.join('；')}`, { size: 9 })
+                }
+                if (Array.isArray(food.symptom_links) && food.symptom_links.length) {
+                  drawText(`      症狀連結：${food.symptom_links.join('；')}`, { size: 9 })
+                }
+                if (Array.isArray(food.notes) && food.notes.length) {
+                  drawText(`      備註：${food.notes.join('；')}`, { size: 9 })
+                }
+              })
+            }
+          })
+        }
+      })
     }
 
     if (Array.isArray(payload.analysis?.foods_to_monitor) && payload.analysis.foods_to_monitor.length) {
@@ -105,6 +148,41 @@ export async function GET(
       })
     }
 
+    if (payload.analysis?.next_steps) {
+      const { maintain, monitor, experiments } = payload.analysis.next_steps
+      if (
+        (Array.isArray(maintain) && maintain.length) ||
+        (Array.isArray(monitor) && monitor.length) ||
+        (Array.isArray(experiments) && experiments.length)
+      ) {
+        drawTitle('下週調整計畫')
+        if (Array.isArray(maintain) && maintain.length) {
+          ensureSpace(40)
+          drawText('維持策略：')
+          maintain.forEach((item: any, index: number) => {
+            ensureSpace(30)
+            drawText(`  ${index + 1}. ${String(item)}`, { size: 10 })
+          })
+        }
+        if (Array.isArray(monitor) && monitor.length) {
+          ensureSpace(40)
+          drawText('監測提醒：')
+          monitor.forEach((item: any, index: number) => {
+            ensureSpace(30)
+            drawText(`  ${index + 1}. ${String(item)}`, { size: 10 })
+          })
+        }
+        if (Array.isArray(experiments) && experiments.length) {
+          ensureSpace(40)
+          drawText('實驗/調整：')
+          experiments.forEach((item: any, index: number) => {
+            ensureSpace(30)
+            drawText(`  ${index + 1}. ${String(item)}`, { size: 10 })
+          })
+        }
+      }
+    }
+
     if (Array.isArray(payload.analysis?.follow_up_actions) && payload.analysis.follow_up_actions.length) {
       drawTitle('下週行動重點')
       payload.analysis.follow_up_actions.forEach((item: any, index: number) => {
@@ -118,6 +196,14 @@ export async function GET(
       payload.analysis.warning_signs.forEach((item: any, index: number) => {
         ensureSpace(40)
         drawText(`${index + 1}. ${item}`)
+      })
+    }
+
+    if (Array.isArray(payload.analysis?.evidence_notes) && payload.analysis.evidence_notes.length) {
+      drawTitle('資料證據')
+      payload.analysis.evidence_notes.forEach((item: any, index: number) => {
+        ensureSpace(30)
+        drawText(`${index + 1}. ${String(item)}`, { size: 10 })
       })
     }
 

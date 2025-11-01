@@ -4,7 +4,7 @@
 
 ## 1. 前置準備
 
-1. Fork 或複製此專案到您 GitHub 帳號下（範例目標 repo：`gilko0725/diet_daily_docker`）。
+1. Fork 或複製此專案到您 GitHub 帳號下（範例目標 repo：`gilko0725/diet-daily`）。
 2. 確保專案根目錄包含完整的 Next.js 原始碼 (`package.json`, `next.config.js`, `src/` 等)。
 3. 在 Render 建立帳號並綁定 GitHub。
 
@@ -35,7 +35,7 @@ Render 部署不會讀取 `.env` 檔案，請將必要變數複製到 Render 的
 ## 3. 使用 `render.yaml` 建立服務
 
 1. 在 Render Dashboard 選擇 **Blueprints** → **New Blueprint Instance**。
-2. 指定 repo URL（例如 `https://github.com/gilko0725/diet_daily_docker`）。
+2. 指定 repo URL（例如 `https://github.com/gilko0725/diet-daily`）。
 3. Render 會讀取 [`pi_docker/render/render.yaml`](render.yaml)，自動建立：
    - 一個 `type: web` 的 Docker 服務
    - 使用 `pi_docker/Dockerfile` 來建置
