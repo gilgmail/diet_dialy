@@ -16,10 +16,9 @@ IOS_DIR="${APP_DIR}/ios"
 RELEASE_DIR="${REPO_ROOT}/releaseIosApp"
 
 DEFAULT_DEVICE_NAME="Gil-Golden"
-DEFAULT_DEVICE_UDID="00008140-00146D6A2610801C"
 
 INSTALL_AFTER_BUILD="false"
-TARGET_DEVICE_UDID="${DEFAULT_DEVICE_UDID}"
+TARGET_DEVICE_UDID=""
 TARGET_DEVICE_NAME="${DEFAULT_DEVICE_NAME}"
 RUN_CLEAN_BUILD="false"
 
@@ -163,13 +162,92 @@ echo "✅ Release artifact ready: ${IPA_PATH}"
 
 if [[ "${INSTALL_AFTER_BUILD}" == "true" ]]; then
   echo ""
-  echo "6️⃣ Installing ${IPA_BASENAME} onto ${TARGET_DEVICE_NAME} (${TARGET_DEVICE_UDID})..."
-  if ! xcrun devicectl list devices 2>/dev/null | grep -q "${TARGET_DEVICE_UDID}"; then
-    echo "   Device not found via xcrun devicectl. Available devices:"
-    xcrun devicectl list devices || true
-    echo "❌ Unable to locate device ${TARGET_DEVICE_UDID}."
+  echo "6️⃣ Installing ${IPA_BASENAME}..."
+
+  DEVICE_LIST_OUTPUT="$(xcrun devicectl list devices --json-output - 2>/dev/null || true)"
+  if [[ -z "${DEVICE_LIST_OUTPUT}" ]]; then
+    echo "❌ Failed to query connected devices via xcrun devicectl." >&2
     exit 1
   fi
+
+  DEVICE_TABLE="$(printf '%s\n' "${DEVICE_LIST_OUTPUT}" | sed '/^{/,$d')"
+  DEVICE_JSON="$(printf '%s\n' "${DEVICE_LIST_OUTPUT}" | python - <<'PY'
+import sys
+
+text = sys.stdin.read()
+start = text.find('{')
+if start == -1:
+    sys.exit(1)
+print(text[start:])
+PY
+)"
+
+  if [[ -z "${DEVICE_JSON}" ]]; then
+    echo "❌ Unable to parse device list JSON." >&2
+    printf '%s\n' "${DEVICE_TABLE}"
+    exit 1
+  fi
+
+  RESOLVED="$(JSON_INPUT="${DEVICE_JSON}" python - "${TARGET_DEVICE_UDID}" "${TARGET_DEVICE_NAME}" <<'PY'
+import json, os, sys
+
+data = json.loads(os.environ["JSON_INPUT"])
+requested_udid = sys.argv[1]
+requested_name = sys.argv[2]
+
+devices = data.get("result", {}).get("devices", [])
+
+def is_ios(device):
+    return device.get("hardwareProperties", {}).get("platform") == "iOS"
+
+def extract(device):
+    udid = device.get("hardwareProperties", {}).get("udid")
+    name = device.get("deviceProperties", {}).get("name") or device.get("identifier")
+    return udid, name
+
+resolved = None
+
+if requested_udid:
+    for device in devices:
+        udid, name = extract(device)
+        if udid == requested_udid:
+            resolved = (udid, name)
+            break
+
+if resolved is None and requested_name:
+    for device in devices:
+        if not is_ios(device):
+            continue
+        udid, name = extract(device)
+        if name == requested_name:
+            resolved = (udid, name)
+            break
+
+if resolved is None:
+    for device in devices:
+        if not is_ios(device):
+            continue
+        udid, name = extract(device)
+        if udid:
+            resolved = (udid, name)
+            break
+
+if resolved:
+    print(f"{resolved[0]}|{resolved[1]}")
+PY
+)"
+
+  if [[ -z "${RESOLVED}" ]]; then
+    echo "   Device not found. Available devices:"
+    printf '%s\n' "${DEVICE_TABLE}"
+    echo "❌ Unable to find a physical iOS device to deploy."
+    exit 1
+  fi
+
+  TARGET_DEVICE_UDID="${RESOLVED%%|*}"
+  TARGET_DEVICE_NAME="${RESOLVED#*|}"
+
+  echo "   Target device: ${TARGET_DEVICE_NAME} (${TARGET_DEVICE_UDID})"
 
   xcrun devicectl install app "${TARGET_DEVICE_UDID}" "${IPA_PATH}"
   echo "✅ Installation request sent to device."
