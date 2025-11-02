@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 # iOS release automation script.
-# Builds the DietDailyMobile iOS app, bumps it to v1.0.0, archives the build,
-# and optionally installs the resulting .ipa onto a connected device.
+# Builds the DietDailyMobile iOS app, bumps it to v1.0.0, and archives the build.
 
 set -euo pipefail
 
@@ -15,59 +14,20 @@ APP_DIR="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyMobile"
 IOS_DIR="${APP_DIR}/ios"
 RELEASE_DIR="${REPO_ROOT}/releaseIosApp"
 
-DEFAULT_DEVICE_NAME="Gil-Golden"
-
-INSTALL_AFTER_BUILD="false"
-TARGET_DEVICE_UDID=""
-TARGET_DEVICE_NAME="${DEFAULT_DEVICE_NAME}"
 RUN_CLEAN_BUILD="false"
-
-PYTHON_BIN="${PYTHON:-python3}"
-if ! command -v "${PYTHON_BIN}" >/dev/null 2>&1; then
-  if command -v python3 >/dev/null 2>&1; then
-    PYTHON_BIN="python3"
-  elif command -v python >/dev/null 2>&1; then
-    PYTHON_BIN="python"
-  else
-    echo "❌ Neither python3 nor python found. Please install Python 3 or set \$PYTHON." >&2
-    exit 1
-  fi
-fi
 
 usage() {
   cat <<'USAGE'
 Usage: scripts/release-ios-app.sh [options]
 
 Options:
-  --install             Install the generated .ipa onto a connected device.
-  --udid <udid>         Target device UDID (defaults to Gil-Golden UDID).
-  --device-name <name>  Friendly name used for log messages (defaults to Gil-Golden).
   --clean               Run pod install and clean derived data before building.
-  --skip-install        Generate the .ipa without installing it (default behaviour).
   -h, --help            Show this help message and exit.
 USAGE
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --install)
-      INSTALL_AFTER_BUILD="true"
-      shift
-      ;;
-    --skip-install)
-      INSTALL_AFTER_BUILD="false"
-      shift
-      ;;
-    --udid)
-      [[ $# -ge 2 ]] || { echo "Error: --udid requires a value" >&2; exit 1; }
-      TARGET_DEVICE_UDID="$2"
-      shift 2
-      ;;
-    --device-name)
-      [[ $# -ge 2 ]] || { echo "Error: --device-name requires a value" >&2; exit 1; }
-      TARGET_DEVICE_NAME="$2"
-      shift 2
-      ;;
     --clean)
       RUN_CLEAN_BUILD="true"
       shift
@@ -171,99 +131,5 @@ fi
 
 echo ""
 echo "✅ Release artifact ready: ${IPA_PATH}"
-
-if [[ "${INSTALL_AFTER_BUILD}" == "true" ]]; then
-  echo ""
-  echo "6️⃣ Installing ${IPA_BASENAME}..."
-
-  DEVICE_LIST_OUTPUT="$(xcrun devicectl list devices --json-output - 2>/dev/null || true)"
-  if [[ -z "${DEVICE_LIST_OUTPUT}" ]]; then
-    echo "❌ Failed to query connected devices via xcrun devicectl." >&2
-    exit 1
-  fi
-
-  DEVICE_TABLE="$(printf '%s\n' "${DEVICE_LIST_OUTPUT}" | sed '/^{/,$d')"
-  DEVICE_JSON="$(printf '%s\n' "${DEVICE_LIST_OUTPUT}" | "${PYTHON_BIN}" - <<'PY'
-import sys
-
-text = sys.stdin.read()
-start = text.find('{')
-if start == -1:
-    sys.exit(1)
-print(text[start:])
-PY
-)"
-
-  if [[ -z "${DEVICE_JSON}" ]]; then
-    echo "❌ Unable to parse device list JSON." >&2
-    printf '%s\n' "${DEVICE_TABLE}"
-    exit 1
-  fi
-  
-  RESOLVED="$(JSON_INPUT="${DEVICE_JSON}" "${PYTHON_BIN}" - "${TARGET_DEVICE_UDID}" "${TARGET_DEVICE_NAME}" <<'PY'
-import json, os, sys
-
-data = json.loads(os.environ["JSON_INPUT"])
-requested_udid = sys.argv[1]
-requested_name = sys.argv[2]
-
-devices = data.get("result", {}).get("devices", [])
-
-def is_ios(device):
-    return device.get("hardwareProperties", {}).get("platform") == "iOS"
-
-def extract(device):
-    udid = device.get("hardwareProperties", {}).get("udid")
-    name = device.get("deviceProperties", {}).get("name") or device.get("identifier")
-    return udid, name
-
-resolved = None
-
-if requested_udid:
-    for device in devices:
-        udid, name = extract(device)
-        if udid == requested_udid:
-            resolved = (udid, name)
-            break
-
-if resolved is None and requested_name:
-    for device in devices:
-        if not is_ios(device):
-            continue
-        udid, name = extract(device)
-        if name == requested_name:
-            resolved = (udid, name)
-            break
-
-if resolved is None:
-    for device in devices:
-        if not is_ios(device):
-            continue
-        udid, name = extract(device)
-        if udid:
-            resolved = (udid, name)
-            break
-
-if resolved:
-    print(f"{resolved[0]}|{resolved[1]}")
-PY
-)"
-
-  if [[ -z "${RESOLVED}" ]]; then
-    echo "   Device not found. Available devices:"
-    printf '%s\n' "${DEVICE_TABLE}"
-    echo "❌ Unable to find a physical iOS device to deploy."
-    exit 1
-  fi
-
-  TARGET_DEVICE_UDID="${RESOLVED%%|*}"
-  TARGET_DEVICE_NAME="${RESOLVED#*|}"
-
-  echo "   Target device: ${TARGET_DEVICE_NAME} (${TARGET_DEVICE_UDID})"
-
-  xcrun devicectl install app "${TARGET_DEVICE_UDID}" "${IPA_PATH}"
-  echo "✅ Installation request sent to device."
-fi
-
 echo ""
-echo "🎉 Done. You can distribute ${IPA_PATH} or install it using --install."
+echo "🎉 Done. Use scripts/install-ios-app.sh to deploy the IPA to a device."
