@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { SymptomSelect } from './SymptomSelect';
+import { SymptomSlider } from './SymptomSlider';
 import { cn } from '@/lib/utils';
 import type { CoreSymptomScores, DailySymptomEntry, BristolStoolType } from '@/types/medical';
 
@@ -21,10 +22,10 @@ interface QuickSymptomEntryProps {
 
 const DEFAULT_SCORES: CoreSymptomScores = {
   overall_health: 3,  // 3 = 一般 (Fair)
-  abdominal_pain: 1,  // 1 = 無 (None)
-  diarrhea: 1,        // 1 = 無 (None)
-  bloody_stool: 1,    // 1 = 無 (None)
-  bloating: 1         // 1 = 無 (None)
+  abdominal_pain: 0,  // 0 = 無 (None)
+  diarrhea: 0,        // 0 = 無 (None)
+  bloody_stool: 0,    // 0 = 無 (None)
+  bloating: 0         // 0 = 無 (None)
 };
 
 export function QuickSymptomEntry({
@@ -71,13 +72,17 @@ export function QuickSymptomEntry({
     setError('');
 
     try {
+      const now = new Date();
+      const recordedDate = now.toISOString().split('T')[0];
+
       const entryData: Partial<DailySymptomEntry> = {
         ...scores,
         bowel_movement_count: bowelMovementCount,
         stool_type: stoolType,
         notes: notes.trim() || undefined,
         // recorded_date will be set by parent component based on selected date
-        recorded_at: new Date(),
+        recorded_at: now,
+        recorded_date: recordedDate,
         entry_source: 'manual',
         data_completeness_score: 1.0, // Full core symptoms completed
         triggers_identified: [],
@@ -90,10 +95,12 @@ export function QuickSymptomEntry({
       await onSubmit(entryData);
 
       // Reset form after successful submission
-      setScores(DEFAULT_SCORES);
-      setBowelMovementCount(1); // Reset to default 1
-      setStoolType(3); // Reset to default 3 (正常)
-      setNotes('');
+      flushSync(() => {
+        setScores({ ...DEFAULT_SCORES });
+        setBowelMovementCount(1); // Reset to default 1
+        setStoolType(3); // Reset to default 3 (正常)
+        setNotes('');
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : '提交失敗，請重試');
     } finally {
@@ -102,19 +109,26 @@ export function QuickSymptomEntry({
   }, [scores, notes, onSubmit]);
 
   // Calculate overall symptom burden for visual feedback
-  const symptomBurden = (scores.abdominal_pain + scores.diarrhea + scores.bloody_stool + scores.bloating) / 4;
-  
-  const getBurdenColor = (burden: number): string => {
-    if (burden === 0) return 'text-green-600';
-    if (burden <= 1.5) return 'text-yellow-600';
-    if (burden <= 3) return 'text-orange-600';
+  const symptomScores = [
+    scores.abdominal_pain,
+    scores.diarrhea,
+    scores.bloody_stool,
+    scores.bloating
+  ];
+  const symptomMax = Math.max(...symptomScores);
+  const symptomAverage = symptomScores.reduce((sum, val) => sum + val, 0) / symptomScores.length;
+
+  const getBurdenColor = (maxSymptom: number): string => {
+    if (maxSymptom === 0) return 'text-green-600';
+    if (maxSymptom <= 2) return 'text-yellow-600';
+    if (maxSymptom <= 3) return 'text-orange-600';
     return 'text-red-600';
   };
 
-  const getBurdenText = (burden: number): string => {
-    if (burden === 0) return '無症狀';
-    if (burden <= 1.5) return '輕微症狀';
-    if (burden <= 3) return '中等症狀';
+  const getBurdenText = (maxSymptom: number): string => {
+    if (maxSymptom === 0) return '無症狀';
+    if (maxSymptom <= 2) return '輕微症狀';
+    if (maxSymptom <= 3) return '中等症狀';
     return '嚴重症狀';
   };
 
@@ -130,10 +144,10 @@ export function QuickSymptomEntry({
         {/* Symptom Burden Indicator */}
         <div className="flex items-center gap-2 text-sm">
           <span className="text-gray-600">當前症狀狀態:</span>
-          <span className={cn('font-medium', getBurdenColor(symptomBurden))}>
-            {getBurdenText(symptomBurden)}
+          <span className={cn('font-medium', getBurdenColor(symptomMax))}>
+            {getBurdenText(symptomMax)}
           </span>
-          <span className="text-gray-400">(平均: {symptomBurden.toFixed(1)}/5)</span>
+          <span className="text-gray-400">(平均: {symptomAverage.toFixed(1)}/5)</span>
         </div>
       </CardHeader>
 
@@ -153,12 +167,13 @@ export function QuickSymptomEntry({
             </h3>
 
             {(Object.keys(DEFAULT_SCORES) as Array<keyof CoreSymptomScores>).map((symptom) => (
-              <SymptomSelect
+              <SymptomSlider
                 key={symptom}
                 symptom={symptom}
                 value={scores[symptom]}
                 onChange={(value) => handleScoreChange(symptom, value)}
                 disabled={isLoading || isSubmitting}
+                showLabels
               />
             ))}
           </div>
@@ -202,10 +217,10 @@ export function QuickSymptomEntry({
               <option value="2">2 - 偏硬</option>
               <option value="3">3 - 正常</option>
               <option value="4">4 - 偏軟</option>
-              <option value="5">5 - 水狀（腹瀉）</option>
+              <option value="5">5 - 水狀（稀便）</option>
             </select>
             <p id="stool-type-help" className="text-xs text-gray-500">
-              大便形態：1=非常硬/便秘，3=正常，5=水狀/腹瀉
+              大便形態：1=非常硬/便秘，3=正常，5=水狀/稀便
             </p>
           </div>
 
@@ -237,9 +252,9 @@ export function QuickSymptomEntry({
               📝 記錄小資訊
             </h4>
             <ul className="text-xs text-blue-800 space-y-1">
-              <li>• 為達到最佳追蹤效果，建議每日同一時間記錄</li>
-              <li>• 健康評分：1=非常差、3=一般、5=非常好</li>
-              <li>• 症狀評分：0=無症狀、3=中等、5=極嚴重</li>
+              <li>• 建議挑選固定時段紀錄，幫助觀察趨勢</li>
+              <li>• 整體狀態評分：1=非常差、3=普通、5=最佳</li>
+              <li>• 症狀強度：0=完全無、3=中等程度、5=最嚴重</li>
             </ul>
           </div>
 

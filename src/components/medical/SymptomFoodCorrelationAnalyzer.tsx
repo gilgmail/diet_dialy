@@ -281,18 +281,25 @@ const SymptomFoodCorrelationAnalyzer: React.FC<SymptomFoodCorrelationAnalyzerPro
       {/* 控制面板 */}
       <div className="bg-gray-50 p-4 rounded-lg flex flex-wrap gap-4 items-center">
         <div className="flex items-center space-x-2">
-          <label className="text-sm font-medium text-gray-700">時間窗口:</label>
-          <select
-            value={selectedTimeWindow}
-            onChange={(e) => setSelectedTimeWindow(Number(e.target.value))}
-            className="border rounded px-2 py-1 text-sm"
-          >
-            <option value={6}>6小時</option>
-            <option value={12}>12小時</option>
-            <option value={24}>24小時</option>
-            <option value={48}>48小時</option>
-            <option value={72}>72小時</option>
-          </select>
+          <label htmlFor="time-window-select" className="text-sm font-medium text-gray-700">
+            時間窗口:
+          </label>
+          <div className="flex items-center space-x-1">
+            <select
+              id="time-window-select"
+              value={selectedTimeWindow}
+              onChange={(e) => setSelectedTimeWindow(Number(e.target.value))}
+              className="border rounded px-2 py-1 text-sm"
+              aria-label="時間窗口 (小時)"
+            >
+              <option value={6}>6</option>
+              <option value={12}>12</option>
+              <option value={24}>24</option>
+              <option value={48}>48</option>
+              <option value={72}>72</option>
+            </select>
+            <span className="text-sm text-gray-500" aria-hidden="true">小時</span>
+          </div>
         </div>
         <div className="flex items-center space-x-2">
           <label className="text-sm font-medium text-gray-700">相關性閾值:</label>
@@ -312,8 +319,10 @@ const SymptomFoodCorrelationAnalyzer: React.FC<SymptomFoodCorrelationAnalyzerPro
       {/* 相關性列表 */}
       <div className="bg-white rounded-lg border overflow-hidden">
         <div className="bg-gray-50 px-4 py-2 border-b">
-          <h3 className="font-semibold text-gray-800">食物症狀相關性分析</h3>
-          <p className="text-sm text-gray-600">發現 {correlationResults.length} 個潛在關聯</p>
+          <h3 className="font-semibold text-gray-800">相關性分析結果</h3>
+          <p className="text-sm text-gray-600">
+            發現 {correlationResults.length} 個潛在關聯，附信心水準百分比評估
+          </p>
         </div>
 
         <div className="max-h-96 overflow-y-auto">
@@ -331,7 +340,7 @@ const SymptomFoodCorrelationAnalyzer: React.FC<SymptomFoodCorrelationAnalyzerPro
                   <div className="text-sm text-gray-600 mt-1">
                     平均延遲時間: {result.avgTimeLag} 小時 |
                     發生次數: {result.occurrences} 次 |
-                    置信度: {(result.confidence * 100).toFixed(1)}%
+                    信心水準: {(result.confidence * 100).toFixed(1)}%
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
@@ -371,12 +380,12 @@ const SymptomFoodCorrelationAnalyzer: React.FC<SymptomFoodCorrelationAnalyzerPro
               <YAxis
                 dataKey="confidence"
                 domain={[0, 1]}
-                label={{ value: '置信度', angle: -90, position: 'insideLeft' }}
+                label={{ value: '信心水準', angle: -90, position: 'insideLeft' }}
               />
               <Tooltip
                 formatter={(value, name) => [
                   typeof value === 'number' ? (value * 100).toFixed(1) + '%' : value,
-                  name === 'correlation' ? '相關性' : '置信度'
+                  name === 'correlation' ? '相關性' : '信心水準'
                 ]}
                 labelFormatter={(label, payload) => {
                   if (payload && payload[0]) {
@@ -623,6 +632,13 @@ const SymptomFoodCorrelationAnalyzer: React.FC<SymptomFoodCorrelationAnalyzerPro
     </div>
   );
 
+  const tabs = [
+    { key: 'correlations', label: '相關性分析', render: renderCorrelationsTab },
+    { key: 'profiles', label: '食物風險檔案（總覽）', render: renderProfilesTab },
+    { key: 'timeline', label: '時間線分析', render: renderTimelineTab },
+    { key: 'recommendations', label: '飲食建議', render: renderRecommendationsTab }
+  ] as const;
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="mb-6">
@@ -634,16 +650,15 @@ const SymptomFoodCorrelationAnalyzer: React.FC<SymptomFoodCorrelationAnalyzerPro
 
       {/* 標籤導航 */}
       <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
-          {[
-            { key: 'correlations', label: '相關性分析' },
-            { key: 'profiles', label: '食物風險檔案' },
-            { key: 'timeline', label: '時間線分析' },
-            { key: 'recommendations', label: '飲食建議' }
-          ].map(tab => (
+        <nav className="-mb-px flex space-x-8" role="tablist" aria-label="食物症狀分析選項">
+          {tabs.map(tab => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
+              role="tab"
+              id={`tab-${tab.key}`}
+              aria-controls={`panel-${tab.key}`}
+              aria-selected={activeTab === tab.key}
+              onClick={() => setActiveTab(tab.key)}
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === tab.key
                   ? 'border-blue-500 text-blue-600'
@@ -657,10 +672,18 @@ const SymptomFoodCorrelationAnalyzer: React.FC<SymptomFoodCorrelationAnalyzerPro
       </div>
 
       {/* 內容區域 */}
-      {activeTab === 'correlations' && renderCorrelationsTab()}
-      {activeTab === 'profiles' && renderProfilesTab()}
-      {activeTab === 'timeline' && renderTimelineTab()}
-      {activeTab === 'recommendations' && renderRecommendationsTab()}
+      {tabs.map(tab => (
+        <div
+          key={tab.key}
+          role="tabpanel"
+          id={`panel-${tab.key}`}
+          aria-labelledby={`tab-${tab.key}`}
+          hidden={activeTab !== tab.key}
+          className={activeTab === tab.key ? '' : 'hidden'}
+        >
+          {activeTab === tab.key ? tab.render() : null}
+        </div>
+      ))}
     </div>
   );
 };

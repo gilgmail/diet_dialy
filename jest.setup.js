@@ -53,6 +53,9 @@ jest.mock('recharts', () => ({
 
 // Mock environment variables
 process.env.NODE_ENV = 'test'
+process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://testing.supabase.local'
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-anon-key'
+process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'test-service-role-key'
 
 // Mock Web APIs for Node.js environment
 const { TextEncoder, TextDecoder } = require('util')
@@ -109,6 +112,18 @@ global.Headers = class MockHeaders extends Map {
 
   has(key) {
     return super.has(key.toLowerCase())
+  }
+
+  append(key, value) {
+    const existing = this.get(key)
+    if (existing) {
+      const combined = Array.isArray(existing)
+        ? [...existing, value]
+        : `${existing}, ${value}`
+      this.set(key, combined)
+    } else {
+      this.set(key, value)
+    }
   }
 }
 

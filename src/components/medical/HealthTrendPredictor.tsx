@@ -335,7 +335,7 @@ const HealthTrendPredictor: React.FC<HealthTrendPredictorProps> = ({
       {/* 主要趨勢圖 */}
       <div className="bg-white p-6 rounded-lg border mb-6">
         <h3 className="text-lg font-semibold mb-4">
-          {metricLabels[selectedMetric]} 趨勢預測
+          <span>{metricLabels[selectedMetric]}</span> 趨勢預測
         </h3>
         <div style={{ width: '100%', height: '400px' }}>
           <ResponsiveContainer>

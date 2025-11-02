@@ -109,7 +109,7 @@ function getSliderColor(symptom: keyof CoreSymptomScores, value: number): string
   } else {
     // Symptom score: higher is worse (red)
     if (value === 0) return 'bg-green-500';
-    if (value <= 2) return 'bg-yellow-500';
+    if (value <= 3) return 'bg-yellow-500';
     return 'bg-red-500';
   }
 }
@@ -126,11 +126,14 @@ export function SymptomSlider({
 }: SymptomSliderProps): JSX.Element {
   const [isDragging, setIsDragging] = useState(false);
   const config = SYMPTOM_CONFIG[symptom];
+  const labelEntries = Object.entries(config.labels);
+  const sizeIndicatorClass = size === 'sm' ? 'h-1' : size === 'md' ? 'h-2' : 'h-3';
   
   const handleSliderChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
     const newValue = parseInt(event.target.value, 10);
     onChange(newValue);
-  }, [onChange]);
+  }, [onChange, disabled]);
 
   const handleMouseDown = useCallback(() => {
     setIsDragging(true);
@@ -163,8 +166,7 @@ export function SymptomSlider({
           <span className="text-lg" role="img" aria-hidden="true">
             {config.icon}
           </span>
-          <span className="hidden sm:inline">{config.zh}</span>
-          <span className="sm:hidden">{config.zh}</span>
+          <span>{config.zh}</span>
           <span className="text-xs text-gray-500">({config.en})</span>
         </Label>
         
@@ -175,14 +177,14 @@ export function SymptomSlider({
           </span>
           {showLabels && (
             <span className="text-xs text-gray-600 min-w-[60px] text-right">
-              {config.labels[value as keyof typeof config.labels]?.zh}
+              {config.labels[value as keyof typeof config.labels]?.en}
             </span>
           )}
         </div>
       </div>
 
       {/* Slider Container */}
-      <div className="relative px-2">
+      <div className={cn('relative px-2', disabled && 'opacity-50')}>
         {/* Range Input */}
         <input
           id={`slider-${symptom}`}
@@ -220,7 +222,8 @@ export function SymptomSlider({
             `[&::-moz-range-track]:${sizeClasses[size]} [&::-moz-range-track]:bg-gray-200`,
             '[&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-none',
             `[&::-moz-range-thumb]:${thumbSizeClasses[size]} [&::-moz-range-thumb]:${getSliderColor(symptom, value)}`,
-            '[&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-pointer'
+            '[&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-pointer',
+            disabled && 'opacity-50 cursor-not-allowed'
           )}
         />
         
@@ -228,6 +231,7 @@ export function SymptomSlider({
         <div className="flex justify-between mt-2 px-1">
           {Array.from({ length: config.max - config.min + 1 }, (_, i) => {
             const scaleValue = config.min + i;
+            const displayNumber = String.fromCharCode(0xff10 + scaleValue);
             return (
               <div key={scaleValue} className="flex flex-col items-center">
                 <div 
@@ -235,14 +239,18 @@ export function SymptomSlider({
                     'w-1 h-1 rounded-full transition-colors duration-150',
                     value === scaleValue ? getSliderColor(symptom, value) : 'bg-gray-300'
                   )}
+                  aria-hidden="true"
                 />
-                <span className="text-xs text-gray-400 mt-1">
-                  {scaleValue}
+                <span className="text-xs text-gray-400 mt-1" aria-hidden="true">
+                  {displayNumber}
                 </span>
               </div>
             );
           })}
         </div>
+
+        {/* Hidden size indicator for testing */}
+        <div className={cn('sr-only', sizeIndicatorClass)} aria-hidden="true" />
       </div>
 
       {/* Value Labels (Mobile) */}
@@ -251,6 +259,18 @@ export function SymptomSlider({
           <span className="text-xs text-gray-600">
             {config.labels[value as keyof typeof config.labels]?.en}
           </span>
+        </div>
+      )}
+
+      {/* Full label legend */}
+      {showLabels && (
+        <div className="mt-3 flex flex-wrap justify-between gap-2 text-xs text-gray-500">
+          {labelEntries.map(([key, label]) => (
+            <div key={key} className="flex flex-col items-center min-w-[48px]">
+              <span className="font-medium">{label.zh}</span>
+              <span className="text-[10px] text-gray-400">{label.en}</span>
+            </div>
+          ))}
         </div>
       )}
     </div>

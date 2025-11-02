@@ -54,6 +54,37 @@ interface ReportSection {
   data?: any;
 }
 
+const sanitizeForPDF = (value: unknown): string => {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .replace(/[\r\n\t]+/g, ' ') // collapse whitespace
+      .replace(/[\u0000-\u001f\u007f]+/g, '') // remove control chars
+      .trim();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(item => sanitizeForPDF(item)).join(', ');
+  }
+
+  if (typeof value === 'object') {
+    try {
+      return sanitizeForPDF(JSON.stringify(value));
+    } catch {
+      return '';
+    }
+  }
+
+  return '';
+};
+
 const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
   healthData,
   symptomRecords,
@@ -79,7 +110,11 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
       const days = reportPeriod === '7d' ? 7 : reportPeriod === '30d' ? 30 : 90;
       const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
-      const safeHealthData = (healthData || []).filter(d => {
+      const sanitizedHealth = (healthData || []).filter(d => d && d.date);
+      const sanitizedSymptoms = (symptomRecords || []).filter(r => r && r.timestamp);
+      const sanitizedFood = (foodEntries || []).filter(f => f && f.timestamp);
+
+      const safeHealthData = sanitizedHealth.filter(d => {
         try {
           return d && d.date && new Date(d.date) >= cutoff;
         } catch (error) {
@@ -88,7 +123,7 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
         }
       });
 
-      const safeSymptomRecords = (symptomRecords || []).filter(r => {
+      const safeSymptomRecords = sanitizedSymptoms.filter(r => {
         try {
           return r && r.timestamp && new Date(r.timestamp) >= cutoff;
         } catch (error) {
@@ -97,7 +132,7 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
         }
       });
 
-      const safeFoodEntries = (foodEntries || []).filter(f => {
+      const safeFoodEntries = sanitizedFood.filter(f => {
         try {
           return f && f.timestamp && new Date(f.timestamp) >= cutoff;
         } catch (error) {
@@ -106,10 +141,14 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
         }
       });
 
+      const finalHealth = safeHealthData.length > 0 ? safeHealthData : sanitizedHealth;
+      const finalSymptoms = safeSymptomRecords.length > 0 ? safeSymptomRecords : sanitizedSymptoms;
+      const finalFood = safeFoodEntries.length > 0 ? safeFoodEntries : sanitizedFood;
+
       return {
-        healthData: safeHealthData,
-        symptomRecords: safeSymptomRecords,
-        foodEntries: safeFoodEntries
+        healthData: finalHealth,
+        symptomRecords: finalSymptoms,
+        foodEntries: finalFood
       };
     } catch (error) {
       console.error('Error filtering data:', error);
@@ -221,18 +260,17 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
     setIsGenerating(true);
 
     try {
+      await new Promise(resolve => setTimeout(resolve, 0));
       // 獲取過濾後的數據
       const data = getFilteredData();
       if (!data || data.healthData.length === 0) {
         alert('無足夠數據生成報告，請確保選定期間內有健康記錄');
-        setIsGenerating(false);
         return;
       }
 
       const stats = calculateStats(data);
       if (!stats) {
         alert('無法計算統計數據');
-        setIsGenerating(false);
         return;
       }
 
@@ -377,11 +415,15 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
       pdf.setTextColor(128);
       const footerY = pageHeight - 10;
       pdf.text(`報告生成時間: ${new Date().toLocaleString('zh-TW')}`, leftMargin, footerY);
-      pdf.text('免責聲明: 此報告僅供參考，不可替代專業醫療建議', leftMargin, footerY + 5);
+      const disclaimerText = '免責聲明: 此報告僅供參考，不可替代專業醫療建議';
+      const disclaimerLines = pdf.splitTextToSize(disclaimerText, pageWidth - 2 * leftMargin);
+      disclaimerLines.forEach((line: string, index: number) => {
+        pdf.text(line, leftMargin, footerY + 5 + index * (lineHeight - 2));
+      });
 
       // 生成文件名並下載
       const timestamp = new Date().toISOString().split('T')[0];
-      const filename = `健康報告_${periodText}_${timestamp}.pdf`;
+      const filename = `Diet_Daily_健康報告_${periodText}_${timestamp}.pdf`;
       pdf.save(filename);
 
       alert('PDF報告已成功生成！檔案小且中文完整顯示。');
@@ -390,7 +432,7 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
       console.error('生成PDF時發生錯誤:', error);
       alert('生成PDF報告時發生錯誤，請稍後再試');
     } finally {
-      setIsGenerating(false);
+      setTimeout(() => setIsGenerating(false), 0);
     }
   };
 
@@ -399,12 +441,12 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
     setIsGenerating(true);
 
     try {
+      await new Promise(resolve => setTimeout(resolve, 0));
       const filteredData = getFilteredData();
       const stats = calculateStats(filteredData);
 
       if (!stats) {
         alert('選定期間內數據不足，無法生成報告');
-        setIsGenerating(false);
         return;
       }
 
@@ -574,7 +616,7 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
 
       // 生成文件名
       const periodLabel = reportPeriod === '7d' ? '7days' : reportPeriod === '30d' ? '30days' : '90days';
-      const fileName = `Diet_Daily_Health_Report_${periodLabel}_${new Date().toISOString().split('T')[0]}.pdf`;
+      const fileName = `Diet_Daily_健康報告_${periodLabel === '7days' ? '7天' : periodLabel === '30days' ? '30天' : '90天'}_${new Date().toISOString().split('T')[0]}.pdf`;
 
       // 保存PDF
       pdf.save(fileName);
@@ -596,7 +638,7 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
 
       alert(errorMessage);
     } finally {
-      setIsGenerating(false);
+      setTimeout(() => setIsGenerating(false), 0);
     }
   };
 
@@ -677,125 +719,31 @@ const PDFReportExporter: React.FC<PDFReportExporterProps> = ({
           <div className="flex justify-end space-x-3">
             <button
               onClick={() => {
-                try {
-                  console.log('=== 開始報告預覽 ===');
+                const data = getFilteredData();
+                const hasData =
+                  data &&
+                  (data.healthData?.length || 0) +
+                  (data.symptomRecords?.length || 0) +
+                  (data.foodEntries?.length || 0) > 0;
 
-                  // 步驟1: 獲取過濾數據
-                  console.log('步驟1: 獲取原始數據...');
-                  console.log('原始健康數據:', healthData);
-                  console.log('原始症狀記錄:', symptomRecords);
-                  console.log('原始飲食記錄:', foodEntries);
-
-                  const data = getFilteredData();
-                  console.log('步驟2: 過濾後數據:', data);
-
-                  if (!data || typeof data !== 'object') {
-                    alert('獲取數據失敗，請重新載入頁面');
-                    return;
-                  }
-
-                  if (!data.healthData || data.healthData.length === 0) {
-                    alert('選定期間內無健康數據可供預覽');
-                    return;
-                  }
-
-                  // Step 3: Calculating statistics
-                  console.log('步驟3: 計算統計數據...');
-                  const stats = calculateStats(data);
-                  console.log('計算出的統計數據:', stats);
-
-                  if (!stats) {
-                    alert('無法計算統計數據，數據可能不完整或格式不正確');
-                    return;
-                  }
-
-                  // 步驟4: 生成建議
-                  console.log('步驟4: 生成醫療建議...');
-                  const recommendations = generateRecommendations(stats);
-                  console.log('生成的醫療建議:', recommendations);
-
-                  // 步驟5: 安全地構建預覽信息
-                  const safeValue = (value: any, defaultValue: any = 'Unknown') => {
-                    if (value === null || value === undefined) return defaultValue;
-                    if (typeof value === 'number' && isNaN(value)) return defaultValue;
-                    return value;
-                  };
-
-                  const formatNumber = (num: any, decimals = 1) => {
-                    const n = parseFloat(num);
-                    return isNaN(n) ? '0.0' : n.toFixed(decimals);
-                  };
-
-                  let topSymptomsText = 'No major symptom records';
-                  try {
-                    if (Array.isArray(stats.topSymptoms) && stats.topSymptoms.length > 0) {
-                      topSymptomsText = stats.topSymptoms
-                        .map(([name, count]: [string, number]) => `${sanitizeForPDF(name)}(${count} times)`)
-                        .join(', ');
-                    }
-                  } catch (e) {
-                    console.warn('Error processing symptom data:', e);
-                  }
-
-                  // 顯示詳細的預覽信息
-                  const previewInfo = `
-Report Preview Summary:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📊 數據統計:
-• Health Records: ${safeValue(data.healthData?.length, 0)} entries
-• Symptom Records: ${safeValue(data.symptomRecords?.length, 0)} entries
-• Food Entries: ${safeValue(data.foodEntries?.length, 0)} entries
-• 報告期間: ${safeValue(stats.reportPeriodDays, 0)} 天
-
-📈 Health Indicators:
-• Average Symptom Severity: ${formatNumber(stats.avgSeverity)}/4
-• Average Activity Impact: ${formatNumber(stats.avgActivity)}/4
-• Average Mood Impact: ${formatNumber(stats.avgMood)}/4
-• Average Sleep Quality: ${formatNumber(stats.avgSleep)}/4
-• Symptom Trend: ${safeValue(stats.trendDirection, 'No trend data')}
-
-🍽️ Dietary Analysis:
-• High-risk Food Types: ${safeValue(stats.uniqueHighRiskFoods?.length, 0)}
-• Main Symptoms: ${topSymptomsText}
-
-💡 Medical Recommendations: ${safeValue(recommendations?.length, 0)} items
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Detailed data output to browser console (F12 > Console)
-Preview successful! Report data integrity is good.
-                  `;
-
-                  console.log('========== 報告預覽詳細數據 ==========');
-                  console.log('統計數據:', stats);
-                  console.log('醫療建議:', recommendations);
-                  console.log('原始數據:', data);
-                  console.log('=======================================');
-
-                  alert(previewInfo);
-
-                } catch (error) {
-                  console.error('Error during report preview:', error);
-                  console.error('Error stack:', error instanceof Error ? error.stack : 'Unknown error');
-
-                  // 提供更詳細的錯誤信息
-                  let errorMessage = 'Error during report preview:\n\n';
-                  if (error instanceof Error) {
-                    if (error.message.includes('Cannot read propert')) {
-                      errorMessage += 'Data structure anomaly, please check the format of health data, symptom records, or food entries.';
-                    } else if (error.message.includes('map') || error.message.includes('forEach')) {
-                      errorMessage += 'Data traversal failed, some data may not be in the expected array format.';
-                    } else {
-                      errorMessage += `Specific error: ${error.message}`;
-                    }
-                  } else {
-                    errorMessage += 'Unknown error type, please check browser console for more information.';
-                  }
-
-                  errorMessage += '\n\nPlease try reloading the page or contact technical support.';
-                  alert(errorMessage);
+                if (!hasData) {
+                  alert('選定期間內沒有數據可供預覽');
+                  return;
                 }
+
+                const stats = calculateStats(data);
+                if (!stats) {
+                  alert('無法計算統計數據，請確認記錄是否完整');
+                  return;
+                }
+
+                const recommendations = generateRecommendations(stats);
+                console.log('報告預覽:', {
+                  stats,
+                  recommendations,
+                  data
+                });
+                alert('報告預覽已輸出到瀏覽器控制台');
               }}
               className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
@@ -810,7 +758,7 @@ Preview successful! Report data integrity is good.
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
-              {isGenerating ? '生成中...' : '生成中文 PDF 報告'}
+              {isGenerating ? '生成中...' : '生成 PDF 報告'}
             </button>
           </div>
 
@@ -820,7 +768,7 @@ Preview successful! Report data integrity is good.
             <ul className="space-y-1 text-blue-700">
               <li>• 報告將包含選定期間內的健康數據統計分析</li>
               <li>• 症狀趨勢、飲食記錄和風險評估</li>
-              <li>• 基於數據的個人化Medical recommendations</li>
+              <li>• 基於數據的個人化醫療建議</li>
               <li>• 適合與醫療專業人員分享討論</li>
             </ul>
           </div>
