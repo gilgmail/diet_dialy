@@ -22,6 +22,18 @@ TARGET_DEVICE_UDID=""
 TARGET_DEVICE_NAME="${DEFAULT_DEVICE_NAME}"
 RUN_CLEAN_BUILD="false"
 
+PYTHON_BIN="${PYTHON:-python3}"
+if ! command -v "${PYTHON_BIN}" >/dev/null 2>&1; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "❌ Neither python3 nor python found. Please install Python 3 or set \$PYTHON." >&2
+    exit 1
+  fi
+fi
+
 usage() {
   cat <<'USAGE'
 Usage: scripts/release-ios-app.sh [options]
@@ -171,7 +183,7 @@ if [[ "${INSTALL_AFTER_BUILD}" == "true" ]]; then
   fi
 
   DEVICE_TABLE="$(printf '%s\n' "${DEVICE_LIST_OUTPUT}" | sed '/^{/,$d')"
-  DEVICE_JSON="$(printf '%s\n' "${DEVICE_LIST_OUTPUT}" | python - <<'PY'
+  DEVICE_JSON="$(printf '%s\n' "${DEVICE_LIST_OUTPUT}" | "${PYTHON_BIN}" - <<'PY'
 import sys
 
 text = sys.stdin.read()
@@ -187,8 +199,8 @@ PY
     printf '%s\n' "${DEVICE_TABLE}"
     exit 1
   fi
-
-  RESOLVED="$(JSON_INPUT="${DEVICE_JSON}" python - "${TARGET_DEVICE_UDID}" "${TARGET_DEVICE_NAME}" <<'PY'
+  
+  RESOLVED="$(JSON_INPUT="${DEVICE_JSON}" "${PYTHON_BIN}" - "${TARGET_DEVICE_UDID}" "${TARGET_DEVICE_NAME}" <<'PY'
 import json, os, sys
 
 data = json.loads(os.environ["JSON_INPUT"])
