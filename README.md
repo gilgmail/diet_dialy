@@ -152,6 +152,10 @@ npm run test:e2e           # Playwright E2E tests
 
 # Local CI/CD Testing
 ./scripts/ci-test.sh       # Simulate GitHub Actions locally
+
+# Mobile Release
+./scripts/release-ios-app.sh        # Build v1.0.0 archive into releaseIosApp/
+./scripts/release-ios-app.sh --install   # Build and install to Gil-Golden (override via --udid)
 \`\`\`
 
 ## 🔧 Technology Stack
