@@ -90,21 +90,21 @@ if [[ -z "${DEVICE_LIST_OUTPUT}" ]]; then
   exit 1
 fi
 
-DEVICE_TABLE="$(printf '%s\n' "${DEVICE_LIST_OUTPUT}" | sed '/^{/,$d')"
-DEVICE_JSON="$(printf '%s\n' "${DEVICE_LIST_OUTPUT}" | "${PYTHON_BIN}" - <<'PY'
-import sys
+DEVICE_JSON="$(
+  DEVICE_LIST_OUTPUT="${DEVICE_LIST_OUTPUT}" "${PYTHON_BIN}" <<'PY'
+import os, sys
 
-text = sys.stdin.read()
+text = os.environ["DEVICE_LIST_OUTPUT"]
 start = text.find('{')
 if start == -1:
     sys.exit(1)
-print(text[start:])
+sys.stdout.write(text[start:])
 PY
 )"
 
 if [[ -z "${DEVICE_JSON}" ]]; then
   echo "❌ Unable to parse device list JSON." >&2
-  printf '%s\n' "${DEVICE_TABLE}"
+  xcrun devicectl list devices || true
   exit 1
 fi
 
@@ -159,7 +159,7 @@ PY
 
 if [[ -z "${RESOLVED}" ]]; then
   echo "   Device not found. Available devices:"
-  printf '%s\n' "${DEVICE_TABLE}"
+  xcrun devicectl list devices || true
   echo "❌ Unable to find a physical iOS device to deploy."
   exit 1
 fi
@@ -169,5 +169,5 @@ TARGET_DEVICE_NAME="${RESOLVED#*|}"
 
 echo "🔌 Target device: ${TARGET_DEVICE_NAME} (${TARGET_DEVICE_UDID})"
 echo "🚀 Installing..."
-xcrun devicectl install app "${TARGET_DEVICE_UDID}" "${IPA_PATH}"
+xcrun devicectl device install app --device "${TARGET_DEVICE_UDID}" "${IPA_PATH}"
 echo "✅ Installation request sent to device."
