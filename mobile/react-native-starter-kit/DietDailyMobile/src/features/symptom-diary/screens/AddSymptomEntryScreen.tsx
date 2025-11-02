@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import type { SeverityLevel, SymptomEntry } from '../types'
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
 import { format, isSameDay } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
+import { parseSymptomNames } from '../utils/parseSymptomNames'
 
 export function AddSymptomEntryScreen() {
   const navigation = useNavigation()
@@ -34,6 +35,10 @@ export function AddSymptomEntryScreen() {
   const [duration, setDuration] = useState('')
   const [notes, setNotes] = useState('')
   const [showOptionalFields, setShowOptionalFields] = useState(false)
+  const selectedSymptomNames = useMemo(
+    () => parseSymptomNames(symptomName),
+    [symptomName]
+  )
 
   const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
     if (date && event.type !== 'dismissed') {
@@ -53,27 +58,40 @@ export function AddSymptomEntryScreen() {
   )
 
   const handleSubmit = async () => {
-    if (!symptomName.trim()) {
+    const symptomNames = parseSymptomNames(symptomName)
+
+    if (symptomNames.length === 0) {
       Alert.alert('提醒', '請輸入症狀名稱')
       return
     }
 
-    try {
-      const newEntry = await createEntry({
-        symptom_name: symptomName.trim(),
-        severity,
-        duration_minutes: duration ? parseInt(duration, 10) : undefined,
-        notes: notes.trim() || undefined,
-        occurred_at: selectedDate.toISOString(),
-      })
+    const createdEntries: SymptomEntry[] = []
+    const durationMinutes = duration ? parseInt(duration, 10) : undefined
+    const trimmedNotes = notes.trim()
 
-      // Add to recent entries list (avoid duplicates by filtering out existing entry with same ID)
-      if (newEntry) {
-        setRecentEntries(prev => {
-          const filtered = prev.filter(e => e.id !== newEntry.id)
-          return [newEntry, ...filtered].slice(0, 5)
+    try {
+      for (const name of symptomNames) {
+        const newEntry = await createEntry({
+          symptom_name: name,
+          severity,
+          duration_minutes: durationMinutes,
+          notes: trimmedNotes || undefined,
+          occurred_at: selectedDate.toISOString(),
         })
+
+        if (newEntry) {
+          createdEntries.push(newEntry)
+        }
       }
+
+      if (createdEntries.length === 0) {
+        throw new Error('No symptom entries were created')
+      }
+
+      setRecentEntries(prev => {
+        const existing = prev.filter(entry => !createdEntries.some(newEntry => newEntry.id === entry.id))
+        return [...createdEntries, ...existing].slice(0, 5)
+      })
 
       // Clear input for next entry
       setSymptomName('')
@@ -81,15 +99,42 @@ export function AddSymptomEntryScreen() {
       setDuration('')
       setNotes('')
 
-      // Show success feedback
-      Alert.alert('成功', `已新增症狀記錄「${symptomName.trim()}」`)
+      const successNames = createdEntries.map(entry => entry.symptom_name).join('、')
+      Alert.alert('成功', `已新增症狀記錄「${successNames}」`)
     } catch (error) {
-      Alert.alert('錯誤', '新增失敗，請稍後再試')
+      if (createdEntries.length > 0) {
+        const successfulNames = createdEntries.map(entry => entry.symptom_name).join('、')
+        const remainingNames = symptomNames.slice(createdEntries.length).join('、')
+
+        if (remainingNames) {
+          setSymptomName(remainingNames)
+        }
+
+        if (remainingNames) {
+          Alert.alert(
+            '提醒',
+            `已成功新增：「${successfulNames}」，但仍有以下症狀未完成：「${remainingNames}」，請稍後再試。`
+          )
+        } else {
+          Alert.alert(
+            '提醒',
+            `已成功新增：「${successfulNames}」，但後續處理發生錯誤，請稍後再試。`
+          )
+        }
+      } else {
+        Alert.alert('錯誤', '新增失敗，請稍後再試')
+      }
     }
   }
 
   const handleCommonSymptomSelect = (name: string) => {
-    setSymptomName(name)
+    setSymptomName(prev => {
+      const names = parseSymptomNames(prev)
+      if (names.includes(name)) {
+        return names.join('、')
+      }
+      return [...names, name].join('、')
+    })
   }
 
   return (
@@ -151,6 +196,7 @@ export function AddSymptomEntryScreen() {
             outlineColor={colors.border}
             activeOutlineColor={colors.primary[500]}
           />
+          <Text style={styles.hint}>可使用逗號或頓號分隔多個症狀</Text>
         </View>
 
         {/* Common Symptoms */}
@@ -162,7 +208,7 @@ export function AddSymptomEntryScreen() {
                 key={symptom.name}
                 style={[
                   styles.symptomChip,
-                  symptomName === symptom.name && styles.symptomChipActive,
+                  selectedSymptomNames.includes(symptom.name) && styles.symptomChipActive,
                 ]}
                 onPress={() => handleCommonSymptomSelect(symptom.name)}
               >
@@ -170,7 +216,7 @@ export function AddSymptomEntryScreen() {
                 <Text
                   style={[
                     styles.symptomName,
-                    symptomName === symptom.name && styles.symptomNameActive,
+                    selectedSymptomNames.includes(symptom.name) && styles.symptomNameActive,
                   ]}
                 >
                   {symptom.name}
@@ -256,7 +302,7 @@ export function AddSymptomEntryScreen() {
           mode="contained"
           onPress={handleSubmit}
           loading={isCreating}
-          disabled={isCreating}
+          disabled={isCreating || selectedSymptomNames.length === 0}
           style={styles.submitButton}
           buttonColor={colors.primary[500]}
           textColor={colors.text.inverse}

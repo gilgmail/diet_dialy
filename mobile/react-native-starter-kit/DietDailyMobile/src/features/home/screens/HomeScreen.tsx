@@ -31,6 +31,7 @@ import {
   type SeverityLevel,
   type SymptomEntry,
 } from '@/features/symptom-diary/types'
+import { parseSymptomNames } from '@/features/symptom-diary/utils/parseSymptomNames'
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
 import { format, isSameDay } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
@@ -71,6 +72,10 @@ export function HomeScreen() {
   const [notes, setNotes] = useState('')
   const [showOptionalFields, setShowOptionalFields] = useState(false)
   const [recentSymptomEntries, setRecentSymptomEntries] = useState<SymptomEntry[]>([])
+  const selectedSymptomNames = useMemo(
+    () => parseSymptomNames(symptomName),
+    [symptomName]
+  )
 
   // Fetch today's food entries for stats
   const selectedDateKey = useMemo(() => format(selectedDate, 'yyyy-MM-dd'), [selectedDate])
@@ -167,39 +172,84 @@ export function HomeScreen() {
   }
 
   const handleSymptomSubmit = async () => {
-    if (!symptomName.trim()) {
+    const symptomNames = parseSymptomNames(symptomName)
+
+    if (symptomNames.length === 0) {
       Alert.alert('提醒', '請輸入症狀名稱')
       return
     }
 
-    try {
-      const newEntry = await createSymptomEntry({
-        symptom_name: symptomName.trim(),
-        severity,
-        duration_minutes: duration ? parseInt(duration, 10) : undefined,
-        notes: notes.trim() || undefined,
-        occurred_at: selectedDate.toISOString(),
-      })
+    const createdEntries: SymptomEntry[] = []
+    const durationMinutes = duration ? parseInt(duration, 10) : undefined
+    const trimmedNotes = notes.trim()
 
-      if (newEntry) {
-        setRecentSymptomEntries((prev) => {
-          const filtered = prev.filter((e) => e.id !== newEntry.id)
-          return [newEntry, ...filtered].slice(0, 5)
+    try {
+
+      for (const name of symptomNames) {
+        const newEntry = await createSymptomEntry({
+          symptom_name: name,
+          severity,
+          duration_minutes: durationMinutes,
+          notes: trimmedNotes || undefined,
+          occurred_at: selectedDate.toISOString(),
         })
+
+        if (newEntry) {
+          createdEntries.push(newEntry)
+        }
       }
+
+      if (createdEntries.length === 0) {
+        throw new Error('No symptom entries were created')
+      }
+
+      setRecentSymptomEntries((prev) => {
+        const existing = prev.filter((entry) =>
+          !createdEntries.some((newEntry) => newEntry.id === entry.id)
+        )
+        return [...createdEntries, ...existing].slice(0, 5)
+      })
 
       setSymptomName('')
       setSeverity('mild')
       setDuration('')
       setNotes('')
-      Alert.alert('成功', `已新增症狀記錄「${symptomName.trim()}」`)
+      const successNames = createdEntries.map((entry) => entry.symptom_name).join('、')
+      Alert.alert('成功', `已新增症狀記錄「${successNames}」`)
     } catch (error) {
-      Alert.alert('錯誤', '新增失敗，請稍後再試')
+      if (createdEntries.length > 0) {
+        const successfulNames = createdEntries.map((entry) => entry.symptom_name).join('、')
+        const remainingNames = symptomNames.slice(createdEntries.length).join('、')
+
+        if (remainingNames) {
+          setSymptomName(remainingNames)
+        }
+
+        if (remainingNames) {
+          Alert.alert(
+            '提醒',
+            `已成功新增：「${successfulNames}」，但仍有以下症狀未完成：「${remainingNames}」，請稍後再試。`
+          )
+        } else {
+          Alert.alert(
+            '提醒',
+            `已成功新增：「${successfulNames}」，但後續處理發生錯誤，請稍後再試。`
+          )
+        }
+      } else {
+        Alert.alert('錯誤', '新增失敗，請稍後再試')
+      }
     }
   }
 
   const handleCommonSymptomSelect = (name: string) => {
-    setSymptomName(name)
+    setSymptomName((prev) => {
+      const names = parseSymptomNames(prev)
+      if (names.includes(name)) {
+        return names.join('、')
+      }
+      return [...names, name].join('、')
+    })
   }
 
   return (
@@ -390,6 +440,7 @@ export function HomeScreen() {
                 outlineColor={colors.border}
                 activeOutlineColor={colors.primary[500]}
               />
+              <Text style={styles.symptomHint}>可使用逗號或頓號分隔多個症狀</Text>
             </View>
 
             {/* Common Symptoms */}
@@ -401,7 +452,7 @@ export function HomeScreen() {
                     key={symptom.name}
                     style={[
                       styles.symptomChip,
-                      symptomName === symptom.name && styles.symptomChipActive,
+                      selectedSymptomNames.includes(symptom.name) && styles.symptomChipActive,
                     ]}
                     onPress={() => handleCommonSymptomSelect(symptom.name)}
                   >
@@ -409,7 +460,7 @@ export function HomeScreen() {
                     <Text
                       style={[
                         styles.symptomName,
-                        symptomName === symptom.name && styles.symptomNameActive,
+                        selectedSymptomNames.includes(symptom.name) && styles.symptomNameActive,
                       ]}
                     >
                       {symptom.name}
@@ -496,7 +547,7 @@ export function HomeScreen() {
               mode="contained"
               onPress={handleSymptomSubmit}
               loading={isCreatingSymptom}
-              disabled={isCreatingSymptom}
+              disabled={isCreatingSymptom || selectedSymptomNames.length === 0}
               style={styles.submitButton}
               buttonColor={colors.error}
               icon="check"
@@ -699,6 +750,11 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: colors.surface,
+  },
+  symptomHint: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
   },
   textArea: {
     minHeight: 100,
