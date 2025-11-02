@@ -167,6 +167,28 @@ fi
 TARGET_DEVICE_UDID="${RESOLVED%%|*}"
 TARGET_DEVICE_NAME="${RESOLVED#*|}"
 
+DEV_MODE_STATUS="$(
+  JSON_INPUT="${DEVICE_JSON}" "${PYTHON_BIN}" - "${TARGET_DEVICE_UDID}" <<'PY'
+import json, os, sys
+
+data = json.loads(os.environ["JSON_INPUT"])
+target_udid = sys.argv[1]
+
+for device in data.get("result", {}).get("devices", []):
+    hardware = device.get("hardwareProperties", {})
+    if hardware.get("udid") == target_udid:
+        status = device.get("deviceProperties", {}).get("developerModeStatus", "unknown")
+        print(status)
+        break
+PY
+)"
+
+if [[ "${DEV_MODE_STATUS}" != "enabled" ]]; then
+  echo "❌ Developer Mode is ${DEV_MODE_STATUS:-not enabled} on ${TARGET_DEVICE_NAME}."
+  echo "請在 iPhone 上開啟「設定 > 隱私與安全性 > Developer Mode」，開啟後依照指示重新啟動並再次解鎖裝置。"
+  exit 1
+fi
+
 echo "🔌 Target device: ${TARGET_DEVICE_NAME} (${TARGET_DEVICE_UDID})"
 echo "🚀 Installing..."
 xcrun devicectl device install app --device "${TARGET_DEVICE_UDID}" "${IPA_PATH}"
