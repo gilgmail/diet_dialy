@@ -142,3 +142,9 @@ audit-logs/
 security-reports/
 
 diet_daily_docker
+
+# iOS release artifacts (keep only ipa and gitkeep)
+releaseIosApp/**
+!releaseIosApp/
+!releaseIosApp/*.ipa
+!releaseIosApp/.gitkeep
