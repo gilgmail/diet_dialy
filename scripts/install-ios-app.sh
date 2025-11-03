@@ -7,10 +7,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 RELEASE_DIR="${REPO_ROOT}/releaseIosApp"
-DEFAULT_IPA="${RELEASE_DIR}/DietDailyMobile-v1.0.0.ipa"
 DEFAULT_DEVICE_NAME="Gil-Golden"
 
-IPA_PATH="${DEFAULT_IPA}"
+IPA_PATH=""
 TARGET_DEVICE_UDID=""
 TARGET_DEVICE_NAME="${DEFAULT_DEVICE_NAME}"
 
@@ -24,6 +23,32 @@ if ! command -v "${PYTHON_BIN}" >/dev/null 2>&1; then
     echo "❌ Neither python3 nor python found. Please install Python 3 or set \$PYTHON." >&2
     exit 1
   fi
+fi
+
+LATEST_IPA="$("${PYTHON_BIN}" - "${RELEASE_DIR}" <<'PY'
+import os, sys
+
+release_dir = sys.argv[1]
+if not os.path.isdir(release_dir):
+    sys.exit(0)
+
+ipa_files = []
+for entry in os.listdir(release_dir):
+    if entry.lower().endswith(".ipa"):
+        full = os.path.join(release_dir, entry)
+        if os.path.isfile(full):
+            ipa_files.append((os.path.getmtime(full), full))
+
+if not ipa_files:
+    sys.exit(0)
+
+ipa_files.sort(reverse=True)
+print(ipa_files[0][1])
+PY
+)"
+
+if [[ -n "${LATEST_IPA}" ]]; then
+  IPA_PATH="${LATEST_IPA}"
 fi
 
 usage() {
@@ -72,6 +97,11 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -z "${IPA_PATH}" ]]; then
+  echo "❌ 未找到任何 .ipa 檔案於 ${RELEASE_DIR}。請先執行發行腳本或使用 --ipa 指定檔案。" >&2
+  exit 1
+fi
 
 if [[ ! -f "${IPA_PATH}" ]]; then
   echo "❌ IPA not found at ${IPA_PATH}. Use --ipa to specify the file." >&2

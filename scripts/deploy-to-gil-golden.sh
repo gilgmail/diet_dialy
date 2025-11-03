@@ -8,7 +8,6 @@ set -e  # Exit on error
 DEVICE_NAME="Gil-Golden"
 DEVICE_ID="A23495EF-156D-5726-8391-01E2B18B8B90"
 APP_DIR="mobile/react-native-starter-kit/DietDailyMobile"
-BUNDLE_ID="com.gilko.DietDailyMobile"
 
 # Colors for output
 RED='\033[0;31m'
@@ -38,6 +37,34 @@ print_error() {
 print_warning() {
     echo -e "${YELLOW}⚠️${NC} $1"
 }
+
+VARIANT="${1:-debug}"
+case "$VARIANT" in
+    debug)
+        BUNDLE_ID="com.gilko.DietDailyMobile.dev"
+        APP_VARIANT_ENV="debug"
+        VARIANT_LABEL="Debug"
+        XCODE_CONFIGURATION="Debug"
+        ;;
+    release)
+        BUNDLE_ID="com.gilko.DietDailyMobile"
+        APP_VARIANT_ENV="release"
+        VARIANT_LABEL="Release"
+        XCODE_CONFIGURATION="Release"
+        ;;
+    -h|--help)
+        echo "Usage: $0 [debug|release]"
+        echo "  debug   (default) - deploys the debug bundle ID (com.gilko.DietDailyMobile.dev)"
+        echo "  release           - deploys the production bundle ID"
+        exit 0
+        ;;
+    *)
+        print_error "Unknown variant '$VARIANT'. Use 'release' or 'debug'."
+        exit 1
+        ;;
+esac
+
+print_status "Selected app variant: ${VARIANT_LABEL}"
 
 # Check if running from project root
 print_status "Checking project directory..."
@@ -107,6 +134,7 @@ echo ""
 echo -e "${BLUE}═══════════════════════════════════════════════${NC}"
 echo -e "${BLUE}Build Configuration:${NC}"
 echo -e "  Device: ${GREEN}$DEVICE_NAME${NC}"
+echo -e "  Variant: ${GREEN}${VARIANT_LABEL}${NC}"
 echo -e "  Bundle ID: ${GREEN}$BUNDLE_ID${NC}"
 if [ -n "$INSTALLED_VERSION" ]; then
     echo -e "  Current Version: ${GREEN}$INSTALLED_VERSION${NC}"
@@ -120,10 +148,10 @@ echo ""
 
 # Run build (macOS uses gtimeout from coreutils, fallback to no timeout)
 if command -v gtimeout &> /dev/null; then
-    gtimeout 600 npx expo run:ios --device "$DEVICE_NAME" 2>&1
+    APP_VARIANT="$APP_VARIANT_ENV" gtimeout 600 npx expo run:ios --device "$DEVICE_NAME" --configuration "$XCODE_CONFIGURATION" 2>&1
     BUILD_RESULT=$?
 else
-    npx expo run:ios --device "$DEVICE_NAME" 2>&1
+    APP_VARIANT="$APP_VARIANT_ENV" npx expo run:ios --device "$DEVICE_NAME" --configuration "$XCODE_CONFIGURATION" 2>&1
     BUILD_RESULT=$?
 fi
 

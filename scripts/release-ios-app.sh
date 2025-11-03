@@ -5,14 +5,12 @@
 
 set -euo pipefail
 
-APP_VERSION="1.0.0"
-VERSION_TAG="v${APP_VERSION}"
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 APP_DIR="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyMobile"
 IOS_DIR="${APP_DIR}/ios"
 RELEASE_DIR="${REPO_ROOT}/releaseIosApp"
+CONFIG_FILE="${SCRIPT_DIR}/release-ios-app.conf"
 
 RUN_CLEAN_BUILD="false"
 
@@ -21,6 +19,7 @@ usage() {
 Usage: scripts/release-ios-app.sh [options]
 
 Options:
+  --config <path>      Specify custom config file (default: scripts/release-ios-app.conf).
   --clean               Run pod install and clean derived data before building.
   -h, --help            Show this help message and exit.
 USAGE
@@ -28,6 +27,14 @@ USAGE
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --config)
+      if [[ -z "${2:-}" ]]; then
+        echo "Missing value for --config" >&2
+        exit 1
+      fi
+      CONFIG_FILE="$2"
+      shift 2
+      ;;
     --clean)
       RUN_CLEAN_BUILD="true"
       shift
@@ -44,32 +51,40 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ ! -f "${CONFIG_FILE}" ]]; then
+  echo "❌ Configuration file not found: ${CONFIG_FILE}" >&2
+  exit 1
+fi
+
+# shellcheck disable=SC1090
+source "${CONFIG_FILE}"
+
+APP_VERSION="${APP_VERSION:-}"
+IOS_BUILD_NUMBER="${IOS_BUILD_NUMBER:-1}"
+
+if [[ -z "${APP_VERSION}" ]]; then
+  echo "❌ APP_VERSION is not set in ${CONFIG_FILE}" >&2
+  exit 1
+fi
+
+VERSION_TAG="v${APP_VERSION}"
+
 echo "============================================"
 echo "🚀 DietDailyMobile iOS Release - ${VERSION_TAG}"
 echo "============================================"
+echo "Using config: ${CONFIG_FILE}"
+echo "  APP_VERSION     = ${APP_VERSION}"
+echo "  IOS_BUILD_NUMBER= ${IOS_BUILD_NUMBER}"
 echo ""
 
 mkdir -p "${RELEASE_DIR}"
 
-echo "1️⃣ Updating Expo app.json to version ${APP_VERSION}..."
-node <<'NODE' "${APP_DIR}/app.json" "${APP_VERSION}"
-const fs = require("fs");
-const path = process.argv[2];
-const version = process.argv[3];
-const data = JSON.parse(fs.readFileSync(path, "utf8"));
-if (!data.expo) data.expo = {};
-data.expo.version = version;
-if (!data.expo.ios) data.expo.ios = {};
-data.expo.ios.buildNumber = "1";
-fs.writeFileSync(path, JSON.stringify(data, null, 2) + "\n");
-NODE
-
-echo "2️⃣ Ensuring Info.plist versions match..."
+echo "1️⃣ Ensuring Info.plist versions match..."
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${APP_VERSION}" "${IOS_DIR}/DietDailyMobile/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion 1" "${IOS_DIR}/DietDailyMobile/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${IOS_BUILD_NUMBER}" "${IOS_DIR}/DietDailyMobile/Info.plist"
 
 if [[ "${RUN_CLEAN_BUILD}" == "true" ]]; then
-  echo "3️⃣ Cleaning build artifacts..."
+  echo "2️⃣ Cleaning build artifacts..."
   rm -rf "${IOS_DIR}/build"
   if command -v xcodebuild >/dev/null 2>&1; then
     xcodebuild -workspace "${IOS_DIR}/DietDailyMobile.xcworkspace" \
@@ -85,7 +100,7 @@ ARCHIVE_PATH="${RELEASE_DIR}/DietDailyMobile-${VERSION_TAG}.xcarchive"
 IPA_BASENAME="DietDailyMobile-${VERSION_TAG}"
 IPA_PATH="${RELEASE_DIR}/${IPA_BASENAME}.ipa"
 
-echo "4️⃣ Building archive..."
+echo "3️⃣ Building archive..."
 xcodebuild -workspace "${IOS_DIR}/DietDailyMobile.xcworkspace" \
   -scheme "DietDailyMobile" \
   -configuration Release \
@@ -111,7 +126,7 @@ cat <<'PLIST' > "${EXPORT_OPTIONS_PLIST}"
 </plist>
 PLIST
 
-echo "5️⃣ Exporting .ipa to ${RELEASE_DIR}..."
+echo "4️⃣ Exporting .ipa to ${RELEASE_DIR}..."
 xcodebuild -exportArchive \
   -archivePath "${ARCHIVE_PATH}" \
   -exportOptionsPlist "${EXPORT_OPTIONS_PLIST}" \

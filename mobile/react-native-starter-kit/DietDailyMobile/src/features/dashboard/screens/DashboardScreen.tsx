@@ -1008,7 +1008,15 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       {/* Version Info */}
       <View style={styles.versionContainer}>
         <Text style={styles.versionText}>
-          v{Constants.expoConfig?.version} ({Platform.OS === 'ios' ? `Build ${Constants.expoConfig?.ios?.buildNumber}` : `Build ${Constants.expoConfig?.android?.versionCode || 'N/A'}`})
+          v{Constants.expoConfig?.version ?? Constants.nativeAppVersion ?? 'N/A'} (
+          {Platform.OS === 'ios'
+            ? `Build ${Constants.expoConfig?.ios?.buildNumber ?? Constants.nativeBuildVersion ?? 'N/A'}`
+            : `Build ${
+                Constants.expoConfig?.android?.versionCode ??
+                Constants.nativeBuildVersion ??
+                'N/A'
+              }`}
+          )
         </Text>
       </View>
       </ScrollView>
