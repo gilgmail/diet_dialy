@@ -40,7 +40,7 @@ A comprehensive full-stack application for patients managing IBD, IBS, food alle
 
 ### Installation
 
-\`\`\`bash
+```bash
 # Clone repository
 git clone https://github.com/your-org/diet-daily.git
 cd diet-daily
@@ -62,11 +62,11 @@ npm run dev
 
 # Open browser
 open http://localhost:3000
-\`\`\`
+```
 
 ### Mobile App Setup (React Native)
 
-\`\`\`bash
+```bash
 cd mobile/react-native-starter-kit/DietDailyMobile
 
 # Install dependencies
@@ -77,7 +77,7 @@ npm run ios
 
 # Android
 npm run android
-\`\`\`
+```
 
 ## 🐳 Production Deployment
 
@@ -103,7 +103,7 @@ cd pi_docker
 
 ## 🏗️ Architecture
 
-\`\`\`
+```
 diet-daily/
 ├── src/
 │   ├── app/                    # Next.js 15 App Router
@@ -131,11 +131,11 @@ diet-daily/
 └── .github/
     └── workflows/
         └── ci-cd.yml         # GitHub Actions workflow
-\`\`\`
+```
 
 ## 🧪 Development Scripts
 
-\`\`\`bash
+```bash
 # Development
 npm run dev                # Start dev server (Next.js)
 npm run build              # Production build
@@ -152,11 +152,25 @@ npm run test:e2e           # Playwright E2E tests
 
 # Local CI/CD Testing
 ./scripts/ci-test.sh       # Simulate GitHub Actions locally
+```
 
-# Mobile Release
-./scripts/release-ios-app.sh             # Build v1.0.0 archive into releaseIosApp/
-./scripts/install-ios-app.sh             # Install the latest .ipa to Gil-Golden (override via --udid/--ipa)
-\`\`\`
+## Mobile Release
+
+```bash
+./scripts/release-ios-app.sh             # Build iOS archive into releaseIosApp/
+./scripts/install-ios-app.sh             # Install the latest .ipa (use --device-name/--ipa to override)
+```
+
+## Symptom Diary Guardrails
+
+- Mobile app 在新增症狀前會先 upsert 一筆 `diet_daily_users` 資料，以符合 `daily_symptom_entries.user_id` 的外鍵限制。
+- 若看到錯誤 `code=23503 ... violates foreign key constraint "daily_symptom_entries_user_id_fkey"`，表示尚未建立此使用者紀錄，可使用 service role key 執行：
+  ```sql
+  insert into diet_daily_users (id, email, name, avatar_url)
+  values ('<auth.user.id>', '<user email>', null, null)
+  on conflict (id) do update set email = excluded.email;
+  ```
+- 亦可撰寫簡單 Node script 搭配 service key 批次 upsert。建議把這個動作放在註冊或登入後的同步流程，以免再次觸發外鍵錯誤。
 
 ## 🔧 Technology Stack
 

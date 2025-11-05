@@ -81,6 +81,7 @@ export class SymptomDiaryService {
     input: CreateSymptomEntryInput
   ) {
     try {
+      await this.ensureUserProfile(userId)
       console.log('[SymptomDiaryService] Creating symptom entry:', { userId, input })
 
       // Use current time with milliseconds to ensure uniqueness for multiple entries per day
@@ -129,9 +130,56 @@ export class SymptomDiaryService {
         error: {
           message: parts.length ? parts.join(' | ') : fallback,
         },
-      }
     }
   }
+
+  /**
+   * Ensure a matching row exists in diet_daily_users for FK constraint.
+   * Some legacy accounts may be missing this row because they pre-date mobile logging.
+   */
+  private static async ensureUserProfile(userId: string) {
+    try {
+      const { data: existing, error: lookupError } = await supabase
+        .from('diet_daily_users')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle()
+
+      if (lookupError) {
+        console.warn('[SymptomDiaryService] Failed to lookup user profile:', lookupError)
+        return
+      }
+
+      if (existing) {
+        return
+      }
+
+      const { data: authData, error: authError } = await supabase.auth.getUser()
+      if (authError || !authData?.user) {
+        console.warn('[SymptomDiaryService] Unable to fetch auth user for profile sync:', authError)
+        return
+      }
+
+      const { user } = authData
+      const profilePayload = {
+        id: user.id,
+        email: user.email,
+        name: (user.user_metadata?.full_name as string | undefined) ?? null,
+        avatar_url: (user.user_metadata?.avatar_url as string | undefined) ?? null,
+      }
+
+      const { error: upsertError } = await supabase
+        .from('diet_daily_users')
+        .upsert(profilePayload, { onConflict: 'id' })
+
+      if (upsertError) {
+        console.warn('[SymptomDiaryService] Failed to upsert user profile:', upsertError)
+      }
+    } catch (error) {
+      console.warn('[SymptomDiaryService] Unexpected error ensuring user profile:', error)
+    }
+  }
+}
 
   /**
    * Update an existing symptom entry
