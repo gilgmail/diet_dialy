@@ -65,6 +65,16 @@ export function AddSymptomEntryScreen() {
       return
     }
 
+    const formatErrorMessage = (error: unknown) => {
+      if (error instanceof Error) return error.message
+      if (typeof error === 'string') return error
+      try {
+        return JSON.stringify(error)
+      } catch {
+        return '未知錯誤'
+      }
+    }
+
     const createdEntries: SymptomEntry[] = []
     const durationMinutes = duration ? parseInt(duration, 10) : undefined
     const trimmedNotes = notes.trim()
@@ -122,7 +132,7 @@ export function AddSymptomEntryScreen() {
           )
         }
       } else {
-        Alert.alert('錯誤', '新增失敗，請稍後再試')
+        Alert.alert('錯誤', `新增失敗：${formatErrorMessage(error)}`)
       }
     }
   }

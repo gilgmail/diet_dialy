@@ -111,11 +111,23 @@ export class SymptomDiaryService {
       }
     } catch (error) {
       console.error('[SymptomDiaryService] Create entry failed:', error)
+      const supabaseError =
+        error && typeof error === 'object' && 'message' in error
+          ? (error as { message?: string; code?: string; details?: string; hint?: string })
+          : null
+
+      const parts: string[] = []
+      if (supabaseError?.code) parts.push(`code=${supabaseError.code}`)
+      if (supabaseError?.message) parts.push(supabaseError.message)
+      if (supabaseError?.details) parts.push(supabaseError.details)
+      if (supabaseError?.hint) parts.push(`hint: ${supabaseError.hint}`)
+      const fallback =
+        error instanceof Error ? error.message : 'Failed to create symptom entry'
+
       return {
         data: null,
         error: {
-          message:
-            error instanceof Error ? error.message : 'Failed to create symptom entry',
+          message: parts.length ? parts.join(' | ') : fallback,
         },
       }
     }
