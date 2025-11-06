@@ -20,21 +20,28 @@ import * as Sharing from 'expo-sharing'
 import Constants from 'expo-constants'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useDashboard } from '../hooks/useDashboard'
+import { DashboardService } from '../services/DashboardService'
 import type { MainStackParamList } from '@/app/navigation/types'
 import { StatCard } from '../components/StatCard'
 import { InsightCard } from '../components/InsightCard'
 import { WeeklyChart } from '../components/WeeklyChart'
 import { DistributionChart } from '../components/DistributionChart'
+import { DashboardSkeleton } from '../components/DashboardSkeleton'
 import { colors, typography, spacing } from '@/theme'
 import { MEAL_TYPES } from '@/features/food-diary/types'
 import { SEVERITY_LEVELS } from '@/features/symptom-diary/types'
-import type { WeeklyAnalysisStatus, WeeklyAnalysisStatusStep } from '../types'
+import type {
+  WeeklyAnalysisStatus,
+  WeeklyAnalysisStatusStep,
+  WeeklyAnalysisHistoryItem,
+} from '../types'
 
 interface DashboardScreenProps {
   hideHeader?: boolean
 }
 
 export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {}) {
+  const screenMountTime = React.useRef(Date.now())
   const { user } = useAuth()
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
   const {
@@ -42,10 +49,24 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     weeklyTrend,
     insights,
     analysisHistory,
+    analysisHistoryTotal,
     analysisStatus: latestAnalysisStatus,
     isLoading,
     refetch,
   } = useDashboard()
+
+  // 追蹤首次渲染時間
+  React.useEffect(() => {
+    if (!isLoading && stats) {
+      const renderTime = Date.now() - screenMountTime.current
+      console.log(`[DashboardScreen] 🎨 RENDER - Screen fully loaded in: ${renderTime}ms`)
+      if (renderTime > 5000) {
+        console.warn(`[DashboardScreen] ⚠️ SLOW - Exceeded 5s target (${renderTime}ms)`)
+      } else {
+        console.log(`[DashboardScreen] ✅ FAST - Within 5s target`)
+      }
+    }
+  }, [isLoading, stats])
   const [refreshing, setRefreshing] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisCountdown, setAnalysisCountdown] = useState(0)
@@ -54,7 +75,15 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   )
   const [latestReportId, setLatestReportId] = useState<string | null>(null)
   const [showAllReports, setShowAllReports] = useState(false)
+  const [history, setHistory] = useState(analysisHistory)
+  const [hasAllHistory, setHasAllHistory] = useState(false)
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false)
   const scrollViewRef = React.useRef<ScrollView>(null)
+  const totalHistoryCount = Math.max(analysisHistoryTotal ?? 0, history.length)
+  const hasPendingServerHistory = !hasAllHistory && totalHistoryCount > history.length
+  const hasHiddenLocalHistory = history.length > 2
+  const showExpandButton = !showAllReports && (hasPendingServerHistory || hasHiddenLocalHistory)
+  const remainingServerCount = Math.max(totalHistoryCount - history.length, 0)
 
   useEffect(() => {
     if (isAnalyzing) {
@@ -67,6 +96,19 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       setAnalysisStatus(null)
     }
   }, [latestAnalysisStatus, isAnalyzing])
+
+  useEffect(() => {
+    setHistory((prev) => {
+      if (hasAllHistory) {
+        if (analysisHistoryTotal > prev.length) {
+          setHasAllHistory(false)
+          return analysisHistory
+        }
+        return prev
+      }
+      return analysisHistory
+    })
+  }, [analysisHistory, analysisHistoryTotal, hasAllHistory])
 
   const formatTimestamp = (value?: string) => {
     if (!value) {
@@ -167,6 +209,28 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     setRefreshing(true)
     await refetch()
     setRefreshing(false)
+  }
+
+  const handleToggleAllReports = async () => {
+    if (!showAllReports) {
+      if (user?.id && hasPendingServerHistory && !isHistoryLoading) {
+        try {
+          setIsHistoryLoading(true)
+          const fullHistory = await DashboardService.loadAnalysisHistory(user.id)
+          if (fullHistory.length) {
+            setHistory(fullHistory)
+          }
+          setHasAllHistory(true)
+        } catch (error) {
+          console.error('[DashboardScreen] Failed to load full analysis history:', error)
+        } finally {
+          setIsHistoryLoading(false)
+        }
+      }
+      setShowAllReports(true)
+    } else {
+      setShowAllReports(false)
+    }
   }
 
   const handleAIAnalysis = async () => {
@@ -303,7 +367,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     }
   }
 
-  const composeShareContent = (item: (typeof analysisHistory)[number]) => {
+  const composeShareContent = (item: WeeklyAnalysisHistoryItem) => {
     const title = item.title
     const summaryText = item.summary ? `<p>${item.summary}</p>` : ''
 
@@ -557,7 +621,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     }
   }
 
-  const handleShareAnalysis = async (item: (typeof analysisHistory)[number]) => {
+  const handleShareAnalysis = async (item: WeeklyAnalysisHistoryItem) => {
     try {
       const { text } = composeShareContent(item)
       await Share.share({ message: text })
@@ -566,7 +630,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     }
   }
 
-  const handleOpenSummaryInSafari = async (item: (typeof analysisHistory)[number]) => {
+  const handleOpenSummaryInSafari = async (item: WeeklyAnalysisHistoryItem) => {
     try {
       const { html } = composeShareContent(item)
 
@@ -605,14 +669,14 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     }
   }
 
-  const handleViewReport = (item: (typeof analysisHistory)[number]) => {
+  const handleViewReport = (item: WeeklyAnalysisHistoryItem) => {
     const { html } = composeShareContent(item)
     // 使用 base64 編碼來避免 URL 參數傳遞時的編碼問題
     const base64Html = Buffer.from(html, 'utf-8').toString('base64')
     navigation.navigate('ReportDetail', { htmlContent: base64Html })
   }
 
-  const renderReportHighlights = (item: (typeof analysisHistory)[number]) => {
+  const renderReportHighlights = (item: WeeklyAnalysisHistoryItem) => {
     const reasoning = item.reasoningTrace || []
     const evidence = item.evidenceNotes || []
     const daily = item.dailyFoodBreakdown || []
@@ -717,13 +781,9 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     )
   }
 
+  // 首次載入時顯示骨架 UI
   if (isLoading && !stats) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
-        <Text style={styles.loadingText}>載入數據中...</Text>
-      </View>
-    )
+    return <DashboardSkeleton />
   }
 
   // Prepare meal distribution data
@@ -852,9 +912,9 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       {/* AI Analysis History */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>AI 分析報告歷史</Text>
-        {analysisHistory.length > 0 ? (
+        {history.length > 0 ? (
           <>
-            {analysisHistory.slice(0, 2).map((item) => (
+            {history.slice(0, 2).map((item) => (
               <View
                 key={item.id}
                 style={[
@@ -924,20 +984,29 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
             ))}
 
             {/* Show collapsed older reports if more than 2 */}
-            {analysisHistory.length > 2 && !showAllReports && (
+            {showExpandButton && (
               <TouchableOpacity
                 style={styles.expandButton}
-                onPress={() => setShowAllReports(true)}
+                onPress={handleToggleAllReports}
               >
                 <Text style={styles.expandButtonText}>
-                  還有 {analysisHistory.length - 2} 週的報告
+                  {hasPendingServerHistory
+                    ? `載入更多報告${remainingServerCount > 0 ? `（尚有 ${remainingServerCount} 週）` : ''}`
+                    : `還有 ${Math.max(history.length - 2, 0)} 週的報告`}
                 </Text>
                 <Text style={styles.expandButtonIcon}>▼</Text>
               </TouchableOpacity>
             )}
 
+            {isHistoryLoading && !showAllReports ? (
+              <View style={styles.historyLoading}>
+                <ActivityIndicator size="small" color={colors.primary[500]} />
+                <Text style={styles.historyLoadingText}>載入更多報告中...</Text>
+              </View>
+            ) : null}
+
             {/* Show remaining reports when expanded */}
-            {showAllReports && analysisHistory.slice(2).map((item) => (
+            {showAllReports && history.slice(2).map((item) => (
               <View
                 key={item.id}
                 style={styles.historyCard}
@@ -985,10 +1054,10 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
             ))}
 
             {/* Collapse button */}
-            {showAllReports && analysisHistory.length > 2 && (
+            {showAllReports && history.length > 2 && (
               <TouchableOpacity
                 style={styles.collapseButton}
-                onPress={() => setShowAllReports(false)}
+                onPress={handleToggleAllReports}
               >
                 <Text style={styles.expandButtonText}>收起舊報告</Text>
                 <Text style={styles.expandButtonIcon}>▲</Text>
@@ -1318,6 +1387,16 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: spacing.xs,
     lineHeight: 20,
+  },
+  historyLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  historyLoadingText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
   },
   historyActions: {
     flexDirection: 'row',

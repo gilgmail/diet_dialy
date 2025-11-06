@@ -89,14 +89,18 @@ export class DashboardService {
     data: DashboardData | null
     error: { message: string } | null
   }> {
-    try {
-      console.log('[DashboardService] Fetching data for userId:', userId)
+    const startTime = Date.now()
+    console.log('[DashboardService] 🚀 START - Fetching data for userId:', userId)
 
+    try {
       // Fetch food and symptom entries in parallel
+      const fetchStartTime = Date.now()
       const [foodResult, symptomResult] = await Promise.all([
         this.getFoodEntries(userId),
         this.getSymptomEntries(userId),
       ])
+      const fetchEndTime = Date.now()
+      console.log(`[DashboardService] ⏱️ FETCH - Food & Symptom entries: ${fetchEndTime - fetchStartTime}ms`)
 
       console.log('[DashboardService] Food entries:', {
         count: foodResult.data?.length || 0,
@@ -119,18 +123,55 @@ export class DashboardService {
       const symptomEntries = symptomResult.data || [] // Use empty array if symptom fetch fails
 
       // Calculate statistics
+      const calcStartTime = Date.now()
       const stats = this.calculateStats(foodEntries, symptomEntries)
       const weeklyTrend = this.calculateWeeklyTrend(foodEntries, symptomEntries)
       const insights = this.generateInsights(stats, weeklyTrend)
-      const {
-        insights: aiInsights,
-        history,
-        analysisStatus,
-      } = await this.getAIInsights(userId, weeklyTrend)
+      const calcEndTime = Date.now()
+      console.log(`[DashboardService] ⏱️ CALC - Stats & Trends: ${calcEndTime - calcStartTime}ms`)
+
+      // Get AI insights in background (non-blocking)
+      // 使用 Promise 但不等待完成，讓主要資料先返回
+      const aiStartTime = Date.now()
+      let aiInsights: HealthInsight[] = []
+      let history: WeeklyAnalysisHistoryItem[] = []
+      let historyTotal = 0
+      let analysisStatus: WeeklyAnalysisStatus | null = null
+
+      try {
+        // 設定更短的超時時間（5秒），避免阻塞主要載入
+        const aiPromise = Promise.race([
+          this.getAIInsights(userId, weeklyTrend),
+          new Promise<{ insights: HealthInsight[]; history: WeeklyAnalysisHistoryItem[]; historyTotal: number; analysisStatus: WeeklyAnalysisStatus | null }>((resolve) =>
+            setTimeout(() => {
+              console.log('[DashboardService] ⏱️ AI - Skipping due to 5s timeout')
+              resolve({ insights: [], history: [], historyTotal: 0, analysisStatus: null })
+            }, 5000)
+          )
+        ])
+
+        const aiResult = await aiPromise
+        aiInsights = aiResult.insights
+        history = aiResult.history
+        historyTotal = aiResult.historyTotal
+        analysisStatus = aiResult.analysisStatus
+
+        const aiEndTime = Date.now()
+        console.log(`[DashboardService] ⏱️ AI - Insights fetch: ${aiEndTime - aiStartTime}ms`)
+      } catch (error) {
+        console.warn('[DashboardService] AI insights failed, continuing without them:', error)
+      }
 
       const combinedInsights = [...aiInsights, ...insights]
 
-      console.log('[DashboardService] Calculated stats:', stats)
+      const totalTime = Date.now() - startTime
+      console.log(`[DashboardService] ✅ COMPLETE - Total time: ${totalTime}ms`)
+      console.log(`[DashboardService] 📊 Stats summary:`, {
+        foodEntries: foodEntries.length,
+        symptomEntries: symptomEntries.length,
+        insights: combinedInsights.length,
+        historyItems: history.length,
+      })
 
       return {
         data: {
@@ -138,6 +179,7 @@ export class DashboardService {
           weeklyTrend,
           insights: combinedInsights,
           analysisHistory: history,
+          analysisHistoryTotal: historyTotal,
           analysisStatus,
         },
         error: null,
@@ -156,26 +198,38 @@ export class DashboardService {
 
   /**
    * Get food entries for the user
+   * 優化：只查詢最近 30 天的資料，減少傳輸量和處理時間
    */
   private static async getFoodEntries(userId: string) {
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
     const { data, error } = await supabase
       .from('food_entries')
       .select('*')
       .eq('user_id', userId)
+      .gte('consumed_at', thirtyDaysAgo.toISOString())
       .order('consumed_at', { ascending: false })
+      .limit(500) // 限制最多 500 筆
 
     return { data: data as FoodEntry[], error }
   }
 
   /**
    * Get symptom entries for the user
+   * 優化：只查詢最近 30 天的資料，減少傳輸量和處理時間
    */
   private static async getSymptomEntries(userId: string) {
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
     const { data, error } = await supabase
       .from('daily_symptom_entries')
       .select('*')
       .eq('user_id', userId)
+      .gte('recorded_at', thirtyDaysAgo.toISOString())
       .order('recorded_date', { ascending: false })
+      .limit(200) // 限制最多 200 筆
 
     return { data: data as SymptomEntry[], error }
   }
@@ -377,19 +431,27 @@ export class DashboardService {
   ): Promise<{
     insights: HealthInsight[]
     history: WeeklyAnalysisHistoryItem[]
+    historyTotal: number
     analysisStatus: WeeklyAnalysisStatus | null
   }> {
     try {
       const apiBase = process.env.EXPO_PUBLIC_API_URL
       if (!apiBase) {
         console.log('[DashboardService] EXPO_PUBLIC_API_URL not configured, skip AI insights')
-        return { insights: [], history: [], analysisStatus: null }
+        return { insights: [], history: [], historyTotal: 0, analysisStatus: null }
       }
 
-      const history = await this.fetchAnalysisHistory(apiBase, userId)
+      // 延遲載入分析歷史：先返回空歷史，讓 Dashboard 快速顯示
+      // 分析歷史會在背景中另外載入
+      const historyPreview: WeeklyAnalysisHistoryItem[] = []
 
       if (!weeklyTrend.week.length) {
-        return { insights: [], history, analysisStatus: null }
+        return {
+          insights: [],
+          history: historyPreview,
+          historyTotal: historyPreview.length,
+          analysisStatus: null,
+        }
       }
 
       const logInChunks = (label: string, content: string) => {
@@ -432,6 +494,10 @@ export class DashboardService {
 
       console.log('  🌐 endpoint:', endpoint)
 
+      // 設定 15 秒超時，避免長時間等待
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000)
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -442,14 +508,30 @@ export class DashboardService {
           startDate,
           endDate,
         }),
+        signal: controller.signal,
       })
+
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
         console.warn('[DashboardService] ❌ AI insight request failed', response.status)
-        return { insights: [], history, analysisStatus: null }
+        return {
+          insights: [],
+          history: historyPreview,
+          historyTotal: historyPreview.length,
+          analysisStatus: null,
+        }
       }
 
       const payload = (await response.json()) as WeeklyIBDAnalysisResponse
+      const payloadHistory = Array.isArray(payload.history) ? payload.history : undefined
+      const normalizedHistoryPreview = this.normalizeHistory(
+        apiBase,
+        payloadHistory ? payloadHistory.slice(0, 1) : undefined
+      )
+      const historyTotal = payloadHistory
+        ? payloadHistory.length
+        : Math.max(normalizedHistoryPreview.length, historyPreview.length)
 
       // 🔍 Diagnostic logging for response
       console.log('[DashboardService] 📥 AI analysis response received:')
@@ -467,17 +549,18 @@ export class DashboardService {
         console.warn('[DashboardService] ⚠️ AI insight response missing analysis', payload.error)
         return {
           insights: [],
-          history,
+          history: normalizedHistoryPreview.length ? normalizedHistoryPreview : historyPreview,
+          historyTotal,
           analysisStatus: payload.analysisStatus ?? null,
         }
       }
 
       const aiAnalysis = payload.analysis.analysis
       if (!aiAnalysis) {
-        const normalizedHistory = this.normalizeHistory(apiBase, payload.history)
         return {
           insights: [],
-          history: normalizedHistory.length ? normalizedHistory : history,
+          history: normalizedHistoryPreview.length ? normalizedHistoryPreview : historyPreview,
+          historyTotal,
           analysisStatus: payload.analysisStatus ?? null,
         }
       }
@@ -568,26 +651,41 @@ export class DashboardService {
         })
       }
 
-      const normalizedHistory = this.normalizeHistory(apiBase, payload.history)
-
       return {
         insights,
-        history: normalizedHistory.length ? normalizedHistory : history,
+        history: normalizedHistoryPreview.length ? normalizedHistoryPreview : historyPreview,
+        historyTotal,
         analysisStatus: payload.analysisStatus ?? null,
       }
     } catch (error) {
-      console.error('[DashboardService] Failed to load AI insights:', error)
-      return { insights: [], history: [], analysisStatus: null }
+      // 超時或網路錯誤時不影響 Dashboard 載入
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.warn('[DashboardService] AI insights request timeout (15s)')
+      } else {
+        console.error('[DashboardService] Failed to load AI insights:', error)
+      }
+      return { insights: [], history: [], historyTotal: 0, analysisStatus: null }
     }
+  }
+
+  static async loadAnalysisHistory(userId: string): Promise<WeeklyAnalysisHistoryItem[]> {
+    const apiBase = process.env.EXPO_PUBLIC_API_URL
+    if (!apiBase) {
+      console.warn('[DashboardService] EXPO_PUBLIC_API_URL not configured, skip history fetch')
+      return []
+    }
+    return this.fetchAnalysisHistory(apiBase, userId)
   }
 
   private static async fetchAnalysisHistory(
     apiBase: string,
-    userId: string
+    userId: string,
+    limit?: number
   ): Promise<WeeklyAnalysisHistoryItem[]> {
     try {
       const baseUrl = apiBase.endsWith('/api') ? apiBase : `${apiBase.replace(/\/+$/, '')}/api`
-      const response = await fetch(`${baseUrl}/ai/weekly-ibd-analysis?userId=${userId}`)
+      const limitQuery = typeof limit === 'number' ? `&limit=${limit}` : ''
+      const response = await fetch(`${baseUrl}/ai/weekly-ibd-analysis?userId=${userId}${limitQuery}`)
 
       if (!response.ok) {
         return []
