@@ -1,9 +1,11 @@
 import React from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { View, Text, StyleSheet, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { Button } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
+import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { DashboardScreen } from '@/features/dashboard/screens/DashboardScreen'
 import { ReportDetailScreen } from '@/features/dashboard/screens/ReportDetailScreen'
@@ -13,6 +15,7 @@ import { AddFoodEntryScreen } from '@/features/food-diary/screens/AddFoodEntrySc
 import { SymptomDiaryScreen } from '@/features/symptom-diary/screens/SymptomDiaryScreen'
 import { AddSymptomEntryScreen } from '@/features/symptom-diary/screens/AddSymptomEntryScreen'
 import { HomeScreen } from '@/features/home/screens/HomeScreen'
+import { SettingsScreen } from '@/features/settings/screens/SettingsScreen'
 import { colors, typography, spacing } from '@/theme'
 import type { MainStackParamList, MainTabParamList } from './types'
 
@@ -24,6 +27,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>()
 // Profile Screen with Dashboard embedded and logout at top
 function ProfileScreen() {
   const { user, signOut } = useAuth()
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
 
   return (
     <View style={styles.profileContainer}>
@@ -34,16 +38,25 @@ function ProfileScreen() {
             {user?.name || user?.email || '使用者'}
           </Text>
         </View>
-        <Button
-          mode="outlined"
-          onPress={signOut}
-          style={styles.logoutButton}
-          labelStyle={styles.logoutButtonLabel}
-          icon="logout"
-          compact
-        >
-          登出
-        </Button>
+        <View style={styles.profileHeaderActions}>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Icon name="cog-outline" size={20} color={colors.text.primary} />
+            <Text style={styles.settingsButtonLabel}>設定</Text>
+          </TouchableOpacity>
+          <Button
+            mode="outlined"
+            onPress={signOut}
+            style={styles.logoutButton}
+            labelStyle={styles.logoutButtonLabel}
+            icon="logout"
+            compact
+          >
+            登出
+          </Button>
+        </View>
       </View>
       <View style={styles.dashboardWrapper}>
         <DashboardScreen hideHeader={true} />
@@ -166,6 +179,18 @@ export function MainNavigator() {
           headerTintColor: colors.text.primary,
         }}
       />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          headerShown: true,
+          title: '設定',
+          headerStyle: {
+            backgroundColor: colors.surface,
+          },
+          headerTintColor: colors.text.primary,
+        }}
+      />
     </Stack.Navigator>
   )
 }
@@ -192,6 +217,11 @@ const styles = StyleSheet.create({
   profileHeaderLeft: {
     flex: 1,
   },
+  profileHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: spacing.sm,
+  },
   profileTitle: {
     fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
@@ -201,6 +231,19 @@ const styles = StyleSheet.create({
   profileSubtitle: {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
+  },
+  settingsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: 8,
+    backgroundColor: colors.background,
+  },
+  settingsButtonLabel: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.primary,
   },
   logoutButton: {
     borderColor: colors.error,

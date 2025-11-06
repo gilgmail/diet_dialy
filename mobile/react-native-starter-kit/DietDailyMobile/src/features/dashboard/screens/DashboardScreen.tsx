@@ -765,10 +765,18 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       {/* Header */}
       {!hideHeader && (
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>健康儀表板</Text>
-          <Text style={styles.headerSubtitle}>
-            {user?.name || user?.email || '使用者'}
-          </Text>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>健康儀表板</Text>
+            <Text style={styles.headerSubtitle}>
+              {user?.name || user?.email || '使用者'}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Text style={styles.settingsIcon}>⚙️</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -1065,12 +1073,18 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
     paddingBottom: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  headerLeft: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: typography.fontSize['2xl'],
@@ -1081,6 +1095,14 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
+  },
+  settingsButton: {
+    padding: spacing.sm,
+    borderRadius: 8,
+    backgroundColor: colors.background,
+  },
+  settingsIcon: {
+    fontSize: 24,
   },
   section: {
     padding: spacing.lg,

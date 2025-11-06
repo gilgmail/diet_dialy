@@ -130,6 +130,7 @@ export class SymptomDiaryService {
         error: {
           message: parts.length ? parts.join(' | ') : fallback,
         },
+      }
     }
   }
 
@@ -179,7 +180,6 @@ export class SymptomDiaryService {
       console.warn('[SymptomDiaryService] Unexpected error ensuring user profile:', error)
     }
   }
-}
 
   /**
    * Update an existing symptom entry

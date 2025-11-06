@@ -129,6 +129,13 @@ if [ ! -f ".env" ] && [ ! -f ".env.development" ]; then
 fi
 print_success "Environment files present"
 
+# Clear Expo/Metro caches (equivalent to --clear)
+print_status "Clearing Expo / Metro caches..."
+rm -rf .expo
+rm -rf node_modules/.cache/metro
+rm -rf node_modules/.cache/expo
+print_success "Caches cleared"
+
 # Display build info
 echo ""
 echo -e "${BLUE}═══════════════════════════════════════════════${NC}"

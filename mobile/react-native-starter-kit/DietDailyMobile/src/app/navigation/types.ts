@@ -22,6 +22,7 @@ export type MainStackParamList = {
   ReportDetail: {
     htmlContent: string
   }
+  Settings: undefined
 }
 
 export type RootStackParamList = {
