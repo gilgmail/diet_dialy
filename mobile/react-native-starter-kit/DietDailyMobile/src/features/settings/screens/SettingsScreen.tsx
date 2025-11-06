@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   View,
   Text,
@@ -22,11 +22,34 @@ import { CHRONIC_DISEASES, TIMEZONES, COMMON_ALLERGENS } from '../types'
 import { colors, typography, spacing } from '@/theme'
 import type { MainStackParamList } from '@/app/navigation/types'
 
+const MEAL_NAMES: Record<'breakfast' | 'lunch' | 'dinner', string> = {
+  breakfast: '早餐',
+  lunch: '午餐',
+  dinner: '晚餐',
+}
+
 export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
   const { user } = useAuth()
   const { settings, isLoading, initializeSettings, updateSettings, subscribeToChanges } = useSettingsStore()
   const [notificationsEnabled, setNotificationsEnabled] = useState(settings.notificationsEnabled)
+  const currentTimezone = useMemo(
+    () => TIMEZONES.find((tz) => tz.value === settings.timezone),
+    [settings.timezone]
+  )
+  const currentDisease = useMemo(
+    () =>
+      settings.chronicDisease
+        ? CHRONIC_DISEASES.find((d) => d.value === settings.chronicDisease) ?? null
+        : null,
+    [settings.chronicDisease]
+  )
+  const currentAllergiesLabel = useMemo(() => {
+    if (!settings.knownAllergies.length) return '未設定'
+    const preview = settings.knownAllergies.slice(0, 3).join('、')
+    const suffix = settings.knownAllergies.length > 3 ? ` 等 ${settings.knownAllergies.length} 項` : ''
+    return `${preview}${suffix}`
+  }, [settings.knownAllergies])
 
   useEffect(() => {
     if (!user?.id) return
@@ -43,22 +66,20 @@ export function SettingsScreen() {
   }, [user?.id])
 
   useEffect(() => {
-    // Sync local state with store
     setNotificationsEnabled(settings.notificationsEnabled)
+  }, [settings.notificationsEnabled])
 
-    // Update notifications when settings change
-    if (settings.notificationsEnabled) {
-      NotificationService.scheduleMealReminders(settings.mealReminders)
+  useEffect(() => {
+    if (!settings.notificationsEnabled) {
+      NotificationService.cancelAllMealReminders()
     }
-  }, [settings])
+  }, [settings.notificationsEnabled])
 
   const handleToggleNotifications = async (value: boolean) => {
     if (!user?.id) return
 
-    setNotificationsEnabled(value)
-    updateSettings(user.id, { notificationsEnabled: value })
-
     if (value) {
+      setNotificationsEnabled(true)
       const hasPermission = await NotificationService.requestPermissions()
       if (!hasPermission) {
         Alert.alert(
@@ -70,12 +91,16 @@ export function SettingsScreen() {
           ]
         )
         setNotificationsEnabled(false)
-        updateSettings(user.id, { notificationsEnabled: false })
         return
       }
-      await NotificationService.scheduleMealReminders(settings.mealReminders)
+      updateSettings(user.id, { notificationsEnabled: true })
+      await NotificationService.scheduleMealReminders(settings.mealReminders, {
+        force: true,
+      })
       Alert.alert('成功', '用餐提醒已啟用')
     } else {
+      setNotificationsEnabled(false)
+      updateSettings(user.id, { notificationsEnabled: false })
       await NotificationService.cancelAllMealReminders()
       Alert.alert('成功', '用餐提醒已關閉')
     }
@@ -158,7 +183,6 @@ export function SettingsScreen() {
         onPress: () => {
           const newAllergies = [...currentAllergies, allergen]
           updateSettings(user.id, { knownAllergies: newAllergies })
-          Alert.alert('成功', `已新增過敏原：${allergen}`)
         },
       })
     })
@@ -184,7 +208,6 @@ export function SettingsScreen() {
                 }
                 const newAllergies = [...currentAllergies, trimmed]
                 updateSettings(user.id, { knownAllergies: newAllergies })
-                Alert.alert('成功', `已新增過敏原：${trimmed}`)
               },
             },
           ],
@@ -201,11 +224,7 @@ export function SettingsScreen() {
   const handleChangeMealTime = (meal: 'breakfast' | 'lunch' | 'dinner') => {
     if (!user?.id) return
 
-    const mealNames = {
-      breakfast: '早餐',
-      lunch: '午餐',
-      dinner: '晚餐',
-    }
+    const mealNames = MEAL_NAMES
 
     Alert.prompt(
       `設定${mealNames[meal]}提醒時間`,
@@ -232,7 +251,10 @@ export function SettingsScreen() {
 
             // Reschedule notifications if enabled
             if (settings.notificationsEnabled) {
-              await NotificationService.scheduleMealReminders(newReminders)
+              await NotificationService.scheduleMealReminders(newReminders, {
+                force: true,
+                meals: [meal],
+              })
             }
 
             Alert.alert('成功', `${mealNames[meal]}提醒時間已設定為 ${time}`)
@@ -263,9 +285,6 @@ Device: ${Platform.OS} ${Platform.Version}
       Alert.alert('錯誤', '無法開啟郵件應用程式')
     })
   }
-
-  const currentTimezone = TIMEZONES.find((tz) => tz.value === settings.timezone)
-  const currentDisease = CHRONIC_DISEASES.find((d) => d.value === settings.chronicDisease)
 
   if (isLoading) {
     return (
@@ -385,11 +404,7 @@ Device: ${Platform.OS} ${Platform.Version}
             <Icon name="alert-circle-outline" size={24} color={colors.warning} />
             <View style={styles.settingTextContainer}>
               <Text style={styles.settingLabel}>已知過敏原</Text>
-              <Text style={styles.settingDescription}>
-                {settings.knownAllergies.length > 0
-                  ? `${settings.knownAllergies.length} 項：${settings.knownAllergies.slice(0, 3).join('、')}${settings.knownAllergies.length > 3 ? '...' : ''}`
-                  : '未設定'}
-              </Text>
+              <Text style={styles.settingDescription}>{currentAllergiesLabel}</Text>
             </View>
           </View>
           <Icon name="chevron-right" size={24} color={colors.text.secondary} />

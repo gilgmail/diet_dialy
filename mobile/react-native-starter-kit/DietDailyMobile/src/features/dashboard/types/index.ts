@@ -124,6 +124,7 @@ export interface DashboardData {
   weeklyTrend: WeeklyTrend
   insights: HealthInsight[]
   analysisHistory?: WeeklyAnalysisHistoryItem[]
+  analysisHistoryTotal?: number
   analysisStatus?: WeeklyAnalysisStatus | null
 }
 

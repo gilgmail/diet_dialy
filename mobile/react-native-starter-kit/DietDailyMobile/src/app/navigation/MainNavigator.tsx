@@ -2,7 +2,6 @@ import React from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
-import { Button } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -28,6 +27,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>()
 function ProfileScreen() {
   const { user, signOut } = useAuth()
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
+  const canGoBack = navigation.canGoBack()
 
   return (
     <View style={styles.profileContainer}>
@@ -38,25 +38,35 @@ function ProfileScreen() {
             {user?.name || user?.email || '使用者'}
           </Text>
         </View>
-        <View style={styles.profileHeaderActions}>
+        <View style={styles.profileSpacer} />
+      </View>
+      <View style={styles.profileActionsBar}>
+        {canGoBack ? (
           <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => navigation.navigate('Settings')}
+            style={styles.actionButton}
+            onPress={() => navigation.goBack()}
+            accessibilityRole="button"
           >
-            <Icon name="cog-outline" size={20} color={colors.text.primary} />
-            <Text style={styles.settingsButtonLabel}>設定</Text>
+            <Icon name='arrow-left' size={20} color={colors.text.primary} />
+            <Text style={styles.actionButtonLabel}>回上一頁</Text>
           </TouchableOpacity>
-          <Button
-            mode="outlined"
-            onPress={signOut}
-            style={styles.logoutButton}
-            labelStyle={styles.logoutButtonLabel}
-            icon="logout"
-            compact
-          >
-            登出
-          </Button>
-        </View>
+        ) : null}
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => navigation.navigate('Settings')}
+          accessibilityRole="button"
+        >
+          <Icon name="cog-outline" size={20} color={colors.text.primary} />
+          <Text style={styles.actionButtonLabel}>設定</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.logoutActionButton]}
+          onPress={signOut}
+          accessibilityRole="button"
+        >
+          <Icon name="logout" size={20} color={colors.error} />
+          <Text style={[styles.actionButtonLabel, styles.logoutActionLabel]}>登出</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.dashboardWrapper}>
         <DashboardScreen hideHeader={true} />
@@ -217,10 +227,9 @@ const styles = StyleSheet.create({
   profileHeaderLeft: {
     flex: 1,
   },
-  profileHeaderActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    columnGap: spacing.sm,
+  profileSpacer: {
+    width: 1,
+    height: 1,
   },
   profileTitle: {
     fontSize: typography.fontSize['2xl'],
@@ -232,7 +241,14 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
   },
-  settingsButton: {
+  profileActionsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     columnGap: spacing.xs,
@@ -240,17 +256,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     borderRadius: 8,
     backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  settingsButtonLabel: {
+  actionButtonLabel: {
     fontSize: typography.fontSize.sm,
     color: colors.text.primary,
   },
-  logoutButton: {
+  logoutActionButton: {
+    backgroundColor: colors.background,
     borderColor: colors.error,
-    borderRadius: 8,
   },
-  logoutButtonLabel: {
-    fontSize: typography.fontSize.sm,
+  logoutActionLabel: {
     color: colors.error,
   },
   container: {
