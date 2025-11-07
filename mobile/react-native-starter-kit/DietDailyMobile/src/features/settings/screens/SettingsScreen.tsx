@@ -11,9 +11,11 @@ import {
   Platform,
   ActivityIndicator,
   TextInput,
+  Modal,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import DateTimePicker from '@react-native-community/datetimepicker'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import Constants from 'expo-constants'
 import { useAuth } from '@/features/auth/hooks/useAuth'
@@ -36,6 +38,9 @@ export function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(settings.notificationsEnabled)
   const [debugMode, setDebugMode] = useState(settings.debugMode ?? false)
   const [customPrompt, setCustomPrompt] = useState(settings.customPrompt ?? '')
+  const [showTimePicker, setShowTimePicker] = useState(false)
+  const [selectedMeal, setSelectedMeal] = useState<'breakfast' | 'lunch' | 'dinner' | null>(null)
+  const [tempTime, setTempTime] = useState(new Date())
   const currentTimezone = useMemo(
     () => TIMEZONES.find((tz) => tz.value === settings.timezone),
     [settings.timezone]
@@ -228,46 +233,85 @@ export function SettingsScreen() {
   const handleChangeMealTime = (meal: 'breakfast' | 'lunch' | 'dinner') => {
     if (!user?.id) return
 
-    const mealNames = MEAL_NAMES
+    // Parse current time for this meal
+    const currentTime = settings.mealReminders[meal]
+    const [hours, minutes] = currentTime.split(':').map(Number)
+    const date = new Date()
+    date.setHours(hours, minutes, 0, 0)
 
-    Alert.prompt(
-      `設定${mealNames[meal]}提醒時間`,
-      '請輸入時間 (格式: HH:mm，例如: 08:00)',
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '確認',
-          onPress: async (time) => {
-            if (!time || !user?.id) return
+    setSelectedMeal(meal)
+    setTempTime(date)
+    setShowTimePicker(true)
+  }
 
-            // Validate time format
-            const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
-            if (!timeRegex.test(time)) {
-              Alert.alert('格式錯誤', '請輸入正確的時間格式 (HH:mm)')
-              return
-            }
+  const handleTimePickerChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false)
+    }
 
-            const newReminders = {
-              ...settings.mealReminders,
-              [meal]: time,
-            }
-            updateSettings(user.id, { mealReminders: newReminders })
+    if (event.type === 'dismissed' || !selectedDate || !selectedMeal || !user?.id) {
+      if (Platform.OS === 'android') {
+        setSelectedMeal(null)
+      }
+      return
+    }
 
-            // Reschedule notifications if enabled
-            if (settings.notificationsEnabled) {
-              await NotificationService.scheduleMealReminders(user.id, newReminders, {
-                force: true,
-                meals: [meal],
-              })
-            }
+    setTempTime(selectedDate)
 
-            Alert.alert('成功', `${mealNames[meal]}提醒時間已設定為 ${time}`)
-          },
-        },
-      ],
-      'plain-text',
-      settings.mealReminders[meal]
-    )
+    if (Platform.OS === 'android') {
+      // Android: Apply immediately
+      const hours = selectedDate.getHours().toString().padStart(2, '0')
+      const minutes = selectedDate.getMinutes().toString().padStart(2, '0')
+      const time = `${hours}:${minutes}`
+
+      const newReminders = {
+        ...settings.mealReminders,
+        [selectedMeal]: time,
+      }
+
+      updateSettings(user.id, { mealReminders: newReminders })
+
+      // Reschedule notifications if enabled
+      if (settings.notificationsEnabled) {
+        NotificationService.scheduleMealReminders(user.id, newReminders, {
+          force: true,
+          meals: [selectedMeal],
+        })
+      }
+
+      setSelectedMeal(null)
+    }
+  }
+
+  const handleConfirmTime = async () => {
+    if (!selectedMeal || !user?.id) return
+
+    const hours = tempTime.getHours().toString().padStart(2, '0')
+    const minutes = tempTime.getMinutes().toString().padStart(2, '0')
+    const time = `${hours}:${minutes}`
+
+    const newReminders = {
+      ...settings.mealReminders,
+      [selectedMeal]: time,
+    }
+
+    await updateSettings(user.id, { mealReminders: newReminders })
+
+    // Reschedule notifications if enabled
+    if (settings.notificationsEnabled) {
+      await NotificationService.scheduleMealReminders(user.id, newReminders, {
+        force: true,
+        meals: [selectedMeal],
+      })
+    }
+
+    setShowTimePicker(false)
+    setSelectedMeal(null)
+  }
+
+  const handleCancelTimePicker = () => {
+    setShowTimePicker(false)
+    setSelectedMeal(null)
   }
 
   const handleSendBugReport = () => {
@@ -584,6 +628,58 @@ Device: ${Platform.OS} ${Platform.Version}
           用心記錄，健康生活
         </Text>
       </View>
+
+      {/* Time Picker Modal for iOS */}
+      {Platform.OS === 'ios' && showTimePicker && selectedMeal && (
+        <Modal
+          visible={showTimePicker}
+          transparent
+          animationType="slide"
+        >
+          <View style={styles.timePickerModalOverlay}>
+            <View style={styles.timePickerModal}>
+              <View style={styles.timePickerHeader}>
+                <Text style={styles.timePickerTitle}>
+                  設定{MEAL_NAMES[selectedMeal]}提醒時間
+                </Text>
+              </View>
+              <DateTimePicker
+                value={tempTime}
+                mode="time"
+                is24Hour={true}
+                display="spinner"
+                onChange={handleTimePickerChange}
+                style={styles.timePicker}
+              />
+              <View style={styles.timePickerActions}>
+                <TouchableOpacity
+                  style={styles.timePickerCancelButton}
+                  onPress={handleCancelTimePicker}
+                >
+                  <Text style={styles.timePickerCancelText}>取消</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.timePickerConfirmButton}
+                  onPress={handleConfirmTime}
+                >
+                  <Text style={styles.timePickerConfirmText}>確認</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Time Picker for Android */}
+      {Platform.OS === 'android' && showTimePicker && selectedMeal && (
+        <DateTimePicker
+          value={tempTime}
+          mode="time"
+          is24Hour={true}
+          display="default"
+          onChange={handleTimePickerChange}
+        />
+      )}
     </ScrollView>
   )
 }
@@ -736,5 +832,65 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     fontSize: typography.fontSize.base,
     color: colors.text.secondary,
+  },
+  timePickerModalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  timePickerModal: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: spacing.xl,
+  },
+  timePickerHeader: {
+    padding: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    alignItems: 'center',
+  },
+  timePickerTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+  },
+  timePicker: {
+    width: '100%',
+    height: 200,
+  },
+  timePickerActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  timePickerCancelButton: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  timePickerConfirmButton: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 8,
+    alignItems: 'center',
+    backgroundColor: colors.primary[500],
+  },
+  timePickerCancelText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
+  },
+  timePickerConfirmText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.surface,
   },
 })
