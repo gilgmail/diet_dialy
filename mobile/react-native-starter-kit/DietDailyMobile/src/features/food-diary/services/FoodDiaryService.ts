@@ -27,6 +27,12 @@ function extractPortion(entry: FoodEntryRow): string | undefined {
   return undefined
 }
 
+type MealReminderMeal = Exclude<MealType, 'snack'>
+
+function isReminderMeal(meal: MealType): meal is MealReminderMeal {
+  return meal === 'breakfast' || meal === 'lunch' || meal === 'dinner'
+}
+
 function mapFoodEntry(entry: FoodEntryRow): FoodEntry {
   return {
     id: entry.id,
@@ -168,7 +174,7 @@ export class FoodDiaryService {
 
       const { data, error } = await supabase
         .from('food_entries')
-        .insert(entry)
+        .insert([entry])
         .select()
         .single()
 
@@ -181,14 +187,11 @@ export class FoodDiaryService {
 
       const mapped = mapFoodEntry(data as FoodEntryRow)
 
-      if (
-        mapped.meal_type === 'breakfast' ||
-        mapped.meal_type === 'lunch' ||
-        mapped.meal_type === 'dinner'
-      ) {
+      const reminderMeal = mapped.meal_type
+      if (isReminderMeal(reminderMeal)) {
         void import('@/features/settings/services/notificationService')
           .then(({ NotificationService }) =>
-            NotificationService.deferMealReminderUntilTomorrow(userId, mapped.meal_type)
+            NotificationService.deferMealReminderUntilTomorrow(userId, reminderMeal)
           )
           .catch((notifyError) => {
             console.warn('[FoodDiaryService] Failed to defer meal reminder:', notifyError)

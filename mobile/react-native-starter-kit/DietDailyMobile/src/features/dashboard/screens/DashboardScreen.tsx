@@ -14,7 +14,7 @@ import { Linking, Platform } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { Buffer } from 'buffer'
-import { EncodingType, File, Paths } from 'expo-file-system'
+import FileSystem from 'expo-file-system'
 import { getContentUriAsync } from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
 import Constants from 'expo-constants'
@@ -38,6 +38,14 @@ import type {
 
 interface DashboardScreenProps {
   hideHeader?: boolean
+}
+
+function resolveWritableDirectory(): string {
+  const directory = FileSystem.cacheDirectory ?? FileSystem.documentDirectory
+  if (!directory) {
+    throw new Error('No writable directory available for sharing summary')
+  }
+  return directory.endsWith('/') ? directory : `${directory}/`
 }
 
 export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {}) {
@@ -640,13 +648,13 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
         /[^\w.-]/g,
         '_'
       )
-      const file = new File(Paths.cache, `${sanitizedFileName}.html`)
-      await file.write(html, { encoding: EncodingType.UTF8 })
+      const fileUri = `${resolveWritableDirectory()}${sanitizedFileName}.html`
+      await FileSystem.writeAsStringAsync(fileUri, html)
 
-      let shareUri = file.uri
+      let shareUri = fileUri
       if (Platform.OS === 'android') {
         try {
-          shareUri = await getContentUriAsync(file.uri)
+          shareUri = await getContentUriAsync(fileUri)
         } catch (androidError) {
           console.warn('[Dashboard] Unable to convert file URI for Android sharing', androidError)
         }
@@ -663,7 +671,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       } else {
         console.warn('[Dashboard] Sharing not available')
         // fallback: 嘗試直接用瀏覽器開啟（可能失敗）
-        await Linking.openURL(file.uri)
+        await Linking.openURL(fileUri)
       }
     } catch (error) {
       console.error('[Dashboard] Failed to open summary:', error)

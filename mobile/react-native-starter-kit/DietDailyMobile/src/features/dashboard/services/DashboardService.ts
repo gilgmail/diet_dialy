@@ -444,6 +444,8 @@ export class DashboardService {
     historyTotal: number
     analysisStatus: WeeklyAnalysisStatus | null
   }> {
+    const historyPreview: WeeklyAnalysisHistoryItem[] = []
+
     try {
       const apiBase = process.env.EXPO_PUBLIC_API_URL
       if (!apiBase) {
@@ -453,7 +455,6 @@ export class DashboardService {
 
       // 延遲載入分析歷史：先返回空歷史，讓 Dashboard 快速顯示
       // 分析歷史會在背景中另外載入
-      const historyPreview: WeeklyAnalysisHistoryItem[] = []
 
       if (!weeklyTrend.week.length) {
         return {
