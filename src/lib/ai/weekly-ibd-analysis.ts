@@ -38,7 +38,7 @@ interface AggregatedFoodImpact {
   notes: Set<string>
 }
 
-type FoodSuitabilityLevel = 'supportive' | 'neutral' | 'watch' | 'avoid'
+type FoodSuitabilityLevel = '有益' | '中性' | '觀察' | '避免'
 
 interface DailyFoodLog {
   date: string
@@ -499,7 +499,7 @@ const PROMPT_VARIANTS = {
 ## 報告架構要求
 - **Summary**：以結論口吻撰寫 3-5 句，引用 dataset 內的日期與指標。
 - **Reasoning Trace**：逐條說明推論邏輯，包含症狀和飲食的關聯時間窗。
-- **Daily Food Breakdown**：每日逐餐列出食物的適合度，標記 supportive / neutral / watch / avoid 並給出依據。
+- **Daily Food Breakdown**：每日逐餐列出食物的適合度，標記「有益」/「中性」/「觀察」/「避免」並給出依據。
 - **Evidence Notes**：列出任何被引用的資料欄位（如 trackingSummary、foodImpacts、symptomOverview）。
 - **Next Steps**：區分維持、監測、實驗三大類，指示份量與觀察指標。
 
@@ -728,13 +728,15 @@ function normalizeRiskLevel(value: unknown): RiskLevel {
 
 function normalizeSuitability(value: unknown): FoodSuitabilityLevel {
   if (typeof value !== 'string') {
-    return 'neutral'
+    return '中性'
   }
-  const normalized = value.toLowerCase().trim() as FoodSuitabilityLevel
-  if (normalized === 'supportive' || normalized === 'neutral' || normalized === 'watch' || normalized === 'avoid') {
-    return normalized
-  }
-  return 'neutral'
+  const normalized = value.trim()
+  // Support both Chinese and English values for backwards compatibility
+  if (normalized === '有益' || normalized === 'supportive') return '有益'
+  if (normalized === '中性' || normalized === 'neutral') return '中性'
+  if (normalized === '觀察' || normalized === 'watch') return '觀察'
+  if (normalized === '避免' || normalized === 'avoid') return '避免'
+  return '中性'
 }
 
 function normalizeDailyFoodBreakdown(value: unknown): DailyFoodAssessment[] {
@@ -1221,7 +1223,7 @@ export class IBDWeeklyAnalysisAgent {
       dataQualityWarnings.push('本週缺少症狀紀錄，無法進行完整趨勢分析。')
     }
     if (daysWithFoodOnly.length > 0) {
-      dataQualityWarnings.push(`以下日期僅有飲食紀錄，缺少症狀追蹤：${daysWithFoodOnly.slice(0, 5).join(', ')}`)
+      dataQualityWarnings.push(`以下日期為健康日（無症狀記錄）：${daysWithFoodOnly.slice(0, 5).join(', ')}。這些日期可能代表身體狀況良好，無明顯不適。`)
     }
     if (symptomEntries.length > 0 && symptomEntries.length < 3) {
       dataQualityWarnings.push('症狀紀錄少於 3 筆，趨勢判斷可信度偏低。')
@@ -1397,7 +1399,7 @@ export class IBDWeeklyAnalysisAgent {
           "foods": [
             {
               "name": "食物名稱",
-              "suitability": "supportive | neutral | watch | avoid",
+              "suitability": "有益 | 中性 | 觀察 | 避免",
               "reasoning": ["指出評估依據或營養亮點/風險"],
               "symptom_links": ["與症狀的時間或嚴重度關聯；若無請回傳空陣列"],
               "notes": ["其他行動建議，可為空陣列"]
@@ -1743,8 +1745,8 @@ ${dataset}
     }
 
     if (data.dataQuality.missingSymptomDates.length > 0) {
-      // More gentle suggestion instead of hard-coded text
-      followUpActions.push(`有 ${data.dataQuality.missingSymptomDates.length} 天僅記錄飲食，建議輕鬆補充症狀狀況以提升分析完整性。`)
+      // These are likely healthy days with no symptoms
+      followUpActions.push(`有 ${data.dataQuality.missingSymptomDates.length} 個健康日（無症狀記錄），顯示身體狀況穩定。`)
     }
 
     if (protectiveFoods.length > 0) {
@@ -1882,8 +1884,9 @@ ${dataset}
     if (foodsToMonitor.length > 0) {
       nextSteps.experiments.push(`將 ${foodsToMonitor[0].food} 份量減半，再觀察 3-5 天後的腹痛與排便變化。`)
     }
-    if (data.dataQuality.missingSymptomDates.length > 0) {
-      nextSteps.experiments.push('設定每日固定時段補寫症狀紀錄，以提升下週分析精準度。')
+    if (data.dataQuality.missingSymptomDates.length > 0 && data.trackingSummary.totalSymptomEntries < 3) {
+      // Only suggest adding symptom logs if there are very few overall
+      nextSteps.experiments.push('若有任何輕微不適，可記錄症狀以建立更完整的健康追蹤。')
     }
     if (nextSteps.experiments.length === 0) {
       nextSteps.experiments.push('選擇一項新食物或烹調方式，少量測試並搭配症狀紀錄。')
