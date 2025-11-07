@@ -1,5 +1,7 @@
 import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
+import { FoodDiaryService } from '@/features/food-diary/services/FoodDiaryService'
+import { useSettingsStore } from '../stores/settingsStore'
 import type { MealReminderConfig } from '../types'
 
 type MealKey = keyof MealReminderConfig
@@ -97,11 +99,13 @@ export class NotificationService {
   }
 
   static async scheduleMealReminders(
+    userId: string,
     config: MealReminderConfig,
-    options: { force?: boolean; meals?: MealKey[] } = {}
+    options: { force?: boolean; meals?: MealKey[]; skipTodayMeals?: MealKey[] } = {}
   ): Promise<void> {
-    const { force = false, meals } = options
+    const { force = false, meals, skipTodayMeals = [] } = options
     const targetMeals = (meals ?? Object.keys(config)) as MealKey[]
+    const skipTodaySet = new Set(skipTodayMeals)
 
     try {
       const hasPermission = await this.requestPermissions()
@@ -130,13 +134,16 @@ export class NotificationService {
         const time = config[meal]
         const { hour, minute } = parseTime(time)
         const existing = scheduledMap.get(meal)
+        const loggedToday = await this.hasMealLoggedToday(userId, meal)
+        const skipToday = skipTodaySet.has(meal) || loggedToday
 
         if (
           !force &&
           existing &&
           hour !== undefined &&
           minute !== undefined &&
-          this.isSameSchedule(existing, hour, minute)
+          this.isSameSchedule(existing, hour, minute) &&
+          !skipToday
         ) {
           continue
         }
@@ -145,7 +152,7 @@ export class NotificationService {
           await Notifications.cancelScheduledNotificationAsync(existing.identifier)
         }
 
-        await this.scheduleMealNotification(meal, time)
+        await this.scheduleMealNotification(userId, meal, time, { skipToday })
       }
 
       console.log(
@@ -167,7 +174,12 @@ export class NotificationService {
     return existingHour === hour && existingMinute === minute
   }
 
-  private static async scheduleMealNotification(meal: MealKey, time: string): Promise<void> {
+  private static async scheduleMealNotification(
+    userId: string,
+    meal: MealKey,
+    time: string,
+    options: { skipToday?: boolean } = {}
+  ): Promise<void> {
     const hasPermission = await ensureNotificationPermissions()
     if (!hasPermission) {
       return
@@ -179,7 +191,9 @@ export class NotificationService {
       return
     }
 
-    const nextTrigger = this.getNextTriggerDate(time)
+    const skipToday =
+      options.skipToday !== undefined ? options.skipToday : await this.hasMealLoggedToday(userId, meal)
+    const nextTrigger = this.getNextTriggerDate(time, skipToday)
     const identifier = MEAL_NOTIFICATION_IDS[meal]
 
     await Notifications.cancelScheduledNotificationAsync(identifier).catch(() => {})
@@ -215,13 +229,13 @@ export class NotificationService {
     })
   }
 
-  private static getNextTriggerDate(time: string): Date {
+  private static getNextTriggerDate(time: string, skipToday = false): Date {
     const { hour, minute } = parseTime(time)
     const now = new Date()
     const trigger = new Date(now)
     trigger.setHours(hour ?? 0, minute ?? 0, 0, 0)
 
-    if (trigger <= now) {
+    if (skipToday || trigger <= now) {
       trigger.setDate(trigger.getDate() + 1)
     }
 
@@ -233,10 +247,20 @@ export class NotificationService {
       for (const identifier of Object.values(MEAL_NOTIFICATION_IDS)) {
         await Notifications.cancelScheduledNotificationAsync(identifier)
       }
+      this.legacyRemindersPurged = false
       console.log('[NotificationService] All meal reminders cancelled')
     } catch (error) {
       console.error('[NotificationService] Error cancelling meal reminders:', error)
     }
+  }
+
+  static async pauseRemindersForMeals(meals?: MealKey[]): Promise<void> {
+    const targets = meals ?? (Object.keys(MEAL_NOTIFICATION_IDS) as MealKey[])
+    await Promise.all(
+      targets.map((meal) =>
+        Notifications.cancelScheduledNotificationAsync(MEAL_NOTIFICATION_IDS[meal]).catch(() => {})
+      )
+    )
   }
 
   static async getAllScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
@@ -278,5 +302,24 @@ export class NotificationService {
     } catch (error) {
       console.warn('[NotificationService] Failed to purge legacy reminders:', error)
     }
+  }
+
+  private static async hasMealLoggedToday(userId: string, meal: MealKey): Promise<boolean> {
+    if (!userId) return false
+    return FoodDiaryService.hasMealEntryForDate(userId, new Date(), meal)
+  }
+
+  static async deferMealReminderUntilTomorrow(userId: string, meal: MealKey) {
+    const { settings } = useSettingsStore.getState()
+    const time = settings.mealReminders[meal]
+    if (!userId || !time) {
+      return
+    }
+
+    await this.scheduleMealReminders(userId, settings.mealReminders, {
+      force: true,
+      meals: [meal],
+      skipTodayMeals: [meal],
+    })
   }
 }

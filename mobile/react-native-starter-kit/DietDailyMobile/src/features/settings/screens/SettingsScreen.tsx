@@ -10,6 +10,7 @@ import {
   Linking,
   Platform,
   ActivityIndicator,
+  TextInput,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -33,6 +34,8 @@ export function SettingsScreen() {
   const { user } = useAuth()
   const { settings, isLoading, initializeSettings, updateSettings, subscribeToChanges } = useSettingsStore()
   const [notificationsEnabled, setNotificationsEnabled] = useState(settings.notificationsEnabled)
+  const [debugMode, setDebugMode] = useState(settings.debugMode ?? false)
+  const [customPrompt, setCustomPrompt] = useState(settings.customPrompt ?? '')
   const currentTimezone = useMemo(
     () => TIMEZONES.find((tz) => tz.value === settings.timezone),
     [settings.timezone]
@@ -75,6 +78,22 @@ export function SettingsScreen() {
     }
   }, [settings.notificationsEnabled])
 
+  useEffect(() => {
+    if (!user?.id || !settings.notificationsEnabled) {
+      return
+    }
+
+    NotificationService.scheduleMealReminders(user.id, settings.mealReminders).catch((error) => {
+      console.warn('[SettingsScreen] Failed to refresh meal reminders:', error)
+    })
+  }, [
+    user?.id,
+    settings.notificationsEnabled,
+    settings.mealReminders.breakfast,
+    settings.mealReminders.lunch,
+    settings.mealReminders.dinner,
+  ])
+
   const handleToggleNotifications = async (value: boolean) => {
     if (!user?.id) return
 
@@ -94,7 +113,7 @@ export function SettingsScreen() {
         return
       }
       updateSettings(user.id, { notificationsEnabled: true })
-      await NotificationService.scheduleMealReminders(settings.mealReminders, {
+      await NotificationService.scheduleMealReminders(user.id, settings.mealReminders, {
         force: true,
       })
       Alert.alert('成功', '用餐提醒已啟用')
@@ -251,7 +270,7 @@ export function SettingsScreen() {
 
             // Reschedule notifications if enabled
             if (settings.notificationsEnabled) {
-              await NotificationService.scheduleMealReminders(newReminders, {
+              await NotificationService.scheduleMealReminders(user.id, newReminders, {
                 force: true,
                 meals: [meal],
               })
@@ -447,6 +466,69 @@ Device: ${Platform.OS} ${Platform.Version}
         </TouchableOpacity>
       </View>
 
+      {/* Debug Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>開發者選項</Text>
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingInfo}>
+            <Icon name="bug" size={24} color={colors.warning} />
+            <View style={styles.settingTextContainer}>
+              <Text style={styles.settingLabel}>Debug 模式</Text>
+              <Text style={styles.settingDescription}>
+                {debugMode ? '已啟用 - 可調整 AI 提示詞' : '已關閉'}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={debugMode}
+            onValueChange={async (value) => {
+              setDebugMode(value)
+              if (user?.id) {
+                await updateSettings(user.id, { debugMode: value })
+              }
+            }}
+            trackColor={{ false: colors.border, true: colors.warning }}
+            thumbColor={debugMode ? colors.warning : colors.text.disabled}
+          />
+        </View>
+
+        {debugMode && (
+          <View style={styles.promptContainer}>
+            <Text style={styles.promptLabel}>自訂 AI 提示詞（選填）</Text>
+            <Text style={styles.promptHint}>
+              留空則使用預設提示詞。可用於微調 AI 分析的重點或風格。
+            </Text>
+            <TextInput
+              style={styles.promptInput}
+              value={customPrompt}
+              onChangeText={setCustomPrompt}
+              placeholder="例如：請特別關注高 FODMAP 食物..."
+              placeholderTextColor={colors.text.disabled}
+              multiline
+              numberOfLines={6}
+              textAlignVertical="top"
+              onBlur={async () => {
+                if (user?.id) {
+                  await updateSettings(user.id, { customPrompt })
+                }
+              }}
+            />
+            <TouchableOpacity
+              style={styles.promptSaveButton}
+              onPress={async () => {
+                if (user?.id) {
+                  await updateSettings(user.id, { customPrompt })
+                  Alert.alert('已儲存', '自訂提示詞已更新')
+                }
+              }}
+            >
+              <Text style={styles.promptSaveButtonText}>儲存提示詞</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
@@ -515,6 +597,47 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: typography.fontSize.xs,
     color: colors.text.disabled,
+  },
+  promptContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.background,
+  },
+  promptLabel: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  promptHint: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.md,
+    lineHeight: 20,
+  },
+  promptInput: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: spacing.md,
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+    minHeight: 120,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  promptSaveButton: {
+    backgroundColor: colors.primary[500],
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  promptSaveButtonText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.surface,
   },
   loadingContainer: {
     flex: 1,

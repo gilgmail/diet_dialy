@@ -11,6 +11,8 @@ export interface UserSettings {
   knownAllergies: string[] // 已知過敏原
   mealReminders: MealReminderConfig
   notificationsEnabled: boolean
+  debugMode?: boolean // Debug 模式開關
+  customPrompt?: string // 自訂 AI 提示詞
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -24,6 +26,8 @@ export const DEFAULT_SETTINGS: UserSettings = {
     dinner: '18:30',
   },
   notificationsEnabled: true,
+  debugMode: false,
+  customPrompt: '',
 }
 
 export const CHRONIC_DISEASES = [

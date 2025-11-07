@@ -6,6 +6,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useQuery } from '@tanstack/react-query'
 import { useFocusEffect } from '@react-navigation/native'
 import { useAuthStore } from '@/shared/stores/authStore'
+import { useSettingsStore } from '@/features/settings/stores/settingsStore'
+import { NotificationService } from '@/features/settings/services/notificationService'
 import { FoodDiaryService } from '../services/FoodDiaryService'
 import { colors, typography, spacing } from '@/theme'
 import { useFoodDiary } from '../hooks/useFoodDiary'
@@ -38,6 +40,7 @@ function getMealTypeByTime(): MealType {
 
 export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
   const { user } = useAuthStore()
+  const { settings } = useSettingsStore()
   const { createEntry, isCreating } = useFoodDiary()
   const { requireDatabaseFood } = appConfig
 
@@ -107,6 +110,32 @@ export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
       setSelectedDate(prev => (isSameDay(prev, now) ? prev : now))
       setMealType(getMealTypeByTime())
     }, [])
+  )
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.id || !settings.notificationsEnabled) {
+        return undefined
+      }
+
+      NotificationService.pauseRemindersForMeals().catch((error) => {
+        console.warn('[AddFoodEntry] Failed to pause reminders:', error)
+      })
+
+      return () => {
+        NotificationService.scheduleMealReminders(user.id, settings.mealReminders).catch(
+          (error) => {
+            console.warn('[AddFoodEntry] Failed to resume reminders:', error)
+          }
+        )
+      }
+    }, [
+      user?.id,
+      settings.notificationsEnabled,
+      settings.mealReminders.breakfast,
+      settings.mealReminders.lunch,
+      settings.mealReminders.dinner,
+    ])
   )
 
   const handleSubmit = async () => {

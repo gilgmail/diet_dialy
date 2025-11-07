@@ -78,6 +78,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   const [history, setHistory] = useState(analysisHistory)
   const [hasAllHistory, setHasAllHistory] = useState(false)
   const [isHistoryLoading, setIsHistoryLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'stats' | 'trends' | 'insights' | 'reports'>('stats')
   const scrollViewRef = React.useRef<ScrollView>(null)
   const totalHistoryCount = Math.max(analysisHistoryTotal ?? 0, history.length)
   const hasPendingServerHistory = !hasAllHistory && totalHistoryCount > history.length
@@ -831,16 +832,61 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
               {user?.name || user?.email || '使用者'}
             </Text>
           </View>
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => navigation.navigate('Settings')}
-          >
-            <Text style={styles.settingsIcon}>⚙️</Text>
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={() => navigation.navigate('Settings')}
+            >
+              <Text style={styles.settingsIcon}>⚙️</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={() => navigation.navigate('Login')}
+            >
+              <Text style={styles.logoutIcon}>🚪</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
+      {/* Tab Navigation */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'stats' && styles.tabActive]}
+          onPress={() => setActiveTab('stats')}
+        >
+          <Text style={[styles.tabText, activeTab === 'stats' && styles.tabTextActive]}>
+            📊 記錄
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'trends' && styles.tabActive]}
+          onPress={() => setActiveTab('trends')}
+        >
+          <Text style={[styles.tabText, activeTab === 'trends' && styles.tabTextActive]}>
+            📈 趨勢
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'insights' && styles.tabActive]}
+          onPress={() => setActiveTab('insights')}
+        >
+          <Text style={[styles.tabText, activeTab === 'insights' && styles.tabTextActive]}>
+            💡 洞察
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'reports' && styles.tabActive]}
+          onPress={() => setActiveTab('reports')}
+        >
+          <Text style={[styles.tabText, activeTab === 'reports' && styles.tabTextActive]}>
+            📝 報告
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Quick Stats - Compact Combined Layout */}
+      {activeTab === 'stats' && (
       <View style={styles.section}>
         <View style={styles.statsSuperCompactGrid}>
           <View style={styles.statsSuperCompactItem}>
@@ -861,9 +907,10 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
           </View>
         </View>
       </View>
+      )}
 
       {/* Weekly Charts */}
-      {weeklyTrend && (
+      {activeTab === 'trends' && weeklyTrend && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>每週趨勢</Text>
           <WeeklyChart
@@ -883,6 +930,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
 
 
       {/* Health Insights */}
+      {activeTab === 'insights' && (
       <View style={styles.section}>
         <View style={styles.sectionHeaderRow}>
           <Text style={[styles.sectionTitle, styles.sectionTitleInline]}>健康洞察</Text>
@@ -908,8 +956,10 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
           </Text>
         )}
       </View>
+      )}
 
       {/* AI Analysis History */}
+      {activeTab === 'reports' && (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>AI 分析報告歷史</Text>
         {history.length > 0 ? (
@@ -1070,6 +1120,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
           </Text>
         )}
       </View>
+      )}
 
       {/* Empty State */}
       {!stats?.totalFoodEntries && !stats?.totalSymptomEntries && (
@@ -1155,6 +1206,10 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
   },
+  headerRight: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
   headerTitle: {
     fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
@@ -1172,6 +1227,40 @@ const styles = StyleSheet.create({
   },
   settingsIcon: {
     fontSize: 24,
+  },
+  logoutButton: {
+    padding: spacing.sm,
+    borderRadius: 8,
+    backgroundColor: colors.background,
+  },
+  logoutIcon: {
+    fontSize: 24,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingHorizontal: spacing.sm,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabActive: {
+    borderBottomColor: colors.primary[500],
+  },
+  tabText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    fontWeight: typography.fontWeight.medium,
+  },
+  tabTextActive: {
+    color: colors.primary[600],
+    fontWeight: typography.fontWeight.semibold,
   },
   section: {
     padding: spacing.lg,

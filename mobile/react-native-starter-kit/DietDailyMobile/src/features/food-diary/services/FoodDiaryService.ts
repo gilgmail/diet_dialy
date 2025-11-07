@@ -108,6 +108,33 @@ export class FoodDiaryService {
     }
   }
 
+  static async hasMealEntryForDate(
+    userId: string,
+    date: Date,
+    meal: 'breakfast' | 'lunch' | 'dinner'
+  ): Promise<boolean> {
+    const startOfDay = new Date(date)
+    startOfDay.setHours(0, 0, 0, 0)
+
+    const endOfDay = new Date(startOfDay)
+    endOfDay.setDate(endOfDay.getDate() + 1)
+
+    const { count, error } = await supabase
+      .from('food_entries')
+      .select('id', { head: true, count: 'exact' })
+      .eq('user_id', userId)
+      .eq('meal_type', meal)
+      .gte('consumed_at', startOfDay.toISOString())
+      .lt('consumed_at', endOfDay.toISOString())
+
+    if (error) {
+      console.warn('[FoodDiaryService] hasMealEntryForDate failed:', error)
+      return false
+    }
+
+    return (count ?? 0) > 0
+  }
+
   /**
    * Create a new food entry
    */
@@ -152,7 +179,23 @@ export class FoodDiaryService {
 
       console.log('Food entry created successfully:', data)
 
-      return { data: mapFoodEntry(data as FoodEntryRow), error: null }
+      const mapped = mapFoodEntry(data as FoodEntryRow)
+
+      if (
+        mapped.meal_type === 'breakfast' ||
+        mapped.meal_type === 'lunch' ||
+        mapped.meal_type === 'dinner'
+      ) {
+        void import('@/features/settings/services/notificationService')
+          .then(({ NotificationService }) =>
+            NotificationService.deferMealReminderUntilTomorrow(userId, mapped.meal_type)
+          )
+          .catch((notifyError) => {
+            console.warn('[FoodDiaryService] Failed to defer meal reminder:', notifyError)
+          })
+      }
+
+      return { data: mapped, error: null }
     } catch (error) {
       console.error('Create food entry error:', error)
       return {
