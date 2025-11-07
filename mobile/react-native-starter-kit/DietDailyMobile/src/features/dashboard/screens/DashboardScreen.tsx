@@ -40,8 +40,14 @@ interface DashboardScreenProps {
   hideHeader?: boolean
 }
 
+type FileSystemDirectoryContext = {
+  cacheDirectory?: string | null
+  documentDirectory?: string | null
+}
+
 function resolveWritableDirectory(): string {
-  const directory = FileSystem.cacheDirectory ?? FileSystem.documentDirectory
+  const directories = FileSystem as FileSystemDirectoryContext
+  const directory = directories.cacheDirectory ?? directories.documentDirectory
   if (!directory) {
     throw new Error('No writable directory available for sharing summary')
   }

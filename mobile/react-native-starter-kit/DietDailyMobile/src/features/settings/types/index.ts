@@ -4,10 +4,12 @@ export interface MealReminderConfig {
   dinner: string
 }
 
+export type ChronicDiseaseValue = typeof CHRONIC_DISEASES[number]['value']
+
 export interface UserSettings {
   timezone: string // e.g., 'Asia/Taipei'
   timezoneOffset: string // e.g., '+08:00'
-  chronicDisease: string | null
+  chronicDisease: ChronicDiseaseValue | null
   knownAllergies: string[] // 已知過敏原
   mealReminders: MealReminderConfig
   notificationsEnabled: boolean

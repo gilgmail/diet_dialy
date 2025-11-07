@@ -1,10 +1,6 @@
 import { supabase } from '@/shared/api/supabase/client'
 import { appConfig } from '@/shared/config/appConfig'
-import type {
-  FoodEntry as FoodEntryRow,
-  FoodEntryInsert,
-  FoodEntryUpdate,
-} from '@/shared/types/supabase'
+import type { FoodEntryRow, FoodEntryInsert, FoodEntryUpdate } from '@/shared/types/supabase'
 import type {
   FoodEntry,
   CreateFoodEntryInput,

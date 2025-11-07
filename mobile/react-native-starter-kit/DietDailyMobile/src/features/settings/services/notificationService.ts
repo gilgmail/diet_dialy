@@ -28,13 +28,15 @@ Notifications.setNotificationHandler({
   }),
 })
 
-function extractCalendarTrigger(trigger: Notifications.NotificationTrigger | null | undefined) {
+function extractCalendarTrigger(
+  trigger: Notifications.NotificationTrigger | null | undefined
+): Notifications.CalendarNotificationTrigger | null {
   if (!trigger || typeof trigger !== 'object') {
     return null
   }
 
   if ('type' in trigger && trigger.type === 'calendar') {
-    return trigger as Notifications.CalendarTrigger & {
+    return trigger as Notifications.CalendarNotificationTrigger & {
       value?: { hour?: number; minute?: number }
     }
   }
@@ -199,7 +201,8 @@ export class NotificationService {
     await Notifications.cancelScheduledNotificationAsync(identifier).catch(() => {})
     await Notifications.dismissNotificationAsync(identifier).catch(() => {})
 
-    const trigger: Notifications.CalendarNotificationTriggerInput = {
+    const trigger: Notifications.CalendarTriggerInput = {
+      type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
       hour: nextTrigger.getHours(),
       minute: nextTrigger.getMinutes(),
       second: 0,
@@ -221,6 +224,11 @@ export class NotificationService {
           type: 'meal-reminder',
           meal,
         },
+        ...(Platform.OS === 'ios' && {
+          summaryArgument: MEAL_LABELS[meal],
+          summaryArgumentCount: 1,
+          interruptionLevel: 'passive' as Notifications.NotificationContentInput['interruptionLevel'],
+        }),
         ...(Platform.OS === 'android' && {
           channelId: 'meal-reminders',
         }),

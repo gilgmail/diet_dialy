@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   TextInput,
   Modal,
+  type AlertButton,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -21,7 +22,12 @@ import Constants from 'expo-constants'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useSettingsStore } from '../stores/settingsStore'
 import { NotificationService } from '../services/notificationService'
-import { CHRONIC_DISEASES, TIMEZONES, COMMON_ALLERGENS } from '../types'
+import {
+  CHRONIC_DISEASES,
+  TIMEZONES,
+  COMMON_ALLERGENS,
+  type ChronicDiseaseValue,
+} from '../types'
 import { colors, typography, spacing } from '@/theme'
 import type { MainStackParamList } from '@/app/navigation/types'
 
@@ -118,32 +124,31 @@ export function SettingsScreen() {
   const handleChangeTimezone = () => {
     if (!user?.id) return
 
-    Alert.alert(
-      '選擇時區',
-      '',
-      TIMEZONES.map((tz) => ({
-        text: tz.label,
-        onPress: () => {
-          updateSettings(user.id, { timezone: tz.value, timezoneOffset: tz.offset })
-          Alert.alert('成功', `時區已變更為 ${tz.label}`)
-        },
-      })).concat({ text: '取消', style: 'cancel' })
-    )
+    const buttons: AlertButton[] = TIMEZONES.map((tz) => ({
+      text: tz.label,
+      onPress: () => {
+        updateSettings(user.id, { timezone: tz.value, timezoneOffset: tz.offset })
+        Alert.alert('成功', `時區已變更為 ${tz.label}`)
+      },
+    }))
+
+    buttons.push({ text: '取消', style: 'cancel' })
+
+    Alert.alert('選擇時區', '', buttons)
   }
 
   const handleChangeDisease = () => {
     if (!user?.id) return
 
-    const options = CHRONIC_DISEASES.map((disease) => ({
+    const buttons: AlertButton[] = CHRONIC_DISEASES.map((disease) => ({
       text: disease.label,
       onPress: () => {
-        updateSettings(user.id, { chronicDisease: disease.value })
+        updateSettings(user.id, { chronicDisease: disease.value as ChronicDiseaseValue })
         Alert.alert('成功', `慢性病設定已更新為 ${disease.label}`)
       },
     }))
 
-    // Add "None" option
-    options.push({
+    buttons.push({
       text: '無',
       onPress: () => {
         updateSettings(user.id, { chronicDisease: null })
@@ -151,9 +156,9 @@ export function SettingsScreen() {
       },
     })
 
-    options.push({ text: '取消', style: 'cancel' } as any)
+    buttons.push({ text: '取消', style: 'cancel' })
 
-    Alert.alert('選擇慢性病', '', options)
+    Alert.alert('選擇慢性病', '', buttons)
   }
 
   const handleManageAllergies = () => {
@@ -169,7 +174,7 @@ export function SettingsScreen() {
     }
 
     // Create options: current allergies (with ✓), available allergens, custom input
-    const options: any[] = []
+    const options: AlertButton[] = []
 
     // Show selected allergies first
     if (currentAllergies.length > 0) {
@@ -207,7 +212,7 @@ export function SettingsScreen() {
             { text: '取消', style: 'cancel' },
             {
               text: '新增',
-              onPress: (customAllergen) => {
+              onPress: (customAllergen?: string) => {
                 if (!customAllergen || !user?.id) return
                 const trimmed = customAllergen.trim()
                 if (!trimmed) return
