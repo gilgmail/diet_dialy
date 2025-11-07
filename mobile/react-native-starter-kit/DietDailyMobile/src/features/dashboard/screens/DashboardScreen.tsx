@@ -20,7 +20,6 @@ import * as Sharing from 'expo-sharing'
 import Constants from 'expo-constants'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useDashboard } from '../hooks/useDashboard'
-import { useAuth } from '@/features/auth/hooks/useAuth'
 import { DashboardService } from '../services/DashboardService'
 import type { MainStackParamList } from '@/app/navigation/types'
 import { StatCard } from '../components/StatCard'
@@ -43,9 +42,8 @@ interface DashboardScreenProps {
 
 export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {}) {
   const screenMountTime = React.useRef(Date.now())
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
-  const { signOut } = useAuth()
   const {
     stats,
     weeklyTrend,
