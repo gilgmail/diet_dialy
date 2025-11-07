@@ -1,10 +1,24 @@
 import { supabase } from '@/shared/api/supabase/client'
 import type {
+  DailySymptomEntryInsert,
+  DietDailyUserInsert,
+  DailySymptomEntryRow,
+} from '@/shared/types/supabase'
+import type {
   SymptomEntry,
   CreateSymptomEntryInput,
   UpdateSymptomEntryInput,
   SeverityLevel,
 } from '../types'
+
+const toStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value
+    .map((item) => (typeof item === 'string' ? item : item != null ? String(item) : null))
+    .filter((item): item is string => !!item)
+}
 
 /**
  * Symptom Diary Service
@@ -27,7 +41,7 @@ export class SymptomDiaryService {
       if (error) throw error
 
       return {
-        data: data ? data.map(entry => this.transformFromDatabase(entry)) : null,
+        data: data ? data.map((entry) => this.transformFromDatabase(entry)) : null,
         error: null
       }
     } catch (error) {
@@ -95,7 +109,7 @@ export class SymptomDiaryService {
 
       const { data, error } = await supabase
         .from('daily_symptom_entries')
-        .insert(dbEntry)
+        .insert([dbEntry])
         .select()
         .single()
 
@@ -162,7 +176,12 @@ export class SymptomDiaryService {
       }
 
       const { user } = authData
-      const profilePayload = {
+      if (!user.email) {
+        console.warn('[SymptomDiaryService] Auth user missing email, skip profile sync')
+        return
+      }
+
+      const profilePayload: DietDailyUserInsert = {
         id: user.id,
         email: user.email,
         name: (user.user_metadata?.full_name as string | undefined) ?? null,
@@ -204,12 +223,20 @@ export class SymptomDiaryService {
       const recordedDate = occurredAt.toISOString().split('T')[0]
 
       // Transform update to database structure while preserving existing values
-      const dbUpdate = this.transformToDatabase(userId, recordedDate, occurredAt, {
-        symptom_name: input.symptom_name ?? existing.additional_symptoms?.[0] ?? '',
-        severity: (input.severity ?? this.scoreToSeverity(existing.overall_health)) as SeverityLevel,
-        duration_minutes: input.duration_minutes ?? existing.duration_minutes,
-        notes: input.notes ?? existing.notes,
-      }, existing)
+      const existingRow = existing as DailySymptomEntryRow
+      const fallbackSymptoms = toStringArray(existingRow.additional_symptoms)
+      const dbUpdate = this.transformToDatabase(
+        userId,
+        recordedDate,
+        occurredAt,
+        {
+          symptom_name: input.symptom_name ?? fallbackSymptoms[0] ?? '症狀記錄',
+          severity: (input.severity ?? this.scoreToSeverity(existingRow.overall_health)) as SeverityLevel,
+          duration_minutes: input.duration_minutes,
+          notes: input.notes ?? existingRow.notes ?? undefined,
+        },
+        existingRow
+      )
 
       const { data, error } = await supabase
         .from('daily_symptom_entries')
@@ -263,11 +290,11 @@ export class SymptomDiaryService {
   /**
    * Transform database entry to mobile app format
    */
-  private static transformFromDatabase(dbEntry: any): SymptomEntry {
-    // Extract symptom name from additional_symptoms array or use a default
-    const symptomName = dbEntry.additional_symptoms?.[0] || '症狀記錄'
-
-    // Determine severity from overall_health score
+  private static transformFromDatabase(dbEntry: DailySymptomEntryRow): SymptomEntry {
+    const additionalSymptoms = toStringArray(dbEntry.additional_symptoms)
+    const medications = toStringArray(dbEntry.medications_taken)
+    const triggers = toStringArray(dbEntry.triggers_identified)
+    const symptomName = additionalSymptoms[0] || '症狀記錄'
     const severity = this.scoreToSeverity(dbEntry.overall_health)
 
     return {
@@ -279,23 +306,23 @@ export class SymptomDiaryService {
       // UI-friendly fields
       symptom_name: symptomName,
       severity,
-      duration_minutes: dbEntry.duration_minutes,
-      notes: dbEntry.notes,
+      duration_minutes: undefined,
+      notes: dbEntry.notes ?? undefined,
 
       // Core scores (for compatibility)
       overall_health: dbEntry.overall_health,
-      abdominal_pain: dbEntry.abdominal_pain,
-      diarrhea: dbEntry.diarrhea,
-      bloody_stool: dbEntry.bloody_stool,
-      bloating: dbEntry.bloating,
+      abdominal_pain: dbEntry.abdominal_pain ?? 0,
+      diarrhea: dbEntry.diarrhea ?? 0,
+      bloody_stool: dbEntry.bloody_stool ?? 0,
+      bloating: dbEntry.bloating ?? 0,
 
       // Additional data
-      additional_symptoms: dbEntry.additional_symptoms || [],
-      medications_taken: dbEntry.medications_taken || [],
-      triggers_identified: dbEntry.triggers_identified || [],
+      additional_symptoms: additionalSymptoms,
+      medications_taken: medications,
+      triggers_identified: triggers,
 
-      created_at: dbEntry.created_at,
-      updated_at: dbEntry.updated_at,
+      created_at: dbEntry.created_at ?? dbEntry.recorded_at,
+      updated_at: dbEntry.updated_at ?? dbEntry.recorded_at,
     }
   }
 
@@ -307,10 +334,14 @@ export class SymptomDiaryService {
     recordedDate: string,
     recordedAt: Date,
     input: CreateSymptomEntryInput | UpdateSymptomEntryInput,
-    existing?: any
-  ): any {
+    existing?: DailySymptomEntryRow
+  ): DailySymptomEntryInsert {
     // Map severity to overall_health score (inverse: low health = high severity)
     const severityScore = this.severityToScore(input.severity as SeverityLevel)
+    const existingSymptoms = existing ? toStringArray(existing.additional_symptoms) : []
+    const additionalSymptoms = input.symptom_name
+      ? [input.symptom_name]
+      : existingSymptoms
 
     return {
       user_id: userId,
@@ -319,31 +350,30 @@ export class SymptomDiaryService {
 
       // Core symptom scores - use existing or defaults
       overall_health: severityScore,
-      abdominal_pain: existing?.abdominal_pain ?? 0,
-      diarrhea: existing?.diarrhea ?? 0,
-      bloody_stool: existing?.bloody_stool ?? 0,
-      bloating: existing?.bloating ?? 0,
+      abdominal_pain: existing?.abdominal_pain ?? null,
+      diarrhea: existing?.diarrhea ?? null,
+      bloody_stool: existing?.bloody_stool ?? null,
+      bloating: existing?.bloating ?? null,
 
       // Bowel movement tracking - use existing or defaults
       bowel_movement_count: existing?.bowel_movement_count ?? null,
       stool_type: existing?.stool_type ?? null,
 
       // Contextual scores - use existing or defaults
-      mood_score: existing?.mood_score ?? 3,
-      energy_level: existing?.energy_level ?? 3,
-      sleep_quality: existing?.sleep_quality ?? 3,
-      stress_level: existing?.stress_level ?? 3,
+      mood_score: existing?.mood_score ?? null,
+      energy_level: existing?.energy_level ?? null,
+      sleep_quality: existing?.sleep_quality ?? null,
+      stress_level: existing?.stress_level ?? null,
 
       // Additional data
-      additional_symptoms: input.symptom_name ? [input.symptom_name] : (existing?.additional_symptoms ?? []),
-      medications_taken: existing?.medications_taken ?? [],
-      triggers_identified: existing?.triggers_identified ?? [],
+      additional_symptoms: additionalSymptoms,
+      medications_taken: existing?.medications_taken ?? null,
+      triggers_identified: existing?.triggers_identified ?? null,
       improvement_factors: existing?.improvement_factors ?? [],
       related_food_entries: existing?.related_food_entries ?? [],
 
       // Observations
-      notes: input.notes,
-      duration_minutes: input.duration_minutes,
+      notes: input.notes ?? existing?.notes ?? null,
 
       // Medication adherence
       medication_adherence: existing?.medication_adherence ?? null,
@@ -353,8 +383,8 @@ export class SymptomDiaryService {
       activity_level: existing?.activity_level ?? null,
 
       // Metadata
-      entry_source: 'manual', // Same as Web version
-      data_completeness_score: 0.6, // Simplified mobile entry has less data
+      entry_source: 'manual',
+      data_completeness_score: existing?.data_completeness_score ?? 0.6,
     }
   }
 

@@ -2241,13 +2241,14 @@ export type Database = {
 }
 
 // Convenient aliases for frequently used tables
-export type DietDailyUserRow = Database['public']['Tables']['diet_daily_users']['Row']
-export type FoodEntryRow = Database['public']['Tables']['food_entries']['Row']
-export type FoodEntryInsert = Database['public']['Tables']['food_entries']['Insert']
-export type FoodEntryUpdate = Database['public']['Tables']['food_entries']['Update']
-export type DailySymptomEntryRow = Database['public']['Tables']['daily_symptom_entries']['Row']
-export type DailySymptomEntryInsert = Database['public']['Tables']['daily_symptom_entries']['Insert']
-export type DailySymptomEntryUpdate = Database['public']['Tables']['daily_symptom_entries']['Update']
+export type DietDailyUserRow = Tables<'diet_daily_users'>
+export type DietDailyUserInsert = TablesInsert<'diet_daily_users'>
+export type FoodEntryRow = Tables<'food_entries'>
+export type FoodEntryInsert = TablesInsert<'food_entries'>
+export type FoodEntryUpdate = TablesUpdate<'food_entries'>
+export type DailySymptomEntryRow = Tables<'daily_symptom_entries'>
+export type DailySymptomEntryInsert = TablesInsert<'daily_symptom_entries'>
+export type DailySymptomEntryUpdate = TablesUpdate<'daily_symptom_entries'>
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 

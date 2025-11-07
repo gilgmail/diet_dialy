@@ -1,6 +1,7 @@
 import { supabase } from '@/shared/api/supabase/client'
 import type { FoodEntry } from '@/features/food-diary/types'
 import type { SymptomEntry } from '@/features/symptom-diary/types'
+import type { DailySymptomEntryRow } from '@/shared/types/supabase'
 import type {
   DashboardStats,
   DailyStats,
@@ -234,6 +235,44 @@ export class DashboardService {
   /**
    * Get symptom entries for the user
    */
+  private static parseStringArray(value: unknown): string[] {
+    if (!Array.isArray(value)) {
+      return []
+    }
+    return value
+      .map((item) => (typeof item === 'string' ? item : item != null ? String(item) : null))
+      .filter((item): item is string => !!item)
+  }
+
+  private static mapSymptomEntry(entry: DailySymptomEntryRow): SymptomEntry {
+    const additionalSymptoms = DashboardService.parseStringArray(entry.additional_symptoms)
+    const medications = DashboardService.parseStringArray(entry.medications_taken)
+    const triggers = DashboardService.parseStringArray(entry.triggers_identified)
+    const symptomName = additionalSymptoms[0] || '症狀記錄'
+    const severity = entry.overall_health >= 4 ? 'mild' : entry.overall_health >= 2 ? 'moderate' : 'severe'
+
+    return {
+      id: entry.id,
+      user_id: entry.user_id,
+      recorded_date: entry.recorded_date,
+      recorded_at: entry.recorded_at,
+      symptom_name: symptomName,
+      severity,
+      duration_minutes: undefined,
+      notes: entry.notes ?? undefined,
+      overall_health: entry.overall_health,
+      abdominal_pain: entry.abdominal_pain ?? 0,
+      diarrhea: entry.diarrhea ?? 0,
+      bloody_stool: entry.bloody_stool ?? 0,
+      bloating: entry.bloating ?? 0,
+      additional_symptoms: additionalSymptoms,
+      medications_taken: medications,
+      triggers_identified: triggers,
+      created_at: entry.created_at ?? entry.recorded_at,
+      updated_at: entry.updated_at ?? entry.recorded_at,
+    }
+  }
+
   private static async getSymptomEntries(userId: string) {
     const { data, error } = await supabase
       .from('daily_symptom_entries')
@@ -241,7 +280,10 @@ export class DashboardService {
       .eq('user_id', userId)
       .order('recorded_date', { ascending: false })
 
-    return { data: data as SymptomEntry[], error }
+    return {
+      data: (data as DailySymptomEntryRow[] | null)?.map((entry) => this.mapSymptomEntry(entry)) ?? [],
+      error,
+    }
   }
 
   /**

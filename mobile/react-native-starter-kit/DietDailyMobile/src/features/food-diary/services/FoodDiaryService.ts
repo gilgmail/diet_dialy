@@ -41,8 +41,8 @@ function mapFoodEntry(entry: FoodEntryRow): FoodEntry {
     calories: entry.calories ?? undefined,
     notes: entry.notes ?? undefined,
     consumed_at: entry.consumed_at,
-    created_at: entry.created_at,
-    updated_at: entry.updated_at,
+    created_at: entry.created_at ?? entry.consumed_at,
+    updated_at: entry.updated_at ?? entry.consumed_at,
   }
 }
 

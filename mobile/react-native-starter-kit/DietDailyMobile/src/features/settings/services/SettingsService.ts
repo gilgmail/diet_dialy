@@ -5,6 +5,7 @@ import {
   TIMEZONES,
   type MealReminderConfig,
   type UserSettings,
+  type ChronicDiseaseValue,
 } from '../types'
 
 interface DbUserRow {
@@ -23,6 +24,19 @@ type MobileSettingsPreferences = {
 }
 
 const CHRONIC_DISEASE_VALUES = CHRONIC_DISEASES.map((item) => item.value)
+
+function findChronicDisease(values: string[]): ChronicDiseaseValue | null {
+  for (const condition of values) {
+    const normalized = normalizeDiseaseValue(condition)
+    const match = CHRONIC_DISEASES.find(
+      (item) => normalizeDiseaseValue(item.value) === normalized
+    )
+    if (match) {
+      return match.value
+    }
+  }
+  return null
+}
 
 const normalizeDiseaseValue = (value: string) => value.replace(/\s*\(.*?\)\s*/g, '').trim()
 
@@ -103,18 +117,6 @@ function mergeMobileSettings(
   }
 
   return base
-}
-
-function findChronicDisease(conditions: string[]): string | null {
-  for (const condition of conditions) {
-    const normalized = normalizeDiseaseValue(condition)
-    for (const value of CHRONIC_DISEASE_VALUES) {
-      if (normalizeDiseaseValue(value) === normalized) {
-        return value
-      }
-    }
-  }
-  return null
 }
 
 export class SettingsService {

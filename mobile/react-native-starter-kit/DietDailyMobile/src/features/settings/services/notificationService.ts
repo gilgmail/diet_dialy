@@ -28,33 +28,27 @@ Notifications.setNotificationHandler({
   }),
 })
 
-function extractCalendarTrigger(
-  trigger: Notifications.NotificationTrigger | null | undefined
-): Notifications.CalendarNotificationTrigger | null {
-  if (!trigger || typeof trigger !== 'object') {
-    return null
-  }
-
-  if ('type' in trigger && trigger.type === 'calendar') {
-    return trigger as Notifications.CalendarNotificationTrigger & {
-      value?: { hour?: number; minute?: number }
-    }
-  }
-
-  return null
+type CalendarComponents = {
+  hour?: number
+  minute?: number
 }
 
 function extractHourMinute(trigger: Notifications.NotificationTrigger | null | undefined) {
-  const calendarTrigger = extractCalendarTrigger(trigger)
-  if (!calendarTrigger) {
+  if (!trigger || typeof trigger !== 'object' || !('type' in trigger)) {
     return { hour: undefined, minute: undefined }
   }
 
-  const value = (calendarTrigger as { value?: { hour?: number; minute?: number } }).value
-  const hour = calendarTrigger.hour ?? value?.hour
-  const minute = calendarTrigger.minute ?? value?.minute
+  if (trigger.type === 'calendar') {
+    const calendarTrigger = trigger as Notifications.CalendarNotificationTrigger
+    const components = calendarTrigger.dateComponents ?? {}
+    const fallback = (calendarTrigger as { value?: CalendarComponents }).value ?? {}
+    return {
+      hour: components.hour ?? fallback.hour,
+      minute: components.minute ?? fallback.minute,
+    }
+  }
 
-  return { hour, minute }
+  return { hour: undefined, minute: undefined }
 }
 
 function parseTime(time: string) {
