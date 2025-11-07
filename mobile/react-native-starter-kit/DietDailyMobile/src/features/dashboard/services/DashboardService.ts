@@ -130,8 +130,7 @@ export class DashboardService {
       const calcEndTime = Date.now()
       console.log(`[DashboardService] ⏱️ CALC - Stats & Trends: ${calcEndTime - calcStartTime}ms`)
 
-      // Get AI insights in background (non-blocking)
-      // 使用 Promise 但不等待完成，讓主要資料先返回
+      // Get AI insights (blocking) so latest report/history are always returned
       const aiStartTime = Date.now()
       let aiInsights: HealthInsight[] = []
       let history: WeeklyAnalysisHistoryItem[] = []
@@ -139,18 +138,7 @@ export class DashboardService {
       let analysisStatus: WeeklyAnalysisStatus | null = null
 
       try {
-        // 設定更短的超時時間（5秒），避免阻塞主要載入
-        const aiPromise = Promise.race([
-          this.getAIInsights(userId, weeklyTrend),
-          new Promise<{ insights: HealthInsight[]; history: WeeklyAnalysisHistoryItem[]; historyTotal: number; analysisStatus: WeeklyAnalysisStatus | null }>((resolve) =>
-            setTimeout(() => {
-              console.log('[DashboardService] ⏱️ AI - Skipping due to 5s timeout')
-              resolve({ insights: [], history: [], historyTotal: 0, analysisStatus: null })
-            }, 5000)
-          )
-        ])
-
-        const aiResult = await aiPromise
+        const aiResult = await this.getAIInsights(userId, weeklyTrend)
         aiInsights = aiResult.insights
         history = aiResult.history
         historyTotal = aiResult.historyTotal
@@ -198,38 +186,26 @@ export class DashboardService {
 
   /**
    * Get food entries for the user
-   * 優化：只查詢最近 30 天的資料，減少傳輸量和處理時間
    */
   private static async getFoodEntries(userId: string) {
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-
     const { data, error } = await supabase
       .from('food_entries')
       .select('*')
       .eq('user_id', userId)
-      .gte('consumed_at', thirtyDaysAgo.toISOString())
       .order('consumed_at', { ascending: false })
-      .limit(500) // 限制最多 500 筆
 
     return { data: data as FoodEntry[], error }
   }
 
   /**
    * Get symptom entries for the user
-   * 優化：只查詢最近 30 天的資料，減少傳輸量和處理時間
    */
   private static async getSymptomEntries(userId: string) {
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-
     const { data, error } = await supabase
       .from('daily_symptom_entries')
       .select('*')
       .eq('user_id', userId)
-      .gte('recorded_at', thirtyDaysAgo.toISOString())
       .order('recorded_date', { ascending: false })
-      .limit(200) // 限制最多 200 筆
 
     return { data: data as SymptomEntry[], error }
   }
@@ -494,10 +470,6 @@ export class DashboardService {
 
       console.log('  🌐 endpoint:', endpoint)
 
-      // 設定 15 秒超時，避免長時間等待
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000)
-
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -508,10 +480,7 @@ export class DashboardService {
           startDate,
           endDate,
         }),
-        signal: controller.signal,
       })
-
-      clearTimeout(timeoutId)
 
       if (!response.ok) {
         console.warn('[DashboardService] ❌ AI insight request failed', response.status)
@@ -658,13 +627,24 @@ export class DashboardService {
         analysisStatus: payload.analysisStatus ?? null,
       }
     } catch (error) {
-      // 超時或網路錯誤時不影響 Dashboard 載入
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.warn('[DashboardService] AI insights request timeout (15s)')
-      } else {
-        console.error('[DashboardService] Failed to load AI insights:', error)
+      // 網路錯誤時不影響 Dashboard 載入
+      const timestamp = new Date().toISOString()
+      console.error('[DashboardService] Failed to load AI insights:', error)
+      return {
+        insights: [
+          {
+            id: `ai-error-${timestamp}`,
+            type: 'warning',
+            icon: '⚠️',
+            title: 'AI 分析暫時無法載入',
+            description: '取得 AI 報告時遇到問題，請檢查網路後再試一次。',
+            timestamp,
+          },
+        ],
+        history: historyPreview,
+        historyTotal: historyPreview.length,
+        analysisStatus: null,
       }
-      return { insights: [], history: [], historyTotal: 0, analysisStatus: null }
     }
   }
 
