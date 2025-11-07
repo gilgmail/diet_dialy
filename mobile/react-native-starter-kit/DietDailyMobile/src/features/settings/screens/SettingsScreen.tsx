@@ -78,21 +78,6 @@ export function SettingsScreen() {
     }
   }, [settings.notificationsEnabled])
 
-  useEffect(() => {
-    if (!user?.id || !settings.notificationsEnabled) {
-      return
-    }
-
-    NotificationService.scheduleMealReminders(user.id, settings.mealReminders).catch((error) => {
-      console.warn('[SettingsScreen] Failed to refresh meal reminders:', error)
-    })
-  }, [
-    user?.id,
-    settings.notificationsEnabled,
-    settings.mealReminders.breakfast,
-    settings.mealReminders.lunch,
-    settings.mealReminders.dinner,
-  ])
 
   const handleToggleNotifications = async (value: boolean) => {
     if (!user?.id) return
@@ -495,9 +480,43 @@ Device: ${Platform.OS} ${Platform.Version}
 
         {debugMode && (
           <View style={styles.promptContainer}>
-            <Text style={styles.promptLabel}>自訂 AI 提示詞（選填）</Text>
+            <View style={styles.promptHeader}>
+              <Text style={styles.promptLabel}>自訂 AI 提示詞（選填）</Text>
+              <TouchableOpacity
+                style={styles.loadDefaultButton}
+                onPress={async () => {
+                  try {
+                    const apiBase = process.env.EXPO_PUBLIC_API_URL
+                    if (!apiBase) {
+                      Alert.alert('錯誤', 'API URL 未設定')
+                      return
+                    }
+
+                    const response = await fetch(`${apiBase}/api/ai/default-prompt`)
+                    const data = await response.json()
+
+                    if (data.success && data.prompt) {
+                      setCustomPrompt(data.prompt)
+                      Alert.alert(
+                        '已載入預設提示詞',
+                        `變體：${data.label}\n\n${data.description}\n\n您可以在此基礎上修改。`,
+                        [{ text: '確定' }]
+                      )
+                    } else {
+                      Alert.alert('錯誤', '無法載入預設提示詞')
+                    }
+                  } catch (error) {
+                    console.error('Failed to load default prompt:', error)
+                    Alert.alert('錯誤', '載入失敗，請檢查網路連線')
+                  }
+                }}
+              >
+                <Icon name="download" size={16} color={colors.primary[600]} />
+                <Text style={styles.loadDefaultButtonText}>載入預設</Text>
+              </TouchableOpacity>
+            </View>
             <Text style={styles.promptHint}>
-              留空則使用預設提示詞。可用於微調 AI 分析的重點或風格。
+              留空則使用預設提示詞。點擊「載入預設」查看完整提示詞並修改。
             </Text>
             <TextInput
               style={styles.promptInput}
@@ -514,17 +533,44 @@ Device: ${Platform.OS} ${Platform.Version}
                 }
               }}
             />
-            <TouchableOpacity
-              style={styles.promptSaveButton}
-              onPress={async () => {
-                if (user?.id) {
-                  await updateSettings(user.id, { customPrompt })
-                  Alert.alert('已儲存', '自訂提示詞已更新')
-                }
-              }}
-            >
-              <Text style={styles.promptSaveButtonText}>儲存提示詞</Text>
-            </TouchableOpacity>
+            <View style={styles.promptActions}>
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={() => {
+                  Alert.alert(
+                    '清除提示詞',
+                    '確定要清除自訂提示詞？將恢復使用預設提示詞。',
+                    [
+                      { text: '取消', style: 'cancel' },
+                      {
+                        text: '清除',
+                        style: 'destructive',
+                        onPress: async () => {
+                          setCustomPrompt('')
+                          if (user?.id) {
+                            await updateSettings(user.id, { customPrompt: '' })
+                            Alert.alert('已清除', '已恢復使用預設提示詞')
+                          }
+                        },
+                      },
+                    ]
+                  )
+                }}
+              >
+                <Text style={styles.clearButtonText}>清除</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.promptSaveButton}
+                onPress={async () => {
+                  if (user?.id) {
+                    await updateSettings(user.id, { customPrompt })
+                    Alert.alert('已儲存', '自訂提示詞已更新')
+                  }
+                }}
+              >
+                <Text style={styles.promptSaveButtonText}>儲存提示詞</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </View>
@@ -603,11 +649,32 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     backgroundColor: colors.background,
   },
+  promptHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
   promptLabel: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+  },
+  loadDefaultButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.primary[50],
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.primary[200],
+  },
+  loadDefaultButtonText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.primary[600],
   },
   promptHint: {
     fontSize: typography.fontSize.sm,
@@ -626,13 +693,33 @@ const styles = StyleSheet.create({
     minHeight: 120,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
+  promptActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  clearButton: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  clearButtonText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
+  },
   promptSaveButton: {
+    flex: 1,
     backgroundColor: colors.primary[500],
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: spacing.md,
   },
   promptSaveButtonText: {
     fontSize: typography.fontSize.base,
