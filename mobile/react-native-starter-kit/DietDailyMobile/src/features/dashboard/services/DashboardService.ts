@@ -12,6 +12,7 @@ import type {
   WeeklyAnalysisHistoryItem,
   WeeklyAnalysisStatus,
 } from '../types'
+import { recordPerformanceMetric } from '@/shared/metrics/performanceTracker'
 
 interface WeeklyIBDAnalysisCard {
   summary?: string
@@ -84,6 +85,10 @@ interface WeeklyIBDAnalysisResponse {
 const AI_INSIGHTS_TIMEOUT_MS = 60 * 1000
 
 export class DashboardService {
+  private static maskUserId(userId?: string) {
+    if (!userId) return 'anonymous'
+    return `${userId.slice(0, 4)}…`
+  }
   /**
    * Get comprehensive dashboard data for the user
    */
@@ -103,6 +108,12 @@ export class DashboardService {
       ])
       const fetchEndTime = Date.now()
       console.log(`[DashboardService] ⏱️ FETCH - Food & Symptom entries: ${fetchEndTime - fetchStartTime}ms`)
+      recordPerformanceMetric('dashboard_fetch', {
+        durationMs: fetchEndTime - fetchStartTime,
+        userId: this.maskUserId(userId),
+        foodEntries: foodResult.data?.length || 0,
+        symptomEntries: symptomResult.data?.length || 0,
+      })
 
       console.log('[DashboardService] Food entries:', {
         count: foodResult.data?.length || 0,
@@ -131,6 +142,10 @@ export class DashboardService {
       const insights = this.generateInsights(stats, weeklyTrend)
       const calcEndTime = Date.now()
       console.log(`[DashboardService] ⏱️ CALC - Stats & Trends: ${calcEndTime - calcStartTime}ms`)
+      recordPerformanceMetric('dashboard_calculation', {
+        durationMs: calcEndTime - calcStartTime,
+        userId: this.maskUserId(userId),
+      })
 
       // Get AI insights (blocking) so latest report/history are always returned
       const aiStartTime = Date.now()
@@ -148,14 +163,31 @@ export class DashboardService {
 
         const aiEndTime = Date.now()
         console.log(`[DashboardService] ⏱️ AI - Insights fetch: ${aiEndTime - aiStartTime}ms`)
+        recordPerformanceMetric('dashboard_ai', {
+          durationMs: aiEndTime - aiStartTime,
+          userId: this.maskUserId(userId),
+          hasHistory: history.length > 0,
+          insightsCount: aiInsights.length,
+        })
       } catch (error) {
         console.warn('[DashboardService] AI insights failed, continuing without them:', error)
+        recordPerformanceMetric('dashboard_ai', {
+          durationMs: Date.now() - aiStartTime,
+          userId: this.maskUserId(userId),
+          error: error instanceof Error ? error.message : String(error),
+        })
       }
 
       const combinedInsights = [...aiInsights, ...insights]
 
       const totalTime = Date.now() - startTime
       console.log(`[DashboardService] ✅ COMPLETE - Total time: ${totalTime}ms`)
+      recordPerformanceMetric('dashboard_total', {
+        durationMs: totalTime,
+        userId: this.maskUserId(userId),
+        insights: combinedInsights.length,
+        historyItems: history.length,
+      })
       console.log(`[DashboardService] 📊 Stats summary:`, {
         foodEntries: foodEntries.length,
         symptomEntries: symptomEntries.length,

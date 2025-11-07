@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '@/shared/stores/authStore'
 import { DashboardService } from '../services/DashboardService'
+import type { DashboardData } from '../types'
 
 /**
  * React Query hook for fetching dashboard data
@@ -14,7 +15,7 @@ export function useDashboard() {
     isLoading,
     error,
     refetch,
-  } = useQuery({
+  } = useQuery<DashboardData | null>({
     queryKey: ['dashboard', user?.id],
     queryFn: async () => {
       console.log('[useDashboard] Fetching dashboard data for user:', user?.id)
@@ -41,7 +42,7 @@ export function useDashboard() {
     },
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 10, // 延長到 10 分鐘，減少不必要的重新載入
-    cacheTime: 1000 * 60 * 30, // 快取 30 分鐘
+    gcTime: 1000 * 60 * 30, // 快取 30 分鐘
     refetchOnMount: false, // 避免每次進入都重新載入
     refetchOnWindowFocus: false, // 避免切換 app 時重新載入
   })
