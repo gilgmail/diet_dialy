@@ -81,6 +81,8 @@ interface WeeklyIBDAnalysisResponse {
   analysisStatus?: WeeklyAnalysisStatus | null
 }
 
+const AI_INSIGHTS_TIMEOUT_MS = 60 * 1000
+
 export class DashboardService {
   /**
    * Get comprehensive dashboard data for the user
@@ -470,6 +472,9 @@ export class DashboardService {
 
       console.log('  🌐 endpoint:', endpoint)
 
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), AI_INSIGHTS_TIMEOUT_MS)
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -480,7 +485,10 @@ export class DashboardService {
           startDate,
           endDate,
         }),
+        signal: controller.signal,
       })
+
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
         console.warn('[DashboardService] ❌ AI insight request failed', response.status)
@@ -627,8 +635,29 @@ export class DashboardService {
         analysisStatus: payload.analysisStatus ?? null,
       }
     } catch (error) {
-      // 網路錯誤時不影響 Dashboard 載入
+      // 超時或網路錯誤時不影響 Dashboard 載入
       const timestamp = new Date().toISOString()
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.warn(
+          `[DashboardService] AI insights request timeout (${AI_INSIGHTS_TIMEOUT_MS / 1000}s)`
+        )
+        return {
+          insights: [
+            {
+              id: `ai-timeout-${timestamp}`,
+              type: 'info',
+              icon: '⌛️',
+              title: 'AI 分析仍在生成中',
+              description: '伺服器仍在產生最新報告，稍候片刻或稍後再重新整理即可更新結果。',
+              timestamp,
+            },
+          ],
+          history: historyPreview,
+          historyTotal: historyPreview.length,
+          analysisStatus: null,
+        }
+      }
+
       console.error('[DashboardService] Failed to load AI insights:', error)
       return {
         insights: [

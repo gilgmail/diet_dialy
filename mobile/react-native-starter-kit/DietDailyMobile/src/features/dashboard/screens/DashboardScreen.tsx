@@ -962,6 +962,27 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       {activeTab === 'reports' && (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>AI 分析報告歷史</Text>
+        {insights.some((insight) => insight.id.startsWith('ai-timeout')) && (
+          <View style={styles.analysisPendingBanner}>
+            <Text style={styles.analysisPendingText}>
+              AI 分析仍在生成中，完成後將自動更新最新報告。
+            </Text>
+          </View>
+        )}
+        {analysisStatus && !analysisStatus.reportGenerated ? (
+          <View style={styles.analysisStatusCard}>
+            <Text style={styles.analysisStatusTitle}>AI 分析仍在進行</Text>
+            <Text style={styles.analysisStatusSummary}>
+              {`資料筆數：${analysisStatus.datasetSummary.totalRecords}（飲食 ${analysisStatus.datasetSummary.foodEntries}、症狀 ${analysisStatus.datasetSummary.symptomEntries}）`}
+            </Text>
+            {analysisStatus.lastUpdated ? (
+              <Text style={styles.analysisStatusTimestamp}>
+                最後更新：{new Date(analysisStatus.lastUpdated).toLocaleString('zh-TW')}
+              </Text>
+            ) : null}
+            {analysisStatus.steps?.map((step) => renderStatusStep(step, 'report-'))}
+          </View>
+        ) : null}
         {history.length > 0 ? (
           <>
             {history.slice(0, 2).map((item) => (
@@ -1277,6 +1298,19 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
     marginBottom: spacing.md,
+  },
+  analysisPendingBanner: {
+    backgroundColor: colors.primary[50],
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary[500],
+  },
+  analysisPendingText: {
+    color: colors.primary[700],
+    fontSize: typography.fontSize.sm,
+    lineHeight: 20,
   },
   sectionTitleInline: {
     marginBottom: 0,
