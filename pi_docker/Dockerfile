@@ -42,6 +42,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \

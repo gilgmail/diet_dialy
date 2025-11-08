@@ -83,7 +83,7 @@ interface WeeklyIBDAnalysisResponse {
   analysisStatus?: WeeklyAnalysisStatus | null
 }
 
-const AI_INSIGHTS_TIMEOUT_MS = 60 * 1000
+const AI_INSIGHTS_TIMEOUT_MS = 10 * 60 * 1000 // 10 minutes for Claude Sonnet 4.5 analysis
 
 export class DashboardService {
   private static maskUserId(userId?: string) {
@@ -297,8 +297,10 @@ export class DashboardService {
     const startOfToday = new Date(now)
     startOfToday.setHours(0, 0, 0, 0)
 
+    // 修正：與 calculateWeeklyTrend 和 AI 分析保持一致，使用過去 7 天（包含今天）
+    // 從今天往回推 6 天，總共 7 天
     const startOfWeek = new Date(now)
-    startOfWeek.setDate(now.getDate() - 7)
+    startOfWeek.setDate(now.getDate() - 6)
     startOfWeek.setHours(0, 0, 0, 0)
 
     // Food stats
@@ -525,41 +527,23 @@ export class DashboardService {
       const today = new Date()
       const endDate = this.formatDate(today)
 
-      // 🔍 Diagnostic logging for date range
-      console.log('[DashboardService] 🔍 Requesting AI analysis:')
-      console.log('  📅 startDate:', startDate)
-      console.log('  📅 endDate:', endDate)
-      console.log('  📊 weeklyTrend length:', weeklyTrend.week.length)
-      console.log('  👤 userId:', userId)
-      console.log(
-        '[DashboardService] 🍱 Weekly diet snapshot:',
-        weeklyTrend.week.map((day) => ({
-          date: day.date,
-          foodCount: day.foodCount,
-          symptomCount: day.symptomCount,
-          totalCalories: day.totalCalories,
-        }))
-      )
+      // Simplified diagnostic logging
+      console.log(`[DashboardService] 🔍 Fetching analysis history: ${startDate} to ${endDate} (${weeklyTrend.week.length} days)`)
 
       const normalizedBase = apiBase.replace(/\/+$/, '')
       const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
-      const endpoint = `${baseApiUrl}/ai/weekly-ibd-analysis`
 
-      console.log('  🌐 endpoint:', endpoint)
+      // Use GET to fetch history only (not trigger new analysis)
+      const endpoint = `${baseApiUrl}/ai/weekly-ibd-analysis?userId=${userId}`
 
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), AI_INSIGHTS_TIMEOUT_MS)
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30s timeout for history fetch
 
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId,
-          startDate,
-          endDate,
-        }),
         signal: controller.signal,
       })
 
@@ -579,23 +563,14 @@ export class DashboardService {
       const payloadHistory = Array.isArray(payload.history) ? payload.history : undefined
       const normalizedHistoryPreview = this.normalizeHistory(
         apiBase,
-        payloadHistory ? payloadHistory.slice(0, 1) : undefined
+        payloadHistory // Load all history items instead of just first one
       )
       const historyTotal = payloadHistory
         ? payloadHistory.length
         : Math.max(normalizedHistoryPreview.length, historyPreview.length)
 
-      // 🔍 Diagnostic logging for response
-      console.log('[DashboardService] 📥 AI analysis response received:')
-      console.log('  ✅ success:', payload.success)
-      console.log('  📊 method:', payload.analysis?.method)
-      console.log('  🍽️ food entries:', payload.analysis?.totals?.food_entries)
-      console.log('  ❤️ symptom entries:', payload.analysis?.totals?.symptom_entries)
-      console.log('  📅 timeframe:', payload.analysis?.timeframe)
-      console.log('  📚 history count:', payload.history?.length)
-      if (payload.analysis?.analysis_version) {
-        console.log('  🏷️ analysis version:', payload.analysis.analysis_version)
-      }
+      // Simplified response logging
+      console.log(`[DashboardService] 📥 Response: ${payload.analysis?.method} | ${payload.analysis?.totals?.food_entries}F ${payload.analysis?.totals?.symptom_entries}S | ${payload.history?.length}H`)
 
       if (!payload.success || !payload.analysis) {
         console.warn('[DashboardService] ⚠️ AI insight response missing analysis', payload.error)
@@ -617,14 +592,14 @@ export class DashboardService {
         }
       }
 
-      if (payload.analysis.prompt_used) {
-        logInChunks('[DashboardService] 🧠 AI prompt used (full):', payload.analysis.prompt_used)
-
-        const datasetMatch = payload.analysis.prompt_used.match(/```json\s*([\s\S]+?)\s*```/)
-        if (datasetMatch) {
-          logInChunks('[DashboardService] 🍱 Dataset provided to AI:', datasetMatch[1])
-        }
-      }
+      // Disabled verbose logging - too much output
+      // if (payload.analysis.prompt_used) {
+      //   logInChunks('[DashboardService] 🧠 AI prompt used (full):', payload.analysis.prompt_used)
+      //   const datasetMatch = payload.analysis.prompt_used.match(/```json\s*([\s\S]+?)\s*```/)
+      //   if (datasetMatch) {
+      //     logInChunks('[DashboardService] 🍱 Dataset provided to AI:', datasetMatch[1])
+      //   }
+      // }
 
       const timestamp = new Date().toISOString()
       const insights: HealthInsight[] = []
@@ -714,22 +689,67 @@ export class DashboardService {
       const timestamp = new Date().toISOString()
       if (error instanceof Error && error.name === 'AbortError') {
         console.warn(
-          `[DashboardService] AI insights request timeout (${AI_INSIGHTS_TIMEOUT_MS / 1000}s)`
+          `[DashboardService] AI insights request timeout (${AI_INSIGHTS_TIMEOUT_MS / 1000}s) - will retry in background`
         )
+
+        // Timeout 後嘗試輪詢結果（每 30 秒檢查一次，最多 3 次）
+        setTimeout(async () => {
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            console.log(`[DashboardService] Polling attempt ${attempt}/3 for completed analysis...`)
+
+            try {
+              // 只拉取歷史報告，不觸發新的分析
+              const pollResponse = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId,
+                  startDate,
+                  endDate,
+                  skipAnalysis: true, // 標記為只拉取歷史
+                }),
+              })
+
+              if (pollResponse.ok) {
+                const data = await pollResponse.json()
+                if (data.success && data.reportInfo) {
+                  console.log('[DashboardService] ✅ Analysis completed in background, report ready!')
+                  // 觸發 UI 更新（可以透過事件或狀態管理）
+                  return
+                }
+              }
+            } catch (err) {
+              console.log(`[DashboardService] Polling attempt ${attempt} failed:`, err)
+            }
+
+            // 等待 30 秒再嘗試
+            if (attempt < 3) {
+              await new Promise(resolve => setTimeout(resolve, 30000))
+            }
+          }
+          console.log('[DashboardService] Polling completed, no new report found')
+        }, 5000) // 5 秒後開始輪詢
+
         return {
           insights: [
             {
               id: `ai-timeout-${timestamp}`,
               type: 'info',
               icon: '⌛️',
-              title: 'AI 分析仍在生成中',
-              description: '伺服器仍在產生最新報告，稍候片刻或稍後再重新整理即可更新結果。',
+              title: 'AI 分析需要較長時間',
+              description: '分析正在背景處理中（約需 5-8 分鐘）。系統會自動檢查並更新結果，請稍候再重新整理頁面。',
               timestamp,
             },
           ],
           history: historyPreview,
           historyTotal: historyPreview.length,
-          analysisStatus: null,
+          analysisStatus: {
+            analysisId: `pending-${timestamp}`,
+            status: 'processing',
+            progress: 50,
+            message: '分析進行中，請稍候...',
+            estimatedCompletion: new Date(Date.now() + 8 * 60 * 1000).toISOString(), // 預估 8 分鐘後完成
+          },
         }
       }
 
@@ -759,6 +779,78 @@ export class DashboardService {
       return []
     }
     return this.fetchAnalysisHistory(apiBase, userId)
+  }
+
+  /**
+   * Trigger a new AI weekly analysis (POST request)
+   * This generates a new analysis report and returns it along with updated history
+   */
+  static async triggerWeeklyAnalysis(
+    userId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<{
+    success: boolean
+    analysis?: any
+    history?: WeeklyAnalysisHistoryItem[]
+    error?: string
+  }> {
+    const apiBase = process.env.EXPO_PUBLIC_API_URL
+    if (!apiBase) {
+      console.warn('[DashboardService] EXPO_PUBLIC_API_URL not configured')
+      return { success: false, error: 'API URL not configured' }
+    }
+
+    try {
+      console.log(`[DashboardService] 🤖 Triggering AI analysis for ${startDate || 'auto'} to ${endDate || 'auto'}`)
+
+      const normalizedBase = apiBase.replace(/\/+$/, '')
+      const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
+      const endpoint = `${baseApiUrl}/ai/weekly-ibd-analysis`
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 600000) // 10 minutes for AI analysis
+
+      const requestBody: any = { userId }
+      if (startDate) requestBody.startDate = startDate
+      if (endDate) requestBody.endDate = endDate
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        console.warn('[DashboardService] ❌ AI analysis request failed', response.status)
+        return { success: false, error: `HTTP ${response.status}` }
+      }
+
+      const data = await response.json()
+      console.log('[DashboardService] ✅ AI analysis completed:', {
+        success: data.success,
+        hasAnalysis: !!data.analysis,
+        historyCount: data.history?.length || 0,
+      })
+
+      return {
+        success: data.success,
+        analysis: data.analysis,
+        history: data.history,
+        error: data.error,
+      }
+    } catch (error) {
+      console.error('[DashboardService] AI analysis error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }
+    }
   }
 
   private static async fetchAnalysisHistory(
@@ -803,6 +895,7 @@ export class DashboardService {
         item.pdfPath && typeof item.pdfPath === 'string' && !item.pdfPath.startsWith('http')
           ? `${apiRoot}${item.pdfPath}`
           : item.pdfPath,
+      allFoodsOverview: item.allFoodsOverview || item.all_foods_overview || undefined,
       foodsToMonitor: item.foodsToMonitor || item.foods_to_monitor || [],
       supportiveFoods: item.supportiveFoods || item.supportive_foods || [],
     }))

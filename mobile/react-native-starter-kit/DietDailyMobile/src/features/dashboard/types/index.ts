@@ -65,6 +65,13 @@ export interface WeeklyAnalysisHistoryItem {
   summary: string
   pdfPath: string
   followUpActions: string[]
+  allFoodsOverview?: {
+    high_risk_foods: string[]
+    moderate_risk_foods: string[]
+    watch_foods: string[]
+    supportive_foods: string[]
+    neutral_foods: string[]
+  }
   foodsToMonitor?: Array<{ food: string; risk_level?: string; reasoning?: string[]; recommended_actions?: string[] }>
   supportiveFoods?: Array<{ food: string; benefits?: string[]; suggestions?: string[] }>
   reasoningTrace?: string[]

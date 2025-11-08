@@ -181,6 +181,7 @@ async function fetchWeeklyHistory(userId: string, limit = DEFAULT_HISTORY_LIMIT)
           followUpActions: analysis.follow_up_actions || [],
           pdfPath: `/api/ai/weekly-ibd-analysis/${reportId}/pdf`,
           jsonPath: `/api/ai/weekly-ibd-analysis/${reportId}/json`,
+          allFoodsOverview: analysis.all_foods_overview || undefined,
           foodsToMonitor: analysis.foods_to_monitor || [],
           supportiveFoods: analysis.supportive_foods || [],
           reasoningTrace: analysis.reasoning_trace || [],

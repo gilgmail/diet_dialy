@@ -249,6 +249,11 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   }
 
   const handleAIAnalysis = async () => {
+    if (!user?.id) {
+      console.warn('[Dashboard] No user ID available for analysis')
+      return
+    }
+
     try {
       setIsAnalyzing(true)
       setAnalysisCountdown(60)
@@ -259,12 +264,65 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
 
       setAnalysisStatus(buildInitialStatus(estimatedFoodEntries, estimatedSymptomEntries))
 
-      // 輪詢機制：每 3 秒檢查一次，最多輪詢 20 次 (60 秒)
-      let attempts = 0
-      const maxAttempts = 20
-      const pollInterval = 3000 // 3 seconds
+      // 先觸發 AI 分析 (POST request)
+      console.log('[Dashboard] Triggering AI analysis...')
+      const analysisResult = await DashboardService.triggerWeeklyAnalysis(user.id)
 
-      const poll = async (): Promise<boolean> => {
+      if (!analysisResult.success) {
+        console.error('[Dashboard] Failed to trigger analysis:', analysisResult.error)
+        const timestamp = new Date().toISOString()
+        setAnalysisStatus((prev) => {
+          const base = prev ?? buildInitialStatus(estimatedFoodEntries, estimatedSymptomEntries)
+          return {
+            ...base,
+            steps: base.steps.map((step) => ({
+              ...step,
+              state: 'failed',
+              detail: analysisResult.error || '分析請求失敗',
+              timestamp,
+            })),
+            reportGenerated: false,
+            lastUpdated: timestamp,
+          }
+        })
+        return
+      }
+
+      console.log('[Dashboard] Analysis triggered successfully, updating data...')
+
+      // 更新歷史記錄
+      if (analysisResult.history && analysisResult.history.length > 0) {
+        setHistory(analysisResult.history)
+        const newReportId = analysisResult.history[0].id
+        setLatestReportId(newReportId)
+
+        // 滾動到報告歷史區域
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true })
+        }, 500)
+
+        // 5 秒後清除高亮標記
+        setTimeout(() => setLatestReportId(null), 5000)
+      }
+
+      // 刷新 Dashboard 數據以更新 UI
+      await refetch()
+
+      console.log('[Dashboard] AI analysis完成！')
+    } finally {
+      setIsAnalyzing(false)
+      setAnalysisCountdown(0)
+    }
+  }
+
+  // 移除舊的輪詢程式碼，保留註解版本作為參考
+  /*
+  const oldPollingCode = async (): Promise<boolean> => {
+        let attempts = 0
+        const maxAttempts = 20
+        const pollInterval = 3000 // 3 seconds
+
+        const poll = async (): Promise<boolean> => {
         attempts++
         console.log(`[Dashboard] Polling attempt ${attempts}/${maxAttempts}`)
 
@@ -361,6 +419,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       setAnalysisCountdown(0)
     }
   }
+  */
 
   useEffect(() => {
     if (!isAnalyzing) {
@@ -386,72 +445,72 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     const title = item.title
     const summaryText = item.summary ? `<p>${item.summary}</p>` : ''
 
-    const foodsToMonitor = (item.foodsToMonitor || [])
-      .slice(0, 3)
+    // 飲食總覽 (all_foods_overview) - 從 foodsToMonitor 生成完整列表並包含理由
+    const allFoodsOverview = item.allFoodsOverview
+
+    // 為高風險食物添加理由（從 foodsToMonitor 中提取）
+    const foodsToMonitorMap = new Map(
+      (item.foodsToMonitor || []).map(food => [food.food, food])
+    )
+
+    const highRiskFoods = (allFoodsOverview?.high_risk_foods || [])
       .map((food) => {
-        const parts: string[] = []
-        if (food.risk_level) parts.push(`風險：${food.risk_level}`)
-        if (food.reasoning?.length) parts.push(`原因：${food.reasoning.join('、')}`)
-        if (food.recommended_actions?.length) parts.push(`建議：${food.recommended_actions.join('、')}`)
-        return `<li>${food.food}${parts.length ? `（${parts.join('；')}）` : ''}</li>`
+        const details = foodsToMonitorMap.get(food)
+        if (details?.reasoning?.length) {
+          return `<li>🔴 <strong>${food}</strong><br/><small style="color: #6b7280;">理由：${details.reasoning.join('、')}</small></li>`
+        }
+        return `<li>🔴 ${food}</li>`
       })
       .join('')
 
-    const supportiveFoods = (item.supportiveFoods || [])
-      .slice(0, 3)
+    const moderateRiskFoods = (allFoodsOverview?.moderate_risk_foods || [])
       .map((food) => {
-        const parts: string[] = []
-        if (food.benefits?.length) parts.push(`優點：${food.benefits.join('、')}`)
-        if (food.suggestions?.length) parts.push(`建議：${food.suggestions.join('、')}`)
-        return `<li>${food.food}${parts.length ? `（${parts.join('；')}）` : ''}</li>`
+        const details = foodsToMonitorMap.get(food)
+        if (details?.reasoning?.length) {
+          return `<li>🟡 <strong>${food}</strong><br/><small style="color: #6b7280;">理由：${details.reasoning.join('、')}</small></li>`
+        }
+        return `<li>🟡 ${food}</li>`
       })
       .join('')
+
+    const watchFoods = (allFoodsOverview?.watch_foods || [])
+      .map((food) => {
+        const details = foodsToMonitorMap.get(food)
+        if (details?.reasoning?.length) {
+          return `<li>👀 <strong>${food}</strong><br/><small style="color: #6b7280;">理由：${details.reasoning.join('、')}</small></li>`
+        }
+        return `<li>👀 ${food}</li>`
+      })
+      .join('')
+
+    const supportiveFoodsOverview = (allFoodsOverview?.supportive_foods || [])
+      .map((food) => `<li>✅ ${food}</li>`)
+      .join('')
+
+    const neutralFoods = (allFoodsOverview?.neutral_foods || [])
+      .map((food) => `<li>⚪ ${food}</li>`)
+      .join('')
+
+    const allFoodsOverviewHtml =
+      highRiskFoods || moderateRiskFoods || watchFoods || supportiveFoodsOverview || neutralFoods
+        ? `<h2>📊 本週飲食總覽</h2>
+           ${highRiskFoods ? `<h3 style="color: #dc2626;">🔴 高風險食物（需避免或減少）</h3><ul>${highRiskFoods}</ul>` : ''}
+           ${moderateRiskFoods ? `<h3 style="color: #ea580c;">🟡 中度風險食物（需觀察調整）</h3><ul>${moderateRiskFoods}</ul>` : ''}
+           ${watchFoods ? `<h3 style="color: #d97706;">👀 需持續觀察</h3><ul>${watchFoods}</ul>` : ''}
+           ${supportiveFoodsOverview ? `<h3 style="color: #16a34a;">✅ 有益食物（可繼續攝取）</h3><ul>${supportiveFoodsOverview}</ul>` : ''}
+           ${neutralFoods ? `<h3 style="color: #6b7280;">⚪ 中性食物（無明顯影響）</h3><ul>${neutralFoods}</ul>` : ''}`
+        : ''
+
+    // 移除「需留意食物」和「建議加強食物」的詳細分析區塊
+    const foodsToMonitor = ''
+    const supportiveFoods = ''
 
     const reasoningTrace = (item.reasoningTrace || []).map((note) => `<li>${note}</li>`).join('')
     const evidenceNotes = (item.evidenceNotes || []).map((note) => `<li>${note}</li>`).join('')
 
-    const dailySections = (item.dailyFoodBreakdown || [])
-      .slice(0, 3)
-      .map((day) => {
-        const meals = (day.meals || [])
-          .slice(0, 2)
-          .map((meal) => {
-            const foods = (meal.foods || [])
-              .slice(0, 3)
-              .map((food) => {
-                const tags: string[] = []
-                if (food.suitability) {
-                  tags.push(`評估：${food.suitability}`)
-                }
-                if (food.reasoning?.length) {
-                  tags.push(`理由：${food.reasoning.join('；')}`)
-                }
-                if (food.symptom_links?.length) {
-                  tags.push(`症狀連結：${food.symptom_links.join('；')}`)
-                }
-                if (food.notes?.length) {
-                  tags.push(`備註：${food.notes.join('；')}`)
-                }
-                const detail = tags.length ? `（${tags.join('；')}）` : ''
-                return `<li>${food.name}${detail}</li>`
-              })
-              .join('')
-
-            return foods
-              ? `<h4>${meal.meal || '未標註餐別'}</h4><ul>${foods}</ul>`
-              : `<h4>${meal.meal || '未標註餐別'}</h4><p>此餐僅記錄食物名稱，缺少詳述。</p>`
-          })
-          .join('')
-
-        const daySummary = day.day_summary ? `<p>${day.day_summary}</p>` : ''
-        return `<article><h3>📅 ${day.date || '未提供日期'}</h3>${daySummary}${meals || '<p>未提供餐點詳情。</p>'}</article>`
-      })
-      .join('')
-
-    const hasMoreDaily =
-      (item.dailyFoodBreakdown?.length || 0) > 3
-        ? `<p><em>更多每日詳情請於完整報告查看。</em></p>`
-        : ''
+    // 移除「每日餐點解析」區塊
+    const dailySections = ''
+    const hasMoreDaily = ''
 
     const nextStepsMaintain = (item.nextSteps?.maintain || [])
       .map((step) => `<li>${step}</li>`)
@@ -547,8 +606,9 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   <h1>${title}</h1>
   <p><strong>期間：</strong>${item.startDate} ~ ${item.endDate}</p>
   ${summaryText}
-  ${foodsToMonitor ? `<h2>需留意食物</h2><ul>${foodsToMonitor}</ul>` : ''}
-  ${supportiveFoods ? `<h2>建議加強食物</h2><ul>${supportiveFoods}</ul>` : ''}
+  ${allFoodsOverviewHtml}
+  ${foodsToMonitor ? `<h2>需留意食物（詳細分析）</h2><ul>${foodsToMonitor}</ul>` : ''}
+  ${supportiveFoods ? `<h2>建議加強食物（詳細分析）</h2><ul>${supportiveFoods}</ul>` : ''}
   ${reasoningHtml}
   ${dailyHtml}
   ${nextStepsHtml}
@@ -684,11 +744,20 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     }
   }
 
-  const handleViewReport = (item: WeeklyAnalysisHistoryItem) => {
-    const { html } = composeShareContent(item)
-    // 使用 base64 編碼來避免 URL 參數傳遞時的編碼問題
-    const base64Html = Buffer.from(html, 'utf-8').toString('base64')
-    navigation.navigate('ReportDetail', { htmlContent: base64Html })
+  const handleViewReport = async (item: WeeklyAnalysisHistoryItem) => {
+    const startTime = Date.now()
+    console.log('[DashboardScreen] 📖 Loading report...', { id: item.id, startDate: item.startDate })
+
+    // 使用 setTimeout 讓 UI 有機會顯示加載狀態
+    setTimeout(() => {
+      const { html } = composeShareContent(item)
+      const base64Html = Buffer.from(html, 'utf-8').toString('base64')
+
+      const loadTime = Date.now() - startTime
+      console.log(`[DashboardScreen] ✅ Report loaded in ${loadTime}ms`)
+
+      navigation.navigate('ReportDetail', { htmlContent: base64Html })
+    }, 50) // 50ms delay to show loading state
   }
 
   const renderReportHighlights = (item: WeeklyAnalysisHistoryItem) => {

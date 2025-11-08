@@ -6,7 +6,7 @@ import type { FoodEntry } from '@/types/supabase'
 import type { DailySymptomEntry, CoreSymptomScores } from '@/types/medical'
 
 // 更新版本時務必同步調整行動端顯示與報告標註
-export const WEEKLY_ANALYSIS_VERSION = '2025.02.09.0'
+export const WEEKLY_ANALYSIS_VERSION = '2025.11.08.8'
 
 interface ClaudeConfig {
   apiKey: string
@@ -146,6 +146,13 @@ export interface WeeklyIBDAnalysisResult {
   }
   analysis: {
     summary: string
+    all_foods_overview: {
+      high_risk_foods: string[]
+      moderate_risk_foods: string[]
+      watch_foods: string[]
+      supportive_foods: string[]
+      neutral_foods: string[]
+    }
     foods_to_monitor: Array<{
       food: string
       risk_level: 'high' | 'moderate' | 'watch'
@@ -187,6 +194,13 @@ type RiskLevel = 'high' | 'moderate' | 'watch'
 
 interface ClaudeAnalysisResponse {
   summary?: string
+  all_foods_overview?: {
+    high_risk_foods?: unknown
+    moderate_risk_foods?: unknown
+    watch_foods?: unknown
+    supportive_foods?: unknown
+    neutral_foods?: unknown
+  }
   foods_to_monitor?: Array<{
     food?: string
     risk_level?: string
@@ -223,6 +237,8 @@ const PROMPT_VARIANTS = {
     label: 'IBD 營養顧問',
     description: '專精於發炎性腸道疾病的個人化營養分析與飲食調整建議。',
     prompt: `你是一位專精於發炎性腸道疾病(IBD)的營養顧問。我會提供患者的每日飲食記錄和症狀日記，請幫我進行深度分析。
+
+【最重要任務】你必須在 daily_food_breakdown 中完整分析「每一天」「每一餐」「每種食物」。這是報告的核心價值，絕對不可省略任何日期。dataset 中 dailyBreakdown 有多少天，你就必須分析多少天。
 
 ## 分析任務
 
@@ -497,13 +513,13 @@ const PROMPT_VARIANTS = {
 - 所有建議都要有營養學證據支持（標註關鍵營養素及含量）
 
 ## 報告架構要求
-- **Summary**：以結論口吻撰寫 3-5 句，引用 dataset 內的日期與指標。
-- **Reasoning Trace**：逐條說明推論邏輯，包含症狀和飲食的關聯時間窗。
-- **Daily Food Breakdown**：每日逐餐列出食物的適合度，標記「有益」/「中性」/「觀察」/「避免」並給出依據。
-- **Evidence Notes**：列出任何被引用的資料欄位（如 trackingSummary、foodImpacts、symptomOverview）。
-- **Next Steps**：區分維持、監測、實驗三大類，指示份量與觀察指標。
+- **Summary**：以結論口吻撰寫 2-3 句簡要總結（簡短即可）。
+- **Reasoning Trace**：簡要說明推論邏輯（2-3 條即可）。
+- **Daily Food Breakdown**：【最重要】務必完整分析「所有日期」「所有餐次」「所有食物」，標記「有益」/「中性」/「觀察」/「避免」並給出依據。這是報告的核心，必須完整覆蓋。
+- **Evidence Notes**：簡要列出（1-2 條即可）。
+- **Next Steps**：簡要列出（2-3 項即可）。
 
-請強調所有建議均可追溯資料來源，必要時引用 flareDays、stableDays、mealTypes、sampleNotes 等欄位。`
+**特別強調**：daily_food_breakdown 是整份報告最重要的部分，必須完整覆蓋所有日期。請將大部分輸出空間用於詳細的每日食物分析，其他部分可以精簡。請確保每一天、每一餐、每種食物都有詳細評估。`
   },
   clinical_trace: {
     label: '臨床深度推論',
@@ -816,6 +832,28 @@ function normalizeNextSteps(value: unknown): NextStepPlan {
   }
 }
 
+function normalizeAllFoodsOverview(value: unknown) {
+  const base = {
+    high_risk_foods: [] as string[],
+    moderate_risk_foods: [] as string[],
+    watch_foods: [] as string[],
+    supportive_foods: [] as string[],
+    neutral_foods: [] as string[]
+  }
+
+  if (!isPlainRecord(value)) {
+    return base
+  }
+
+  return {
+    high_risk_foods: normalizeStringArray(value.high_risk_foods),
+    moderate_risk_foods: normalizeStringArray(value.moderate_risk_foods),
+    watch_foods: normalizeStringArray(value.watch_foods),
+    supportive_foods: normalizeStringArray(value.supportive_foods),
+    neutral_foods: normalizeStringArray(value.neutral_foods)
+  }
+}
+
 export class IBDWeeklyAnalysisAgent {
   private anthropic: Anthropic | null
   private readonly config: ClaudeConfig
@@ -954,30 +992,47 @@ export class IBDWeeklyAnalysisAgent {
   }
 
   private resolveTimeframe(options: WeeklyAnalysisOptions): Timeframe {
-    const end = options.endDate ? new Date(options.endDate) : new Date()
-    if (Number.isNaN(end.getTime())) {
-      throw new Error('Invalid endDate provided to IBDWeeklyAnalysisAgent')
+    // 如果有明確指定日期，使用指定的日期
+    if (options.endDate && options.startDate) {
+      const end = new Date(options.endDate)
+      const start = new Date(options.startDate)
+
+      if (Number.isNaN(end.getTime())) {
+        throw new Error('Invalid endDate provided to IBDWeeklyAnalysisAgent')
+      }
+      if (Number.isNaN(start.getTime())) {
+        throw new Error('Invalid startDate provided to IBDWeeklyAnalysisAgent')
+      }
+
+      end.setHours(0, 0, 0, 0)
+      start.setHours(0, 0, 0, 0)
+
+      const daysCovered = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+
+      return {
+        startDate: formatDateInput(start),
+        endDate: formatDateInput(end),
+        daysCovered
+      }
     }
+
+    // 默認行為：計算過去 7 天（與 Dashboard 的 calculateWeeklyTrend 完全一致）
+    // Dashboard 使用: for (let i = 6; i >= 0; i--) { date.setDate(now.getDate() - i) }
+    const now = new Date()
+    const end = new Date(now)
     end.setHours(0, 0, 0, 0)
 
-    const start = options.startDate ? new Date(options.startDate) : new Date(end)
-    if (Number.isNaN(start.getTime())) {
-      throw new Error('Invalid startDate provided to IBDWeeklyAnalysisAgent')
-    }
-
-    if (!options.startDate) {
-      start.setDate(end.getDate() - 6)
-    }
-
-    if (start > end) {
-      const temp = new Date(start)
-      start.setTime(end.getTime())
-      end.setTime(temp.getTime())
-    }
-
+    // 計算開始日期：從今天往回推 6 天（總共 7 天，包含今天）
+    const start = new Date(now)
+    start.setDate(now.getDate() - 6)
     start.setHours(0, 0, 0, 0)
 
-    const daysCovered = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    const daysCovered = 7 // 固定為 7 天
+
+    console.log('[resolveTimeframe] 📅 Calculating past 7 days (matching Dashboard logic):')
+    console.log(`  📅 Start: ${formatDateInput(start)} (${now.getDate() - 6} days ago from today)`)
+    console.log(`  📅 End: ${formatDateInput(end)} (today)`)
+    console.log(`  📊 Days covered: ${daysCovered}`)
 
     return {
       startDate: formatDateInput(start),
@@ -1018,12 +1073,32 @@ export class IBDWeeklyAnalysisAgent {
       const dates = foodEntries.map(e => e.consumed_at.split('T')[0])
       const uniqueDates = [...new Set(dates)]
       console.log('  📅 Unique food dates:', uniqueDates.sort())
+
+      // 詳細列出每一天的飲食記錄數量
+      const dateCountMap = new Map<string, number>()
+      dates.forEach(date => {
+        dateCountMap.set(date, (dateCountMap.get(date) || 0) + 1)
+      })
+      console.log('  📊 Food entries by date:')
+      Array.from(dateCountMap.entries()).sort().forEach(([date, count]) => {
+        console.log(`    ${date}: ${count} entries`)
+      })
     }
 
     if (symptomEntries.length > 0) {
       const dates = symptomEntries.map(e => e.recorded_date)
       const uniqueDates = [...new Set(dates)]
       console.log('  📅 Unique symptom dates:', uniqueDates.sort())
+
+      // 詳細列出每一天的症狀記錄數量
+      const dateCountMap = new Map<string, number>()
+      dates.forEach(date => {
+        dateCountMap.set(date, (dateCountMap.get(date) || 0) + 1)
+      })
+      console.log('  📊 Symptom entries by date:')
+      Array.from(dateCountMap.entries()).sort().forEach(([date, count]) => {
+        console.log(`    ${date}: ${count} entries`)
+      })
     }
 
     return {
@@ -1329,15 +1404,9 @@ export class IBDWeeklyAnalysisAgent {
     console.log(`  🍽️ Total food entries: ${foodEntries.length}`)
     console.log(`  🆔 Unique foods: ${uniqueFoodNames.size}`)
     console.log(`  💊 Symptom entries: ${symptomEntries.length}`)
+    console.log(`  📆 Daily breakdown days: ${dailyBreakdown.length}`)
     console.log(`  ⚠️ High-risk foods: ${highRiskFoods.length}`)
     console.log(`  ✅ Protective foods: ${protectiveFoods.length}`)
-
-    if (highRiskFoods.length > 0) {
-      console.log('  📋 High-risk food list:')
-      highRiskFoods.forEach(f => {
-        console.log(`    - ${f.food} (severity: ${f.severity.toFixed(2)}, dates: ${f.dates.join(', ')})`)
-      })
-    }
 
     return {
       payload,
@@ -1350,9 +1419,25 @@ export class IBDWeeklyAnalysisAgent {
   private composePrompt(promptTemplate: string, payload: WeeklyAnalysisPayload): string {
     const dataset = JSON.stringify(payload, null, 2)
 
+    // Extract all dates from dailyBreakdown to explicitly list them
+    const allDates = payload.dailyBreakdown.map(day => day.date).join(', ')
+    const dateCount = payload.dailyBreakdown.length
+
     return `${promptTemplate}
 
 資料格式說明：以下提供的 JSON 已整理出一週的飲食與症狀摘要。請閱讀所有欄位，整合臨床判斷。
+
+【最重要！必須完成】dataset 包含 ${dateCount} 天的資料，日期為：${allDates}
+
+daily_food_breakdown 分析策略：
+1. 你的輸出「必須」包含這 ${dateCount} 天的「每一天」
+2. 每一天都必須有 date、day_summary 和 meals 欄位
+3. 對於每一餐的食物，只需分析「代表性食物」：
+   - 重點分析：可能有問題的食物（高風險、症狀相關）
+   - 重點分析：有益的食物（營養價值高、抗發炎）
+   - 如果當天飲食整體無問題，在 day_summary 中說明「當日飲食穩定，無明顯風險食物」
+   - 不需要對每一種普通食物都詳細分析
+4. 這樣可以節省 token，同時確保每一天都有完整評估
 
 回覆規範：
 1. 請以繁體中文回覆。
@@ -1360,6 +1445,13 @@ export class IBDWeeklyAnalysisAgent {
 3. JSON 結構固定如下：
 {
   "summary": "結論 (3-5 句，明確指出整體狀態、成功亮點與急迫風險，務必引用日期或數據佐證)",
+  "all_foods_overview": {
+    "high_risk_foods": ["食物名稱列表（高風險食物，需避免或減少）"],
+    "moderate_risk_foods": ["食物名稱列表（中度風險，需觀察調整）"],
+    "watch_foods": ["食物名稱列表（需持續觀察）"],
+    "supportive_foods": ["食物名稱列表（有益食物，可繼續攝取）"],
+    "neutral_foods": ["食物名稱列表（無明顯影響的中性食物）"]
+  },
   "foods_to_monitor": [
     {
       "food": "食物名稱",
@@ -1419,7 +1511,24 @@ export class IBDWeeklyAnalysisAgent {
 請務必嚴格遵守以上 JSON 格式。
 所有欄位都不可省略；若資料不足，請使用空字串或空陣列表示，切勿刪除欄位。
 輸出必須具體引用 dataset 中的日期、症狀嚴重度、mealTypes、sampleNotes、foodImpacts、dailyBreakdown 等資訊。
-務必提供詳盡內容（尤其是 reasoning_trace 與 daily_food_breakdown），讓醫療團隊可直接引用。
+
+【重要】all_foods_overview 必須列出本週所有攝取的食物：
+- 此欄位提供整體飲食總覽，方便快速了解哪些食物需要調整
+- high_risk_foods：列出所有高風險食物（risk_level = high）
+- moderate_risk_foods：列出所有中度風險食物（risk_level = moderate）
+- watch_foods：列出所有需觀察的食物（risk_level = watch）
+- supportive_foods：列出所有有益的食物
+- neutral_foods：列出無明顯影響的中性食物
+- 所有在 dataset 中出現的食物都應該被歸類到這五個分類之一
+
+【重要】daily_food_breakdown 必須包含「所有日期」的完整分析：
+- 必須覆蓋 dataset 中 dailyBreakdown 裡的每一天
+- 每一天必須包含所有用餐紀錄（breakfast, lunch, dinner, snack, unspecified）
+- 每一餐必須分析該餐的所有食物
+- 每種食物都要有明確的 suitability（有益/中性/觀察/避免）和 reasoning
+- 這是報告的核心價值，請務必完整提供，不可省略任何日期
+
+其他欄位（summary, reasoning_trace, foods_to_monitor 等）可以精簡，但 daily_food_breakdown 必須詳盡完整。
 
 週期資料：
 \u0060\u0060\u0060json
@@ -1460,7 +1569,14 @@ ${dataset}
       modelToUse = 'claude-3-5-sonnet-latest'
     }
 
-    const response = await this.anthropic.messages.create({
+    console.log('[callClaude] 🤖 API Request Configuration:')
+    console.log(`  📦 Model: ${modelToUse}`)
+    console.log(`  🎯 Max tokens: ${this.config.maxTokens}`)
+    console.log(`  🌡️ Temperature: ${this.config.temperature}`)
+    console.log(`  📝 Prompt length: ${prompt.length} characters`)
+
+    // Use streaming to avoid 10-minute timeout limitation
+    const stream = await this.anthropic.messages.stream({
       model: modelToUse,
       max_tokens: this.config.maxTokens,
       temperature: this.config.temperature,
@@ -1472,16 +1588,27 @@ ${dataset}
       ]
     })
 
-    const first = response.content[0]
-    if (!first) {
+    let fullText = ''
+    for await (const chunk of stream) {
+      if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+        fullText += chunk.delta.text
+      }
+    }
+
+    const finalMessage = await stream.finalMessage()
+
+    console.log('[callClaude] ✅ API Response (streaming):')
+    console.log(`  📊 Model used: ${finalMessage.model}`)
+    console.log(`  🔢 Input tokens: ${finalMessage.usage.input_tokens}`)
+    console.log(`  📤 Output tokens: ${finalMessage.usage.output_tokens}`)
+    console.log(`  ⚠️ Stop reason: ${finalMessage.stop_reason}`)
+    console.log(`  📏 Response length: ${fullText.length} characters`)
+
+    if (!fullText || fullText.trim().length === 0) {
       throw new Error('Empty response from Claude')
     }
 
-    if (first.type === 'text' && first.text) {
-      return first.text.trim()
-    }
-
-    throw new Error(`Unexpected Claude response type: ${first.type}`)
+    return fullText.trim()
   }
 
   private parseClaudeResponse(
@@ -1495,7 +1622,15 @@ ${dataset}
     console.log('  📄 First 500 chars:', raw.substring(0, 500))
 
     try {
-      const parsed = JSON.parse(raw) as ClaudeAnalysisResponse
+      // Remove markdown code block markers if present (```json ... ```)
+      let cleanedRaw = raw.trim()
+      if (cleanedRaw.startsWith('```json')) {
+        cleanedRaw = cleanedRaw.replace(/^```json\s*/, '').replace(/```\s*$/, '')
+      } else if (cleanedRaw.startsWith('```')) {
+        cleanedRaw = cleanedRaw.replace(/^```\s*/, '').replace(/```\s*$/, '')
+      }
+
+      const parsed = JSON.parse(cleanedRaw) as ClaudeAnalysisResponse
 
       // Debug log for parsed structure
       console.log('[parseClaudeResponse] ✅ Successfully parsed JSON')
@@ -1536,6 +1671,7 @@ ${dataset}
             }))
         : []
 
+      const allFoodsOverview = normalizeAllFoodsOverview(parsed.all_foods_overview)
       const gutRecommendations = normalizeStringArray(parsed.gut_health_recommendations)
       const warningSigns = normalizeStringArray(parsed.warning_signs)
       const dataQualityNotes = [
@@ -1553,6 +1689,7 @@ ${dataset}
         method: 'claude_api',
         analysis: {
           summary: typeof parsed.summary === 'string' ? parsed.summary : '',
+          all_foods_overview: allFoodsOverview,
           foods_to_monitor: foodsToMonitor,
           supportive_foods: supportiveFoods,
           symptom_trends: symptomTrends,
@@ -1570,14 +1707,8 @@ ${dataset}
       // Debug log for final analysis result
       console.log('[parseClaudeResponse] 📊 Final analysis result:')
       console.log('  📝 Summary:', result.analysis.summary?.substring(0, 100) + '...')
-      console.log('  ⚠️ Foods to monitor:')
-      foodsToMonitor.forEach(f => {
-        console.log(`    - ${f.food} (${f.risk_level}): ${f.reasoning[0] || 'no reason'}`)
-      })
-      console.log('  ✅ Supportive foods:')
-      supportiveFoods.forEach(f => {
-        console.log(`    - ${f.food}: ${f.benefits[0] || 'no benefit'}`)
-      })
+      console.log('  ⚠️ Foods to monitor:', foodsToMonitor.length)
+      console.log('  ✅ Supportive foods:', supportiveFoods.length)
       console.log('  💡 Gut health recommendations:', gutRecommendations.length)
       console.log('  ⚠️ Warning signs:', warningSigns.length)
       console.log('  📋 Follow-up actions:', followUpActions.length)
@@ -1689,6 +1820,15 @@ ${dataset}
       ],
       suggestions: ['可維持適量，並持續觀察身體反應。']
     }))
+
+    // Generate all foods overview
+    const allFoodsOverview = {
+      high_risk_foods: foodsToMonitor.filter(f => f.risk_level === 'high').map(f => f.food),
+      moderate_risk_foods: foodsToMonitor.filter(f => f.risk_level === 'moderate').map(f => f.food),
+      watch_foods: foodsToMonitor.filter(f => f.risk_level === 'watch').map(f => f.food),
+      supportive_foods: supportiveFoods.map(f => f.food),
+      neutral_foods: [] as string[] // Fallback doesn't classify neutral foods separately
+    }
 
     const symptomTrends: WeeklyIBDAnalysisResult['analysis']['symptom_trends'] = []
     data.symptomOverview.trendNotes.forEach((note) => {
@@ -1897,6 +2037,7 @@ ${dataset}
       method: insufficient ? 'insufficient_data' : 'fallback',
       analysis: {
         summary: summaryParts.join(' '),
+        all_foods_overview: allFoodsOverview,
         foods_to_monitor: foodsToMonitor,
         supportive_foods: supportiveFoods,
         symptom_trends: symptomTrends,
