@@ -8,6 +8,7 @@
 
 import { logError, logMedical } from '@/lib/logger';
 import { getExternalApiUrl, getApiKey } from '@/lib/env-validation';
+import { recordAIUsage } from '@/lib/ai/usage-tracker';
 
 export interface MedicalCondition {
   type: 'IBD' | 'IBS' | 'CANCER_CHEMO' | 'ALLERGIES'
@@ -30,6 +31,12 @@ export interface FoodData {
   brand?: string
   ingredients?: string
   preparation?: string
+}
+
+interface UsageContext {
+  userId?: string
+  feature?: string
+  metadata?: Record<string, unknown>
 }
 
 export interface ConditionAnalysis {
@@ -76,7 +83,8 @@ export class MultiConditionScorer {
    */
   async scoreFoodForConditions(
     foodData: FoodData,
-    conditions: MedicalCondition[]
+    conditions: MedicalCondition[],
+    options?: { usageContext?: UsageContext }
   ): Promise<MultiConditionResult> {
     const components = this.extractFoodComponents(foodData)
 
@@ -85,14 +93,15 @@ export class MultiConditionScorer {
         components.map(componentName =>
           this.scoreSingleFoodForConditions(
             { ...foodData, name: componentName },
-            conditions
+            conditions,
+            options?.usageContext
           )
         )
       )
       return this.combineCompositeResults(foodData, components, componentResults)
     }
 
-    return this.scoreSingleFoodForConditions(foodData, conditions)
+    return this.scoreSingleFoodForConditions(foodData, conditions, options?.usageContext)
   }
 
   /**
@@ -100,13 +109,14 @@ export class MultiConditionScorer {
    */
   private async scoreSingleFoodForConditions(
     foodData: FoodData,
-    conditions: MedicalCondition[]
+    conditions: MedicalCondition[],
+    usageContext?: UsageContext
   ): Promise<MultiConditionResult> {
     const conditionAnalyses: ConditionAnalysis[] = []
 
     // Analyze each condition
     for (const condition of conditions) {
-      const analysis = await this.analyzeForCondition(foodData, condition)
+      const analysis = await this.analyzeForCondition(foodData, condition, usageContext)
       conditionAnalyses.push(analysis)
     }
 
@@ -138,10 +148,11 @@ export class MultiConditionScorer {
    */
   private async analyzeForCondition(
     foodData: FoodData,
-    condition: MedicalCondition
+    condition: MedicalCondition,
+    usageContext?: UsageContext
   ): Promise<ConditionAnalysis> {
     if (this.anthropicApiKey) {
-      return this.analyzeWithClaude(foodData, condition)
+      return this.analyzeWithClaude(foodData, condition, usageContext)
     } else {
       return this.analyzeWithFallback(foodData, condition)
     }
@@ -152,7 +163,8 @@ export class MultiConditionScorer {
    */
   private async analyzeWithClaude(
     foodData: FoodData,
-    condition: MedicalCondition
+    condition: MedicalCondition,
+    usageContext?: UsageContext
   ): Promise<ConditionAnalysis> {
     const prompt = this.buildConditionPrompt(foodData, condition)
 
@@ -180,14 +192,54 @@ export class MultiConditionScorer {
 
       if (!response.ok) {
         console.error('Claude API error:', response.status)
+        await recordAIUsage({
+          userId: usageContext?.userId,
+          feature: usageContext?.feature ?? 'multi_condition_score',
+          model: 'claude-3-5-haiku-20241022',
+          operation: 'messages.create',
+          status: 'failed',
+          metadata: {
+            condition: condition.type,
+            foodName: foodData.name,
+            httpStatus: response.status
+          }
+        })
         return this.analyzeWithFallback(foodData, condition)
       }
 
       const data = await response.json()
+
+      await recordAIUsage({
+        userId: usageContext?.userId,
+        feature: usageContext?.feature ?? 'multi_condition_score',
+        model: data.model ?? 'claude-3-5-haiku-20241022',
+        operation: 'messages.create',
+        requestId: data.id,
+        inputTokens: data.usage?.input_tokens,
+        outputTokens: data.usage?.output_tokens,
+        metadata: {
+          condition: condition.type,
+          foodName: foodData.name,
+          ...usageContext?.metadata
+        }
+      })
+
       return this.parseClaudeResponse(data.content[0].text, condition.type)
 
     } catch (error) {
       console.error('Claude API request failed:', error)
+      await recordAIUsage({
+        userId: usageContext?.userId,
+        feature: usageContext?.feature ?? 'multi_condition_score',
+        model: 'claude-3-5-haiku-20241022',
+        operation: 'messages.create',
+        status: 'failed',
+        metadata: {
+          condition: condition.type,
+          foodName: foodData.name,
+          error: error instanceof Error ? error.message : 'Unknown Claude error'
+        }
+      })
       return this.analyzeWithFallback(foodData, condition)
     }
   }

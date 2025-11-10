@@ -259,3 +259,104 @@ CREATE POLICY "Users can manage own medical reports" ON medical_reports
 -- 症狀追蹤的存取政策
 CREATE POLICY "Users can manage own symptom tracking" ON symptom_tracking
     FOR ALL USING (user_id = auth.uid());
+
+-- 6. AI 使用事件追蹤 (ai_usage_events)
+CREATE TABLE ai_usage_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES diet_daily_users(id) ON DELETE SET NULL,
+    feature TEXT NOT NULL,
+    provider TEXT NOT NULL DEFAULT 'anthropic',
+    model TEXT NOT NULL,
+    operation TEXT NOT NULL DEFAULT 'messages.create',
+    request_id TEXT,
+    status TEXT NOT NULL DEFAULT 'completed',
+    input_tokens INTEGER NOT NULL DEFAULT 0,
+    output_tokens INTEGER NOT NULL DEFAULT 0,
+    total_tokens INTEGER NOT NULL DEFAULT 0,
+    cost_usd NUMERIC(12,6) NOT NULL DEFAULT 0,
+    currency TEXT NOT NULL DEFAULT 'USD',
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    error_message TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE ai_usage_events IS 'AI API 呼叫紀錄與成本';
+
+CREATE INDEX idx_ai_usage_events_user ON ai_usage_events(user_id, created_at DESC);
+CREATE INDEX idx_ai_usage_events_feature ON ai_usage_events(feature, created_at DESC);
+
+ALTER TABLE ai_usage_events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own AI usage events" ON ai_usage_events
+    FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "Admins can view all AI usage events" ON ai_usage_events
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM diet_daily_users
+            WHERE id = auth.uid() AND is_admin = true
+        )
+    );
+
+CREATE POLICY "Users can insert own AI usage events" ON ai_usage_events
+    FOR INSERT WITH CHECK (user_id = auth.uid());
+
+GRANT SELECT ON ai_usage_events TO authenticated;
+
+-- AI 使用每日匯總視圖
+CREATE OR REPLACE VIEW ai_usage_daily_summary AS
+SELECT
+    user_id,
+    DATE_TRUNC('day', created_at)::date AS usage_date,
+    feature,
+    COUNT(*) AS call_count,
+    COALESCE(SUM(input_tokens), 0) AS total_input_tokens,
+    COALESCE(SUM(output_tokens), 0) AS total_output_tokens,
+    COALESCE(SUM(cost_usd), 0) AS total_cost_usd
+FROM ai_usage_events
+GROUP BY user_id, DATE_TRUNC('day', created_at)::date, feature;
+
+GRANT SELECT ON ai_usage_daily_summary TO authenticated;
+COMMENT ON VIEW ai_usage_daily_summary IS 'AI 使用情況每日彙總';
+
+-- 7. AI 成本提醒設定 (ai_usage_alert_settings)
+CREATE TABLE ai_usage_alert_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES diet_daily_users(id) ON DELETE CASCADE,
+    monthly_cost_threshold NUMERIC(12,2) NOT NULL DEFAULT 50.00,
+    alert_channels TEXT[] NOT NULL DEFAULT ARRAY['dashboard'],
+    last_triggered_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id)
+);
+
+COMMENT ON TABLE ai_usage_alert_settings IS '使用者自訂 AI 成本提醒門檻與通知方式';
+
+CREATE INDEX idx_ai_usage_alert_settings_user ON ai_usage_alert_settings(user_id);
+
+ALTER TABLE ai_usage_alert_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users manage own AI alert settings" ON ai_usage_alert_settings
+    FOR ALL USING (user_id = auth.uid())
+    WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Admins can view AI alert settings" ON ai_usage_alert_settings
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM diet_daily_users
+            WHERE id = auth.uid() AND is_admin = true
+        )
+    );
+
+CREATE OR REPLACE FUNCTION update_ai_usage_alert_settings_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_ai_usage_alert_settings_updated_at
+    BEFORE UPDATE ON ai_usage_alert_settings
+    FOR EACH ROW EXECUTE FUNCTION update_ai_usage_alert_settings_updated_at();

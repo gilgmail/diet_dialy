@@ -12,6 +12,91 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_usage_alert_settings: {
+        Row: {
+          id: string
+          user_id: string
+          monthly_cost_threshold: number
+          alert_channels: string[]
+          last_triggered_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          monthly_cost_threshold?: number
+          alert_channels?: string[]
+          last_triggered_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          monthly_cost_threshold?: number
+          alert_channels?: string[]
+          last_triggered_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      ai_usage_events: {
+        Row: {
+          id: string
+          user_id: string | null
+          feature: string
+          provider: string
+          model: string
+          operation: string
+          request_id: string | null
+          status: string
+          input_tokens: number
+          output_tokens: number
+          total_tokens: number
+          cost_usd: number
+          currency: string
+          metadata: Json
+          error_message: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          feature: string
+          provider?: string
+          model: string
+          operation?: string
+          request_id?: string | null
+          status?: string
+          input_tokens?: number
+          output_tokens?: number
+          total_tokens?: number
+          cost_usd?: number
+          currency?: string
+          metadata?: Json
+          error_message?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          feature?: string
+          provider?: string
+          model?: string
+          operation?: string
+          request_id?: string | null
+          status?: string
+          input_tokens?: number
+          output_tokens?: number
+          total_tokens?: number
+          cost_usd?: number
+          currency?: string
+          metadata?: Json
+          error_message?: string | null
+          created_at?: string
+        }
+      }
       diet_daily_users: {
         Row: {
           id: string
@@ -351,7 +436,19 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      ai_usage_daily_summary: {
+        Row: {
+          user_id: string | null
+          usage_date: string | null
+          feature: string | null
+          call_count: number | null
+          total_input_tokens: number | null
+          total_output_tokens: number | null
+          total_cost_usd: number | null
+        }
+        Insert: never
+        Update: never
+      }
     }
     Functions: {
       [_ in never]: never
@@ -371,6 +468,8 @@ export type Food = Database['public']['Tables']['diet_daily_foods']['Row']
 export type FoodEntry = Database['public']['Tables']['food_entries']['Row']
 export type MedicalReport = Database['public']['Tables']['medical_reports']['Row']
 export type SymptomTracking = Database['public']['Tables']['symptom_tracking']['Row']
+export type AIUsageEvent = Database['public']['Tables']['ai_usage_events']['Row']
+export type AIUsageAlertSettings = Database['public']['Tables']['ai_usage_alert_settings']['Row']
 
 export type UserInsert = Database['public']['Tables']['diet_daily_users']['Insert']
 export type FoodInsert = Database['public']['Tables']['diet_daily_foods']['Insert']
@@ -383,6 +482,10 @@ export type FoodUpdate = Database['public']['Tables']['diet_daily_foods']['Updat
 export type FoodEntryUpdate = Database['public']['Tables']['food_entries']['Update']
 export type MedicalReportUpdate = Database['public']['Tables']['medical_reports']['Update']
 export type SymptomTrackingUpdate = Database['public']['Tables']['symptom_tracking']['Update']
+export type AIUsageEventInsert = Database['public']['Tables']['ai_usage_events']['Insert']
+export type AIUsageEventUpdate = Database['public']['Tables']['ai_usage_events']['Update']
+export type AIUsageAlertSettingsInsert = Database['public']['Tables']['ai_usage_alert_settings']['Insert']
+export type AIUsageAlertSettingsUpdate = Database['public']['Tables']['ai_usage_alert_settings']['Update']
 
 // 醫療狀況和過敏原的類型定義
 export interface MedicalCondition {

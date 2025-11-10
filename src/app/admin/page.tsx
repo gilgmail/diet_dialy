@@ -15,6 +15,8 @@ import {
   Clock,
   Copy
 } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import type { AdminUsageOverview } from '@/lib/ai/usage-service'
 
 export default function AdminDashboard() {
   const { user, userProfile, isLoading, isAuthenticated } = useSupabaseAuth()
@@ -24,9 +26,32 @@ export default function AdminDashboard() {
     totalUsers: 156,
     activeUsers: 89
   })
+  const [aiUsageOverview, setAiUsageOverview] = useState<AdminUsageOverview | null>(null)
+  const [aiUsageLoading, setAiUsageLoading] = useState(false)
 
   // 檢查管理員權限
   const isAdmin = userProfile?.is_admin || false
+
+  useEffect(() => {
+    if (!isAdmin) return
+    const loadAiUsage = async () => {
+      setAiUsageLoading(true)
+      try {
+        const response = await fetch('/api/admin/ai-usage')
+        if (!response.ok) {
+          throw new Error('failed to load ai usage')
+        }
+        const data = await response.json()
+        setAiUsageOverview(data.overview)
+      } catch (error) {
+        console.error('載入 AI 使用統計失敗:', error)
+      } finally {
+        setAiUsageLoading(false)
+      }
+    }
+
+    loadAiUsage()
+  }, [isAdmin])
 
   if (isLoading) {
     return (
@@ -143,6 +168,64 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>AI 成本總覽</CardTitle>
+            <CardDescription>{aiUsageOverview?.period.label || '本月摘要'}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {aiUsageLoading ? (
+              <p className="text-sm text-gray-500">載入成本統計中...</p>
+            ) : aiUsageOverview ? (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <p className="text-sm text-gray-500 mb-1">本月成本</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    ${aiUsageOverview.totals.costUsd.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    呼叫 {aiUsageOverview.totals.callCount} 次 · 使用者 {aiUsageOverview.totals.activeUsers} 人
+                  </p>
+                </div>
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">成本最高的功能</p>
+                  <div className="space-y-2 text-sm">
+                    {aiUsageOverview.features.slice(0, 3).map((feature) => (
+                      <div key={feature.feature} className="flex items-center justify-between">
+                        <span>{feature.feature}</span>
+                        <span className="font-semibold">${feature.costUsd.toFixed(2)}</span>
+                      </div>
+                    ))}
+                    {aiUsageOverview.features.length === 0 && (
+                      <p className="text-gray-500 text-sm">尚無資料</p>
+                    )}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">成本最高的用戶</p>
+                  <div className="space-y-2 text-sm">
+                    {aiUsageOverview.topUsers.slice(0, 3).map((user) => (
+                      <div key={user.userId} className="flex flex-col">
+                        <span className="font-medium text-gray-900">
+                          {user.name || user.email || user.userId.slice(0, 6)}
+                        </span>
+                        <span className="text-gray-500">
+                          ${user.costUsd.toFixed(2)} · {user.callCount} 次
+                        </span>
+                      </div>
+                    ))}
+                    {aiUsageOverview.topUsers.length === 0 && (
+                      <p className="text-gray-500 text-sm">尚無資料</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">尚未有成本資料</p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Admin Tools */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

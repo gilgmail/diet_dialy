@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MultiConditionScorer } from '@/lib/ai/multi-condition-scorer'
 import type { MultiConditionResult, MedicalCondition } from '@/lib/ai/multi-condition-scorer'
+import { getAuthenticatedUser } from '@/lib/supabase/server-auth'
 
 export interface MultiConditionScoreRequest {
   foodName: string
@@ -84,6 +85,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const authUser = await getAuthenticatedUser(request)
+
     // 初始化多條件 AI 評分器
     const scorer = new MultiConditionScorer()
 
@@ -134,7 +137,16 @@ export async function POST(request: NextRequest) {
     console.log(`🎯 多條件 AI 評分 - 食物: ${body.foodName}, 條件: ${medicalConditions.map(c => c.type).join(', ')}`)
 
     // 執行多條件評分
-    const result = await scorer.scoreFoodForConditions(foodData, medicalConditions)
+    const result = await scorer.scoreFoodForConditions(foodData, medicalConditions, {
+      usageContext: {
+        userId: authUser?.id,
+        feature: 'multi_condition_score',
+        metadata: {
+          requestedConditions: medicalConditions.map((condition) => condition.type),
+          fullAnalysis: body.fullAnalysis ?? false
+        }
+      }
+    })
 
     if (!result.success) {
       throw new Error('多條件評分失敗')

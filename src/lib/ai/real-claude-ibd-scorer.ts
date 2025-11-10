@@ -2,6 +2,7 @@
 // 整合 Anthropic Claude API 提供專業營養評分
 
 import Anthropic from '@anthropic-ai/sdk'
+import { recordAIUsage } from '@/lib/ai/usage-tracker'
 import type { IBDFoodScore } from './ibd-nutritionist-scorer'
 
 interface FoodNutrition {
@@ -50,13 +51,16 @@ export class RealClaudeIBDScorer {
   }
 
   // 主要評分方法
-  async scoreFood(food: FoodNutrition): Promise<IBDFoodScore> {
+  async scoreFood(
+    food: FoodNutrition,
+    usageContext?: { userId?: string; feature?: string }
+  ): Promise<IBDFoodScore> {
     try {
       if (!this.config.apiKey) {
         return this.fallbackScoring(food)
       }
 
-      const response = await this.callClaudeAPI(food)
+      const response = await this.callClaudeAPI(food, usageContext)
       return this.parseClaudeResponse(response)
     } catch (error) {
       console.error('Claude API 評分失敗:', error)
@@ -165,14 +169,17 @@ ${foodDescription}
   }
 
   // 調用 Claude API
-  private async callClaudeAPI(food: FoodNutrition): Promise<string> {
+  private async callClaudeAPI(
+    food: FoodNutrition,
+    usageContext?: { userId?: string; feature?: string }
+  ): Promise<string> {
     const prompt = this.buildNutritionistPrompt(food)
 
     // 確保使用正確的模型，避免回退到舊版本
     const validModels = [
       'claude-3-5-haiku-20241022',
-      'claude-3-haiku-20240307',
-      'claude-3-5-sonnet-latest'
+      'claude-3-5-haiku-latest',
+      'claude-3-haiku-20240307'
     ]
 
     let modelToUse = this.config.model
@@ -181,25 +188,54 @@ ${foodDescription}
       modelToUse = 'claude-3-5-haiku-20241022'
     }
 
-    const response = await this.anthropic.messages.create({
-      model: modelToUse,
-      max_tokens: this.config.maxTokens,
-      temperature: this.config.temperature,
-      messages: [
-        {
-          role: 'user',
-          content: prompt
+    try {
+      const response = await this.anthropic.messages.create({
+        model: modelToUse,
+        max_tokens: this.config.maxTokens,
+        temperature: this.config.temperature,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
+      })
+
+      await recordAIUsage({
+        userId: usageContext?.userId,
+        feature: usageContext?.feature ?? 'ibd_food_score',
+        model: response.model,
+        operation: 'messages.create',
+        requestId: response.id,
+        inputTokens: response.usage?.input_tokens,
+        outputTokens: response.usage?.output_tokens,
+        metadata: {
+          foodName: food.name,
+          category: food.category
         }
-      ]
-    })
+      })
 
-    // 提取回應內容
-    const content = response.content[0]
-    if (content.type === 'text') {
-      return content.text
+      const content = response.content[0]
+      if (content.type === 'text') {
+        return content.text
+      }
+
+      throw new Error('Claude API 回應格式不正確')
+    } catch (error) {
+      await recordAIUsage({
+        userId: usageContext?.userId,
+        feature: usageContext?.feature ?? 'ibd_food_score',
+        model: this.config.model,
+        operation: 'messages.create',
+        status: 'failed',
+        metadata: {
+          foodName: food.name,
+          category: food.category,
+          error: error instanceof Error ? error.message : 'Unknown Claude error'
+        }
+      })
+      throw error
     }
-
-    throw new Error('Claude API 回應格式不正確')
   }
 
   // 解析 Claude 回應

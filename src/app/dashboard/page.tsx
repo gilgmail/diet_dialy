@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Activity, Calendar, FileText, PlusCircle, TrendingUp, Clock, ChevronRight, Heart, Utensils } from 'lucide-react';
 import MainNavigation from '@/components/navigation/MainNavigation';
+import { AIUsageCard } from '@/components/dashboard/AIUsageCard';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import type { DailySymptomEntry } from '@/types/medical';
 import type { FoodHistoryEntry } from '@/types/history';
@@ -259,6 +260,11 @@ export default function DashboardPage() {
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* AI 成本監控 */}
+        <div className="mb-8">
+          <AIUsageCard enabled={isAuthenticated} />
         </div>
 
         {/* 快速操作 */}

@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { recordAIUsage } from '@/lib/ai/usage-tracker'
 import { SupabaseFoodEntriesService } from '@/lib/supabase/food-entries'
 import { DailySymptomService } from '@/lib/supabase/daily-symptom-service'
 import { createAdminClient } from '@/lib/supabase/server'
@@ -6,7 +7,7 @@ import type { FoodEntry } from '@/types/supabase'
 import type { DailySymptomEntry, CoreSymptomScores } from '@/types/medical'
 
 // 更新版本時務必同步調整行動端顯示與報告標註
-export const WEEKLY_ANALYSIS_VERSION = '2025.11.08.8'
+export const WEEKLY_ANALYSIS_VERSION = '2025.11.09.8'
 
 interface ClaudeConfig {
   apiKey: string
@@ -130,6 +131,13 @@ export interface WeeklyAnalysisOptions {
   promptOverride?: string
   promptStyle?: PromptVariantKey
   includePromptRecommendations?: boolean
+  useMockMode?: boolean // 🧪 強制使用測試模式（優先於環境變數）
+}
+
+interface ClaudeUsageContext {
+  userId?: string
+  feature: string
+  metadata?: Record<string, unknown>
 }
 
 export interface WeeklyIBDAnalysisResult {
@@ -862,7 +870,7 @@ export class IBDWeeklyAnalysisAgent {
 
   constructor(config?: Partial<ClaudeConfig>) {
     const apiKey = config?.apiKey ?? process.env.ANTHROPIC_API_KEY ?? ''
-    const model = config?.model ?? process.env.CLAUDE_MODEL ?? 'claude-3-5-sonnet-latest'
+    const model = config?.model ?? process.env.CLAUDE_MODEL ?? 'claude-3-5-haiku-latest'
     const maxTokens = config?.maxTokens ?? Number(process.env.CLAUDE_MAX_TOKENS ?? '4096')
     const temperature = config?.temperature ?? Number(process.env.CLAUDE_TEMPERATURE ?? '0.3')
 
@@ -963,7 +971,14 @@ export class IBDWeeklyAnalysisAgent {
 
       console.log('📞 Calling Claude API...')
       const apiStartTime = Date.now()
-      const raw = await this.callClaude(prompt)
+      const raw = await this.callClaude(prompt, {
+        userId,
+        feature: 'weekly_ibd_analysis',
+        metadata: {
+          timeframe,
+          promptLength: prompt.length
+        }
+      }, options.useMockMode)
       const apiDuration = ((Date.now() - apiStartTime) / 1000).toFixed(2)
       console.log(`✅ Claude API responded (${apiDuration}s)`)
       console.log('  - Response length:', raw.length, 'characters')
@@ -1548,7 +1563,14 @@ ${dataset}
     return DEFAULT_PROMPT
   }
 
-  private async callClaude(prompt: string): Promise<string> {
+  private async callClaude(prompt: string, usageContext?: ClaudeUsageContext, forceMockMode = false): Promise<string> {
+    // 🧪 測試模式：使用模擬資料，完全免費（參數優先於環境變數）
+    if (forceMockMode || process.env.AI_MOCK_MODE === 'true') {
+      console.log('[callClaude] 🧪 Mock mode enabled - returning mock data (FREE)')
+      console.log('[callClaude] 🎭 Source:', forceMockMode ? 'User preference' : 'Environment variable')
+      return this.generateMockAnalysis()
+    }
+
     if (!this.anthropic) {
       throw new Error('Anthropic client is not initialized')
     }
@@ -1565,8 +1587,8 @@ ${dataset}
 
     let modelToUse = this.config.model
     if (!validModels.includes(modelToUse)) {
-      console.warn(`[IBDWeeklyAnalysisAgent] Model ${modelToUse} not in allowlist, fallback to claude-3-5-sonnet-latest`)
-      modelToUse = 'claude-3-5-sonnet-latest'
+      console.warn(`[IBDWeeklyAnalysisAgent] Model ${modelToUse} not in allowlist, fallback to claude-3-5-haiku-latest`)
+      modelToUse = 'claude-3-5-haiku-latest'
     }
 
     console.log('[callClaude] 🤖 API Request Configuration:')
@@ -1575,40 +1597,145 @@ ${dataset}
     console.log(`  🌡️ Temperature: ${this.config.temperature}`)
     console.log(`  📝 Prompt length: ${prompt.length} characters`)
 
-    // Use streaming to avoid 10-minute timeout limitation
-    const stream = await this.anthropic.messages.stream({
-      model: modelToUse,
-      max_tokens: this.config.maxTokens,
-      temperature: this.config.temperature,
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
-    })
+    const metadata = {
+      ...(usageContext?.metadata || {}),
+      promptLength: prompt.length
+    }
 
-    let fullText = ''
-    for await (const chunk of stream) {
-      if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
-        fullText += chunk.delta.text
+    try {
+      const stream = await this.anthropic.messages.stream({
+        model: modelToUse,
+        max_tokens: this.config.maxTokens,
+        temperature: this.config.temperature,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
+      })
+
+      let fullText = ''
+      for await (const chunk of stream) {
+        if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+          fullText += chunk.delta.text
+        }
+      }
+
+      const finalMessage = await stream.finalMessage()
+
+      console.log('[callClaude] ✅ API Response (streaming):')
+      console.log(`  📊 Model used: ${finalMessage.model}`)
+      console.log(`  🔢 Input tokens: ${finalMessage.usage.input_tokens}`)
+      console.log(`  📤 Output tokens: ${finalMessage.usage.output_tokens}`)
+      console.log(`  ⚠️ Stop reason: ${finalMessage.stop_reason}`)
+      console.log(`  📏 Response length: ${fullText.length} characters`)
+
+      await recordAIUsage({
+        userId: usageContext?.userId,
+        feature: usageContext?.feature ?? 'weekly_ibd_analysis',
+        model: finalMessage.model,
+        operation: 'messages.stream',
+        requestId: finalMessage.id,
+        inputTokens: finalMessage.usage?.input_tokens,
+        outputTokens: finalMessage.usage?.output_tokens,
+        metadata
+      })
+
+      if (!fullText || fullText.trim().length === 0) {
+        throw new Error('Empty response from Claude')
+      }
+
+      return fullText.trim()
+    } catch (error) {
+      await recordAIUsage({
+        userId: usageContext?.userId,
+        feature: usageContext?.feature ?? 'weekly_ibd_analysis',
+        model: modelToUse,
+        operation: 'messages.stream',
+        status: 'failed',
+        metadata: {
+          ...metadata,
+          error: error instanceof Error ? error.message : 'Unknown Claude error'
+        }
+      })
+      throw error
+    }
+  }
+
+  /**
+   * 🧪 生成模擬的 AI 分析資料（測試模式用，完全免費）
+   */
+  private generateMockAnalysis(): string {
+    const mockResponse = {
+      summary: "測試模式：本週飲食整體穩定，症狀控制良好。建議持續觀察特定食物的影響。",
+      overall_symptom_trend: "穩定",
+      correlation_insights: [
+        "辣椒與腹瀉症狀呈現中度相關性（相關係數 0.65）",
+        "白飯在症狀輕微時食用，未見明顯惡化趨勢"
+      ],
+      foods_to_monitor: [
+        {
+          food: "辣椒",
+          reasoning: ["多次攝取後 6-12 小時出現腹瀉", "症狀嚴重度平均 6.5/10"],
+          severity_pattern: "高風險",
+          recommendation: "建議暫停食用 2-4 週，觀察症狀改善情況"
+        },
+        {
+          food: "牛奶",
+          reasoning: ["偶爾出現腹脹", "症狀輕微但具一致性"],
+          severity_pattern: "中度風險",
+          recommendation: "可嘗試改用無乳糖牛奶或植物奶"
+        }
+      ],
+      supportive_foods: [
+        {
+          food: "白飯",
+          benefits: ["症狀穩定時的主食", "未觀察到惡化趨勢"],
+          recommendation: "可安心繼續食用"
+        },
+        {
+          food: "雞肉",
+          benefits: ["優質蛋白質來源", "消化良好"],
+          recommendation: "建議維持適量攝取"
+        }
+      ],
+      daily_assessments: [
+        {
+          date: new Date().toISOString().split('T')[0],
+          day_summary: "飲食均衡，症狀輕微",
+          meals: [
+            {
+              meal: "早餐",
+              foods: [
+                {
+                  name: "白飯",
+                  suitability: "有益" as const,
+                  reasoning: ["易消化", "能量來源"],
+                  symptom_links: [],
+                  notes: []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      next_steps: {
+        maintain: ["持續記錄飲食與症狀", "保持規律作息"],
+        monitor: ["辣椒的完全避免效果", "牛奶替代品的適應性"],
+        experiments: ["嘗試發酵食品（如優格）", "增加膳食纖維（如燕麥）"]
+      },
+      all_foods_overview: {
+        high_risk_foods: ["辣椒"],
+        moderate_risk_foods: ["牛奶"],
+        watch_foods: ["油炸食物"],
+        safe_foods: ["白飯", "雞肉", "地瓜"],
+        beneficial_foods: ["香蕉", "木瓜"],
+        neutral_foods: ["青菜", "豆腐"]
       }
     }
 
-    const finalMessage = await stream.finalMessage()
-
-    console.log('[callClaude] ✅ API Response (streaming):')
-    console.log(`  📊 Model used: ${finalMessage.model}`)
-    console.log(`  🔢 Input tokens: ${finalMessage.usage.input_tokens}`)
-    console.log(`  📤 Output tokens: ${finalMessage.usage.output_tokens}`)
-    console.log(`  ⚠️ Stop reason: ${finalMessage.stop_reason}`)
-    console.log(`  📏 Response length: ${fullText.length} characters`)
-
-    if (!fullText || fullText.trim().length === 0) {
-      throw new Error('Empty response from Claude')
-    }
-
-    return fullText.trim()
+    return JSON.stringify(mockResponse, null, 2)
   }
 
   private parseClaudeResponse(
