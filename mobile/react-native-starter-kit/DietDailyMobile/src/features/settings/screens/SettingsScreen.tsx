@@ -30,6 +30,7 @@ import {
 } from '../types'
 import { colors, typography, spacing } from '@/theme'
 import type { MainStackParamList } from '@/app/navigation/types'
+import { AIModelSelector } from '../components/AIModelSelector'
 
 const MEAL_NAMES: Record<'breakfast' | 'lunch' | 'dinner', string> = {
   breakfast: '早餐',
@@ -462,6 +463,12 @@ Device: ${Platform.OS} ${Platform.Version}
           </View>
           <Icon name="chevron-right" size={24} color={colors.text.secondary} />
         </TouchableOpacity>
+      </View>
+
+      {/* AI Settings */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>AI 設定</Text>
+        <AIModelSelector />
       </View>
 
       {/* About Section */}

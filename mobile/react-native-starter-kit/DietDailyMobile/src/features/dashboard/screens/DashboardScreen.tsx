@@ -54,6 +54,20 @@ function resolveWritableDirectory(): string {
   return directory.endsWith('/') ? directory : `${directory}/`
 }
 
+/**
+ * 將 AI 模型 ID 轉換成易讀的顯示名稱
+ */
+function getModelDisplayName(modelId: string): string {
+  const modelMap: Record<string, string> = {
+    'claude-sonnet-4-5-20250929': 'Claude 4.5 Sonnet（最新）',
+    'claude-3-5-haiku-latest': 'Claude 3.5 Haiku（推薦）',
+    'claude-3-5-haiku-20241022': 'Claude 3.5 Haiku',
+    'claude-3-haiku-20240307': 'Claude 3 Haiku（經濟）',
+    'mock': '測試模式（免費）',
+  }
+  return modelMap[modelId] || modelId
+}
+
 export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {}) {
   const screenMountTime = React.useRef(Date.now())
   const { user, signOut } = useAuth()
@@ -605,6 +619,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
 <body>
   <h1>${title}</h1>
   <p><strong>期間：</strong>${item.startDate} ~ ${item.endDate}</p>
+  ${item.aiModel ? `<p style="color: #6b7280; font-size: 14px;"><strong>AI 模型：</strong>${getModelDisplayName(item.aiModel)}</p>` : ''}
   ${summaryText}
   ${allFoodsOverviewHtml}
   ${foodsToMonitor ? `<h2>需留意食物（詳細分析）</h2><ul>${foodsToMonitor}</ul>` : ''}

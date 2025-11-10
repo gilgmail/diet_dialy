@@ -300,26 +300,72 @@ export async function POST(request: NextRequest) {
       if (error) return error
     }
 
+    // 🎯 獲取用戶的 AI 模型偏好設定（從 diet_daily_users.preferences.mobileSettings）
+    const admin = createAdminClient()
+    const { data: user } = await admin
+      .from('diet_daily_users')
+      .select('preferences')
+      .eq('id', body.userId)
+      .maybeSingle()
+
+    let aiModelPreference = 'haiku-3.5-latest' // 預設值
+    if (user?.preferences && typeof user.preferences === 'object') {
+      const prefs = user.preferences as Record<string, any>
+      if (prefs.mobileSettings && typeof prefs.mobileSettings === 'object') {
+        const mobileSettings = prefs.mobileSettings as Record<string, any>
+        if (mobileSettings.aiModelPreference && typeof mobileSettings.aiModelPreference === 'string') {
+          aiModelPreference = mobileSettings.aiModelPreference
+        }
+      }
+    }
+
+    // 🗺️ 將用戶偏好轉換為實際的模型 ID 和配置
+    let modelConfig: { model?: string; mockMode?: boolean } = {}
+    switch (aiModelPreference) {
+      case 'sonnet-4.5-latest':
+        modelConfig = { model: 'claude-sonnet-4-5-20250929' }
+        break
+      case 'haiku-3.5-latest':
+        modelConfig = { model: 'claude-3-5-haiku-latest' }
+        break
+      case 'haiku-3-legacy':
+        modelConfig = { model: 'claude-3-haiku-20240307' }
+        break
+      case 'mock':
+        modelConfig = { mockMode: true }
+        break
+      default:
+        modelConfig = { model: 'claude-3-5-haiku-latest' }
+    }
+
+    console.log(`[${requestId}] 🎛️ 用戶 AI 模型偏好: ${aiModelPreference}`, modelConfig)
+
     // Run AI analysis
     console.log(`[${requestId}] 🤖 開始執行 AI 分析...`)
     const analysisStartTime = Date.now()
-    const agent = new IBDWeeklyAnalysisAgent()
+    const agent = new IBDWeeklyAnalysisAgent(modelConfig.model ? { model: modelConfig.model } : undefined)
     const result = await agent.analyze(body.userId, {
       startDate: body.startDate,
       endDate: body.endDate,
       promptStyle: body.promptStyle,
       promptOverride: body.promptOverride,
       includePromptRecommendations: body.includePromptRecommendations,
+      useMockMode: modelConfig.mockMode,
     })
     const analysisDuration = ((Date.now() - analysisStartTime) / 1000).toFixed(2)
     console.log(`[${requestId}] ✅ AI 分析完成 (耗時 ${analysisDuration}s):`, {
       success: result.success,
       method: result.method,
+      aiModel: modelConfig.mockMode ? 'mock' : modelConfig.model,
       foodEntries: result.totals.food_entries,
       uniqueFoods: result.totals.unique_foods,
       symptomEntries: result.totals.symptom_entries,
       timeframe: `${result.timeframe.startDate} ~ ${result.timeframe.endDate}`,
     })
+
+    // 🏷️ 將模型資訊加入到結果中
+    result.aiModel = modelConfig.mockMode ? 'mock' : modelConfig.model
+    result.aiModelPreference = aiModelPreference
 
     // Fetch history (before saving new report to get current count)
     console.log(`[${requestId}] 📚 取得歷史報告...`)
