@@ -110,6 +110,41 @@ export class FoodDiaryService {
     }
   }
 
+  /**
+   * Get food entries for a date range
+   */
+  static async getFoodEntriesByDateRange(userId: string, startDate: Date, endDate: Date) {
+    try {
+      const start = new Date(startDate)
+      start.setHours(0, 0, 0, 0)
+
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+
+      const { data, error } = await supabase
+        .from('food_entries')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('consumed_at', start.toISOString())
+        .lte('consumed_at', end.toISOString())
+        .order('consumed_at', { ascending: false })
+
+      if (error) throw error
+
+      return {
+        data: (data as FoodEntryRow[]).map(mapFoodEntry),
+        error: null,
+      }
+    } catch (error) {
+      return {
+        data: null,
+        error: {
+          message: error instanceof Error ? error.message : 'Failed to fetch food entries',
+        },
+      }
+    }
+  }
+
   static async hasMealEntryForDate(
     userId: string,
     date: Date,

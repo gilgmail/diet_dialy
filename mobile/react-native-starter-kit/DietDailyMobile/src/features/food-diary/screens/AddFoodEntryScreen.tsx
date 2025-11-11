@@ -38,13 +38,15 @@ function getMealTypeByTime(): MealType {
   return 'snack' // 其他時間: 點心
 }
 
-export function AddFoodEntryScreen({ navigation }: AddFoodEntryScreenProps) {
+export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProps) {
   const { user } = useAuthStore()
   const { settings } = useSettingsStore()
   const { createEntry, isCreating } = useFoodDiary()
   const { requireDatabaseFood } = appConfig
 
-  const [selectedDate, setSelectedDate] = useState(new Date())
+  // Support date parameter from navigation (for historical entries)
+  const initialDate = route.params?.date ? new Date(route.params.date) : new Date()
+  const [selectedDate, setSelectedDate] = useState(initialDate)
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [recentEntries, setRecentEntries] = useState<FoodEntry[]>([])
 

@@ -10,11 +10,13 @@ import {
 } from 'react-native'
 import { TextInput, Button, SegmentedButtons, IconButton } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
-import { useNavigation, useFocusEffect } from '@react-navigation/native'
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native'
+import type { RouteProp } from '@react-navigation/native'
 import { useSymptomDiary } from '../hooks/useSymptomDiary'
 import { colors, typography, spacing } from '@/theme'
 import { SEVERITY_LEVELS, COMMON_SYMPTOMS } from '../types'
 import type { SeverityLevel, SymptomEntry } from '../types'
+import type { MainStackParamList } from '@/app/navigation/types'
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
 import { format, isSameDay } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
@@ -22,10 +24,12 @@ import { parseSymptomNames } from '../utils/parseSymptomNames'
 
 export function AddSymptomEntryScreen() {
   const navigation = useNavigation()
+  const route = useRoute<RouteProp<MainStackParamList, 'AddSymptomEntry'>>()
   const { createEntry, isCreating } = useSymptomDiary()
 
-  // State for date selection
-  const [selectedDate, setSelectedDate] = useState(new Date())
+  // Support date parameter from navigation (for historical entries)
+  const initialDate = route.params?.date ? new Date(route.params.date) : new Date()
+  const [selectedDate, setSelectedDate] = useState(initialDate)
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [recentEntries, setRecentEntries] = useState<SymptomEntry[]>([])
 

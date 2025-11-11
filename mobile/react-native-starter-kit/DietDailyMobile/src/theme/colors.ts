@@ -50,9 +50,11 @@ export const colors = {
   // 語意化顏色
   background: '#FFFFFF',
   surface: '#F9FAFB',
+  white: '#FFFFFF',
   text: {
     primary: '#111827',
     secondary: '#6B7280',
+    tertiary: '#9CA3AF',
     disabled: '#9CA3AF',
     inverse: '#FFFFFF',
   },

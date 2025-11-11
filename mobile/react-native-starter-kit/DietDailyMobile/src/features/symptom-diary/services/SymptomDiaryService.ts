@@ -87,6 +87,39 @@ export class SymptomDiaryService {
   }
 
   /**
+   * Get symptom entries for a date range
+   */
+  static async getSymptomEntriesByDateRange(userId: string, startDate: Date, endDate: Date) {
+    try {
+      const startStr = startDate.toISOString().split('T')[0]
+      const endStr = endDate.toISOString().split('T')[0]
+
+      const { data, error } = await supabase
+        .from('daily_symptom_entries')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('recorded_date', startStr)
+        .lte('recorded_date', endStr)
+        .order('recorded_at', { ascending: false })
+
+      if (error) throw error
+
+      return {
+        data: data ? data.map(entry => this.transformFromDatabase(entry)) : null,
+        error: null
+      }
+    } catch (error) {
+      return {
+        data: null,
+        error: {
+          message:
+            error instanceof Error ? error.message : 'Failed to fetch symptom entries',
+        },
+      }
+    }
+  }
+
+  /**
    * Create a new symptom entry
    * Note: Each entry gets a unique timestamp to allow multiple entries per day
    */

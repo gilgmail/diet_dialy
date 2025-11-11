@@ -6,23 +6,26 @@ export type AuthStackParamList = {
 }
 
 export type MainTabParamList = {
-  Home: undefined
-  FoodDiary: undefined
-  Symptoms: undefined
-  Profile: undefined
+  Today: undefined
+  History: undefined
+  Insights: undefined
+  Settings: undefined
 }
 
 export type MainStackParamList = {
   MainTabs: undefined
-  AddFoodEntry: undefined
-  AddSymptomEntry: undefined
+  AddFoodEntry: {
+    date?: string // Optional date for adding to specific date
+  }
+  AddSymptomEntry: {
+    date?: string // Optional date for adding to specific date
+  }
   FoodDayDetail: {
     date: string
   }
   ReportDetail: {
     htmlContent: string
   }
-  Settings: undefined
 }
 
 export type RootStackParamList = {
