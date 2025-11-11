@@ -5,11 +5,13 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Platform,
 } from 'react-native'
 import { Menu } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { format, addMonths, subMonths } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
 import { MonthCalendarView } from '../components/MonthCalendarView'
 import { WeekCalendarView } from '../components/WeekCalendarView'
 import { ListHistoryView } from '../components/ListHistoryView'
@@ -23,6 +25,7 @@ export function HistoryScreen() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [monthMenuVisible, setMonthMenuVisible] = useState(false)
   const [viewMenuVisible, setViewMenuVisible] = useState(false)
+  const [showMonthPicker, setShowMonthPicker] = useState(false)
 
   const viewModeLabels = {
     month: '月曆',
@@ -40,6 +43,25 @@ export function HistoryScreen() {
 
   const handleToday = () => {
     setCurrentMonth(new Date())
+    setMonthMenuVisible(false)
+  }
+
+  const handleMonthPickerChange = (event: DateTimePickerEvent, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowMonthPicker(false)
+    }
+
+    if (date && event.type !== 'dismissed') {
+      setCurrentMonth(date)
+    }
+  }
+
+  const handleOpenMonthPicker = () => {
+    setMonthMenuVisible(false)
+    // Small delay to ensure menu closes before picker opens
+    setTimeout(() => {
+      setShowMonthPicker(true)
+    }, 100)
   }
 
   return (
@@ -78,8 +100,27 @@ export function HistoryScreen() {
               </TouchableOpacity>
             }
           >
-            <Menu.Item onPress={handleToday} title="回到今天" />
+            <Menu.Item onPress={handleOpenMonthPicker} title="選擇年月" leadingIcon="calendar" />
+            <Menu.Item onPress={handleToday} title="回到今天" leadingIcon="calendar-today" />
           </Menu>
+
+          {showMonthPicker && (
+            <DateTimePicker
+              value={currentMonth}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleMonthPickerChange}
+              maximumDate={new Date()}
+            />
+          )}
+
+          {Platform.OS === 'ios' && showMonthPicker && (
+            <TouchableOpacity
+              style={styles.pickerOverlay}
+              onPress={() => setShowMonthPicker(false)}
+              activeOpacity={1}
+            />
+          )}
 
           <TouchableOpacity
             style={styles.navArrow}
@@ -231,5 +272,14 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  pickerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 999,
   },
 })

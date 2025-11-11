@@ -224,12 +224,10 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
       // Select the date
       onSelectDate(date)
 
-      // Navigate to detail page if there are any records
-      if (dayData.foodCount > 0 || dayData.symptomCount > 0) {
-        navigation.navigate('FoodDayDetail', {
-          date: format(date, 'yyyy-MM-dd'),
-        })
-      }
+      // Always navigate to detail page (even if no records)
+      navigation.navigate('FoodDayDetail', {
+        date: format(date, 'yyyy-MM-dd'),
+      })
     }
 
     return (
