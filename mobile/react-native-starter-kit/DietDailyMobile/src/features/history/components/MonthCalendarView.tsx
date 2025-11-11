@@ -5,6 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useQuery } from '@tanstack/react-query'
 import {
   format,
@@ -22,6 +24,7 @@ import { FoodDiaryService } from '@/features/food-diary/services/FoodDiaryServic
 import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
 import type { FoodEntry } from '@/features/food-diary/types'
 import type { SymptomEntry } from '@/features/symptom-diary/types'
+import type { MainStackParamList } from '@/app/navigation/types'
 import { colors, typography, spacing } from '@/theme'
 
 interface MonthCalendarViewProps {
@@ -46,6 +49,7 @@ const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
 
 export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: MonthCalendarViewProps) {
   const { user } = useAuthStore()
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
 
   const monthStart = useMemo(() => startOfMonth(currentMonth), [currentMonth])
   const monthEnd = useMemo(() => endOfMonth(currentMonth), [currentMonth])
@@ -175,6 +179,20 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
       bgColor = colors.success + '15' // Light green
     }
 
+    const handleDayPress = () => {
+      if (!dayData.isCurrentMonth) return
+
+      // Select the date
+      onSelectDate(date)
+
+      // Navigate to detail page if there are any records
+      if (dayData.foodCount > 0 || dayData.symptomCount > 0) {
+        navigation.navigate('FoodDayDetail', {
+          date: format(date, 'yyyy-MM-dd'),
+        })
+      }
+    }
+
     return (
       <TouchableOpacity
         key={dayData.dateKey}
@@ -184,7 +202,7 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
           !dayData.isCurrentMonth && styles.dayCellOtherMonth,
           isSelected && styles.dayCellSelected,
         ]}
-        onPress={() => onSelectDate(date)}
+        onPress={handleDayPress}
         activeOpacity={0.7}
         disabled={!dayData.isCurrentMonth}
       >
@@ -209,12 +227,12 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
               </Text>
             )}
 
-            {/* Symptom entries */}
-            {dayData.symptomEntries.slice(0, 2).map((entry, index) => (
-              <Text key={index} style={styles.symptomText} numberOfLines={1}>
-                {entry.symptom_name}
+            {/* Symptom summary */}
+            {dayData.symptomCount > 0 && (
+              <Text style={styles.symptomText} numberOfLines={1}>
+                {dayData.symptomCount}症
               </Text>
-            ))}
+            )}
           </View>
         </View>
       </TouchableOpacity>
