@@ -135,11 +135,11 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
   }
 
   const handleAddFood = () => {
-    navigation.navigate('AddFoodEntry', { defaultDate: date })
+    navigation.navigate('AddFoodEntry', { date: date })
   }
 
   const handleAddSymptom = () => {
-    navigation.navigate('AddSymptomEntry', { defaultDate: date })
+    navigation.navigate('AddSymptomEntry', { date: date })
   }
 
   const renderEntry = ({ item }: { item: FoodEntry }) => {

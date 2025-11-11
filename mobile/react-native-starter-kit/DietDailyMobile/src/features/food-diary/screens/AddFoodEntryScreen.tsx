@@ -50,10 +50,11 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
   const existingEntry = isEditMode ? entries.find(e => e.id === entryId) : null
 
   // Support date parameter from navigation (for historical entries)
+  // Use T12:00:00 to avoid timezone conversion issues
   const initialDate = route.params?.date
-    ? new Date(route.params.date)
+    ? new Date(`${route.params.date}T12:00:00`)
     : existingEntry
-    ? new Date(existingEntry.consumed_at)
+    ? new Date(`${existingEntry.consumed_at.split('T')[0]}T12:00:00`)
     : new Date()
   const [selectedDate, setSelectedDate] = useState(initialDate)
   const [showDatePicker, setShowDatePicker] = useState(false)
