@@ -50,10 +50,19 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
   const { data: symptomEntries = [], refetch: refetchSymptoms } = useQuery({
     queryKey: ['symptomEntries', user?.id, date],
     queryFn: async () => {
-      if (!user?.id) return []
+      if (!user?.id) {
+        console.log('[FoodDayDetail] No user ID')
+        return []
+      }
+      console.log('[FoodDayDetail] Fetching symptoms for date:', date, 'user:', user.id)
       const dateObj = parseISO(`${date}T00:00:00`)
       const result = await SymptomDiaryService.getSymptomEntriesByDate(user.id, dateObj)
-      console.log('[FoodDayDetail] Symptom entries:', result.data)
+      console.log('[FoodDayDetail] Query result:', {
+        date,
+        dataCount: result.data?.length || 0,
+        data: result.data,
+        error: result.error
+      })
       return result.data || []
     },
     enabled: !!user?.id,

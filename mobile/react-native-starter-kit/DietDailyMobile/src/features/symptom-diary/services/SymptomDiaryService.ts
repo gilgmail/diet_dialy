@@ -61,6 +61,7 @@ export class SymptomDiaryService {
   static async getSymptomEntriesByDate(userId: string, date: Date) {
     try {
       const dateStr = date.toISOString().split('T')[0]
+      console.log('[SymptomDiaryService] getSymptomEntriesByDate:', { userId, dateStr })
 
       const { data, error } = await supabase
         .from('daily_symptom_entries')
@@ -69,13 +70,23 @@ export class SymptomDiaryService {
         .eq('recorded_date', dateStr)
         .order('recorded_at', { ascending: false })
 
+      console.log('[SymptomDiaryService] Query result:', {
+        dataCount: data?.length || 0,
+        error,
+        rawData: data
+      })
+
       if (error) throw error
 
+      const transformed = data ? data.map(entry => this.transformFromDatabase(entry)) : null
+      console.log('[SymptomDiaryService] Transformed:', { count: transformed?.length || 0 })
+
       return {
-        data: data ? data.map(entry => this.transformFromDatabase(entry)) : null,
+        data: transformed,
         error: null
       }
     } catch (error) {
+      console.error('[SymptomDiaryService] Error:', error)
       return {
         data: null,
         error: {

@@ -90,11 +90,21 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
     queryKey: ['symptomEntries', user?.id, format(currentMonth, 'yyyy-MM')],
     queryFn: async () => {
       if (!user?.id) return []
+      const startDate = startOfWeek(monthStart, { weekStartsOn: 0 })
+      const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 })
+      console.log('[MonthCalendarView] Fetching symptoms range:', {
+        startDate: format(startDate, 'yyyy-MM-dd'),
+        endDate: format(endDate, 'yyyy-MM-dd')
+      })
       const result = await SymptomDiaryService.getSymptomEntriesByDateRange(
         user.id,
-        startOfWeek(monthStart, { weekStartsOn: 0 }),
-        endOfWeek(monthEnd, { weekStartsOn: 0 })
+        startDate,
+        endDate
       )
+      console.log('[MonthCalendarView] Symptom entries fetched:', {
+        count: result.data?.length || 0,
+        entries: result.data?.map(e => ({ date: e.recorded_date, name: e.symptom_name }))
+      })
       return result.data || []
     },
     enabled: !!user?.id,
@@ -150,10 +160,16 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
     })
 
     // Count symptom entries and calculate max severity
+    console.log('[MonthCalendarView] Processing symptom entries:', symptomEntries.length)
     symptomEntries.forEach((entry: SymptomEntry) => {
       // Use recorded_date field (not recorded_at) to match database query
       const key = entry.recorded_date
       const dayData = map.get(key)
+      console.log('[MonthCalendarView] Symptom entry:', {
+        date: key,
+        name: entry.symptom_name,
+        hasDayData: !!dayData
+      })
       if (dayData) {
         dayData.symptomCount++
         dayData.hasSymptoms = true
@@ -166,6 +182,14 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
         if (newRank > currentRank) {
           dayData.maxSeverity = entry.severity
         }
+      }
+    })
+
+    // Debug: Log final symptom counts
+    console.log('[MonthCalendarView] Final symptom counts by date:')
+    Array.from(map.entries()).forEach(([date, data]) => {
+      if (data.symptomCount > 0) {
+        console.log(`  ${date}: ${data.symptomCount} symptoms`)
       }
     })
 
