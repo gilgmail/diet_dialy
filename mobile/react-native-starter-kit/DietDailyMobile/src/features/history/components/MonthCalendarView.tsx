@@ -1,11 +1,10 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native'
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useQuery } from '@tanstack/react-query'
 import {
   format,
@@ -14,8 +13,6 @@ import {
   startOfWeek,
   endOfWeek,
   addDays,
-  addMonths,
-  subMonths,
   isSameMonth,
   isSameDay,
 } from 'date-fns'
@@ -30,6 +27,7 @@ import { colors, typography, spacing } from '@/theme'
 interface MonthCalendarViewProps {
   selectedDate: Date | null
   onSelectDate: (date: Date) => void
+  currentMonth: Date
 }
 
 interface DayData {
@@ -46,9 +44,8 @@ interface DayData {
 
 const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
 
-export function MonthCalendarView({ selectedDate, onSelectDate }: MonthCalendarViewProps) {
+export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: MonthCalendarViewProps) {
   const { user } = useAuthStore()
-  const [currentMonth, setCurrentMonth] = useState(new Date())
 
   const monthStart = useMemo(() => startOfMonth(currentMonth), [currentMonth])
   const monthEnd = useMemo(() => endOfMonth(currentMonth), [currentMonth])
@@ -160,18 +157,6 @@ export function MonthCalendarView({ selectedDate, onSelectDate }: MonthCalendarV
     return map
   }, [calendarDays, currentMonth, foodEntries, symptomEntries])
 
-  const handlePrevMonth = () => {
-    setCurrentMonth(subMonths(currentMonth, 1))
-  }
-
-  const handleNextMonth = () => {
-    setCurrentMonth(addMonths(currentMonth, 1))
-  }
-
-  const handleToday = () => {
-    setCurrentMonth(new Date())
-  }
-
   const renderDay = (date: Date) => {
     const dayData = dayDataMap.get(format(date, 'yyyy-MM-dd'))
     if (!dayData) return null
@@ -220,7 +205,7 @@ export function MonthCalendarView({ selectedDate, onSelectDate }: MonthCalendarV
             {/* Meal completion indicator */}
             {dayData.foodCount > 0 && (
               <Text style={styles.mealIndicator}>
-                餐 {dayData.mealsRecorded}
+                {dayData.mealsRecorded}餐
               </Text>
             )}
 
@@ -247,35 +232,6 @@ export function MonthCalendarView({ selectedDate, onSelectDate }: MonthCalendarV
 
   return (
     <View style={styles.container}>
-      {/* Month Header with Navigation */}
-      <View style={styles.monthHeader}>
-        <TouchableOpacity
-          style={styles.navButton}
-          onPress={handlePrevMonth}
-          activeOpacity={0.7}
-        >
-          <Icon name="chevron-left" size={24} color={colors.text.primary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.monthTitle}
-          onPress={handleToday}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.monthTitleText}>
-            {format(currentMonth, 'yyyy年MM月', { locale: zhTW })}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navButton}
-          onPress={handleNextMonth}
-          activeOpacity={0.7}
-        >
-          <Icon name="chevron-right" size={24} color={colors.text.primary} />
-        </TouchableOpacity>
-      </View>
-
       {/* Weekday Labels */}
       <View style={styles.weekdayRow}>
         {WEEKDAY_LABELS.map((label, index) => (
@@ -300,19 +256,15 @@ export function MonthCalendarView({ selectedDate, onSelectDate }: MonthCalendarV
         <View style={styles.legendItems}>
           <View style={styles.legendItem}>
             <View style={[styles.legendColor, { backgroundColor: colors.success + '15' }]} />
-            <Text style={styles.legendText}>有飲食</Text>
+            <Text style={styles.legendText}>健康（有記錄無症狀）</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendColor, { backgroundColor: colors.error + '15' }]} />
             <Text style={styles.legendText}>有症狀</Text>
           </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: '#FFF8DC' }]} />
-            <Text style={styles.legendText}>兩者都有</Text>
-          </View>
         </View>
         <Text style={styles.legendHint}>
-          數字表示記錄的餐數（早/午/晚），🔴 表示有症狀，🟢 表示健康
+          數字表示記錄的餐數，點擊日期可查看詳細記錄
         </Text>
       </View>
     </View>
@@ -323,25 +275,6 @@ const styles = StyleSheet.create({
   container: {
     padding: spacing.md,
     flex: 1,
-  },
-  monthHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xl,
-    paddingHorizontal: spacing.md,
-  },
-  navButton: {
-    padding: spacing.md,
-  },
-  monthTitle: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  monthTitleText: {
-    fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
   },
   weekdayRow: {
     flexDirection: 'row',

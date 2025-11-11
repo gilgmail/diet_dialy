@@ -97,14 +97,6 @@ export function TodayScreen() {
     return grouped
   }, [foodEntries])
 
-  const handleAddFood = () => {
-    navigation.navigate('AddFoodEntry', {})
-  }
-
-  const handleAddSymptom = () => {
-    navigation.navigate('AddSymptomEntry', {})
-  }
-
   return (
     <ScrollView
       style={styles.container}
@@ -118,31 +110,6 @@ export function TodayScreen() {
         <Text style={styles.headerSubtitle}>
           {format(today, 'yyyy年MM月dd日 (EEEE)', { locale: zhTW })}
         </Text>
-      </View>
-
-      {/* Quick Add Buttons */}
-      <View style={styles.quickAddContainer}>
-        <TouchableOpacity
-          style={[styles.quickAddButton, styles.foodButton]}
-          onPress={handleAddFood}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.iconCircle, styles.foodIconCircle]}>
-            <Icon name="plus" size={32} color={colors.success} />
-          </View>
-          <Text style={styles.quickAddLabel}>新增飲食</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.quickAddButton, styles.symptomButton]}
-          onPress={handleAddSymptom}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.iconCircle, styles.symptomIconCircle]}>
-            <Icon name="plus" size={32} color={colors.error} />
-          </View>
-          <Text style={styles.quickAddLabel}>新增症狀</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Meal Stats Overview */}
@@ -176,7 +143,7 @@ export function TodayScreen() {
           <View style={styles.emptyState}>
             <Icon name="food-off" size={48} color={colors.text.tertiary} />
             <Text style={styles.emptyStateText}>今天還沒有飲食記錄</Text>
-            <Text style={styles.emptyStateHint}>點擊上方按鈕開始記錄</Text>
+            <Text style={styles.emptyStateHint}>點擊底部中間 + 按鈕開始記錄</Text>
           </View>
         ) : (
           <View style={styles.timeline}>
@@ -286,51 +253,6 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: typography.fontSize.base,
     color: colors.text.secondary,
-  },
-  quickAddContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
-    gap: spacing.md,
-  },
-  quickAddButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xl,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    borderWidth: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  foodButton: {
-    borderColor: colors.success + '30',
-  },
-  symptomButton: {
-    borderColor: colors.error + '30',
-  },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  foodIconCircle: {
-    backgroundColor: colors.success + '15',
-  },
-  symptomIconCircle: {
-    backgroundColor: colors.error + '15',
-  },
-  quickAddLabel: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
   },
   statsCard: {
     marginHorizontal: spacing.lg,
