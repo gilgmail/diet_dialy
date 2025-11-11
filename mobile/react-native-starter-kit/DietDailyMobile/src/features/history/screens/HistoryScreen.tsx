@@ -8,7 +8,7 @@ import {
 } from 'react-native'
 import { Menu } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
-import { format, addMonths, subMonths } from 'date-fns'
+import { format, addMonths, subMonths, isSameMonth } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
 import { MonthCalendarView } from '../components/MonthCalendarView'
 import { WeekCalendarView } from '../components/WeekCalendarView'
@@ -37,6 +37,13 @@ export function HistoryScreen() {
     setCurrentMonth(addMonths(currentMonth, 1))
   }
 
+  const handleMonthClick = () => {
+    const now = new Date()
+    if (!isSameMonth(currentMonth, now)) {
+      setCurrentMonth(now)
+    }
+  }
+
 
   return (
     <View style={styles.container}>
@@ -58,11 +65,18 @@ export function HistoryScreen() {
             <Icon name="chevron-left" size={24} color={colors.text.primary} />
           </TouchableOpacity>
 
-          <View style={styles.monthDisplay}>
-            <Text style={styles.monthText}>
+          <TouchableOpacity
+            style={styles.monthDisplay}
+            onPress={handleMonthClick}
+            activeOpacity={isSameMonth(currentMonth, new Date()) ? 1 : 0.6}
+          >
+            <Text style={[
+              styles.monthText,
+              !isSameMonth(currentMonth, new Date()) && styles.monthTextClickable
+            ]}>
               {format(currentMonth, 'yyyy年MM月', { locale: zhTW })}
             </Text>
-          </View>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.navArrow}
@@ -190,6 +204,10 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
+  },
+  monthTextClickable: {
+    color: colors.primary[600],
+    textDecorationLine: 'underline',
   },
   viewModeButton: {
     flexDirection: 'row',
