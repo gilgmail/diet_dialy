@@ -3,36 +3,43 @@ import { useAuthStore } from '@/shared/stores/authStore'
 import { BowelDiaryService } from '../services/BowelDiaryService'
 import type { CreateBowelMovementInput, UpdateBowelMovementInput } from '../types'
 
-export function useBowelDiary() {
+export function useBowelDiary(date?: Date) {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
 
-  // Fetch bowel movements for current month
+  // Fetch bowel movements for specific date or current month
   const { data: entries = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['bowelMovements', user?.id],
+    queryKey: ['bowelMovements', user?.id, date?.toISOString()],
     queryFn: async () => {
       if (!user?.id) return []
 
-      const now = new Date()
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      if (date) {
+        // Fetch for specific date
+        const result = await BowelDiaryService.getBowelMovementsByDate(user.id, date)
+        return result.data || []
+      } else {
+        // Fetch for current month
+        const now = new Date()
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
 
-      const result = await BowelDiaryService.getBowelMovementsByDateRange(
-        user.id,
-        startOfMonth,
-        endOfMonth
-      )
-      return result.data || []
+        const result = await BowelDiaryService.getBowelMovementsByDateRange(
+          user.id,
+          startOfMonth,
+          endOfMonth
+        )
+        return result.data || []
+      }
     },
     enabled: !!user?.id,
   })
 
-  // Create or update bowel movement
-  const { mutateAsync: upsertEntry, isPending: isUpserting } = useMutation({
+  // Create bowel movement
+  const { mutateAsync: createEntry, isPending: isCreating } = useMutation({
     mutationFn: async (input: CreateBowelMovementInput) => {
       if (!user?.id) throw new Error('User not authenticated')
 
-      const result = await BowelDiaryService.upsertBowelMovement(user.id, input)
+      const result = await BowelDiaryService.createBowelMovement(user.id, input)
 
       if (result.error) {
         throw new Error(result.error.message)
@@ -41,10 +48,10 @@ export function useBowelDiary() {
       return result.data
     },
     onSuccess: () => {
-      // Invalidate bowel movements query
+      // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['bowelMovements', user?.id] })
-      // Also invalidate symptom entries as they share the same table
       queryClient.invalidateQueries({ queryKey: ['symptomEntries', user?.id] })
+      queryClient.invalidateQueries({ queryKey: ['foodEntries', user?.id] })
     },
   })
 
@@ -62,6 +69,7 @@ export function useBowelDiary() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bowelMovements', user?.id] })
       queryClient.invalidateQueries({ queryKey: ['symptomEntries', user?.id] })
+      queryClient.invalidateQueries({ queryKey: ['foodEntries', user?.id] })
     },
   })
 
@@ -79,6 +87,7 @@ export function useBowelDiary() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bowelMovements', user?.id] })
       queryClient.invalidateQueries({ queryKey: ['symptomEntries', user?.id] })
+      queryClient.invalidateQueries({ queryKey: ['foodEntries', user?.id] })
     },
   })
 
@@ -87,10 +96,10 @@ export function useBowelDiary() {
     isLoading,
     error,
     refetch,
-    upsertEntry,
+    createEntry,
     updateEntry,
     deleteEntry,
-    isUpserting,
+    isCreating,
     isUpdating,
     isDeleting,
   }

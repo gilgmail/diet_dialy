@@ -13,12 +13,13 @@ export class BowelDiaryService {
     return {
       id: dbRecord.id,
       user_id: dbRecord.user_id,
+      occurred_at: dbRecord.occurred_at,
       recorded_date: dbRecord.recorded_date,
-      recorded_at: dbRecord.recorded_at,
-      bowel_movement_count: dbRecord.bowel_movement_count || 0,
-      stool_type: dbRecord.stool_type || 3,
-      has_blood: dbRecord.has_blood || false,
-      notes: dbRecord.notes || '',
+      stool_type: dbRecord.stool_type,
+      has_blood: dbRecord.has_blood,
+      difficulty: dbRecord.difficulty,
+      duration_minutes: dbRecord.duration_minutes,
+      notes: dbRecord.notes,
       created_at: dbRecord.created_at,
       updated_at: dbRecord.updated_at,
     }
@@ -37,13 +38,12 @@ export class BowelDiaryService {
       const endStr = endDate.toISOString().split('T')[0]
 
       const { data, error } = await supabase
-        .from('daily_symptom_entries')
+        .from('bowel_movement_entries')
         .select('*')
         .eq('user_id', userId)
         .gte('recorded_date', startStr)
         .lte('recorded_date', endStr)
-        .not('bowel_movement_count', 'is', null)
-        .order('recorded_date', { ascending: false })
+        .order('occurred_at', { ascending: false })
 
       if (error) throw error
 
@@ -61,44 +61,38 @@ export class BowelDiaryService {
   }
 
   /**
-   * Get bowel movement entry for specific date
+   * Get bowel movement entries for specific date
    */
-  static async getBowelMovementByDate(userId: string, date: Date) {
+  static async getBowelMovementsByDate(userId: string, date: Date) {
     try {
       const dateStr = date.toISOString().split('T')[0]
 
       const { data, error } = await supabase
-        .from('daily_symptom_entries')
+        .from('bowel_movement_entries')
         .select('*')
         .eq('user_id', userId)
         .eq('recorded_date', dateStr)
-        .single()
+        .order('occurred_at', { ascending: true })
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // No rows found
-          return { data: null, error: null }
-        }
-        throw error
-      }
+      if (error) throw error
 
-      const transformed = data ? this.transformFromDatabase(data) : null
+      const transformed = data ? data.map(entry => this.transformFromDatabase(entry)) : null
       return { data: transformed, error: null }
     } catch (error) {
       console.error('[BowelDiaryService] Error:', error)
       return {
         data: null,
         error: {
-          message: error instanceof Error ? error.message : 'Failed to fetch bowel movement',
+          message: error instanceof Error ? error.message : 'Failed to fetch bowel movements',
         },
       }
     }
   }
 
   /**
-   * Create or update bowel movement entry
+   * Create new bowel movement entry
    */
-  static async upsertBowelMovement(
+  static async createBowelMovement(
     userId: string,
     input: CreateBowelMovementInput
   ) {
@@ -106,32 +100,20 @@ export class BowelDiaryService {
       const occurredAt = input.occurred_at ? new Date(input.occurred_at) : new Date()
       const recordedDate = occurredAt.toISOString().split('T')[0]
 
-      // Check if entry exists for this date
-      const { data: existing } = await this.getBowelMovementByDate(userId, occurredAt)
-
       const payload = {
         user_id: userId,
+        occurred_at: occurredAt.toISOString(),
         recorded_date: recordedDate,
-        recorded_at: occurredAt.toISOString(),
-        bowel_movement_count: input.bowel_movement_count,
         stool_type: input.stool_type,
-        has_blood: input.has_blood,
-        bloody_stool: input.has_blood ? 3 : 0, // Set bloody_stool score based on has_blood
-        notes: input.notes || '',
-        // Set default values for required symptom fields if creating new entry
-        ...((!existing) && {
-          overall_health: 3,
-          abdominal_pain: 0,
-          diarrhea: input.stool_type === 5 ? 3 : 0,
-          bloating: 0,
-        }),
+        has_blood: input.has_blood ?? false,
+        difficulty: input.difficulty,
+        duration_minutes: input.duration_minutes,
+        notes: input.notes,
       }
 
       const { data, error } = await supabase
-        .from('daily_symptom_entries')
-        .upsert(payload, {
-          onConflict: 'user_id,recorded_date',
-        })
+        .from('bowel_movement_entries')
+        .insert(payload)
         .select()
         .single()
 
@@ -144,7 +126,7 @@ export class BowelDiaryService {
       return {
         data: null,
         error: {
-          message: error instanceof Error ? error.message : 'Failed to save bowel movement',
+          message: error instanceof Error ? error.message : 'Failed to create bowel movement',
         },
       }
     }
@@ -162,31 +144,29 @@ export class BowelDiaryService {
         updated_at: new Date().toISOString(),
       }
 
-      if (input.bowel_movement_count !== undefined) {
-        payload.bowel_movement_count = input.bowel_movement_count
-      }
       if (input.stool_type !== undefined) {
         payload.stool_type = input.stool_type
-        // Update diarrhea score if stool type is watery
-        if (input.stool_type === 5) {
-          payload.diarrhea = 3
-        }
       }
       if (input.has_blood !== undefined) {
         payload.has_blood = input.has_blood
-        payload.bloody_stool = input.has_blood ? 3 : 0
+      }
+      if (input.difficulty !== undefined) {
+        payload.difficulty = input.difficulty
+      }
+      if (input.duration_minutes !== undefined) {
+        payload.duration_minutes = input.duration_minutes
       }
       if (input.notes !== undefined) {
         payload.notes = input.notes
       }
       if (input.occurred_at) {
         const occurredAt = new Date(input.occurred_at)
-        payload.recorded_at = occurredAt.toISOString()
+        payload.occurred_at = occurredAt.toISOString()
         payload.recorded_date = occurredAt.toISOString().split('T')[0]
       }
 
       const { data, error } = await supabase
-        .from('daily_symptom_entries')
+        .from('bowel_movement_entries')
         .update(payload)
         .eq('id', entryId)
         .select()
@@ -208,26 +188,18 @@ export class BowelDiaryService {
   }
 
   /**
-   * Delete bowel movement data from entry (keeps the entry, just removes bowel data)
+   * Delete bowel movement entry
    */
   static async deleteBowelMovement(entryId: string) {
     try {
-      const { data, error} = await supabase
-        .from('daily_symptom_entries')
-        .update({
-          bowel_movement_count: null,
-          stool_type: 3, // Reset to default
-          has_blood: false,
-          bloody_stool: 0,
-          updated_at: new Date().toISOString(),
-        })
+      const { error } = await supabase
+        .from('bowel_movement_entries')
+        .delete()
         .eq('id', entryId)
-        .select()
-        .single()
 
       if (error) throw error
 
-      return { data, error: null }
+      return { data: true, error: null }
     } catch (error) {
       console.error('[BowelDiaryService] Error:', error)
       return {
