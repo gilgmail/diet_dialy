@@ -151,7 +151,8 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
 
     // Count symptom entries and calculate max severity
     symptomEntries.forEach((entry: SymptomEntry) => {
-      const key = format(new Date(entry.recorded_at), 'yyyy-MM-dd')
+      // Use recorded_date field (not recorded_at) to match database query
+      const key = entry.recorded_date
       const dayData = map.get(key)
       if (dayData) {
         dayData.symptomCount++

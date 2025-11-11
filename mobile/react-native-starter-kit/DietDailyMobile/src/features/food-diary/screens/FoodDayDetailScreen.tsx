@@ -126,52 +126,40 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
     const mealInfo = getMealTypeInfo(item.meal_type)
 
     return (
-      <Card style={styles.entryCard}>
-        <View style={styles.entryHeader}>
-          <View style={styles.entryHeaderLeft}>
-            <Text style={styles.mealIcon}>{mealInfo.icon}</Text>
-            <View>
-              <Text style={styles.foodName}>{item.food_name}</Text>
+      <TouchableOpacity onPress={() => handleEditFood(item)}>
+        <Card style={styles.entryCard}>
+          <View style={styles.entryContent}>
+            <View style={styles.entryMainRow}>
+              <Text style={styles.mealIcon}>{mealInfo.icon}</Text>
+              <View style={styles.entryTextContainer}>
+                <Text style={styles.foodName} numberOfLines={2}>
+                  {item.food_name}
+                </Text>
+              </View>
+              <IconButton
+                icon="pencil-outline"
+                size={20}
+                iconColor={colors.primary[500]}
+                onPress={() => handleEditFood(item)}
+                style={styles.editButton}
+              />
             </View>
-          </View>
-          <View style={styles.entryActions}>
-            <IconButton
-              icon="pencil-outline"
-              size={20}
-              iconColor={colors.primary[500]}
-              onPress={() => handleEditFood(item)}
-            />
-            <IconButton
-              icon="delete-outline"
-              size={20}
-              iconColor={colors.error}
-              onPress={() => handleDeleteEntry(item)}
-              disabled={isDeleting}
-            />
-          </View>
-        </View>
 
-        <View style={styles.entryDetails}>
-          {item.calories && (
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>熱量：</Text>
-              <Text style={styles.detailValue}>{item.calories} kcal</Text>
+            <View style={styles.entryDetails}>
+              <Text style={styles.detailLabel}>時間：</Text>
+              <Text style={styles.detailValue}>
+                {format(new Date(item.consumed_at), 'HH:mm')}
+              </Text>
             </View>
-          )}
-          <View style={styles.detailItem}>
-            <Text style={styles.detailLabel}>時間：</Text>
-            <Text style={styles.detailValue}>
-              {format(new Date(item.consumed_at), 'HH:mm')}
-            </Text>
-          </View>
-        </View>
 
-        {item.notes && (
-          <View style={styles.entryNotes}>
-            <Text style={styles.notesText}>{item.notes}</Text>
+            {item.notes && (
+              <View style={styles.entryNotes}>
+                <Text style={styles.notesText}>{item.notes}</Text>
+              </View>
+            )}
           </View>
-        )}
-      </Card>
+        </Card>
+      </TouchableOpacity>
     )
   }
 
@@ -179,48 +167,43 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
     const severityInfo = getSeverityInfo(item.severity)
 
     return (
-      <Card style={styles.symptomCard}>
-        <View style={styles.entryHeader}>
-          <View style={styles.entryHeaderLeft}>
-            <Text style={styles.severityIcon}>{severityInfo.icon}</Text>
-            <View>
-              <Text style={styles.foodName}>{item.symptom_name}</Text>
-              <Text style={[styles.severityLabel, { color: severityInfo.color }]}>
-                {severityInfo.label}
+      <TouchableOpacity onPress={() => handleEditSymptom(item)}>
+        <Card style={styles.symptomCard}>
+          <View style={styles.entryContent}>
+            <View style={styles.entryMainRow}>
+              <Text style={styles.severityIcon}>{severityInfo.icon}</Text>
+              <View style={styles.entryTextContainer}>
+                <Text style={styles.foodName} numberOfLines={2}>
+                  {item.symptom_name}
+                </Text>
+                <Text style={[styles.severityLabel, { color: severityInfo.color }]}>
+                  {severityInfo.label}
+                </Text>
+              </View>
+              <IconButton
+                icon="pencil-outline"
+                size={20}
+                iconColor={colors.primary[500]}
+                onPress={() => handleEditSymptom(item)}
+                style={styles.editButton}
+              />
+            </View>
+
+            <View style={styles.entryDetails}>
+              <Text style={styles.detailLabel}>時間：</Text>
+              <Text style={styles.detailValue}>
+                {format(new Date(item.recorded_at), 'HH:mm')}
               </Text>
             </View>
-          </View>
-          <View style={styles.entryActions}>
-            <IconButton
-              icon="pencil-outline"
-              size={20}
-              iconColor={colors.primary[500]}
-              onPress={() => handleEditSymptom(item)}
-            />
-            <IconButton
-              icon="delete-outline"
-              size={20}
-              iconColor={colors.error}
-              onPress={() => handleDeleteSymptom(item)}
-            />
-          </View>
-        </View>
 
-        <View style={styles.entryDetails}>
-          <View style={styles.detailItem}>
-            <Text style={styles.detailLabel}>時間：</Text>
-            <Text style={styles.detailValue}>
-              {format(new Date(item.recorded_at), 'HH:mm')}
-            </Text>
+            {item.notes && (
+              <View style={styles.entryNotes}>
+                <Text style={styles.notesText}>{item.notes}</Text>
+              </View>
+            )}
           </View>
-        </View>
-
-        {item.notes && (
-          <View style={styles.entryNotes}>
-            <Text style={styles.notesText}>{item.notes}</Text>
-          </View>
-        )}
-      </Card>
+        </Card>
+      </TouchableOpacity>
     )
   }
 
@@ -429,45 +412,39 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     elevation: 1,
   },
-  entryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  entryContent: {
     padding: spacing.md,
   },
-  entryHeaderLeft: {
+  entryMainRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  entryActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: -spacing.sm,
+    alignItems: 'flex-start',
+    marginBottom: spacing.sm,
   },
   mealIcon: {
     fontSize: 32,
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
+    marginTop: spacing.xs / 2,
+  },
+  entryTextContainer: {
+    flex: 1,
+    marginRight: spacing.xs,
+    paddingTop: spacing.xs / 2,
   },
   foodName: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
-    marginBottom: spacing.xs / 2,
+    lineHeight: typography.fontSize.lg * 1.3,
   },
-  mealType: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
+  editButton: {
+    margin: 0,
+    marginTop: -spacing.xs,
+    marginRight: -spacing.xs,
   },
   entryDetails: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-    gap: spacing.md,
-  },
-  detailItem: {
-    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 40,
   },
   detailLabel: {
     fontSize: typography.fontSize.sm,
@@ -477,10 +454,11 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.primary,
     fontWeight: typography.fontWeight.medium,
+    marginLeft: spacing.xs,
   },
   entryNotes: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
+    marginTop: spacing.xs,
+    marginLeft: 40,
     paddingTop: spacing.xs,
     borderTopWidth: 1,
     borderTopColor: colors.border,
@@ -489,6 +467,7 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
     lineHeight: typography.fontSize.sm * typography.lineHeight.normal,
+    marginTop: spacing.xs,
   },
   sectionContainer: {
     marginTop: spacing.lg,
