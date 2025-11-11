@@ -29,6 +29,8 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
   const { user } = useAuthStore()
   const { entries, deleteEntry, isDeleting } = useFoodDiary()
 
+  console.log('[FoodDayDetail] Screen rendered with date:', date, 'user:', user?.id)
+
   // Filter entries for this specific date, sorted by meal type
   const dayEntries = useMemo(() => {
     const mealOrder = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 }
@@ -47,8 +49,8 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
   }, [entries, date])
 
   // Fetch symptom entries for this date
-  const { data: symptomEntries = [], refetch: refetchSymptoms } = useQuery({
-    queryKey: ['symptomEntries', user?.id, date],
+  const { data: symptomEntries = [], refetch: refetchSymptoms, isLoading, isFetching } = useQuery({
+    queryKey: ['symptomEntriesForDate', user?.id, date],
     queryFn: async () => {
       if (!user?.id) {
         console.log('[FoodDayDetail] No user ID')
@@ -66,6 +68,13 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
       return result.data || []
     },
     enabled: !!user?.id,
+  })
+
+  console.log('[FoodDayDetail] Current state:', {
+    symptomCount: symptomEntries.length,
+    isLoading,
+    isFetching,
+    hasUser: !!user?.id
   })
 
   const handleDeleteEntry = (entry: FoodEntry) => {
