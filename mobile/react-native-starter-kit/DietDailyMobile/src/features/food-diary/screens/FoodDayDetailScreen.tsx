@@ -57,7 +57,13 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
         return []
       }
       console.log('[FoodDayDetail] Fetching symptoms for date:', date, 'user:', user.id)
-      const dateObj = parseISO(`${date}T00:00:00`)
+      // Use date string directly without timezone conversion
+      const dateObj = new Date(`${date}T12:00:00`)
+      console.log('[FoodDayDetail] Date object created:', {
+        input: date,
+        dateObj: dateObj.toISOString(),
+        localDate: dateObj.toLocaleDateString()
+      })
       const result = await SymptomDiaryService.getSymptomEntriesByDate(user.id, dateObj)
       console.log('[FoodDayDetail] Query result:', {
         date,
