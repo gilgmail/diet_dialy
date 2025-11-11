@@ -6,8 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  Modal,
 } from 'react-native'
-import { Menu } from 'react-native-paper'
+import { Menu, Button } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { format, addMonths, subMonths } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
@@ -26,6 +27,7 @@ export function HistoryScreen() {
   const [monthMenuVisible, setMonthMenuVisible] = useState(false)
   const [viewMenuVisible, setViewMenuVisible] = useState(false)
   const [showMonthPicker, setShowMonthPicker] = useState(false)
+  const [tempMonth, setTempMonth] = useState(new Date())
 
   const viewModeLabels = {
     month: '月曆',
@@ -49,19 +51,33 @@ export function HistoryScreen() {
   const handleMonthPickerChange = (event: DateTimePickerEvent, date?: Date) => {
     if (Platform.OS === 'android') {
       setShowMonthPicker(false)
-    }
-
-    if (date && event.type !== 'dismissed') {
-      setCurrentMonth(date)
+      if (date && event.type !== 'dismissed') {
+        setCurrentMonth(date)
+      }
+    } else {
+      // iOS: update temp value
+      if (date) {
+        setTempMonth(date)
+      }
     }
   }
 
   const handleOpenMonthPicker = () => {
+    setTempMonth(currentMonth)
     setMonthMenuVisible(false)
     // Small delay to ensure menu closes before picker opens
     setTimeout(() => {
       setShowMonthPicker(true)
     }, 100)
+  }
+
+  const handleConfirmMonthPicker = () => {
+    setCurrentMonth(tempMonth)
+    setShowMonthPicker(false)
+  }
+
+  const handleCancelMonthPicker = () => {
+    setShowMonthPicker(false)
   }
 
   return (
@@ -104,21 +120,46 @@ export function HistoryScreen() {
             <Menu.Item onPress={handleToday} title="回到今天" leadingIcon="calendar-today" />
           </Menu>
 
-          {showMonthPicker && (
+          {/* Month Picker Modal for iOS */}
+          {Platform.OS === 'ios' && (
+            <Modal
+              visible={showMonthPicker}
+              transparent={true}
+              animationType="slide"
+              onRequestClose={handleCancelMonthPicker}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <View style={styles.modalHeader}>
+                    <Button onPress={handleCancelMonthPicker} textColor={colors.primary[500]}>
+                      取消
+                    </Button>
+                    <Text style={styles.modalTitle}>選擇年月</Text>
+                    <Button onPress={handleConfirmMonthPicker} textColor={colors.primary[500]}>
+                      完成
+                    </Button>
+                  </View>
+                  <DateTimePicker
+                    value={tempMonth}
+                    mode="date"
+                    display="spinner"
+                    onChange={handleMonthPickerChange}
+                    maximumDate={new Date()}
+                    textColor={colors.text.primary}
+                  />
+                </View>
+              </View>
+            </Modal>
+          )}
+
+          {/* Android Date Picker */}
+          {Platform.OS === 'android' && showMonthPicker && (
             <DateTimePicker
               value={currentMonth}
               mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              display="default"
               onChange={handleMonthPickerChange}
               maximumDate={new Date()}
-            />
-          )}
-
-          {Platform.OS === 'ios' && showMonthPicker && (
-            <TouchableOpacity
-              style={styles.pickerOverlay}
-              onPress={() => setShowMonthPicker(false)}
-              activeOpacity={1}
             />
           )}
 
@@ -273,13 +314,29 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  pickerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 999,
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: spacing.xl,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  modalTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
   },
 })
