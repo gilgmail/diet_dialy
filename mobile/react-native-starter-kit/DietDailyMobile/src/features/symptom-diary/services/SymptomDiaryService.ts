@@ -56,12 +56,19 @@ export class SymptomDiaryService {
   }
 
   /**
-   * Get symptom entries for a specific date
+   * Get symptom entries for a specific date (accepts Date object)
    */
   static async getSymptomEntriesByDate(userId: string, date: Date) {
+    const dateStr = date.toISOString().split('T')[0]
+    return this.getSymptomEntriesByDateString(userId, dateStr)
+  }
+
+  /**
+   * Get symptom entries for a specific date string (yyyy-MM-dd)
+   */
+  static async getSymptomEntriesByDateString(userId: string, dateStr: string) {
     try {
-      const dateStr = date.toISOString().split('T')[0]
-      console.log('[SymptomDiaryService] getSymptomEntriesByDate:', { userId, dateStr })
+      console.log('[SymptomDiaryService] getSymptomEntriesByDateString:', { userId, dateStr })
 
       const { data, error } = await supabase
         .from('daily_symptom_entries')

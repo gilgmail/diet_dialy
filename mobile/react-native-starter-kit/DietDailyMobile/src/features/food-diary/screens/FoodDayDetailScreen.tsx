@@ -56,15 +56,9 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
         console.log('[FoodDayDetail] No user ID')
         return []
       }
-      console.log('[FoodDayDetail] Fetching symptoms for date:', date, 'user:', user.id)
-      // Use date string directly without timezone conversion
-      const dateObj = new Date(`${date}T12:00:00`)
-      console.log('[FoodDayDetail] Date object created:', {
-        input: date,
-        dateObj: dateObj.toISOString(),
-        localDate: dateObj.toLocaleDateString()
-      })
-      const result = await SymptomDiaryService.getSymptomEntriesByDate(user.id, dateObj)
+      console.log('[FoodDayDetail] Fetching symptoms for date string:', date, 'user:', user.id)
+      // Use date string directly - no Date object conversion needed
+      const result = await SymptomDiaryService.getSymptomEntriesByDateString(user.id, date)
       console.log('[FoodDayDetail] Query result:', {
         date,
         dataCount: result.data?.length || 0,
@@ -74,6 +68,8 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
       return result.data || []
     },
     enabled: !!user?.id,
+    staleTime: 0, // Always consider data stale
+    cacheTime: 0, // Don't cache results
   })
 
   console.log('[FoodDayDetail] Current state:', {
