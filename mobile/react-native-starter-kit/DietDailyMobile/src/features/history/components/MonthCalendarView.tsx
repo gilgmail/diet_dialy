@@ -41,6 +41,7 @@ interface DayData {
   symptomCount: number
   mealsRecorded: number // 0-3 (breakfast, lunch, dinner)
   hasSymptoms: boolean
+  symptomEntries: SymptomEntry[]
 }
 
 const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
@@ -113,6 +114,7 @@ export function MonthCalendarView({ selectedDate, onSelectDate }: MonthCalendarV
         symptomCount: 0,
         mealsRecorded: 0,
         hasSymptoms: false,
+        symptomEntries: [],
       })
     })
 
@@ -144,13 +146,14 @@ export function MonthCalendarView({ selectedDate, onSelectDate }: MonthCalendarV
       dayData.mealsRecorded = [meals.breakfast, meals.lunch, meals.dinner].filter(Boolean).length
     })
 
-    // Count symptom entries
+    // Count symptom entries and store them
     symptomEntries.forEach((entry: SymptomEntry) => {
       const key = format(new Date(entry.recorded_at), 'yyyy-MM-dd')
       const dayData = map.get(key)
       if (dayData) {
         dayData.symptomCount++
         dayData.hasSymptoms = true
+        dayData.symptomEntries.push(entry)
       }
     })
 
@@ -176,13 +179,15 @@ export function MonthCalendarView({ selectedDate, onSelectDate }: MonthCalendarV
     const isSelected = selectedDate && isSameDay(selectedDate, date)
 
     // Determine background color
-    let bgColor = colors.surface
-    if (dayData.foodCount > 0 && dayData.hasSymptoms) {
-      bgColor = '#FFF8DC' // Light yellow (both)
-    } else if (dayData.foodCount > 0) {
-      bgColor = colors.success + '08' // Light green
-    } else if (dayData.hasSymptoms) {
-      bgColor = colors.error + '08' // Light red
+    let bgColor = colors.background
+
+    // If has symptoms - red
+    if (dayData.hasSymptoms && dayData.symptomCount > 0) {
+      bgColor = colors.error + '15' // Light red
+    }
+    // If has records but no symptoms - green (healthy)
+    else if (dayData.foodCount > 0 || dayData.hasSymptoms) {
+      bgColor = colors.success + '15' // Light green
     }
 
     return (
@@ -199,7 +204,7 @@ export function MonthCalendarView({ selectedDate, onSelectDate }: MonthCalendarV
         disabled={!dayData.isCurrentMonth}
       >
         <View style={styles.dayCellContent}>
-          {/* Date number */}
+          {/* Date number at top */}
           <Text
             style={[
               styles.dayNumber,
@@ -210,24 +215,22 @@ export function MonthCalendarView({ selectedDate, onSelectDate }: MonthCalendarV
             {format(date, 'd')}
           </Text>
 
-          {/* Today badge */}
-          {dayData.isToday && (
-            <View style={styles.todayDot} />
-          )}
+          {/* Content area */}
+          <View style={styles.contentArea}>
+            {/* Meal completion indicator */}
+            {dayData.foodCount > 0 && (
+              <Text style={styles.mealIndicator}>
+                餐 {dayData.mealsRecorded}
+              </Text>
+            )}
 
-          {/* Meal completion indicator */}
-          {dayData.foodCount > 0 && (
-            <Text style={styles.mealIndicator}>
-              {dayData.mealsRecorded}/3
-            </Text>
-          )}
-
-          {/* Symptom indicator */}
-          {dayData.hasSymptoms && (
-            <Text style={styles.symptomIndicator}>
-              {dayData.symptomCount > 0 ? '🔴' : '🟢'}
-            </Text>
-          )}
+            {/* Symptom entries */}
+            {dayData.symptomEntries.slice(0, 2).map((entry, index) => (
+              <Text key={index} style={styles.symptomText} numberOfLines={1}>
+                {entry.symptom_name}
+              </Text>
+            ))}
+          </View>
         </View>
       </TouchableOpacity>
     )
@@ -356,66 +359,73 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   calendarGrid: {
-    gap: spacing.sm,
     paddingHorizontal: spacing.xs,
+    borderTopWidth: 0.5,
+    borderLeftWidth: 0.5,
+    borderColor: colors.border,
   },
   weekRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
   },
   dayCell: {
     flex: 1,
     aspectRatio: 1,
-    borderRadius: 12,
-    borderWidth: 1.5,
+    borderRightWidth: 0.5,
+    borderBottomWidth: 0.5,
     borderColor: colors.border,
     padding: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 70,
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    minHeight: 80,
+    backgroundColor: colors.background,
   },
   dayCellOtherMonth: {
     opacity: 0.3,
+    backgroundColor: colors.surface,
   },
   dayCellSelected: {
     borderColor: colors.primary[500],
-    borderWidth: 2.5,
+    borderWidth: 2,
+    borderRightWidth: 2,
+    borderBottomWidth: 2,
   },
   dayCellContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
     width: '100%',
     height: '100%',
   },
   dayNumber: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.xs / 2,
   },
   dayNumberOtherMonth: {
     color: colors.text.tertiary,
   },
   dayNumberToday: {
-    color: colors.primary[500],
+    color: colors.white,
     fontWeight: typography.fontWeight.bold,
-    fontSize: typography.fontSize.xl,
-  },
-  todayDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
     backgroundColor: colors.primary[500],
-    marginBottom: spacing.xs,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  contentArea: {
+    flex: 1,
+    width: '100%',
+    gap: 2,
   },
   mealIndicator: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.success,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
   },
-  symptomIndicator: {
-    fontSize: 14,
-    marginTop: spacing.xs,
+  symptomText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.primary,
   },
   legend: {
     marginTop: spacing.xl,
