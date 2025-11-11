@@ -5,14 +5,11 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Platform,
-  Modal,
 } from 'react-native'
-import { Menu, Button } from 'react-native-paper'
+import { Menu } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { format, addMonths, subMonths } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
 import { MonthCalendarView } from '../components/MonthCalendarView'
 import { WeekCalendarView } from '../components/WeekCalendarView'
 import { ListHistoryView } from '../components/ListHistoryView'
@@ -24,10 +21,7 @@ export function HistoryScreen() {
   const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [monthMenuVisible, setMonthMenuVisible] = useState(false)
   const [viewMenuVisible, setViewMenuVisible] = useState(false)
-  const [showMonthPicker, setShowMonthPicker] = useState(false)
-  const [tempMonth, setTempMonth] = useState(new Date())
 
   const viewModeLabels = {
     month: '月曆',
@@ -43,42 +37,6 @@ export function HistoryScreen() {
     setCurrentMonth(addMonths(currentMonth, 1))
   }
 
-  const handleToday = () => {
-    setCurrentMonth(new Date())
-    setMonthMenuVisible(false)
-  }
-
-  const handleMonthPickerChange = (event: DateTimePickerEvent, date?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowMonthPicker(false)
-      if (date && event.type !== 'dismissed') {
-        setCurrentMonth(date)
-      }
-    } else {
-      // iOS: update temp value
-      if (date) {
-        setTempMonth(date)
-      }
-    }
-  }
-
-  const handleOpenMonthPicker = () => {
-    setTempMonth(currentMonth)
-    setMonthMenuVisible(false)
-    // Small delay to ensure menu closes before picker opens
-    setTimeout(() => {
-      setShowMonthPicker(true)
-    }, 100)
-  }
-
-  const handleConfirmMonthPicker = () => {
-    setCurrentMonth(tempMonth)
-    setShowMonthPicker(false)
-  }
-
-  const handleCancelMonthPicker = () => {
-    setShowMonthPicker(false)
-  }
 
   return (
     <View style={styles.container}>
@@ -97,78 +55,21 @@ export function HistoryScreen() {
             onPress={handlePrevMonth}
             activeOpacity={0.7}
           >
-            <Icon name="chevron-left" size={20} color={colors.text.primary} />
+            <Icon name="chevron-left" size={24} color={colors.text.primary} />
           </TouchableOpacity>
 
-          <Menu
-            visible={monthMenuVisible}
-            onDismiss={() => setMonthMenuVisible(false)}
-            anchor={
-              <TouchableOpacity
-                style={styles.monthButton}
-                onPress={() => setMonthMenuVisible(true)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.monthText}>
-                  {format(currentMonth, 'yyyy年MM月', { locale: zhTW })}
-                </Text>
-                <Icon name="menu-down" size={20} color={colors.text.secondary} />
-              </TouchableOpacity>
-            }
-          >
-            <Menu.Item onPress={handleOpenMonthPicker} title="選擇年月" leadingIcon="calendar" />
-            <Menu.Item onPress={handleToday} title="回到今天" leadingIcon="calendar-today" />
-          </Menu>
-
-          {/* Month Picker Modal for iOS */}
-          {Platform.OS === 'ios' && (
-            <Modal
-              visible={showMonthPicker}
-              transparent={true}
-              animationType="slide"
-              onRequestClose={handleCancelMonthPicker}
-            >
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <View style={styles.modalHeader}>
-                    <Button onPress={handleCancelMonthPicker} textColor={colors.primary[500]}>
-                      取消
-                    </Button>
-                    <Text style={styles.modalTitle}>選擇年月</Text>
-                    <Button onPress={handleConfirmMonthPicker} textColor={colors.primary[500]}>
-                      完成
-                    </Button>
-                  </View>
-                  <DateTimePicker
-                    value={tempMonth}
-                    mode="date"
-                    display="spinner"
-                    onChange={handleMonthPickerChange}
-                    maximumDate={new Date()}
-                    textColor={colors.text.primary}
-                  />
-                </View>
-              </View>
-            </Modal>
-          )}
-
-          {/* Android Date Picker */}
-          {Platform.OS === 'android' && showMonthPicker && (
-            <DateTimePicker
-              value={currentMonth}
-              mode="date"
-              display="default"
-              onChange={handleMonthPickerChange}
-              maximumDate={new Date()}
-            />
-          )}
+          <View style={styles.monthDisplay}>
+            <Text style={styles.monthText}>
+              {format(currentMonth, 'yyyy年MM月', { locale: zhTW })}
+            </Text>
+          </View>
 
           <TouchableOpacity
             style={styles.navArrow}
             onPress={handleNextMonth}
             activeOpacity={0.7}
           >
-            <Icon name="chevron-right" size={20} color={colors.text.primary} />
+            <Icon name="chevron-right" size={24} color={colors.text.primary} />
           </TouchableOpacity>
         </View>
 
@@ -279,20 +180,15 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   navArrow: {
-    padding: spacing.xs,
+    padding: spacing.sm,
   },
-  monthButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: 6,
-    backgroundColor: colors.background,
-    gap: spacing.xs,
+  monthDisplay: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   monthText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
   },
   viewModeButton: {
@@ -313,30 +209,5 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: spacing.xl,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  modalTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
   },
 })
