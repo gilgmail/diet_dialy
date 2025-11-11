@@ -93,9 +93,15 @@ export function AddSymptomEntryScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // Skip auto-reset in edit mode
+      if (isEditMode) {
+        console.log('[AddSymptomEntry] Skip auto-reset in edit mode')
+        return
+      }
+
       const now = new Date()
       setSelectedDate(prev => (isSameDay(prev, now) ? prev : now))
-    }, [])
+    }, [isEditMode])
   )
 
   const handleSubmit = async () => {
