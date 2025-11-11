@@ -41,11 +41,20 @@ function getMealTypeByTime(): MealType {
 export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProps) {
   const { user } = useAuthStore()
   const { settings } = useSettingsStore()
-  const { createEntry, isCreating } = useFoodDiary()
+  const { entries, createEntry, updateEntry, deleteEntry, isCreating, isUpdating, isDeleting } = useFoodDiary()
   const { requireDatabaseFood } = appConfig
 
+  // Check if editing existing entry
+  const entryId = route.params?.entryId
+  const isEditMode = !!entryId
+  const existingEntry = isEditMode ? entries.find(e => e.id === entryId) : null
+
   // Support date parameter from navigation (for historical entries)
-  const initialDate = route.params?.date ? new Date(route.params.date) : new Date()
+  const initialDate = route.params?.date
+    ? new Date(route.params.date)
+    : existingEntry
+    ? new Date(existingEntry.consumed_at)
+    : new Date()
   const [selectedDate, setSelectedDate] = useState(initialDate)
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [recentEntries, setRecentEntries] = useState<FoodEntry[]>([])
@@ -82,9 +91,9 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
     return stats
   }, [todayEntries])
 
-  const [foodName, setFoodName] = useState('')
+  const [foodName, setFoodName] = useState(existingEntry?.food_name || '')
   const [selectedFood, setSelectedFood] = useState<FoodSearchResult | null>(null)
-  const [mealType, setMealType] = useState<MealType>(getMealTypeByTime())
+  const [mealType, setMealType] = useState<MealType>(existingEntry?.meal_type || getMealTypeByTime())
 
   const handleFoodInputChange = (text: string) => {
     setFoodName(text)
@@ -149,42 +158,83 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
       return
     }
 
-    if (requireDatabaseFood && !chosenFood) {
+    if (requireDatabaseFood && !chosenFood && !isEditMode) {
       Alert.alert('提醒', '請從資料庫選擇食物')
       return
     }
 
     try {
-      const payload: CreateFoodEntryInput = {
-        food_name: trimmedName,
-        meal_type: mealType,
-        consumed_at: selectedDate.toISOString(),
+      if (isEditMode && entryId) {
+        // Update existing entry
+        const payload: CreateFoodEntryInput = {
+          food_name: trimmedName,
+          meal_type: mealType,
+          consumed_at: selectedDate.toISOString(),
+        }
+
+        if (chosenFood) {
+          payload.food_id = chosenFood.id
+          payload.food_category = chosenFood.category
+          payload.calories = chosenFood.calories
+        }
+
+        await updateEntry({ entryId, input: payload })
+        Alert.alert('成功', `已更新「${trimmedName}」`)
+        navigation.goBack()
+      } else {
+        // Create new entry
+        const payload: CreateFoodEntryInput = {
+          food_name: trimmedName,
+          meal_type: mealType,
+          consumed_at: selectedDate.toISOString(),
+        }
+
+        if (chosenFood) {
+          payload.food_id = chosenFood.id
+          payload.food_category = chosenFood.category
+          payload.calories = chosenFood.calories
+        }
+
+        const newEntry = await createEntry(payload)
+
+        // Add to recent entries list
+        if (newEntry) {
+          setRecentEntries(prev => [newEntry, ...prev].slice(0, 5))
+        }
+
+        // Clear input for next entry
+        setFoodName('')
+        setSelectedFood(null)
+        setMealType(getMealTypeByTime())
+
+        // Show success feedback
+        const displayName = chosenFood?.name ?? trimmedName
+        Alert.alert('成功', `已新增「${displayName}」`)
       }
-
-      if (chosenFood) {
-        payload.food_id = chosenFood.id
-        payload.food_category = chosenFood.category
-        payload.calories = chosenFood.calories
-      }
-
-      const newEntry = await createEntry(payload)
-
-      // Add to recent entries list
-      if (newEntry) {
-        setRecentEntries(prev => [newEntry, ...prev].slice(0, 5))
-      }
-
-      // Clear input for next entry
-      setFoodName('')
-      setSelectedFood(null)
-      setMealType(getMealTypeByTime())
-
-      // Show success feedback
-      const displayName = chosenFood?.name ?? trimmedName
-      Alert.alert('成功', `已新增「${displayName}」`)
     } catch (error) {
-      Alert.alert('錯誤', error instanceof Error ? error.message : '新增失敗')
+      Alert.alert('錯誤', error instanceof Error ? error.message : isEditMode ? '更新失敗' : '新增失敗')
     }
+  }
+
+  const handleDelete = async () => {
+    if (!isEditMode || !entryId) return
+
+    Alert.alert('確認刪除', `確定要刪除「${foodName}」嗎？`, [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '刪除',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteEntry(entryId)
+            Alert.alert('成功', '已刪除記錄')
+            navigation.goBack()
+          } catch (error) {
+            Alert.alert('錯誤', error instanceof Error ? error.message : '刪除失敗')
+          }
+        },
+      },
+    ])
   }
 
   const mealTypeButtons = MEAL_TYPES.map(meal => ({
@@ -328,20 +378,34 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
 
       {/* Floating Save Button */}
       <View style={styles.floatingButtonContainer}>
+        {isEditMode && (
+          <Button
+            mode="outlined"
+            onPress={handleDelete}
+            loading={isDeleting}
+            disabled={isDeleting || isUpdating}
+            style={[styles.floatingButton, styles.deleteButton]}
+            labelStyle={styles.deleteButtonLabel}
+            icon="delete"
+          >
+            刪除記錄
+          </Button>
+        )}
         <Button
           mode="contained"
           onPress={handleSubmit}
-          loading={isCreating}
+          loading={isEditMode ? isUpdating : isCreating}
           disabled={
-            isCreating ||
+            (isEditMode ? isUpdating : isCreating) ||
+            isDeleting ||
             !foodName.trim() ||
-            (requireDatabaseFood && !selectedFood)
+            (!isEditMode && requireDatabaseFood && !selectedFood)
           }
           style={styles.floatingButton}
           labelStyle={styles.floatingButtonLabel}
           icon="check"
         >
-          儲存記錄
+          {isEditMode ? '更新記錄' : '儲存記錄'}
         </Button>
       </View>
     </SafeAreaView>
@@ -481,15 +545,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+    flexDirection: 'row',
+    gap: spacing.md,
   },
   floatingButton: {
     backgroundColor: colors.primary[500],
     borderRadius: 12,
     paddingVertical: spacing.xs,
+    flex: 1,
   },
   floatingButtonLabel: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.inverse,
+  },
+  deleteButton: {
+    backgroundColor: 'transparent',
+    borderColor: colors.error,
+    borderWidth: 2,
+  },
+  deleteButtonLabel: {
+    color: colors.error,
   },
 })
