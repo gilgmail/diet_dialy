@@ -53,7 +53,7 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
   // Use T12:00:00 to avoid timezone conversion issues
   const initialDate = route.params?.date
     ? new Date(`${route.params.date}T12:00:00`)
-    : existingEntry
+    : existingEntry?.consumed_at
     ? new Date(`${existingEntry.consumed_at.split('T')[0]}T12:00:00`)
     : new Date()
   const [selectedDate, setSelectedDate] = useState(initialDate)
@@ -107,15 +107,17 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
       setFoodName(existingEntry.food_name)
       setMealType(existingEntry.meal_type)
 
-      // Update selected date to match entry date
-      const entryDate = new Date(`${existingEntry.consumed_at.split('T')[0]}T12:00:00`)
-      console.log('[AddFoodEntry] Setting date from entry:', {
-        consumed_at: existingEntry.consumed_at,
-        extracted: existingEntry.consumed_at.split('T')[0],
-        dateObject: entryDate.toISOString(),
-        formatted: format(entryDate, 'yyyy-MM-dd')
-      })
-      setSelectedDate(entryDate)
+      // Update selected date to match entry date (with safety check)
+      if (existingEntry.consumed_at) {
+        const entryDate = new Date(`${existingEntry.consumed_at.split('T')[0]}T12:00:00`)
+        console.log('[AddFoodEntry] Setting date from entry:', {
+          consumed_at: existingEntry.consumed_at,
+          extracted: existingEntry.consumed_at.split('T')[0],
+          dateObject: entryDate.toISOString(),
+          formatted: format(entryDate, 'yyyy-MM-dd')
+        })
+        setSelectedDate(entryDate)
+      }
     }
   }, [existingEntry?.id])
 
@@ -141,16 +143,16 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
 
   useFocusEffect(
     useCallback(() => {
-      // Skip auto-reset in edit mode
-      if (isEditMode) {
-        console.log('[AddFoodEntry] Skip auto-reset in edit mode')
+      // Skip auto-reset in edit mode or when date parameter is provided
+      if (isEditMode || route.params?.date) {
+        console.log('[AddFoodEntry] Skip auto-reset:', { isEditMode, hasDateParam: !!route.params?.date })
         return
       }
 
       const now = new Date()
       setSelectedDate(prev => (isSameDay(prev, now) ? prev : now))
       setMealType(getMealTypeByTime())
-    }, [isEditMode])
+    }, [isEditMode, route.params?.date])
   )
 
   useFocusEffect(

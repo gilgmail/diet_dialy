@@ -36,7 +36,7 @@ export function AddSymptomEntryScreen() {
   // Use T12:00:00 to avoid timezone conversion issues
   const initialDate = route.params?.date
     ? new Date(`${route.params.date}T12:00:00`)
-    : existingEntry
+    : existingEntry?.occurred_at
     ? new Date(`${existingEntry.occurred_at.split('T')[0]}T12:00:00`)
     : new Date()
   const [selectedDate, setSelectedDate] = useState(initialDate)
@@ -62,15 +62,17 @@ export function AddSymptomEntryScreen() {
       setDuration(existingEntry.duration_minutes?.toString() || '')
       setNotes(existingEntry.notes || '')
 
-      // Update selected date to match entry date
-      const entryDate = new Date(`${existingEntry.occurred_at.split('T')[0]}T12:00:00`)
-      console.log('[AddSymptomEntry] Setting date from entry:', {
-        occurred_at: existingEntry.occurred_at,
-        extracted: existingEntry.occurred_at.split('T')[0],
-        dateObject: entryDate.toISOString(),
-        formatted: format(entryDate, 'yyyy-MM-dd')
-      })
-      setSelectedDate(entryDate)
+      // Update selected date to match entry date (with safety check)
+      if (existingEntry.occurred_at) {
+        const entryDate = new Date(`${existingEntry.occurred_at.split('T')[0]}T12:00:00`)
+        console.log('[AddSymptomEntry] Setting date from entry:', {
+          occurred_at: existingEntry.occurred_at,
+          extracted: existingEntry.occurred_at.split('T')[0],
+          dateObject: entryDate.toISOString(),
+          formatted: format(entryDate, 'yyyy-MM-dd')
+        })
+        setSelectedDate(entryDate)
+      }
     }
   }, [existingEntry?.id])
   const [showOptionalFields, setShowOptionalFields] = useState(
@@ -93,15 +95,15 @@ export function AddSymptomEntryScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      // Skip auto-reset in edit mode
-      if (isEditMode) {
-        console.log('[AddSymptomEntry] Skip auto-reset in edit mode')
+      // Skip auto-reset in edit mode or when date parameter is provided
+      if (isEditMode || route.params?.date) {
+        console.log('[AddSymptomEntry] Skip auto-reset:', { isEditMode, hasDateParam: !!route.params?.date })
         return
       }
 
       const now = new Date()
       setSelectedDate(prev => (isSameDay(prev, now) ? prev : now))
-    }, [isEditMode])
+    }, [isEditMode, route.params?.date])
   )
 
   const handleSubmit = async () => {
