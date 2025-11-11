@@ -12,24 +12,52 @@ import { Card, IconButton } from 'react-native-paper'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { format, parseISO } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
+import { useQuery } from '@tanstack/react-query'
 import { colors, typography, spacing } from '@/theme'
 import { useFoodDiary } from '../hooks/useFoodDiary'
 import { MEAL_TYPES, type FoodEntry } from '../types'
 import type { MainStackParamList } from '@/app/navigation/types'
+import { useAuthStore } from '@/shared/stores/authStore'
+import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
+import { SEVERITY_LEVELS } from '@/features/symptom-diary/types'
+import type { SymptomEntry } from '@/features/symptom-diary/types'
 
 type FoodDayDetailScreenProps = NativeStackScreenProps<MainStackParamList, 'FoodDayDetail'>
 
 export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenProps) {
   const { date } = route.params
+  const { user } = useAuthStore()
   const { entries, deleteEntry, isDeleting } = useFoodDiary()
 
-  // Filter entries for this specific date
+  // Filter entries for this specific date, sorted by meal type
   const dayEntries = useMemo(() => {
-    return entries.filter((entry) => {
-      const entryDate = format(parseISO(entry.consumed_at), 'yyyy-MM-dd')
-      return entryDate === date
-    })
+    const mealOrder = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 }
+    return entries
+      .filter((entry) => {
+        const entryDate = format(parseISO(entry.consumed_at), 'yyyy-MM-dd')
+        return entryDate === date
+      })
+      .sort((a, b) => {
+        const orderA = mealOrder[a.meal_type as keyof typeof mealOrder] ?? 999
+        const orderB = mealOrder[b.meal_type as keyof typeof mealOrder] ?? 999
+        if (orderA !== orderB) return orderA - orderB
+        // If same meal type, sort by time
+        return new Date(a.consumed_at).getTime() - new Date(b.consumed_at).getTime()
+      })
   }, [entries, date])
+
+  // Fetch symptom entries for this date
+  const { data: symptomEntries = [], refetch: refetchSymptoms } = useQuery({
+    queryKey: ['symptomEntries', user?.id, date],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const dateObj = parseISO(`${date}T00:00:00`)
+      const result = await SymptomDiaryService.getSymptomEntriesByDate(user.id, dateObj)
+      console.log('[FoodDayDetail] Symptom entries:', result.data)
+      return result.data || []
+    },
+    enabled: !!user?.id,
+  })
 
   const handleDeleteEntry = (entry: FoodEntry) => {
     Alert.alert('刪除記錄', `確定要刪除「${entry.food_name}」嗎？`, [
@@ -55,6 +83,45 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
     return MEAL_TYPES.find(m => m.value === mealType) || MEAL_TYPES[0]
   }
 
+  const getSeverityInfo = (severity: string) => {
+    return SEVERITY_LEVELS.find(s => s.value === severity) || SEVERITY_LEVELS[0]
+  }
+
+  const handleDeleteSymptom = (entry: SymptomEntry) => {
+    Alert.alert('刪除症狀記錄', '確定要刪除此症狀記錄嗎？', [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '刪除',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            if (!user?.id) return
+            await SymptomDiaryService.deleteSymptomEntry(entry.id, user.id)
+            refetchSymptoms()
+          } catch (error) {
+            Alert.alert('錯誤', '刪除失敗')
+          }
+        },
+      },
+    ])
+  }
+
+  const handleEditFood = (entry: FoodEntry) => {
+    navigation.navigate('AddFoodEntry', { entryId: entry.id })
+  }
+
+  const handleEditSymptom = (entry: SymptomEntry) => {
+    navigation.navigate('AddSymptomEntry', { entryId: entry.id })
+  }
+
+  const handleAddFood = () => {
+    navigation.navigate('AddFoodEntry', { defaultDate: date })
+  }
+
+  const handleAddSymptom = () => {
+    navigation.navigate('AddSymptomEntry', { defaultDate: date })
+  }
+
   const renderEntry = ({ item }: { item: FoodEntry }) => {
     const mealInfo = getMealTypeInfo(item.meal_type)
 
@@ -65,25 +132,26 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
             <Text style={styles.mealIcon}>{mealInfo.icon}</Text>
             <View>
               <Text style={styles.foodName}>{item.food_name}</Text>
-              <Text style={styles.mealType}>{mealInfo.label}</Text>
             </View>
           </View>
-          <IconButton
-            icon="delete-outline"
-            size={20}
-            iconColor={colors.error}
-            onPress={() => handleDeleteEntry(item)}
-            disabled={isDeleting}
-          />
+          <View style={styles.entryActions}>
+            <IconButton
+              icon="pencil-outline"
+              size={20}
+              iconColor={colors.primary[500]}
+              onPress={() => handleEditFood(item)}
+            />
+            <IconButton
+              icon="delete-outline"
+              size={20}
+              iconColor={colors.error}
+              onPress={() => handleDeleteEntry(item)}
+              disabled={isDeleting}
+            />
+          </View>
         </View>
 
         <View style={styles.entryDetails}>
-          {item.portion_size && (
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>份量：</Text>
-              <Text style={styles.detailValue}>{item.portion_size}</Text>
-            </View>
-          )}
           {item.calories && (
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>熱量：</Text>
@@ -94,6 +162,55 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
             <Text style={styles.detailLabel}>時間：</Text>
             <Text style={styles.detailValue}>
               {format(new Date(item.consumed_at), 'HH:mm')}
+            </Text>
+          </View>
+        </View>
+
+        {item.notes && (
+          <View style={styles.entryNotes}>
+            <Text style={styles.notesText}>{item.notes}</Text>
+          </View>
+        )}
+      </Card>
+    )
+  }
+
+  const renderSymptomEntry = ({ item }: { item: SymptomEntry }) => {
+    const severityInfo = getSeverityInfo(item.severity)
+
+    return (
+      <Card style={styles.symptomCard}>
+        <View style={styles.entryHeader}>
+          <View style={styles.entryHeaderLeft}>
+            <Text style={styles.severityIcon}>{severityInfo.icon}</Text>
+            <View>
+              <Text style={styles.foodName}>{item.symptom_name}</Text>
+              <Text style={[styles.severityLabel, { color: severityInfo.color }]}>
+                {severityInfo.label}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.entryActions}>
+            <IconButton
+              icon="pencil-outline"
+              size={20}
+              iconColor={colors.primary[500]}
+              onPress={() => handleEditSymptom(item)}
+            />
+            <IconButton
+              icon="delete-outline"
+              size={20}
+              iconColor={colors.error}
+              onPress={() => handleDeleteSymptom(item)}
+            />
+          </View>
+        </View>
+
+        <View style={styles.entryDetails}>
+          <View style={styles.detailItem}>
+            <Text style={styles.detailLabel}>時間：</Text>
+            <Text style={styles.detailValue}>
+              {format(new Date(item.recorded_at), 'HH:mm')}
             </Text>
           </View>
         </View>
@@ -126,10 +243,27 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
     return (
       <View style={styles.header}>
         <Text style={styles.title}>{dateDisplay}</Text>
+
+        {/* Add buttons */}
+        <View style={styles.addButtonsContainer}>
+          <TouchableOpacity style={styles.addButton} onPress={handleAddFood}>
+            <IconButton icon="food-apple" size={20} iconColor={colors.primary[500]} />
+            <Text style={styles.addButtonText}>新增飲食</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.addButton} onPress={handleAddSymptom}>
+            <IconButton icon="medical-bag" size={20} iconColor={colors.primary[500]} />
+            <Text style={styles.addButtonText}>新增症狀</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.summaryContainer}>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>總記錄</Text>
+            <Text style={styles.summaryLabel}>飲食記錄</Text>
             <Text style={styles.summaryValue}>{dayEntries.length} 筆</Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>症狀記錄</Text>
+            <Text style={styles.summaryValue}>{symptomEntries.length} 筆</Text>
           </View>
           {daySummary.totalCalories > 0 && (
             <View style={styles.summaryItem}>
@@ -176,6 +310,21 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
     )
   }
 
+  const renderSymptomSection = () => {
+    if (symptomEntries.length === 0) return null
+
+    return (
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>症狀記錄</Text>
+        {symptomEntries.map((entry) => (
+          <View key={entry.id}>
+            {renderSymptomEntry({ item: entry })}
+          </View>
+        ))}
+      </View>
+    )
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <FlatList
@@ -184,6 +333,7 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={renderHeader}
+        ListFooterComponent={renderSymptomSection}
       />
     </SafeAreaView>
   )
@@ -204,6 +354,27 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
     marginBottom: spacing.md,
+  },
+  addButtonsContainer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  addButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary[50],
+    borderRadius: 8,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  addButtonText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.primary[500],
+    fontWeight: typography.fontWeight.medium,
+    marginLeft: -spacing.xs,
   },
   summaryContainer: {
     flexDirection: 'row',
@@ -269,6 +440,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  entryActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: -spacing.sm,
+  },
   mealIcon: {
     fontSize: 32,
     marginRight: spacing.md,
@@ -313,5 +489,31 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
     lineHeight: typography.fontSize.sm * typography.lineHeight.normal,
+  },
+  sectionContainer: {
+    marginTop: spacing.lg,
+    paddingTop: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  sectionTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
+  },
+  symptomCard: {
+    marginBottom: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    elevation: 1,
+  },
+  severityIcon: {
+    fontSize: 32,
+    marginRight: spacing.md,
+  },
+  severityLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
   },
 })

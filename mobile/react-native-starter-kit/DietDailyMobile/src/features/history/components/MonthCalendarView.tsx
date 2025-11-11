@@ -43,6 +43,7 @@ interface DayData {
   mealsRecorded: number // 0-3 (breakfast, lunch, dinner)
   hasSymptoms: boolean
   symptomEntries: SymptomEntry[]
+  maxSeverity: 'mild' | 'moderate' | 'severe' | null
 }
 
 const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
@@ -116,6 +117,7 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
         mealsRecorded: 0,
         hasSymptoms: false,
         symptomEntries: [],
+        maxSeverity: null,
       })
     })
 
@@ -147,7 +149,7 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
       dayData.mealsRecorded = [meals.breakfast, meals.lunch, meals.dinner].filter(Boolean).length
     })
 
-    // Count symptom entries and store them
+    // Count symptom entries and calculate max severity
     symptomEntries.forEach((entry: SymptomEntry) => {
       const key = format(new Date(entry.recorded_at), 'yyyy-MM-dd')
       const dayData = map.get(key)
@@ -155,6 +157,14 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
         dayData.symptomCount++
         dayData.hasSymptoms = true
         dayData.symptomEntries.push(entry)
+
+        // Update max severity
+        const severityRank = { mild: 1, moderate: 2, severe: 3 }
+        const currentRank = dayData.maxSeverity ? severityRank[dayData.maxSeverity] : 0
+        const newRank = severityRank[entry.severity]
+        if (newRank > currentRank) {
+          dayData.maxSeverity = entry.severity
+        }
       }
     })
 
@@ -167,15 +177,19 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
 
     const isSelected = selectedDate && isSameDay(selectedDate, date)
 
-    // Determine background color
+    // Determine background color based on symptom severity
     let bgColor = colors.background
 
-    // If has symptoms - red
     if (dayData.hasSymptoms && dayData.symptomCount > 0) {
-      bgColor = colors.error + '15' // Light red
+      // Color based on max severity
+      if (dayData.maxSeverity === 'mild') {
+        bgColor = '#FEF3C7' // Light yellow for mild
+      } else if (dayData.maxSeverity === 'moderate' || dayData.maxSeverity === 'severe') {
+        bgColor = colors.error + '15' // Light red for moderate and above
+      }
     }
     // If has records but no symptoms - green (healthy)
-    else if (dayData.foodCount > 0 || dayData.hasSymptoms) {
+    else if (dayData.foodCount > 0) {
       bgColor = colors.success + '15' // Light green
     }
 
