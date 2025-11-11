@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Button, TextInput, SegmentedButtons, IconButton } from 'react-native-paper'
@@ -92,9 +92,32 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
     return stats
   }, [todayEntries])
 
-  const [foodName, setFoodName] = useState(existingEntry?.food_name || '')
+  const [foodName, setFoodName] = useState('')
   const [selectedFood, setSelectedFood] = useState<FoodSearchResult | null>(null)
-  const [mealType, setMealType] = useState<MealType>(existingEntry?.meal_type || getMealTypeByTime())
+  const [mealType, setMealType] = useState<MealType>(getMealTypeByTime())
+
+  // Load existing entry data when available
+  useEffect(() => {
+    if (existingEntry) {
+      console.log('[AddFoodEntry] Loading existing entry data:', {
+        food_name: existingEntry.food_name,
+        meal_type: existingEntry.meal_type,
+        consumed_at: existingEntry.consumed_at
+      })
+      setFoodName(existingEntry.food_name)
+      setMealType(existingEntry.meal_type)
+
+      // Update selected date to match entry date
+      const entryDate = new Date(`${existingEntry.consumed_at.split('T')[0]}T12:00:00`)
+      console.log('[AddFoodEntry] Setting date from entry:', {
+        consumed_at: existingEntry.consumed_at,
+        extracted: existingEntry.consumed_at.split('T')[0],
+        dateObject: entryDate.toISOString(),
+        formatted: format(entryDate, 'yyyy-MM-dd')
+      })
+      setSelectedDate(entryDate)
+    }
+  }, [existingEntry?.id])
 
   const handleFoodInputChange = (text: string) => {
     setFoodName(text)

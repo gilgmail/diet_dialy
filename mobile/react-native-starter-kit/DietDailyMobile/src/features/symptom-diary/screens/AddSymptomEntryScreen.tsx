@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import {
   View,
   Text,
@@ -44,10 +44,35 @@ export function AddSymptomEntryScreen() {
   const [recentEntries, setRecentEntries] = useState<SymptomEntry[]>([])
 
   // Form state
-  const [symptomName, setSymptomName] = useState(existingEntry?.symptom_name || '')
-  const [severity, setSeverity] = useState<SeverityLevel>(existingEntry?.severity || 'mild')
-  const [duration, setDuration] = useState(existingEntry?.duration_minutes?.toString() || '')
-  const [notes, setNotes] = useState(existingEntry?.notes || '')
+  const [symptomName, setSymptomName] = useState('')
+  const [severity, setSeverity] = useState<SeverityLevel>('mild')
+  const [duration, setDuration] = useState('')
+  const [notes, setNotes] = useState('')
+
+  // Load existing entry data when available
+  useEffect(() => {
+    if (existingEntry) {
+      console.log('[AddSymptomEntry] Loading existing entry data:', {
+        symptom_name: existingEntry.symptom_name,
+        severity: existingEntry.severity,
+        occurred_at: existingEntry.occurred_at
+      })
+      setSymptomName(existingEntry.symptom_name)
+      setSeverity(existingEntry.severity)
+      setDuration(existingEntry.duration_minutes?.toString() || '')
+      setNotes(existingEntry.notes || '')
+
+      // Update selected date to match entry date
+      const entryDate = new Date(`${existingEntry.occurred_at.split('T')[0]}T12:00:00`)
+      console.log('[AddSymptomEntry] Setting date from entry:', {
+        occurred_at: existingEntry.occurred_at,
+        extracted: existingEntry.occurred_at.split('T')[0],
+        dateObject: entryDate.toISOString(),
+        formatted: format(entryDate, 'yyyy-MM-dd')
+      })
+      setSelectedDate(entryDate)
+    }
+  }, [existingEntry?.id])
   const [showOptionalFields, setShowOptionalFields] = useState(
     !!(existingEntry?.duration_minutes || existingEntry?.notes)
   )
