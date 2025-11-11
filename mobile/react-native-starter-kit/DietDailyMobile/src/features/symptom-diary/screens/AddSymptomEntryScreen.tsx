@@ -25,20 +25,31 @@ import { parseSymptomNames } from '../utils/parseSymptomNames'
 export function AddSymptomEntryScreen() {
   const navigation = useNavigation()
   const route = useRoute<RouteProp<MainStackParamList, 'AddSymptomEntry'>>()
-  const { createEntry, isCreating } = useSymptomDiary()
+  const { entries, createEntry, updateEntry, deleteEntry, isCreating, isUpdating, isDeleting } = useSymptomDiary()
+
+  // Check if editing existing entry
+  const entryId = route.params?.entryId
+  const isEditMode = !!entryId
+  const existingEntry = isEditMode ? entries.find(e => e.id === entryId) : null
 
   // Support date parameter from navigation (for historical entries)
-  const initialDate = route.params?.date ? new Date(route.params.date) : new Date()
+  const initialDate = route.params?.date
+    ? new Date(route.params.date)
+    : existingEntry
+    ? new Date(existingEntry.occurred_at)
+    : new Date()
   const [selectedDate, setSelectedDate] = useState(initialDate)
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [recentEntries, setRecentEntries] = useState<SymptomEntry[]>([])
 
   // Form state
-  const [symptomName, setSymptomName] = useState('')
-  const [severity, setSeverity] = useState<SeverityLevel>('mild')
-  const [duration, setDuration] = useState('')
-  const [notes, setNotes] = useState('')
-  const [showOptionalFields, setShowOptionalFields] = useState(false)
+  const [symptomName, setSymptomName] = useState(existingEntry?.symptom_name || '')
+  const [severity, setSeverity] = useState<SeverityLevel>(existingEntry?.severity || 'mild')
+  const [duration, setDuration] = useState(existingEntry?.duration_minutes?.toString() || '')
+  const [notes, setNotes] = useState(existingEntry?.notes || '')
+  const [showOptionalFields, setShowOptionalFields] = useState(
+    !!(existingEntry?.duration_minutes || existingEntry?.notes)
+  )
   const selectedSymptomNames = useMemo(
     () => parseSymptomNames(symptomName),
     [symptomName]
@@ -62,9 +73,9 @@ export function AddSymptomEntryScreen() {
   )
 
   const handleSubmit = async () => {
-    const symptomNames = parseSymptomNames(symptomName)
+    const trimmedName = symptomName.trim()
 
-    if (symptomNames.length === 0) {
+    if (!trimmedName) {
       Alert.alert('提醒', '請輸入症狀名稱')
       return
     }
@@ -79,66 +90,85 @@ export function AddSymptomEntryScreen() {
       }
     }
 
-    const createdEntries: SymptomEntry[] = []
     const durationMinutes = duration ? parseInt(duration, 10) : undefined
     const trimmedNotes = notes.trim()
 
     try {
-      for (const name of symptomNames) {
-        const newEntry = await createEntry({
-          symptom_name: name,
-          severity,
-          duration_minutes: durationMinutes,
-          notes: trimmedNotes || undefined,
-          occurred_at: selectedDate.toISOString(),
+      if (isEditMode && entryId) {
+        // Update existing entry
+        await updateEntry({
+          entryId,
+          input: {
+            symptom_name: trimmedName,
+            severity,
+            duration_minutes: durationMinutes,
+            notes: trimmedNotes || undefined,
+            occurred_at: selectedDate.toISOString(),
+          },
+        })
+        Alert.alert('成功', `已更新「${trimmedName}」`)
+        navigation.goBack()
+      } else {
+        // Create new entry - support multiple symptoms
+        const symptomNames = parseSymptomNames(trimmedName)
+        const createdEntries: SymptomEntry[] = []
+
+        for (const name of symptomNames) {
+          const newEntry = await createEntry({
+            symptom_name: name,
+            severity,
+            duration_minutes: durationMinutes,
+            notes: trimmedNotes || undefined,
+            occurred_at: selectedDate.toISOString(),
+          })
+
+          if (newEntry) {
+            createdEntries.push(newEntry)
+          }
+        }
+
+        if (createdEntries.length === 0) {
+          throw new Error('No symptom entries were created')
+        }
+
+        setRecentEntries(prev => {
+          const existing = prev.filter(entry => !createdEntries.some(newEntry => newEntry.id === entry.id))
+          return [...createdEntries, ...existing].slice(0, 5)
         })
 
-        if (newEntry) {
-          createdEntries.push(newEntry)
-        }
+        // Clear input for next entry
+        setSymptomName('')
+        setSeverity('mild')
+        setDuration('')
+        setNotes('')
+
+        const successNames = createdEntries.map(entry => entry.symptom_name).join('、')
+        Alert.alert('成功', `已新增症狀記錄「${successNames}」`)
       }
-
-      if (createdEntries.length === 0) {
-        throw new Error('No symptom entries were created')
-      }
-
-      setRecentEntries(prev => {
-        const existing = prev.filter(entry => !createdEntries.some(newEntry => newEntry.id === entry.id))
-        return [...createdEntries, ...existing].slice(0, 5)
-      })
-
-      // Clear input for next entry
-      setSymptomName('')
-      setSeverity('mild')
-      setDuration('')
-      setNotes('')
-
-      const successNames = createdEntries.map(entry => entry.symptom_name).join('、')
-      Alert.alert('成功', `已新增症狀記錄「${successNames}」`)
     } catch (error) {
-      if (createdEntries.length > 0) {
-        const successfulNames = createdEntries.map(entry => entry.symptom_name).join('、')
-        const remainingNames = symptomNames.slice(createdEntries.length).join('、')
-
-        if (remainingNames) {
-          setSymptomName(remainingNames)
-        }
-
-        if (remainingNames) {
-          Alert.alert(
-            '提醒',
-            `已成功新增：「${successfulNames}」，但仍有以下症狀未完成：「${remainingNames}」，請稍後再試。`
-          )
-        } else {
-          Alert.alert(
-            '提醒',
-            `已成功新增：「${successfulNames}」，但後續處理發生錯誤，請稍後再試。`
-          )
-        }
-      } else {
-        Alert.alert('錯誤', `新增失敗：${formatErrorMessage(error)}`)
-      }
+      Alert.alert('錯誤', error instanceof Error ? error.message : isEditMode ? '更新失敗' : '新增失敗')
     }
+  }
+
+  const handleDelete = async () => {
+    if (!isEditMode || !entryId) return
+
+    Alert.alert('確認刪除', `確定要刪除「${symptomName}」嗎？`, [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '刪除',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteEntry(entryId)
+            Alert.alert('成功', '已刪除記錄')
+            navigation.goBack()
+          } catch (error) {
+            Alert.alert('錯誤', error instanceof Error ? error.message : '刪除失敗')
+          }
+        },
+      },
+    ])
   }
 
   const handleCommonSymptomSelect = (name: string) => {
@@ -311,18 +341,39 @@ export function AddSymptomEntryScreen() {
           </View>
         )}
 
-        {/* Submit Button */}
-        <Button
-          mode="contained"
-          onPress={handleSubmit}
-          loading={isCreating}
-          disabled={isCreating || selectedSymptomNames.length === 0}
-          style={styles.submitButton}
-          buttonColor={colors.primary[500]}
-          textColor={colors.text.inverse}
-        >
-          儲存
-        </Button>
+        {/* Submit and Delete Buttons */}
+        <View style={styles.floatingButtonContainer}>
+          {isEditMode && (
+            <Button
+              mode="outlined"
+              onPress={handleDelete}
+              loading={isDeleting}
+              disabled={isDeleting || isUpdating}
+              style={[styles.floatingButton, styles.deleteButton]}
+              labelStyle={styles.deleteButtonLabel}
+              icon="delete"
+            >
+              刪除記錄
+            </Button>
+          )}
+          <Button
+            mode="contained"
+            onPress={handleSubmit}
+            loading={isEditMode ? isUpdating : isCreating}
+            disabled={
+              (isEditMode ? isUpdating : isCreating) ||
+              isDeleting ||
+              selectedSymptomNames.length === 0
+            }
+            style={styles.floatingButton}
+            labelStyle={styles.floatingButtonLabel}
+            buttonColor={colors.primary[500]}
+            textColor={colors.text.inverse}
+            icon="check"
+          >
+            {isEditMode ? '更新記錄' : '儲存記錄'}
+          </Button>
+        </View>
       </View>
     </ScrollView>
   )
@@ -434,9 +485,27 @@ const styles = StyleSheet.create({
   segmentedButtons: {
     backgroundColor: colors.surface,
   },
-  submitButton: {
+  floatingButtonContainer: {
     marginTop: spacing.lg,
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  floatingButton: {
+    borderRadius: 12,
     paddingVertical: spacing.xs,
+    flex: 1,
+  },
+  floatingButtonLabel: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  deleteButton: {
+    backgroundColor: 'transparent',
+    borderColor: colors.error,
+    borderWidth: 2,
+  },
+  deleteButtonLabel: {
+    color: colors.error,
   },
   optionalFieldsToggle: {
     flexDirection: 'row',
