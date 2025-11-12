@@ -2,8 +2,13 @@ import Anthropic from '@anthropic-ai/sdk'
 import { recordAIUsage } from '@/lib/ai/usage-tracker'
 import { SupabaseFoodEntriesService } from '@/lib/supabase/food-entries'
 import { DailySymptomService } from '@/lib/supabase/daily-symptom-service'
+import {
+  DEFAULT_FOOD_ANALYSIS_MAX_AGE_DAYS,
+  DEFAULT_FOOD_ANALYSIS_VERSION,
+  FoodAnalysisCacheService
+} from '@/lib/supabase/food-analysis-cache'
 import { createAdminClient } from '@/lib/supabase/server'
-import type { FoodEntry } from '@/types/supabase'
+import type { FoodAnalysisCache, FoodEntry } from '@/types/supabase'
 import type { DailySymptomEntry, CoreSymptomScores } from '@/types/medical'
 
 // 更新版本時務必同步調整行動端顯示與報告標註
@@ -45,7 +50,11 @@ interface DailyFoodLog {
   date: string
   meals: Array<{
     meal: string
-    foods: string[]
+    foods: Array<{
+      id?: string | null
+      name: string
+      category?: string | null
+    }>
   }>
   symptomSummary?: {
     severity: number | null
@@ -73,6 +82,20 @@ interface NextStepPlan {
   maintain: string[]
   monitor: string[]
   experiments: string[]
+}
+
+interface FoodKnowledgeSummary {
+  food_id: string
+  food_name: string
+  food_category?: string | null
+  analysis_version: string
+  analysis_source: string
+  analysis_updated_at: string
+  nutrition_profile: Record<string, unknown>
+  risk_profile: Record<string, unknown>
+  supportive_attributes: unknown[]
+  serving_guidelines: unknown[]
+  analysis_notes?: string | null
 }
 
 interface WeeklyAnalysisPayload {
@@ -123,6 +146,7 @@ interface WeeklyAnalysisPayload {
     missingSymptomDates: string[]
   }
   dailyBreakdown: DailyFoodLog[]
+  foodKnowledgeBase: Record<string, FoodKnowledgeSummary>
 }
 
 export interface WeeklyAnalysisOptions {
@@ -143,9 +167,11 @@ interface ClaudeUsageContext {
 export interface WeeklyIBDAnalysisResult {
   success: boolean
   method: 'claude_api' | 'fallback' | 'insufficient_data'
+  analysis_mode?: AnalysisStrategy
   prompt_used: string
   timeframe: Timeframe
   analysis_version: string
+  token_strategy?: TokenStrategyMeta
   totals: {
     food_entries: number
     unique_foods: number
@@ -198,6 +224,24 @@ interface PromptRecommendation {
   prompt: string
 }
 
+type AnalysisStrategy = 'single_pass' | 'chunked'
+
+interface TokenStrategyMeta {
+  estimated_prompt_tokens: number
+  max_tokens: number
+  mode: AnalysisStrategy
+  chunk_size?: number
+  chunk_count?: number
+  warnings?: string[]
+}
+
+interface StrategyDecision {
+  mode: AnalysisStrategy
+  estimatedTokens: number
+  chunkSize?: number
+  reason: string
+}
+
 type RiskLevel = 'high' | 'moderate' | 'watch'
 
 interface ClaudeAnalysisResponse {
@@ -239,6 +283,116 @@ interface ClaudeAnalysisResponse {
 type MonitorItem = NonNullable<ClaudeAnalysisResponse['foods_to_monitor']>[number]
 type SupportiveFoodItem = NonNullable<ClaudeAnalysisResponse['supportive_foods']>[number]
 type SymptomTrendItem = NonNullable<ClaudeAnalysisResponse['symptom_trends']>[number]
+
+interface ChunkAnalysisResponseData {
+  chunk_id?: string
+  date_range?: {
+    start?: string
+    end?: string
+  }
+  daily_breakdown?: unknown
+  risk_candidates?: Array<{
+    food?: string
+    risk_level?: string
+    reasoning?: unknown
+    recommendations?: unknown
+    supporting_days?: unknown
+  }>
+  supportive_candidates?: Array<{
+    food?: string
+    benefits?: unknown
+    suggestions?: unknown
+    dates?: unknown
+  }>
+  symptom_highlights?: unknown
+  data_warnings?: unknown
+}
+
+interface ChunkSummaryResult {
+  chunkId: string
+  startDate: string
+  endDate: string
+  index: number
+  rawResponse?: string
+  dailyBreakdown: DailyFoodAssessment[]
+  riskCandidates: Array<{
+    food: string
+    risk_level: RiskLevel
+    reasoning: string[]
+    recommended_actions: string[]
+    supporting_days: string[]
+  }>
+  supportiveCandidates: Array<{
+    food: string
+    benefits: string[]
+    suggestions: string[]
+  }>
+  symptomHighlights: string[]
+  dataWarnings: string[]
+}
+
+interface ChunkAnalysisInput {
+  chunkId: string
+  index: number
+  totalChunks: number
+  days: DailyFoodLog[]
+  chunkStats: {
+    dayCount: number
+    mealCount: number
+    foodsLogged: number
+    symptomEntries: number
+  }
+  timeframe: Timeframe
+  relevantFoodImpacts: WeeklyAnalysisPayload['foodImpacts']
+  dataQuality: WeeklyAnalysisPayload['dataQuality']
+  lifestyleFactors: WeeklyAnalysisPayload['lifestyleFactors']
+  foodKnowledgeBase: Record<string, FoodKnowledgeSummary>
+}
+
+interface ChunkedSummaryDataset {
+  timeframe: Timeframe
+  trackingSummary: WeeklyAnalysisPayload['trackingSummary']
+  symptomOverview: WeeklyAnalysisPayload['symptomOverview']
+  lifestyleFactors: WeeklyAnalysisPayload['lifestyleFactors']
+  dataQuality: WeeklyAnalysisPayload['dataQuality']
+  aggregatedFoodImpacts: WeeklyAnalysisPayload['foodImpacts']
+  foodKnowledgeBase: WeeklyAnalysisPayload['foodKnowledgeBase']
+  chunk_meta: {
+    chunk_size: number
+    chunk_count: number
+    chunk_ranges: Array<{
+      chunk_id: string
+      start: string
+      end: string
+      day_count: number
+    }>
+  }
+  chunk_insights: Array<{
+    chunk_id: string
+    date_range: {
+      start: string
+      end: string
+    }
+    day_summaries: Array<{
+      date: string
+      summary?: string
+    }>
+    risk_candidates: ChunkSummaryResult['riskCandidates']
+    supportive_candidates: ChunkSummaryResult['supportiveCandidates']
+    symptom_highlights: string[]
+    data_warnings: string[]
+  }>
+  aggregated_risk_candidates: ChunkSummaryResult['riskCandidates']
+  aggregated_supportive_candidates: ChunkSummaryResult['supportiveCandidates']
+  aggregated_symptom_highlights: string[]
+}
+
+interface MergedChunkInsights {
+  foodsToMonitor: ChunkSummaryResult['riskCandidates']
+  supportiveFoods: ChunkSummaryResult['supportiveCandidates']
+  symptomHighlights: string[]
+  dataWarnings: string[]
+}
 
 const PROMPT_VARIANTS = {
   balanced: {
@@ -563,6 +717,48 @@ export type PromptVariantKey = keyof typeof PROMPT_VARIANTS
 
 const DEFAULT_PROMPT = PROMPT_VARIANTS.balanced.prompt
 
+const CHUNK_ANALYSIS_PROMPT = `你是一位專精 IBD 的臨床營養師。系統會以 1-2 天為單位提供簡化後的飲食與症狀紀錄，請輸出精簡 JSON。
+
+規則：
+1. 僅分析 chunk dataset 中提供的日期。
+2. 'daily_breakdown' 的結構需與主系統一致：date、day_summary、meals -> foods，且 suitability 只能是「有益 / 中性 / 觀察 / 避免」。
+3. 每餐最多挑選 3 個最具代表性的食物（高風險或穩定者），reasoning 需引用份量/症狀/時間資訊。
+4. 'risk_candidates' 與 'supportive_candidates' 為本 chunk 中值得關注的食物，提供 1-2 句證據與日期。
+5. 'symptom_highlights' 用於描述這些日期最重要的症狀觀察。
+6. 若缺少症狀或資料品質不佳，請在 'data_warnings' 清楚說明。
+7. 'food_knowledge_base' 為可用的既有風險/營養資訊，請在合理時引用（若無對應條目可忽略）。
+
+輸出固定 JSON：
+{
+  "chunk_id": "chunk-x",
+  "date_range": { "start": "YYYY-MM-DD", "end": "YYYY-MM-DD" },
+  "daily_breakdown": [...],
+  "risk_candidates": [
+    {
+      "food": "",
+      "risk_level": "high | moderate | watch",
+      "reasoning": [],
+      "recommended_actions": [],
+      "supporting_days": []
+    }
+  ],
+  "supportive_candidates": [
+    { "food": "", "benefits": [], "suggestions": [] }
+  ],
+  "symptom_highlights": [],
+  "data_warnings": []
+}
+
+請勿輸出多餘文字或註解。`
+
+const CHUNKED_SUMMARY_INSTRUCTIONS = `你正在使用「分段摘要模式」。
+- chunk_insights 已提供每個日期的摘要與候選食物，請綜合評估後輸出與單次模式相同的 JSON 結構。
+- daily_food_breakdown 由系統填充，你可以回傳空陣列 []。
+- summary、foods_to_monitor、supportive_foods、symptom_trends、next_steps 等欄位務必引用 chunk_insights 或 aggregated_* 中的日期/食物/症狀。
+- 若資料不足，請在 data_quality_notes 與 warning_signs 中附註。
+- foodKnowledgeBase 提供既有風險/營養資訊，可作為加權參考（請在引用時標註 food_id 或食物名稱）。
+- 請保持繁體中文並給出臨床等級建議。`
+
 function formatDateInput(date: Date): string {
   const year = date.getFullYear()
   const month = `${date.getMonth() + 1}`.padStart(2, '0')
@@ -687,6 +883,20 @@ function splitFoodName(foodName: string): string[] {
     .split(separatorPattern)
     .map(item => item.trim())
     .filter(item => item.length > 0)
+}
+
+function deduplicateFoodsByName(
+  foods: Array<{ id?: string | null; name: string; category?: string | null }>
+) {
+  const seen = new Set<string>()
+  return foods.filter((food) => {
+    const key = `${food.id ?? 'unknown'}::${food.name.trim()}`
+    if (seen.has(key)) {
+      return false
+    }
+    seen.add(key)
+    return true
+  })
 }
 
 function summarizeMealTypes(mealTypes: Record<string, number>): Record<string, number> {
@@ -866,6 +1076,7 @@ export class IBDWeeklyAnalysisAgent {
   private anthropic: Anthropic | null
   private readonly config: ClaudeConfig
   private readonly foodEntryService: SupabaseFoodEntriesService
+  private readonly foodAnalysisService: FoodAnalysisCacheService
   private readonly adminClient: ReturnType<typeof createAdminClient>
 
   constructor(config?: Partial<ClaudeConfig>) {
@@ -884,6 +1095,7 @@ export class IBDWeeklyAnalysisAgent {
     this.anthropic = apiKey ? new Anthropic({ apiKey }) : null
     this.adminClient = createAdminClient()
     this.foodEntryService = new SupabaseFoodEntriesService(this.adminClient)
+    this.foodAnalysisService = new FoodAnalysisCacheService(this.adminClient)
   }
 
   static getPromptTemplates(): Array<PromptRecommendation> {
@@ -910,11 +1122,50 @@ export class IBDWeeklyAnalysisAgent {
 
     console.log('📥 Fetching dataset from database...')
     const dataset = await this.fetchDataset(userId, timeframe)
+    const uniqueFoodIds = this.extractFoodIds(dataset.foodEntries)
+    const foodNameMap = this.buildFoodNameMap(dataset.foodEntries)
+
+    console.log('📚 Resolving food knowledge base (cache lookup)...')
+    const foodKnowledgeLookup = await this.foodAnalysisService.fetchAnalyses(uniqueFoodIds, {
+      targetVersion: DEFAULT_FOOD_ANALYSIS_VERSION,
+      maxAgeDays: DEFAULT_FOOD_ANALYSIS_MAX_AGE_DAYS
+    })
+
+    if (foodKnowledgeLookup.missing.length > 0) {
+      console.warn('[FoodKnowledge] Missing analyses for foods:', foodKnowledgeLookup.missing.length)
+    }
+
+    if (foodKnowledgeLookup.stale.length > 0) {
+      console.warn('[FoodKnowledge] Stale analyses detected:', foodKnowledgeLookup.stale.length)
+    }
+
+    if (foodKnowledgeLookup.fresh.length > 0) {
+      try {
+        await this.foodAnalysisService.incrementUsage(
+          foodKnowledgeLookup.fresh.map((record) => record.food_id)
+        )
+      } catch (error) {
+        console.warn('[FoodKnowledge] Unable to increment usage count:', error)
+      }
+    }
+
+    const foodKnowledgeBase = this.buildFoodKnowledgeMap(foodKnowledgeLookup.fresh, foodNameMap)
 
     console.log('🔨 Building analysis payload...')
-    const payload = this.buildAnalysisPayload(dataset, timeframe)
+    const payload = this.buildAnalysisPayload(dataset, timeframe, foodKnowledgeBase)
     const promptTemplate = this.resolvePrompt(options)
-    const fullPrompt = this.composePrompt(promptTemplate, payload.payload)
+    const strategyDecision = this.selectAnalysisStrategy({
+      payload: payload.payload,
+      promptTemplate,
+      maxTokens: this.config.maxTokens
+    })
+    console.log('🧮 Token strategy decision:', {
+      mode: strategyDecision.mode,
+      estimatedTokens: strategyDecision.estimatedTokens,
+      maxTokens: this.config.maxTokens,
+      chunkSize: strategyDecision.chunkSize ?? null,
+      reason: strategyDecision.reason
+    })
     console.log('📊 Payload summary:', {
       hasMinimalData: payload.hasMinimalData,
       foodEntries: payload.payload.trackingSummary.totalFoodEntries,
@@ -926,9 +1177,16 @@ export class IBDWeeklyAnalysisAgent {
     const baseResult: WeeklyIBDAnalysisResult = {
       success: true,
       method: 'fallback',
-      prompt_used: fullPrompt,
+      prompt_used: '',
       timeframe,
       analysis_version: WEEKLY_ANALYSIS_VERSION,
+      analysis_mode: strategyDecision.mode,
+      token_strategy: {
+        estimated_prompt_tokens: strategyDecision.estimatedTokens,
+        max_tokens: this.config.maxTokens,
+        mode: strategyDecision.mode,
+        chunk_size: strategyDecision.chunkSize
+      },
       totals: {
         food_entries: payload.payload.trackingSummary.totalFoodEntries,
         unique_foods: payload.payload.trackingSummary.uniqueFoods,
@@ -953,6 +1211,23 @@ export class IBDWeeklyAnalysisAgent {
       console.log('========== IBD Weekly Analysis Agent: analyze() END ==========\n')
       return insufficient
     }
+
+    if (strategyDecision.mode === 'chunked') {
+      console.log('🚧 Entering chunked analysis workflow...')
+      const chunked = await this.runChunkedAnalysis({
+        payload,
+        baseResult,
+        promptTemplate,
+        options,
+        userId,
+        strategyDecision
+      })
+      console.log('========== IBD Weekly Analysis Agent: analyze() END ==========\n')
+      return chunked
+    }
+
+    const fullPrompt = this.composePrompt(promptTemplate, payload.payload)
+    baseResult.prompt_used = fullPrompt
 
     if (!this.anthropic || !this.config.apiKey) {
       console.warn('⚠️ Claude API not configured, using fallback analysis')
@@ -984,7 +1259,12 @@ export class IBDWeeklyAnalysisAgent {
       console.log('  - Response length:', raw.length, 'characters')
 
       console.log('🔍 Parsing Claude response...')
-      const parsed = this.parseClaudeResponse(raw, baseResult, payload.payload.dataQuality.warnings)
+      const parsed = this.parseClaudeResponse(
+        raw,
+        baseResult,
+        payload.payload.dataQuality.warnings,
+        undefined
+      )
       parsed.raw_ai_response = raw
       parsed.method = 'claude_api'
       console.log('✅ Analysis complete via Claude API')
@@ -1124,7 +1404,8 @@ export class IBDWeeklyAnalysisAgent {
 
   private buildAnalysisPayload(
     dataset: { foodEntries: FoodEntry[]; symptomEntries: DailySymptomEntry[] },
-    timeframe: Timeframe
+    timeframe: Timeframe,
+    foodKnowledgeBase: Record<string, FoodKnowledgeSummary>
   ): {
     payload: WeeklyAnalysisPayload
     hasMinimalData: boolean
@@ -1137,7 +1418,10 @@ export class IBDWeeklyAnalysisAgent {
       symptomByDate.set(entry.recorded_date, entry)
     })
 
-    const foodsByDate = new Map<string, Array<{ name: string; mealType: string | null }>>()
+    const foodsByDate = new Map<
+      string,
+      Array<{ name: string; mealType: string | null; foodId?: string | null; category?: string | null }>
+    >()
     const foodImpactsMap = new Map<string, AggregatedFoodImpact>()
     const uniqueFoodNames = new Set<string>()
 
@@ -1158,7 +1442,12 @@ export class IBDWeeklyAnalysisAgent {
 
       foodsToProcess.forEach((foodName) => {
         const dayFoods = foodsByDate.get(date) ?? []
-        dayFoods.push({ name: foodName, mealType: entry.meal_type })
+        dayFoods.push({
+          name: foodName,
+          mealType: entry.meal_type,
+          foodId: entry.food_id,
+          category: entry.food_category
+        })
         foodsByDate.set(date, dayFoods)
 
         uniqueFoodNames.add(foodName)
@@ -1327,12 +1616,16 @@ export class IBDWeeklyAnalysisAgent {
     const dailyBreakdown: DailyFoodLog[] = Array.from(allDates)
       .sort()
       .map((date) => {
-        const mealsMap = new Map<string, string[]>()
+        const mealsMap = new Map<string, Array<{ id?: string | null; name: string; category?: string | null }>>()
         const foods = foodsByDate.get(date) ?? []
         foods.forEach((item) => {
           const key = item.mealType && item.mealType.trim().length > 0 ? item.mealType : 'unspecified'
           const mealFoods = mealsMap.get(key) ?? []
-          mealFoods.push(item.name)
+          mealFoods.push({
+            id: item.foodId,
+            name: item.name,
+            category: item.category
+          })
           mealsMap.set(key, mealFoods)
         })
 
@@ -1346,7 +1639,7 @@ export class IBDWeeklyAnalysisAgent {
           date,
           meals: Array.from(mealsMap.entries()).map(([meal, mealFoods]) => ({
             meal,
-            foods: Array.from(new Set(mealFoods))
+            foods: deduplicateFoodsByName(mealFoods)
           })),
           symptomSummary: symptomEntry
             ? {
@@ -1384,7 +1677,8 @@ export class IBDWeeklyAnalysisAgent {
         warnings: dataQualityWarnings,
         missingSymptomDates: daysWithFoodOnly.slice(0, 10)
       },
-      dailyBreakdown
+      dailyBreakdown,
+      foodKnowledgeBase
     }
 
     const highRiskFoods = sortedFoodImpacts
@@ -1431,6 +1725,236 @@ export class IBDWeeklyAnalysisAgent {
     }
   }
 
+  private extractFoodIds(entries: FoodEntry[]): string[] {
+    const ids = new Set<string>()
+    entries.forEach((entry) => {
+      if (entry.food_id) {
+        ids.add(entry.food_id)
+      }
+    })
+    return Array.from(ids)
+  }
+
+  private buildFoodNameMap(
+    entries: FoodEntry[]
+  ): Record<string, { name: string; category?: string | null }> {
+    const map: Record<string, { name: string; category?: string | null }> = {}
+    entries.forEach((entry) => {
+      if (entry.food_id && entry.food_name) {
+        if (!map[entry.food_id]) {
+          map[entry.food_id] = {
+            name: entry.food_name,
+            category: entry.food_category
+          }
+        }
+      }
+    })
+    return map
+  }
+
+  private buildFoodKnowledgeMap(
+    records: FoodAnalysisCache[],
+    foodNameMap: Record<string, { name: string; category?: string | null }>
+  ): Record<string, FoodKnowledgeSummary> {
+    const result: Record<string, FoodKnowledgeSummary> = {}
+    records.forEach((record) => {
+      const meta = foodNameMap[record.food_id]
+      const nutritionProfile = isPlainRecord(record.nutrition_profile)
+        ? (record.nutrition_profile as Record<string, unknown>)
+        : {}
+      const riskProfile = isPlainRecord(record.risk_profile)
+        ? (record.risk_profile as Record<string, unknown>)
+        : {}
+      result[record.food_id] = {
+        food_id: record.food_id,
+        food_name: meta?.name ?? '未知食物',
+        food_category: meta?.category ?? null,
+        analysis_version: record.analysis_version,
+        analysis_source: record.analysis_source,
+        analysis_updated_at: record.analysis_updated_at,
+        nutrition_profile: nutritionProfile,
+        risk_profile: riskProfile,
+        supportive_attributes: Array.isArray(record.supportive_attributes)
+          ? record.supportive_attributes
+          : [],
+        serving_guidelines: Array.isArray(record.serving_guidelines)
+          ? record.serving_guidelines
+          : [],
+        analysis_notes: record.analysis_notes ?? null
+      }
+    })
+    return result
+  }
+
+  private selectAnalysisStrategy(params: {
+    payload: WeeklyAnalysisPayload
+    promptTemplate: string
+    maxTokens: number
+  }): StrategyDecision {
+    const payloadLength = JSON.stringify(params.payload).length
+    const estimatedTokens = Math.ceil(
+      (payloadLength + params.promptTemplate.length) / 4
+    )
+    const safeMaxTokens = Math.max(params.maxTokens, 1)
+    const ratio = estimatedTokens / safeMaxTokens
+    const dayCount = params.payload.dailyBreakdown.length
+
+    if (ratio >= 0.9) {
+      return {
+        mode: 'chunked',
+        estimatedTokens,
+        chunkSize: 1,
+        reason: 'estimated_tokens_exceed_90_percent'
+      }
+    }
+
+    if (ratio >= 0.7 || dayCount > 6) {
+      return {
+        mode: 'chunked',
+        estimatedTokens,
+        chunkSize: dayCount >= 6 ? 2 : 1,
+        reason: 'estimated_tokens_exceed_70_percent_or_long_week'
+      }
+    }
+
+    return {
+      mode: 'single_pass',
+      estimatedTokens,
+      reason: 'within_safe_token_budget'
+    }
+  }
+
+  private async runChunkedAnalysis(params: {
+    payload: {
+      payload: WeeklyAnalysisPayload
+      hasMinimalData: boolean
+      highRiskFoods: Array<{ food: string; severity: number; dates: string[] }>
+      protectiveFoods: Array<{ food: string; severity: number; occurrences: number }>
+    }
+    baseResult: WeeklyIBDAnalysisResult
+    promptTemplate: string
+    options: WeeklyAnalysisOptions
+    userId: string
+    strategyDecision: StrategyDecision
+  }): Promise<WeeklyIBDAnalysisResult> {
+    if (!this.anthropic || !this.config.apiKey) {
+      console.warn('[chunked] Claude API 未設定，回退至 fallback 分析')
+      return this.buildFallbackAnalysis(params.payload, params.baseResult)
+    }
+
+    const chunkSize = Math.max(params.strategyDecision.chunkSize ?? 2, 1)
+    const dailyBreakdown = params.payload.payload.dailyBreakdown
+    const chunkGroups = this.partitionDailyBreakdown(dailyBreakdown, chunkSize)
+
+    if (chunkGroups.length === 0) {
+      console.warn('[chunked] 無 dailyBreakdown 資料，改用 fallback')
+      return this.buildFallbackAnalysis(params.payload, params.baseResult)
+    }
+
+    console.log(`[chunked] Total chunks: ${chunkGroups.length} (chunkSize=${chunkSize})`)
+
+    const chunkResults: ChunkSummaryResult[] = []
+
+    for (let i = 0; i < chunkGroups.length; i++) {
+      const chunkInput = this.buildChunkInput({
+        days: chunkGroups[i],
+        index: i,
+        totalChunks: chunkGroups.length,
+        payload: params.payload.payload
+      })
+      const chunkPrompt = this.composeChunkPrompt(chunkInput)
+
+      try {
+        const raw = await this.callClaude(
+          chunkPrompt,
+          {
+            userId: params.userId,
+            feature: 'weekly_ibd_analysis_chunk',
+            metadata: {
+              chunkId: chunkInput.chunkId,
+              chunkIndex: i + 1,
+              chunkCount: chunkGroups.length,
+              chunkStats: chunkInput.chunkStats
+            }
+          },
+          params.options.useMockMode
+        )
+        const parsedChunk = this.parseChunkResponse(raw, chunkInput)
+        parsedChunk.rawResponse = raw
+        chunkResults.push(parsedChunk)
+      } catch (error) {
+        console.error(`[chunked] Chunk ${chunkInput.chunkId} failed, using fallback summary`, error)
+        chunkResults.push(this.buildDefaultChunkSummary(chunkInput, error))
+      }
+    }
+
+    const combinedDaily = chunkResults.flatMap((chunk) => chunk.dailyBreakdown)
+    if (combinedDaily.length === 0) {
+      console.warn('[chunked] 無法取得任何 chunk daily breakdown，回退 fallback')
+      return this.buildFallbackAnalysis(params.payload, params.baseResult)
+    }
+
+    const aggregated = this.mergeChunkInsights(chunkResults)
+    const summaryDataset = this.composeChunkedSummaryDataset({
+      payload: params.payload.payload,
+      chunkResults,
+      aggregated,
+      chunkSize
+    })
+    const summaryPrompt = this.composeChunkedSummaryPrompt(params.promptTemplate, summaryDataset)
+
+    params.baseResult.prompt_used = summaryPrompt
+    params.baseResult.analysis_mode = 'chunked'
+    params.baseResult.token_strategy = {
+      estimated_prompt_tokens:
+        params.baseResult.token_strategy?.estimated_prompt_tokens ??
+        params.strategyDecision.estimatedTokens,
+      max_tokens: this.config.maxTokens,
+      mode: 'chunked',
+      chunk_size: chunkSize,
+      chunk_count: chunkResults.length,
+      warnings: aggregated.dataWarnings
+    }
+
+    const combinedWarnings = Array.from(
+      new Set([
+        ...params.payload.payload.dataQuality.warnings,
+        ...aggregated.dataWarnings
+      ])
+    )
+
+    try {
+      const rawSummary = await this.callClaude(
+        summaryPrompt,
+        {
+          userId: params.userId,
+          feature: 'weekly_ibd_analysis_summary',
+          metadata: {
+            chunkCount: chunkResults.length,
+            chunkSize,
+            aggregatedRiskFoods: aggregated.foodsToMonitor.length
+          }
+        },
+        params.options.useMockMode
+      )
+      const parsed = this.parseClaudeResponse(
+        rawSummary,
+        params.baseResult,
+        combinedWarnings,
+        combinedDaily
+      )
+      parsed.raw_ai_response = rawSummary
+      parsed.analysis_mode = 'chunked'
+      parsed.token_strategy = params.baseResult.token_strategy
+      parsed.analysis.daily_food_breakdown = combinedDaily
+      parsed.analysis.data_quality_notes = combinedWarnings
+      return parsed
+    } catch (error) {
+      console.error('[chunked] Summary prompt failed, fallback analysis', error)
+      return this.buildFallbackAnalysis(params.payload, params.baseResult)
+    }
+  }
+
   private composePrompt(promptTemplate: string, payload: WeeklyAnalysisPayload): string {
     const dataset = JSON.stringify(payload, null, 2)
 
@@ -1453,6 +1977,11 @@ daily_food_breakdown 分析策略：
    - 如果當天飲食整體無問題，在 day_summary 中說明「當日飲食穩定，無明顯風險食物」
    - 不需要對每一種普通食物都詳細分析
 4. 這樣可以節省 token，同時確保每一天都有完整評估
+
+foodKnowledgeBase 說明：
+- 以 food_id 為 key，提供既有的營養/風險/建議摘要。
+- 若資料存在，請在 foods_to_monitor、supportive_foods 或 summary 中引用其風險標籤（例如：「根據快取：FODMAP 高 + 本週症狀」）。
+- 若沒有對應的 food_id，保持原本推論即可。
 
 回覆規範：
 1. 請以繁體中文回覆。
@@ -1549,6 +2078,351 @@ daily_food_breakdown 分析策略：
 \u0060\u0060\u0060json
 ${dataset}
 \u0060\u0060\u0060`
+  }
+
+  private partitionDailyBreakdown(days: DailyFoodLog[], chunkSize: number): DailyFoodLog[][] {
+    const size = Math.max(Math.floor(chunkSize), 1)
+    const chunks: DailyFoodLog[][] = []
+    for (let i = 0; i < days.length; i += size) {
+      chunks.push(days.slice(i, i + size))
+    }
+    return chunks
+  }
+
+  private buildChunkInput(params: {
+    days: DailyFoodLog[]
+    index: number
+    totalChunks: number
+    payload: WeeklyAnalysisPayload
+  }): ChunkAnalysisInput {
+    const chunkId = `chunk-${String(params.index + 1).padStart(2, '0')}`
+    let mealCount = 0
+    let foodsLogged = 0
+    let symptomEntries = 0
+    const foodNameSet = new Set<string>()
+    const foodIdSet = new Set<string>()
+
+    params.days.forEach((day) => {
+      mealCount += day.meals.length
+      day.meals.forEach((meal) => {
+        const foods = meal.foods || []
+        foodsLogged += foods.length
+        foods.forEach((food) => {
+          if (food?.name && food.name.trim().length > 0) {
+            foodNameSet.add(food.name.trim())
+          }
+          if (food?.id) {
+            foodIdSet.add(food.id)
+          }
+        })
+      })
+      if (day.symptomSummary && day.symptomSummary.severity !== null && day.symptomSummary.severity !== undefined) {
+        symptomEntries += 1
+      }
+    })
+
+    const relevantFoodImpacts = params.payload.foodImpacts
+      .filter((impact) => foodNameSet.has(impact.food))
+      .slice(0, 12)
+
+    const chunkKnowledgeBase = this.pickFoodKnowledgeBase(
+      params.payload.foodKnowledgeBase,
+      foodIdSet
+    )
+
+    return {
+      chunkId,
+      index: params.index,
+      totalChunks: params.totalChunks,
+      days: params.days,
+      chunkStats: {
+        dayCount: params.days.length,
+        mealCount,
+        foodsLogged,
+        symptomEntries
+      },
+      timeframe: params.payload.timeframe,
+      relevantFoodImpacts,
+      dataQuality: params.payload.dataQuality,
+      lifestyleFactors: params.payload.lifestyleFactors,
+      foodKnowledgeBase: chunkKnowledgeBase
+    }
+  }
+
+  private pickFoodKnowledgeBase(
+    base: Record<string, FoodKnowledgeSummary>,
+    ids: Set<string>
+  ): Record<string, FoodKnowledgeSummary> {
+    if (!ids.size) {
+      return {}
+    }
+    const subset: Record<string, FoodKnowledgeSummary> = {}
+    ids.forEach((id) => {
+      if (base[id]) {
+        subset[id] = base[id]
+      }
+    })
+    return subset
+  }
+
+  private composeChunkPrompt(input: ChunkAnalysisInput): string {
+    const startDate = input.days[0]?.date ?? input.timeframe.startDate
+    const endDate = input.days[input.days.length - 1]?.date ?? input.timeframe.endDate
+    const dataset = {
+      chunk_id: input.chunkId,
+      chunk_index: input.index + 1,
+      total_chunks: input.totalChunks,
+      chunk_stats: input.chunkStats,
+      days: input.days,
+      relevant_food_impacts: input.relevantFoodImpacts,
+      data_quality: input.dataQuality,
+      lifestyle_factors: input.lifestyleFactors,
+      food_knowledge_base: input.foodKnowledgeBase
+    }
+
+    return `${CHUNK_ANALYSIS_PROMPT}
+
+Chunk ${input.index + 1}/${input.totalChunks}：${startDate} ~ ${endDate}
+
+\`\`\`json
+${JSON.stringify(dataset, null, 2)}
+\`\`\``
+  }
+
+  private parseChunkResponse(raw: string, chunkInput: ChunkAnalysisInput): ChunkSummaryResult {
+    try {
+      let cleanedRaw = raw.trim()
+      if (cleanedRaw.startsWith('```json')) {
+        cleanedRaw = cleanedRaw.replace(/^```json\s*/, '').replace(/```\s*$/, '')
+      } else if (cleanedRaw.startsWith('```')) {
+        cleanedRaw = cleanedRaw.replace(/^```\s*/, '').replace(/```\s*$/, '')
+      }
+
+      const parsed = JSON.parse(cleanedRaw) as ChunkAnalysisResponseData
+      const riskCandidates = Array.isArray(parsed.risk_candidates)
+        ? parsed.risk_candidates
+            .filter((item): item is NonNullable<ChunkAnalysisResponseData['risk_candidates']>[number] => isPlainRecord(item))
+            .map((item) => ({
+              food: typeof item.food === 'string' ? item.food : '',
+              risk_level: normalizeRiskLevel(item.risk_level),
+              reasoning: normalizeStringArray(item.reasoning),
+              recommended_actions: normalizeStringArray(item.recommendations),
+              supporting_days: normalizeStringArray(item.supporting_days)
+            }))
+            .filter((item) => item.food.trim().length > 0)
+        : []
+
+      const supportiveCandidates = Array.isArray(parsed.supportive_candidates)
+        ? parsed.supportive_candidates
+            .filter((item): item is NonNullable<ChunkAnalysisResponseData['supportive_candidates']>[number] => isPlainRecord(item))
+            .map((item) => ({
+              food: typeof item.food === 'string' ? item.food : '',
+              benefits: normalizeStringArray(item.benefits),
+              suggestions: normalizeStringArray(item.suggestions)
+            }))
+            .filter((item) => item.food.trim().length > 0)
+        : []
+
+      const symptomHighlights = normalizeStringArray(parsed.symptom_highlights)
+      const dataWarnings = normalizeStringArray(parsed.data_warnings)
+      let dailyBreakdown = normalizeDailyFoodBreakdown(parsed.daily_breakdown)
+
+      if (dailyBreakdown.length === 0) {
+        const fallbackDaily = this.buildDefaultChunkSummary(chunkInput).dailyBreakdown
+        dailyBreakdown = fallbackDaily
+        dataWarnings.push('chunk_response_missing_daily_breakdown')
+      }
+
+      return {
+        chunkId: typeof parsed.chunk_id === 'string' && parsed.chunk_id.trim().length > 0
+          ? parsed.chunk_id
+          : chunkInput.chunkId,
+        startDate: parsed.date_range?.start || chunkInput.days[0]?.date || chunkInput.timeframe.startDate,
+        endDate:
+          parsed.date_range?.end ||
+          chunkInput.days[chunkInput.days.length - 1]?.date ||
+          chunkInput.timeframe.endDate,
+        index: chunkInput.index,
+        dailyBreakdown,
+        riskCandidates,
+        supportiveCandidates,
+        symptomHighlights,
+        dataWarnings
+      }
+    } catch (error) {
+      console.error('[chunked] Failed to parse chunk JSON, using default summary', error)
+      return this.buildDefaultChunkSummary(chunkInput, error)
+    }
+  }
+
+  private buildDefaultChunkSummary(chunkInput: ChunkAnalysisInput, error?: unknown): ChunkSummaryResult {
+    const startDate = chunkInput.days[0]?.date || chunkInput.timeframe.startDate
+    const endDate = chunkInput.days[chunkInput.days.length - 1]?.date || chunkInput.timeframe.endDate
+    const warningMessages = ['AI chunk 摘要失敗，已使用預設文案。']
+    if (error instanceof Error) {
+      warningMessages.push(`reason: ${error.message.substring(0, 120)}`)
+    }
+
+    const fallbackDaily: DailyFoodAssessment[] = chunkInput.days.map((day) => ({
+      date: day.date,
+      day_summary:
+        day.symptomSummary?.notes ||
+        (day.symptomSummary
+          ? `症狀嚴重度 ${day.symptomSummary.severity ?? '無紀錄'}`
+          : '僅有飲食紀錄，缺少症狀資料。'),
+      meals: day.meals.map((meal) => {
+        const sampleFoods = Array.isArray(meal.foods) ? meal.foods.slice(0, 3) : []
+        return {
+          meal: meal.meal,
+          foods: sampleFoods.map((food) => {
+            const foodName =
+              typeof food === 'string' ? food : food?.name ?? '未提供食物名稱'
+            return {
+              name: foodName,
+              suitability: '觀察' as FoodSuitabilityLevel,
+              reasoning: ['AI 摘要失敗，自動填寫占位訊息。'],
+              symptom_links: [],
+              notes: []
+            }
+          })
+        }
+      })
+    }))
+
+    return {
+      chunkId: chunkInput.chunkId,
+      startDate,
+      endDate,
+      index: chunkInput.index,
+      dailyBreakdown: fallbackDaily,
+      riskCandidates: [],
+      supportiveCandidates: [],
+      symptomHighlights: ['AI chunk 摘要失敗，請留意資料品質。'],
+      dataWarnings: warningMessages
+    }
+  }
+
+  private mergeChunkInsights(chunks: ChunkSummaryResult[]): MergedChunkInsights {
+    const riskPriority: Record<RiskLevel, number> = {
+      high: 3,
+      moderate: 2,
+      watch: 1
+    }
+    const monitorMap = new Map<string, ChunkSummaryResult['riskCandidates'][number]>()
+    const supportiveMap = new Map<string, ChunkSummaryResult['supportiveCandidates'][number]>()
+    const symptomSet = new Set<string>()
+    const warningSet = new Set<string>()
+
+    chunks.forEach((chunk) => {
+      chunk.riskCandidates.forEach((candidate) => {
+        const key = candidate.food.toLowerCase()
+        const existing = monitorMap.get(key)
+        if (!existing || riskPriority[candidate.risk_level] > riskPriority[existing.risk_level]) {
+          monitorMap.set(key, {
+            ...candidate,
+            reasoning: Array.from(new Set(candidate.reasoning)),
+            recommended_actions: Array.from(new Set(candidate.recommended_actions)),
+            supporting_days: Array.from(new Set(candidate.supporting_days))
+          })
+        } else {
+          existing.reasoning = Array.from(new Set([...existing.reasoning, ...candidate.reasoning]))
+          existing.recommended_actions = Array.from(
+            new Set([...existing.recommended_actions, ...candidate.recommended_actions])
+          )
+          existing.supporting_days = Array.from(
+            new Set([...existing.supporting_days, ...candidate.supporting_days])
+          )
+        }
+      })
+
+      chunk.supportiveCandidates.forEach((candidate) => {
+        const key = candidate.food.toLowerCase()
+        const existing = supportiveMap.get(key)
+        if (!existing) {
+          supportiveMap.set(key, {
+            ...candidate,
+            benefits: Array.from(new Set(candidate.benefits)),
+            suggestions: Array.from(new Set(candidate.suggestions))
+          })
+        } else {
+          existing.benefits = Array.from(new Set([...existing.benefits, ...candidate.benefits]))
+          existing.suggestions = Array.from(
+            new Set([...existing.suggestions, ...candidate.suggestions])
+          )
+        }
+      })
+
+      chunk.symptomHighlights.forEach((note) => symptomSet.add(note))
+      chunk.dataWarnings.forEach((note) => warningSet.add(note))
+    })
+
+    return {
+      foodsToMonitor: Array.from(monitorMap.values()),
+      supportiveFoods: Array.from(supportiveMap.values()),
+      symptomHighlights: Array.from(symptomSet),
+      dataWarnings: Array.from(warningSet)
+    }
+  }
+
+  private composeChunkedSummaryDataset(params: {
+    payload: WeeklyAnalysisPayload
+    chunkResults: ChunkSummaryResult[]
+    aggregated: MergedChunkInsights
+    chunkSize: number
+  }): ChunkedSummaryDataset {
+    const chunkRanges = params.chunkResults.map((chunk) => ({
+      chunk_id: chunk.chunkId,
+      start: chunk.startDate,
+      end: chunk.endDate,
+      day_count: chunk.dailyBreakdown.length
+    }))
+
+    const chunkInsights = params.chunkResults.map((chunk) => ({
+      chunk_id: chunk.chunkId,
+      date_range: {
+        start: chunk.startDate,
+        end: chunk.endDate
+      },
+      day_summaries: chunk.dailyBreakdown.map((day) => ({
+        date: day.date,
+        summary: day.day_summary
+      })),
+      risk_candidates: chunk.riskCandidates,
+      supportive_candidates: chunk.supportiveCandidates,
+      symptom_highlights: chunk.symptomHighlights,
+      data_warnings: chunk.dataWarnings
+    }))
+
+    return {
+      timeframe: params.payload.timeframe,
+      trackingSummary: params.payload.trackingSummary,
+      symptomOverview: params.payload.symptomOverview,
+      lifestyleFactors: params.payload.lifestyleFactors,
+      dataQuality: params.payload.dataQuality,
+      aggregatedFoodImpacts: params.payload.foodImpacts.slice(0, 20),
+      foodKnowledgeBase: params.payload.foodKnowledgeBase,
+      chunk_meta: {
+        chunk_size: params.chunkSize,
+        chunk_count: params.chunkResults.length,
+        chunk_ranges: chunkRanges
+      },
+      chunk_insights: chunkInsights,
+      aggregated_risk_candidates: params.aggregated.foodsToMonitor,
+      aggregated_supportive_candidates: params.aggregated.supportiveFoods,
+      aggregated_symptom_highlights: params.aggregated.symptomHighlights
+    }
+  }
+
+  private composeChunkedSummaryPrompt(promptTemplate: string, dataset: ChunkedSummaryDataset): string {
+    const serialized = JSON.stringify(dataset, null, 2)
+    return `${promptTemplate}
+
+${CHUNKED_SUMMARY_INSTRUCTIONS}
+
+chunk_mode_dataset:
+\`\`\`json
+${serialized}
+\`\`\``
   }
 
   private resolvePrompt(options: WeeklyAnalysisOptions): string {
@@ -1741,7 +2615,8 @@ ${dataset}
   private parseClaudeResponse(
     raw: string,
     baseResult: WeeklyIBDAnalysisResult,
-    dataQualityWarnings: string[]
+    dataQualityWarnings: string[],
+    dailyOverride?: DailyFoodAssessment[]
   ): WeeklyIBDAnalysisResult {
     // Debug log for raw Claude response
     console.log('[parseClaudeResponse] 🤖 Claude API raw response:')
@@ -1808,7 +2683,10 @@ ${dataset}
       const followUpActions = normalizeStringArray(parsed.follow_up_actions)
       const reasoningTrace = normalizeStringArray(parsed.reasoning_trace)
       const evidenceNotes = normalizeStringArray(parsed.evidence_notes)
-      const dailyFoodBreakdown = normalizeDailyFoodBreakdown(parsed.daily_food_breakdown)
+      const dailyFoodBreakdown =
+        dailyOverride && dailyOverride.length > 0
+          ? dailyOverride
+          : normalizeDailyFoodBreakdown(parsed.daily_food_breakdown)
       const nextSteps = normalizeNextSteps(parsed.next_steps)
 
       const result: WeeklyIBDAnalysisResult = {
@@ -2043,7 +2921,12 @@ ${dataset}
         .map((meal) => {
           const mealName = meal.meal || 'unspecified'
           const uniqueFoods = Array.from(
-            new Set((meal.foods || []).map((foodName) => foodName.trim()).filter((name) => name.length > 0))
+            new Set(
+              (meal.foods || [])
+                .map((food) => (typeof food === 'string' ? food : food?.name || ''))
+                .map((name) => name.trim())
+                .filter((name) => name.length > 0)
+            )
           )
 
           const foods = uniqueFoods.map((foodName) => {

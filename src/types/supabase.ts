@@ -263,6 +263,62 @@ export type Database = {
           updated_at?: string
         }
       }
+      food_analysis_cache: {
+        Row: {
+          id: string
+          food_id: string
+          analysis_version: string
+          analysis_source: 'ai' | 'manual' | 'hybrid'
+          nutrition_profile: Json
+          risk_profile: Json
+          supportive_attributes: Json
+          serving_guidelines: Json
+          analysis_payload: Json
+          analysis_notes: string | null
+          analysis_tokens: Json
+          refresh_frequency_days: number
+          analysis_usage_count: number
+          analysis_updated_at: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          food_id: string
+          analysis_version: string
+          analysis_source?: 'ai' | 'manual' | 'hybrid'
+          nutrition_profile?: Json
+          risk_profile?: Json
+          supportive_attributes?: Json
+          serving_guidelines?: Json
+          analysis_payload?: Json
+          analysis_notes?: string | null
+          analysis_tokens?: Json
+          refresh_frequency_days?: number
+          analysis_usage_count?: number
+          analysis_updated_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          food_id?: string
+          analysis_version?: string
+          analysis_source?: 'ai' | 'manual' | 'hybrid'
+          nutrition_profile?: Json
+          risk_profile?: Json
+          supportive_attributes?: Json
+          serving_guidelines?: Json
+          analysis_payload?: Json
+          analysis_notes?: string | null
+          analysis_tokens?: Json
+          refresh_frequency_days?: number
+          analysis_usage_count?: number
+          analysis_updated_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
       food_entries: {
         Row: {
           id: string
@@ -451,7 +507,10 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      increment_food_analysis_usage: {
+        Args: { p_food_ids: string[] }
+        Returns: void
+      }
     }
     Enums: {
       [_ in never]: never
@@ -466,6 +525,7 @@ export type Database = {
 export type User = Database['public']['Tables']['diet_daily_users']['Row']
 export type Food = Database['public']['Tables']['diet_daily_foods']['Row']
 export type FoodEntry = Database['public']['Tables']['food_entries']['Row']
+export type FoodAnalysisCache = Database['public']['Tables']['food_analysis_cache']['Row']
 export type MedicalReport = Database['public']['Tables']['medical_reports']['Row']
 export type SymptomTracking = Database['public']['Tables']['symptom_tracking']['Row']
 export type AIUsageEvent = Database['public']['Tables']['ai_usage_events']['Row']
@@ -474,12 +534,14 @@ export type AIUsageAlertSettings = Database['public']['Tables']['ai_usage_alert_
 export type UserInsert = Database['public']['Tables']['diet_daily_users']['Insert']
 export type FoodInsert = Database['public']['Tables']['diet_daily_foods']['Insert']
 export type FoodEntryInsert = Database['public']['Tables']['food_entries']['Insert']
+export type FoodAnalysisCacheInsert = Database['public']['Tables']['food_analysis_cache']['Insert']
 export type MedicalReportInsert = Database['public']['Tables']['medical_reports']['Insert']
 export type SymptomTrackingInsert = Database['public']['Tables']['symptom_tracking']['Insert']
 
 export type UserUpdate = Database['public']['Tables']['diet_daily_users']['Update']
 export type FoodUpdate = Database['public']['Tables']['diet_daily_foods']['Update']
 export type FoodEntryUpdate = Database['public']['Tables']['food_entries']['Update']
+export type FoodAnalysisCacheUpdate = Database['public']['Tables']['food_analysis_cache']['Update']
 export type MedicalReportUpdate = Database['public']['Tables']['medical_reports']['Update']
 export type SymptomTrackingUpdate = Database['public']['Tables']['symptom_tracking']['Update']
 export type AIUsageEventInsert = Database['public']['Tables']['ai_usage_events']['Insert']
