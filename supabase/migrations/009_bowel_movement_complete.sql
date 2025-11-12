@@ -52,6 +52,26 @@ WHERE bowel_movement_count IS NOT NULL;
 
 COMMENT ON INDEX idx_daily_symptom_entries_bowel_movement_complete IS 'Comprehensive index for bowel movement tracking queries';
 
+-- Ensure unique constraint exists for (user_id, recorded_date)
+-- This is required for ON CONFLICT in the trigger function
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = 'daily_symptom_entries'::regclass
+        AND contype = 'u'
+        AND conkey = (
+            SELECT ARRAY_AGG(attnum ORDER BY attnum)
+            FROM pg_attribute
+            WHERE attrelid = 'daily_symptom_entries'::regclass
+            AND attname IN ('user_id', 'recorded_date')
+        )
+    ) THEN
+        ALTER TABLE daily_symptom_entries
+        ADD CONSTRAINT daily_symptom_entries_user_date_unique UNIQUE (user_id, recorded_date);
+    END IF;
+END $$;
+
 -- Add comments for existing columns
 COMMENT ON COLUMN daily_symptom_entries.bowel_movement_count IS '大便次數 - Number of bowel movements (0-50)';
 COMMENT ON COLUMN daily_symptom_entries.stool_type IS '大便形態 - Bristol Stool Scale (1=便秘/硬, 2=偏硬, 3=正常, 4=偏軟, 5=腹瀉/水狀)';
