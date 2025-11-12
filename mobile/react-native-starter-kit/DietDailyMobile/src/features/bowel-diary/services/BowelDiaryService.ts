@@ -1,4 +1,4 @@
-import { supabase } from '@/shared/lib/supabase'
+import { supabase } from '@/shared/api/supabase/client'
 import type {
   BowelMovementEntry,
   CreateBowelMovementInput,
@@ -9,7 +9,7 @@ export class BowelDiaryService {
   /**
    * Transform database record to app format
    */
-  private static transformFromDatabase(dbRecord: any): BowelMovementEntry {
+  private static transformFromDatabase(dbRecord: Record<string, any>): BowelMovementEntry {
     return {
       id: dbRecord.id,
       user_id: dbRecord.user_id,
@@ -37,7 +37,7 @@ export class BowelDiaryService {
       const startStr = startDate.toISOString().split('T')[0]
       const endStr = endDate.toISOString().split('T')[0]
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('bowel_movement_entries')
         .select('*')
         .eq('user_id', userId)
@@ -47,7 +47,7 @@ export class BowelDiaryService {
 
       if (error) throw error
 
-      const transformed = data ? data.map(entry => this.transformFromDatabase(entry)) : null
+      const transformed = data ? data.map((entry: Record<string, any>) => this.transformFromDatabase(entry)) : null
       return { data: transformed, error: null }
     } catch (error) {
       console.error('[BowelDiaryService] Error:', error)
@@ -67,7 +67,7 @@ export class BowelDiaryService {
     try {
       const dateStr = date.toISOString().split('T')[0]
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('bowel_movement_entries')
         .select('*')
         .eq('user_id', userId)
@@ -76,7 +76,7 @@ export class BowelDiaryService {
 
       if (error) throw error
 
-      const transformed = data ? data.map(entry => this.transformFromDatabase(entry)) : null
+      const transformed = data ? data.map((entry: Record<string, any>) => this.transformFromDatabase(entry)) : null
       return { data: transformed, error: null }
     } catch (error) {
       console.error('[BowelDiaryService] Error:', error)
@@ -111,7 +111,7 @@ export class BowelDiaryService {
         notes: input.notes,
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('bowel_movement_entries')
         .insert(payload)
         .select()
@@ -165,7 +165,7 @@ export class BowelDiaryService {
         payload.recorded_date = occurredAt.toISOString().split('T')[0]
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('bowel_movement_entries')
         .update(payload)
         .eq('id', entryId)
@@ -192,7 +192,7 @@ export class BowelDiaryService {
    */
   static async deleteBowelMovement(entryId: string) {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('bowel_movement_entries')
         .delete()
         .eq('id', entryId)

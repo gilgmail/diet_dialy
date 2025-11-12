@@ -61,7 +61,7 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
   }, [entries, date])
 
   // Fetch symptom entries for this date
-  const { data: symptomEntries = [], refetch: refetchSymptoms, isLoading, isFetching } = useQuery({
+  const { data: symptomEntries = [], refetch: refetchSymptoms, isLoading, isFetching } = useQuery<SymptomEntry[]>({
     queryKey: ['symptomEntriesForDate', user?.id, date],
     queryFn: async () => {
       if (!user?.id) {
@@ -81,7 +81,7 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
     },
     enabled: !!user?.id,
     staleTime: 0, // Always consider data stale
-    cacheTime: 0, // Don't cache results
+    gcTime: 0, // Don't cache results (renamed from cacheTime in React Query v5)
   })
 
   console.log('[FoodDayDetail] Current state:', {

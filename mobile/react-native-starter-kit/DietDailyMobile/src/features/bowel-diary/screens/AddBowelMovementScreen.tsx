@@ -40,7 +40,7 @@ export function AddBowelMovementScreen({ navigation, route }: AddBowelMovementSc
   // Load existing entry in edit mode
   useEffect(() => {
     if (isEditMode && entryId) {
-      const existingEntry = entries.find(e => e.id === entryId)
+      const existingEntry = entries.find((e: any) => e.id === entryId)
       if (existingEntry) {
         setStoolType(existingEntry.stool_type)
         setHasBlood(existingEntry.has_blood)
