@@ -70,3 +70,23 @@
 3. **人工覆寫機制**：營養師可在後台調整分析內容，並標註「manual_override = true」，避免自動刷新覆蓋人工判斷。
 4. **多資料來源融合**：若未來收集到跨使用者統計（眾包症狀回報），可將「觀察到的群體風險」與個人資料加權，提升建議可信度。
 5. **成本監控**：彙總 `analysis_tokens` 產生月度報表，適時調整刷新頻率、模型等級，確保成本與精準度取得平衡。
+
+## 測試方法與測試資料設計
+
+### 1. 單元測試
+- `FoodAnalysisCacheService`：以 Jest mock Supabase client，覆蓋 `fetchAnalyses()`（missing/stale/fresh）、`shouldRefreshFoodAnalysis()`（版本/時間邊界）、`incrementUsage()` RPC 失敗重試。
+- `IBDWeeklyAnalysisAgent`：mock Supabase 資料集與 `FoodAnalysisCacheService` 回傳值，驗證 `foodKnowledgeBase` 有正確注入 prompt、chunk dataset 也帶著相同子集。
+
+### 2. 整合測試（資料庫 / API）
+- 建立 `seed_food_analysis_cache.sql`：插入 2 筆新鮮、1 筆過期、1 筆缺失資料，模擬不同狀態。
+- 以 `npm run test:integration` 跑一個針對 `/api/ai/weekly-ibd-analysis` 的測試：mock Anthropic、指定 `FOOD_ANALYSIS_VERSION`，驗證回應包含 `analysis.token_strategy` 與 `foodKnowledgeBase` 的引用。
+
+### 3. 測試資料建議
+- 食物樣本：`奶茶`（高風險，高糖 + 乳糖）、`白飯`（supportive）、`泡菜`（中度風險，發酵 + 鹽分）。每筆附上 `nutrition_profile.*`、`risk_profile.triggers`、`serving_guidelines`。
+- 飲食紀錄：7 天 x 3 餐 JSON fixture，以 `tests/fixtures/weekly-food-logs.json` 儲存供 agent 測試。
+- 症狀紀錄：對應日期的 `DailySymptomEntry` fixture（含嚴重度、keySymptoms、related_food_entries）。
+
+### 4. 驗證步驟
+1. 匯入 seed SQL → 跑 `npm run test -- src/lib/ai/weekly-ibd-analysis.test.ts`。
+2. 檢查輸出 JSON：`analysis.reasoning_trace` 需引用 food cache 版本資訊；`foods_to_monitor` 引用 `risk_profile` 的描述。
+3. 由 CI 記錄快取命中率、缺漏與刷新計數，確保 pipeline 變更不會隱性破壞快取邏輯。
