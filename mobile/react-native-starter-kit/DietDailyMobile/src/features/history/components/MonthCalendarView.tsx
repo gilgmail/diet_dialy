@@ -22,8 +22,10 @@ import { zhTW } from 'date-fns/locale'
 import { useAuthStore } from '@/shared/stores/authStore'
 import { FoodDiaryService } from '@/features/food-diary/services/FoodDiaryService'
 import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
+import { BowelDiaryService } from '@/features/bowel-diary/services/BowelDiaryService'
 import type { FoodEntry } from '@/features/food-diary/types'
 import type { SymptomEntry } from '@/features/symptom-diary/types'
+import type { BowelMovementEntry } from '@/features/bowel-diary/types'
 import type { MainStackParamList } from '@/app/navigation/types'
 import { colors, typography, spacing } from '@/theme'
 
@@ -40,6 +42,7 @@ interface DayData {
   isToday: boolean
   foodCount: number
   symptomCount: number
+  bowelCount: number // Bowel movement count
   mealsRecorded: number // 0-3 (breakfast, lunch, dinner)
   hasSymptoms: boolean
   symptomEntries: SymptomEntry[]
@@ -110,6 +113,23 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
     enabled: !!user?.id,
   })
 
+  // Fetch bowel movement entries for current month
+  const { data: bowelEntries = [] } = useQuery({
+    queryKey: ['bowelEntries', user?.id, format(currentMonth, 'yyyy-MM')],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const startDate = startOfWeek(monthStart, { weekStartsOn: 0 })
+      const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 })
+      const result = await BowelDiaryService.getBowelMovementsByDateRange(
+        user.id,
+        startDate,
+        endDate
+      )
+      return result.data || []
+    },
+    enabled: !!user?.id,
+  })
+
   // Process data for each day
   const dayDataMap = useMemo(() => {
     const map = new Map<string, DayData>()
@@ -124,6 +144,7 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
         isToday: isSameDay(date, today),
         foodCount: 0,
         symptomCount: 0,
+        bowelCount: 0,
         mealsRecorded: 0,
         hasSymptoms: false,
         symptomEntries: [],
@@ -193,8 +214,17 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
       }
     })
 
+    // Count bowel movement entries
+    bowelEntries.forEach((entry: BowelMovementEntry) => {
+      const key = entry.recorded_date
+      const dayData = map.get(key)
+      if (dayData) {
+        dayData.bowelCount++
+      }
+    })
+
     return map
-  }, [calendarDays, currentMonth, foodEntries, symptomEntries])
+  }, [calendarDays, currentMonth, foodEntries, symptomEntries, bowelEntries])
 
   const renderDay = (date: Date) => {
     const dayData = dayDataMap.get(format(date, 'yyyy-MM-dd'))
@@ -268,6 +298,13 @@ export function MonthCalendarView({ selectedDate, onSelectDate, currentMonth }: 
             {dayData.symptomCount > 0 && (
               <Text style={styles.symptomText} numberOfLines={1}>
                 {dayData.symptomCount}症
+              </Text>
+            )}
+
+            {/* Bowel movement summary */}
+            {dayData.bowelCount > 0 && (
+              <Text style={styles.bowelText} numberOfLines={1}>
+                {dayData.bowelCount}便
               </Text>
             )}
           </View>
@@ -412,6 +449,10 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   symptomText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.primary,
+  },
+  bowelText: {
     fontSize: typography.fontSize.xs,
     color: colors.text.primary,
   },

@@ -21,7 +21,7 @@ import { useAuthStore } from '@/shared/stores/authStore'
 import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
 import { SEVERITY_LEVELS } from '@/features/symptom-diary/types'
 import type { SymptomEntry } from '@/features/symptom-diary/types'
-import { useBowelDiary } from '@/features/bowel-diary/hooks/useBowelDiary'
+import { BowelDiaryService } from '@/features/bowel-diary/services/BowelDiaryService'
 import { STOOL_TYPES, BLOOD_STATUS, DIFFICULTY_LEVELS } from '@/features/bowel-diary/types'
 import type { BowelMovementEntry } from '@/features/bowel-diary/types'
 
@@ -32,14 +32,39 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
   const { user } = useAuthStore()
   const { entries, deleteEntry, isDeleting } = useFoodDiary()
 
-  // Parse date for bowel diary hook
-  const dateObj = parseISO(`${date}T00:00:00`)
-  const {
-    entries: bowelEntries,
-    deleteEntry: deleteBowelEntry,
-    isDeleting: isDeletingBowel,
-    refetch: refetchBowelEntries
-  } = useBowelDiary(dateObj)
+  // Fetch bowel entries directly using date string to avoid timezone conversion issues
+  const { data: bowelEntries = [], refetch: refetchBowelEntries } = useQuery<BowelMovementEntry[]>({
+    queryKey: ['bowelEntriesForDate', user?.id, date],
+    queryFn: async () => {
+      if (!user?.id) {
+        console.log('[FoodDayDetail] No user ID for bowel entries')
+        return []
+      }
+      console.log('[FoodDayDetail] Fetching bowel entries for date string:', date, 'user:', user.id)
+      const result = await BowelDiaryService.getBowelMovementsByDateString(user.id, date)
+      console.log('[FoodDayDetail] Bowel query result:', {
+        date,
+        dataCount: result.data?.length || 0,
+        data: result.data,
+        error: result.error
+      })
+      return result.data || []
+    },
+    enabled: !!user?.id,
+    staleTime: 0,
+    gcTime: 0,
+  })
+
+  console.log('[FoodDayDetail] Bowel entries state:', {
+    date,
+    bowelEntriesCount: bowelEntries.length,
+    bowelEntries: bowelEntries.map(e => ({
+      id: e.id,
+      occurred_at: e.occurred_at,
+      recorded_date: e.recorded_date,
+      stool_type: e.stool_type,
+    }))
+  })
 
   console.log('[FoodDayDetail] Screen rendered with date:', date, 'user:', user?.id)
 
@@ -170,7 +195,7 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
         style: 'destructive',
         onPress: async () => {
           try {
-            await deleteBowelEntry(entry.id)
+            await BowelDiaryService.deleteBowelMovement(entry.id)
             refetchBowelEntries()
           } catch (error) {
             Alert.alert('錯誤', '刪除失敗')

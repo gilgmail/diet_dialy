@@ -169,6 +169,42 @@ export function AddBowelMovementScreen({ navigation, route }: AddBowelMovementSc
                   </Text>
                 </View>
               )}
+
+              {/* Today's Records List */}
+              <View style={styles.todayRecordsList}>
+                <Text style={styles.recordsListTitle}>今日記錄：</Text>
+                {entries
+                  .filter(entry => isSameDay(new Date(entry.occurred_at), new Date()))
+                  .sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime())
+                  .map((entry) => {
+                    const stoolInfo = STOOL_TYPES.find(t => t.value === entry.stool_type) || STOOL_TYPES[2]
+                    return (
+                      <TouchableOpacity
+                        key={entry.id}
+                        style={styles.recordItem}
+                        onPress={() => {
+                          navigation.replace('AddBowelMovement', { entryId: entry.id })
+                        }}
+                      >
+                        <Text style={styles.recordIcon}>{stoolInfo.icon}</Text>
+                        <View style={styles.recordDetails}>
+                          <Text style={styles.recordTime}>
+                            {format(new Date(entry.occurred_at), 'HH:mm')}
+                          </Text>
+                          <Text style={styles.recordType}>{stoolInfo.label}</Text>
+                        </View>
+                        {entry.has_blood && (
+                          <Text style={styles.recordWarning}>⚠️</Text>
+                        )}
+                        <IconButton
+                          icon="pencil"
+                          size={16}
+                          iconColor={colors.primary[500]}
+                        />
+                      </TouchableOpacity>
+                    )
+                  })}
+              </View>
             </View>
           )}
 
@@ -382,6 +418,48 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: '#D2691E',
+  },
+  todayRecordsList: {
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: '#E5D5C3',
+  },
+  recordsListTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+  },
+  recordItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: spacing.sm,
+    marginBottom: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  recordIcon: {
+    fontSize: 24,
+    marginRight: spacing.sm,
+  },
+  recordDetails: {
+    flex: 1,
+  },
+  recordTime: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  recordType: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+  },
+  recordWarning: {
+    fontSize: 16,
+    marginRight: spacing.xs,
   },
   todayBadge: {
     backgroundColor: colors.primary[100],

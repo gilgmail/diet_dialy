@@ -61,11 +61,14 @@ export class BowelDiaryService {
   }
 
   /**
-   * Get bowel movement entries for specific date
+   * Get bowel movement entries for specific date string (yyyy-MM-dd)
    */
-  static async getBowelMovementsByDate(userId: string, date: Date) {
+  static async getBowelMovementsByDateString(userId: string, dateStr: string) {
     try {
-      const dateStr = date.toISOString().split('T')[0]
+      console.log('[BowelDiaryService] getBowelMovementsByDateString:', {
+        userId,
+        dateStr,
+      })
 
       const { data, error } = await (supabase as any)
         .from('bowel_movement_entries')
@@ -73,6 +76,12 @@ export class BowelDiaryService {
         .eq('user_id', userId)
         .eq('recorded_date', dateStr)
         .order('occurred_at', { ascending: true })
+
+      console.log('[BowelDiaryService] Query result:', {
+        dataCount: data?.length || 0,
+        data,
+        error,
+      })
 
       if (error) throw error
 
@@ -87,6 +96,14 @@ export class BowelDiaryService {
         },
       }
     }
+  }
+
+  /**
+   * Get bowel movement entries for specific date
+   */
+  static async getBowelMovementsByDate(userId: string, date: Date) {
+    const dateStr = date.toISOString().split('T')[0]
+    return this.getBowelMovementsByDateString(userId, dateStr)
   }
 
   /**
