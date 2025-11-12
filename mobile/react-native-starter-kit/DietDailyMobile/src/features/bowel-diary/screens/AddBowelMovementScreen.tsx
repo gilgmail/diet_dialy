@@ -14,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native'
 import { format, isSameDay } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
 import { useBowelDiary } from '../hooks/useBowelDiary'
+import { useBowelDiarySummary } from '../hooks/useBowelDiarySummary'
 import { STOOL_TYPES, BLOOD_STATUS, DIFFICULTY_LEVELS } from '../types'
 import type { StoolType, DifficultyLevel } from '../types'
 import { colors, typography, spacing } from '@/theme'
@@ -36,6 +37,7 @@ export function AddBowelMovementScreen({ navigation, route }: AddBowelMovementSc
   const [notes, setNotes] = useState('')
 
   const { entries, createEntry, updateEntry, deleteEntry, isCreating, isUpdating, isDeleting } = useBowelDiary(selectedDate)
+  const { summary, refetch: refetchSummary } = useBowelDiarySummary(selectedDate)
 
   // Load existing entry in edit mode
   useEffect(() => {
@@ -151,6 +153,24 @@ export function AddBowelMovementScreen({ navigation, route }: AddBowelMovementSc
               </View>
             )}
           </View>
+
+          {/* Today's Summary - Only show in create mode and if it's today */}
+          {!isEditMode && isSameDay(selectedDate, new Date()) && summary.totalCount > 0 && (
+            <View style={styles.todaySummary}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>今日已記錄：</Text>
+                <Text style={styles.summaryValue}>{summary.totalCount} 次</Text>
+              </View>
+              {summary.lastTime && (
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>最後記錄：</Text>
+                  <Text style={styles.summaryValue}>
+                    {format(summary.lastTime, 'HH:mm')}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
 
           {/* Quick Selection (only in create mode) */}
           {!isEditMode && !showDetails && (
@@ -339,6 +359,29 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
+  },
+  todaySummary: {
+    backgroundColor: '#FFF9F0',
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    borderLeftWidth: 4,
+    borderLeftColor: '#D2691E',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  summaryLabel: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+  },
+  summaryValue: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: '#D2691E',
   },
   todayBadge: {
     backgroundColor: colors.primary[100],
