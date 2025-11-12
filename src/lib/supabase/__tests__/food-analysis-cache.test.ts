@@ -1,6 +1,9 @@
+import path from 'path'
+import { readFileSync } from 'fs'
 import {
   DEFAULT_FOOD_ANALYSIS_MAX_AGE_DAYS,
   DEFAULT_FOOD_ANALYSIS_VERSION,
+  FoodAnalysisCacheService,
   shouldRefreshFoodAnalysis
 } from '../food-analysis-cache'
 import type { FoodAnalysisCache } from '@/types/supabase'
@@ -48,5 +51,70 @@ describe('shouldRefreshFoodAnalysis', () => {
     oldDate.setDate(oldDate.getDate() - (DEFAULT_FOOD_ANALYSIS_MAX_AGE_DAYS + 5))
     const record = mockRecord({ analysis_updated_at: oldDate.toISOString() })
     expect(shouldRefreshFoodAnalysis(record)).toBe(true)
+  })
+})
+
+describe('FoodAnalysisCacheService', () => {
+  const fixturePath = path.resolve(process.cwd(), 'tests/fixtures/food-analysis-cache.json')
+  const fixtureRecords = JSON.parse(
+    readFileSync(fixturePath, 'utf-8')
+  ) as FoodAnalysisCache[]
+
+  function createMockClient(data: FoodAnalysisCache[]) {
+    const inFn = jest.fn().mockResolvedValue({ data, error: null })
+    const selectFn = jest.fn().mockReturnValue({ in: inFn })
+    const fromFn = jest.fn().mockReturnValue({ select: selectFn })
+    const rpcFn = jest.fn().mockResolvedValue({ data: null, error: null })
+    return {
+      from: fromFn,
+      rpc: rpcFn
+    } as any
+  }
+
+  it('classifies fresh, stale, and missing analyses', async () => {
+    const mockClient = createMockClient(fixtureRecords)
+    const service = new FoodAnalysisCacheService(mockClient)
+
+    const now = new Date('2025-11-10T00:00:00.000Z')
+    const result = await service.fetchAnalyses(
+      [
+        '11111111-1111-1111-1111-111111111111',
+        '22222222-2222-2222-2222-222222222222',
+        '99999999-9999-9999-9999-999999999999'
+      ],
+      {
+        targetVersion: DEFAULT_FOOD_ANALYSIS_VERSION,
+        maxAgeDays: DEFAULT_FOOD_ANALYSIS_MAX_AGE_DAYS,
+        now
+      }
+    )
+
+    expect(result.fresh).toHaveLength(1)
+    expect(result.fresh[0].food_id).toBe('11111111-1111-1111-1111-111111111111')
+    expect(result.stale.map((item) => item.food_id)).toEqual(
+      expect.arrayContaining([
+        '22222222-2222-2222-2222-222222222222',
+        '33333333-3333-3333-3333-333333333333'
+      ])
+    )
+    expect(result.missing).toEqual(['99999999-9999-9999-9999-999999999999'])
+  })
+
+  it('deduplicates IDs when incrementing usage', async () => {
+    const mockClient = createMockClient([])
+    const service = new FoodAnalysisCacheService(mockClient)
+
+    await service.incrementUsage([
+      '11111111-1111-1111-1111-111111111111',
+      '11111111-1111-1111-1111-111111111111',
+      '22222222-2222-2222-2222-222222222222'
+    ])
+
+    expect(mockClient.rpc).toHaveBeenCalledWith('increment_food_analysis_usage', {
+      p_food_ids: [
+        '11111111-1111-1111-1111-111111111111',
+        '22222222-2222-2222-2222-222222222222'
+      ]
+    })
   })
 })

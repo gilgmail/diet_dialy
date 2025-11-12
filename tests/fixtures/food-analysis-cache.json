@@ -1,0 +1,53 @@
+[
+  {
+    "id": "aaaa1111-aaaa-1111-aaaa-1111aaaa1111",
+    "food_id": "11111111-1111-1111-1111-111111111111",
+    "analysis_version": "2025.11.01",
+    "analysis_source": "ai",
+    "nutrition_profile": { "calories": 120, "carbs": 18, "lactose": true },
+    "risk_profile": { "triggers": ["乳糖", "高糖"], "severity": "high" },
+    "supportive_attributes": [],
+    "serving_guidelines": [{ "tip": "改用無乳糖奶或豆奶", "max_ml": 150 }],
+    "analysis_payload": { "summary": "高糖+乳糖，易誘發腹瀉" },
+    "analysis_tokens": { "input": 1200, "output": 450 },
+    "refresh_frequency_days": 90,
+    "analysis_usage_count": 5,
+    "analysis_updated_at": "2025-11-05T00:00:00.000Z",
+    "created_at": "2025-11-05T00:00:00.000Z",
+    "updated_at": "2025-11-05T00:00:00.000Z"
+  },
+  {
+    "id": "bbbb2222-bbbb-2222-bbbb-2222bbbb2222",
+    "food_id": "22222222-2222-2222-2222-222222222222",
+    "analysis_version": "2025.11.01",
+    "analysis_source": "ai",
+    "nutrition_profile": { "calories": 200, "carbs": 44, "fiber": 1 },
+    "risk_profile": { "triggers": [], "severity": "low" },
+    "supportive_attributes": [{ "benefit": "穩定碳水來源" }],
+    "serving_guidelines": [{ "tip": "搭配低脂蛋白質", "portion_g": 150 }],
+    "analysis_payload": { "summary": "低刺激主食，可視為 supportive" },
+    "analysis_tokens": { "input": 900, "output": 300 },
+    "refresh_frequency_days": 120,
+    "analysis_usage_count": 12,
+    "analysis_updated_at": "2025-07-01T00:00:00.000Z",
+    "created_at": "2025-07-01T00:00:00.000Z",
+    "updated_at": "2025-07-01T00:00:00.000Z"
+  },
+  {
+    "id": "cccc3333-cccc-3333-cccc-3333cccc3333",
+    "food_id": "33333333-3333-3333-3333-333333333333",
+    "analysis_version": "2024.08.01",
+    "analysis_source": "ai",
+    "nutrition_profile": { "calories": 40, "sodium": 900 },
+    "risk_profile": { "triggers": ["高鹽", "發酵辣椒"], "severity": "moderate" },
+    "supportive_attributes": [],
+    "serving_guidelines": [{ "tip": "每次 30g 以內", "frequency": "週 2 次" }],
+    "analysis_payload": { "summary": "高鹽+辣椒，建議觀察" },
+    "analysis_tokens": { "input": 1000, "output": 400 },
+    "refresh_frequency_days": 60,
+    "analysis_usage_count": 3,
+    "analysis_updated_at": "2024-10-01T00:00:00.000Z",
+    "created_at": "2024-10-01T00:00:00.000Z",
+    "updated_at": "2024-10-01T00:00:00.000Z"
+  }
+]
