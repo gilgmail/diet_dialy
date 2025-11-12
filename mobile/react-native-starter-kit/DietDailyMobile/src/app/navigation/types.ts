@@ -16,9 +16,15 @@ export type MainStackParamList = {
   MainTabs: undefined
   AddFoodEntry: {
     date?: string // Optional date for adding to specific date
+    entryId?: string // Optional entry ID for editing
   }
   AddSymptomEntry: {
     date?: string // Optional date for adding to specific date
+    entryId?: string // Optional entry ID for editing
+  }
+  AddBowelMovement: {
+    date?: string // Optional date for adding to specific date
+    entryId?: string // Optional entry ID for editing
   }
   FoodDayDetail: {
     date: string

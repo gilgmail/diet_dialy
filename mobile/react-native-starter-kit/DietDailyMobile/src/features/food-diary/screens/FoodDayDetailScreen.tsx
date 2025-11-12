@@ -21,6 +21,9 @@ import { useAuthStore } from '@/shared/stores/authStore'
 import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
 import { SEVERITY_LEVELS } from '@/features/symptom-diary/types'
 import type { SymptomEntry } from '@/features/symptom-diary/types'
+import { useBowelDiary } from '@/features/bowel-diary/hooks/useBowelDiary'
+import { STOOL_TYPES, BLOOD_STATUS, DIFFICULTY_LEVELS } from '@/features/bowel-diary/types'
+import type { BowelMovementEntry } from '@/features/bowel-diary/types'
 
 type FoodDayDetailScreenProps = NativeStackScreenProps<MainStackParamList, 'FoodDayDetail'>
 
@@ -28,6 +31,15 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
   const { date } = route.params
   const { user } = useAuthStore()
   const { entries, deleteEntry, isDeleting } = useFoodDiary()
+
+  // Parse date for bowel diary hook
+  const dateObj = parseISO(`${date}T00:00:00`)
+  const {
+    entries: bowelEntries,
+    deleteEntry: deleteBowelEntry,
+    isDeleting: isDeletingBowel,
+    refetch: refetchBowelEntries
+  } = useBowelDiary(dateObj)
 
   console.log('[FoodDayDetail] Screen rendered with date:', date, 'user:', user?.id)
 
@@ -142,6 +154,40 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
     navigation.navigate('AddSymptomEntry', { date: date })
   }
 
+  const handleAddBowelMovement = () => {
+    navigation.navigate('AddBowelMovement', { date: date })
+  }
+
+  const handleEditBowelMovement = (entry: BowelMovementEntry) => {
+    navigation.navigate('AddBowelMovement', { entryId: entry.id })
+  }
+
+  const handleDeleteBowelMovement = (entry: BowelMovementEntry) => {
+    Alert.alert('刪除記錄', '確定要刪除此大便記錄嗎？', [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '刪除',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteBowelEntry(entry.id)
+            refetchBowelEntries()
+          } catch (error) {
+            Alert.alert('錯誤', '刪除失敗')
+          }
+        },
+      },
+    ])
+  }
+
+  const getStoolTypeInfo = (stoolType: number) => {
+    return STOOL_TYPES.find(s => s.value === stoolType) || STOOL_TYPES[2]
+  }
+
+  const getDifficultyInfo = (difficulty?: string) => {
+    return DIFFICULTY_LEVELS.find(d => d.value === difficulty) || DIFFICULTY_LEVELS[0]
+  }
+
   const renderEntry = ({ item }: { item: FoodEntry }) => {
     const mealInfo = getMealTypeInfo(item.meal_type)
 
@@ -227,6 +273,67 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
     )
   }
 
+  const renderBowelEntry = ({ item }: { item: BowelMovementEntry }) => {
+    const stoolInfo = getStoolTypeInfo(item.stool_type)
+    const difficultyInfo = item.difficulty ? getDifficultyInfo(item.difficulty) : null
+
+    return (
+      <TouchableOpacity onPress={() => handleEditBowelMovement(item)}>
+        <Card style={styles.bowelCard}>
+          <View style={styles.entryContent}>
+            <View style={styles.entryMainRow}>
+              <Text style={styles.stoolIcon}>{stoolInfo.icon}</Text>
+              <View style={styles.entryTextContainer}>
+                <Text style={styles.foodName}>
+                  {stoolInfo.label}
+                </Text>
+                <View style={styles.bowelDetailsRow}>
+                  <Text style={[styles.stoolTypeLabel, { color: stoolInfo.color }]}>
+                    {stoolInfo.description}
+                  </Text>
+                  {item.has_blood && (
+                    <Text style={styles.bloodWarning}>⚠️ 有血便</Text>
+                  )}
+                  {difficultyInfo && difficultyInfo.value !== 'normal' && (
+                    <Text style={[styles.difficultyLabel, { color: difficultyInfo.color }]}>
+                      {difficultyInfo.icon} {difficultyInfo.label}
+                    </Text>
+                  )}
+                </View>
+              </View>
+              <IconButton
+                icon="pencil-outline"
+                size={20}
+                iconColor={colors.primary[500]}
+                onPress={() => handleEditBowelMovement(item)}
+                style={styles.editButton}
+              />
+            </View>
+
+            <View style={styles.entryDetails}>
+              <Text style={styles.detailLabel}>時間：</Text>
+              <Text style={styles.detailValue}>
+                {format(new Date(item.occurred_at), 'HH:mm')}
+              </Text>
+              {item.duration_minutes && (
+                <>
+                  <Text style={[styles.detailLabel, { marginLeft: spacing.md }]}>時長：</Text>
+                  <Text style={styles.detailValue}>{item.duration_minutes} 分鐘</Text>
+                </>
+              )}
+            </View>
+
+            {item.notes && (
+              <View style={styles.entryNotes}>
+                <Text style={styles.notesText}>{item.notes}</Text>
+              </View>
+            )}
+          </View>
+        </Card>
+      </TouchableOpacity>
+    )
+  }
+
   // Calculate day summary
   const daySummary = useMemo(() => {
     const totalCalories = dayEntries.reduce((sum, e) => sum + (e.calories || 0), 0)
@@ -257,6 +364,10 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
             <IconButton icon="medical-bag" size={20} iconColor={colors.primary[500]} />
             <Text style={styles.addButtonText}>新增症狀</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.addButton} onPress={handleAddBowelMovement}>
+            <IconButton icon="toilet" size={20} iconColor="#D2691E" />
+            <Text style={[styles.addButtonText, { color: '#D2691E' }]}>大便記錄</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.summaryContainer}>
@@ -268,12 +379,10 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
             <Text style={styles.summaryLabel}>症狀記錄</Text>
             <Text style={styles.summaryValue}>{symptomEntries.length} 筆</Text>
           </View>
-          {daySummary.totalCalories > 0 && (
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>總熱量</Text>
-              <Text style={styles.summaryValue}>{daySummary.totalCalories} kcal</Text>
-            </View>
-          )}
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>大便記錄</Text>
+            <Text style={styles.summaryValue}>{bowelEntries.length} 次</Text>
+          </View>
         </View>
         <View style={styles.mealSummaryContainer}>
           {daySummary.mealBreakdown.breakfast > 0 && (
@@ -328,6 +437,33 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
     )
   }
 
+  const renderBowelSection = () => {
+    if (bowelEntries.length === 0) return null
+
+    // Sort by time
+    const sortedEntries = [...bowelEntries].sort((a, b) =>
+      new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime()
+    )
+
+    return (
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>大便記錄</Text>
+        {sortedEntries.map((entry) => (
+          <View key={entry.id}>
+            {renderBowelEntry({ item: entry })}
+          </View>
+        ))}
+      </View>
+    )
+  }
+
+  const renderFooter = () => (
+    <>
+      {renderSymptomSection()}
+      {renderBowelSection()}
+    </>
+  )
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <FlatList
@@ -336,7 +472,7 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={renderHeader}
-        ListFooterComponent={renderSymptomSection}
+        ListFooterComponent={renderFooter}
       />
     </SafeAreaView>
   )
@@ -512,6 +648,37 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   severityLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+  },
+  bowelCard: {
+    marginBottom: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    elevation: 1,
+    borderLeftWidth: 3,
+    borderLeftColor: '#D2691E',
+  },
+  stoolIcon: {
+    fontSize: 32,
+    marginRight: spacing.md,
+  },
+  bowelDetailsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.xs / 2,
+  },
+  stoolTypeLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+  },
+  bloodWarning: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: '#EF4444',
+  },
+  difficultyLabel: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
   },

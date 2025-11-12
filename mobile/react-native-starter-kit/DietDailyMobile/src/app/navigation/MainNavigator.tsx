@@ -12,6 +12,7 @@ import { ReportDetailScreen } from '@/features/dashboard/screens/ReportDetailScr
 import { FoodDayDetailScreen } from '@/features/food-diary/screens/FoodDayDetailScreen'
 import { AddFoodEntryScreen } from '@/features/food-diary/screens/AddFoodEntryScreen'
 import { AddSymptomEntryScreen } from '@/features/symptom-diary/screens/AddSymptomEntryScreen'
+import { AddBowelMovementScreen } from '@/features/bowel-diary/screens/AddBowelMovementScreen'
 import { TodayScreen } from '@/features/today/screens/TodayScreen'
 import { HistoryScreen } from '@/features/history/screens/HistoryScreen'
 import { InsightsScreen } from '@/features/insights/screens/InsightsScreen'
@@ -106,6 +107,11 @@ const tabBarStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.error + '30',
   },
+  quickAddBowel: {
+    backgroundColor: '#D2691E' + '10',
+    borderWidth: 1,
+    borderColor: '#D2691E' + '30',
+  },
   quickAddText: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
@@ -126,6 +132,11 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const handleAddSymptom = () => {
     setShowQuickAdd(false)
     mainNavigation.navigate('AddSymptomEntry', { date: undefined })
+  }
+
+  const handleAddBowelMovement = () => {
+    setShowQuickAdd(false)
+    mainNavigation.navigate('AddBowelMovement', { date: undefined })
   }
 
   return (
@@ -256,6 +267,15 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               <Icon name="medical-bag" size={24} color={colors.error} />
               <Text style={tabBarStyles.quickAddText}>新增症狀</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[tabBarStyles.quickAddItem, tabBarStyles.quickAddBowel]}
+              onPress={handleAddBowelMovement}
+              activeOpacity={0.7}
+            >
+              <Icon name="toilet" size={24} color="#D2691E" />
+              <Text style={tabBarStyles.quickAddText}>大便記錄</Text>
+            </TouchableOpacity>
           </View>
         </Pressable>
       </Modal>
@@ -346,6 +366,18 @@ export function MainNavigator() {
         options={{
           headerShown: true,
           title: '新增症狀記錄',
+          headerStyle: {
+            backgroundColor: colors.surface,
+          },
+          headerTintColor: colors.text.primary,
+        }}
+      />
+      <Stack.Screen
+        name="AddBowelMovement"
+        component={AddBowelMovementScreen}
+        options={{
+          headerShown: true,
+          title: '大便記錄',
           headerStyle: {
             backgroundColor: colors.surface,
           },
