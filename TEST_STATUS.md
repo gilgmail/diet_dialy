@@ -26,6 +26,27 @@
 
 ## 需要執行的操作
 
+### 0. 確認測試用戶 ID 存在（重要！）
+**錯誤：** `violates foreign key constraint "food_entries_user_id_fkey"`
+
+測試資料使用的用戶 ID 必須存在於 `auth.users` 表中。
+
+**檢查步驟：**
+```sql
+-- 查詢您的用戶 ID
+SELECT id, email FROM auth.users WHERE email = '您的郵箱' LIMIT 1;
+
+-- 或查看所有用戶
+SELECT id, email FROM auth.users LIMIT 5;
+```
+
+**如果測試用戶 ID 不存在：**
+1. 複製您的真實用戶 ID
+2. 在 `seed_test_data_v2.sql` 中全局替換：
+   - 搜尋：`e7c62e70-7e95-40e3-84c6-f27c84ede44e`
+   - 替換為：您的用戶 ID
+3. 或直接在執行 SQL 前手動修改所有出現的地方
+
 ### 1. 檢查表結構（如果遇到 category NOT NULL 錯誤）
 如果執行 SQL 時出現 `category violates not-null constraint` 錯誤，請先執行：
 

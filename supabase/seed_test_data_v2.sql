@@ -9,7 +9,30 @@
 BEGIN;
 
 -- ============================================================
--- 0. 清理既有測試資料（以 SEED_ 開頭的食物）
+-- 0. 確認測試用戶 ID
+-- ============================================================
+-- 注意: 此腳本使用的測試用戶 ID 必須在 auth.users 表中存在
+-- 測試用戶 UUID: e7c62e70-7e95-40e3-84c6-f27c84ede44e
+--
+-- 如果此用戶 ID 不存在，請執行以下查詢找到一個存在的用戶 ID：
+-- SELECT id FROM auth.users LIMIT 1;
+--
+-- 然後將下方所有 'e7c62e70-7e95-40e3-84c6-f27c84ede44e' 替換為該用戶 ID
+
+-- 檢查用戶是否存在（僅用於驗證，不會中斷執行）
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = 'e7c62e70-7e95-40e3-84c6-f27c84ede44e') THEN
+    RAISE NOTICE '⚠️  警告: 測試用戶 e7c62e70-7e95-40e3-84c6-f27c84ede44e 不存在於 auth.users';
+    RAISE NOTICE '請先執行: SELECT id FROM auth.users LIMIT 1; 找到有效的用戶 ID';
+    RAISE EXCEPTION '測試用戶不存在，請更新腳本中的用戶 ID';
+  ELSE
+    RAISE NOTICE '✅ 測試用戶已確認存在';
+  END IF;
+END $$;
+
+-- ============================================================
+-- 1. 清理既有測試資料（以 SEED_ 開頭的食物）
 -- ============================================================
 DELETE FROM food_analysis_refresh_queue
 WHERE food_id IN (
