@@ -52,6 +52,26 @@ describe('shouldRefreshFoodAnalysis', () => {
     const record = mockRecord({ analysis_updated_at: oldDate.toISOString() })
     expect(shouldRefreshFoodAnalysis(record)).toBe(true)
   })
+
+  it('returns true when record exceeds its specific refresh_frequency_days', () => {
+    const oldDate = new Date()
+    oldDate.setDate(oldDate.getDate() - 45) // 45 days old
+    const record = mockRecord({
+      analysis_updated_at: oldDate.toISOString(),
+      refresh_frequency_days: 30 // Should refresh after 30 days
+    })
+    expect(shouldRefreshFoodAnalysis(record)).toBe(true)
+  })
+
+  it('returns false when record is within its specific refresh_frequency_days', () => {
+    const recentDate = new Date()
+    recentDate.setDate(recentDate.getDate() - 25) // 25 days old
+    const record = mockRecord({
+      analysis_updated_at: recentDate.toISOString(),
+      refresh_frequency_days: 30 // Should NOT refresh yet (25 < 30)
+    })
+    expect(shouldRefreshFoodAnalysis(record)).toBe(false)
+  })
 })
 
 describe('FoodAnalysisCacheService', () => {

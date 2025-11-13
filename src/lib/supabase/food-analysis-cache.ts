@@ -41,7 +41,9 @@ export function shouldRefreshFoodAnalysis(
     return true
   }
 
-  if (ageDays >= maxAgeDays) {
+  // Use record-specific refresh_frequency_days, fallback to maxAgeDays
+  const refreshThreshold = record.refresh_frequency_days ?? maxAgeDays
+  if (ageDays >= refreshThreshold) {
     return true
   }
 
