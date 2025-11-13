@@ -26,7 +26,25 @@
 
 ## 需要執行的操作
 
-### 1. 在 Supabase Studio 執行更新的 SQL
+### 1. 檢查表結構（如果遇到 category NOT NULL 錯誤）
+如果執行 SQL 時出現 `category violates not-null constraint` 錯誤，請先執行：
+
+```sql
+-- 檢查 diet_daily_foods 表結構
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_name = 'diet_daily_foods'
+ORDER BY ordinal_position;
+```
+
+如果發現 `category` 欄位的 `is_nullable = 'NO'` 但沒有 default 值，可能需要手動設置：
+
+```sql
+-- 暫時移除 NOT NULL 約束（如果需要）
+ALTER TABLE diet_daily_foods ALTER COLUMN category DROP NOT NULL;
+```
+
+### 2. 在 Supabase Studio 執行更新的 SQL
 ```bash
 # 檔案位置
 supabase/seed_test_data_v2.sql
@@ -37,6 +55,29 @@ supabase/seed_test_data_v2.sql
 2. 複製整個 `seed_test_data_v2.sql` 內容
 3. 貼上並執行
 4. 確認執行成功（應該會有 BEGIN, DELETE, INSERT, COMMIT 輸出）
+
+**如果還是失敗，嘗試分段執行：**
+```sql
+-- 步驟 1: 只清理資料
+BEGIN;
+DELETE FROM food_analysis_refresh_queue
+WHERE food_id IN (
+  'aaaa1111-2222-3333-4444-555555555501',
+  'aaaa1111-2222-3333-4444-555555555502',
+  'aaaa1111-2222-3333-4444-555555555503',
+  'aaaa1111-2222-3333-4444-555555555504'
+);
+DELETE FROM food_analysis_cache WHERE food_id IN (...);
+DELETE FROM food_entries WHERE user_id = 'e7c62e70-7e95-40e3-84c6-f27c84ede44e' AND food_name LIKE 'SEED_%';
+DELETE FROM diet_daily_foods WHERE name LIKE 'SEED_%';
+COMMIT;
+
+-- 步驟 2: 手動插入單一食物測試
+INSERT INTO diet_daily_foods (id, name, category, created_at, updated_at)
+VALUES ('aaaa1111-2222-3333-4444-555555555501', 'SEED_白飯', 'staple', NOW(), NOW());
+
+-- 如果成功，再執行完整的 seed_test_data_v2.sql
+```
 
 ### 2. 驗證資料
 執行後可以用以下查詢驗證：

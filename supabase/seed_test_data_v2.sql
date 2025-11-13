@@ -43,7 +43,10 @@ VALUES
   ('aaaa1111-2222-3333-4444-555555555502', 'SEED_雞胸肉', 'protein', NOW(), NOW()),
   ('aaaa1111-2222-3333-4444-555555555503', 'SEED_青花菜', 'vegetable', NOW(), NOW()),
   ('aaaa1111-2222-3333-4444-555555555504', 'SEED_香蕉', 'fruit', NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  category = EXCLUDED.category,
+  updated_at = EXCLUDED.updated_at;
 
 -- ============================================================
 -- 2. food_analysis_cache - 不同狀態
