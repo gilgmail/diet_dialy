@@ -73,4 +73,45 @@ export class FoodKnowledgeService {
     const payload = await response.json()
     return Boolean(payload?.success)
   }
+
+  static async triggerProcessor(): Promise<{ success: boolean; processed?: number; error?: string }> {
+    try {
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL
+      const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+
+      if (!supabaseUrl || !anonKey) {
+        throw new Error('Supabase environment variables not configured')
+      }
+
+      const functionsUrl = supabaseUrl.replace('.supabase.co', '.supabase.co/functions/v1')
+      const endpoint = `${functionsUrl}/refresh-food-analysis`
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${anonKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.warn('[FoodKnowledgeService] processor trigger failed:', response.status, errorText)
+        return { success: false, error: `HTTP ${response.status}` }
+      }
+
+      const result = await response.json()
+      return {
+        success: true,
+        processed: result.processed ?? 0
+      }
+    } catch (error) {
+      console.error('[FoodKnowledgeService] triggerProcessor error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
 }

@@ -125,6 +125,60 @@ export function SettingsScreen() {
     }
   }
 
+  const handleTriggerProcessor = async () => {
+    if (!knowledgeStatus || knowledgeStatus.items.length === 0) {
+      Alert.alert('提示', '目前沒有待處理的項目。')
+      return
+    }
+
+    const pendingCount = knowledgeStatus.items.filter(
+      (item) => item.status === 'pending'
+    ).length
+
+    if (pendingCount === 0) {
+      Alert.alert('提示', '沒有等待處理的項目，可能已經在處理中或已完成。')
+      return
+    }
+
+    Alert.alert(
+      '立即處理佇列',
+      `將立即處理 ${pendingCount} 個待處理項目，這可能需要幾分鐘時間。`,
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '開始處理',
+          onPress: async () => {
+            setKnowledgeLoading(true)
+            try {
+              const result = await FoodKnowledgeService.triggerProcessor()
+              if (result.success) {
+                Alert.alert(
+                  '處理完成',
+                  `成功處理了 ${result.processed ?? 0} 個項目。`,
+                  [
+                    {
+                      text: '確定',
+                      onPress: async () => {
+                        await loadFoodKnowledgeStatus()
+                      }
+                    }
+                  ]
+                )
+              } else {
+                Alert.alert('處理失敗', result.error ?? '無法觸發處理器，請稍後再試。')
+              }
+            } catch (error) {
+              console.warn('[SettingsScreen] trigger processor error:', error)
+              Alert.alert('錯誤', '無法觸發處理器。')
+            } finally {
+              setKnowledgeLoading(false)
+            }
+          }
+        }
+      ]
+    )
+  }
+
   const loadFoodKnowledgeStatus = useCallback(async () => {
     if (!user?.id) return
     setKnowledgeLoading(true)
@@ -407,20 +461,37 @@ Device: ${Platform.OS} ${Platform.Version}
       <View style={styles.section}>
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>AI 食物知識庫</Text>
-          <TouchableOpacity
-            style={[
-              styles.knowledgeRefreshButton,
-              (!knowledgeStatus || knowledgeLoading) && styles.knowledgeRefreshButtonDisabled
-            ]}
-            onPress={handleManualKnowledgeRefresh}
-            disabled={!knowledgeStatus || knowledgeLoading}
-          >
-            {knowledgeLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={styles.knowledgeRefreshText}>立即刷新</Text>
-            )}
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              style={[
+                styles.knowledgeActionButton,
+                styles.knowledgeProcessButton,
+                (!knowledgeStatus || knowledgeLoading) && styles.knowledgeActionButtonDisabled
+              ]}
+              onPress={handleTriggerProcessor}
+              disabled={!knowledgeStatus || knowledgeLoading}
+            >
+              {knowledgeLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Icon name="play-circle" size={16} color="#FFFFFF" />
+                  <Text style={styles.knowledgeActionButtonText}>立即處理</Text>
+                </>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.knowledgeActionButton,
+                styles.knowledgeRefreshButton,
+                (!knowledgeStatus || knowledgeLoading) && styles.knowledgeActionButtonDisabled
+              ]}
+              onPress={handleManualKnowledgeRefresh}
+              disabled={!knowledgeStatus || knowledgeLoading}
+            >
+              <Icon name="refresh" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
         </View>
         {knowledgeStatus ? (
           <>
@@ -859,16 +930,25 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
   },
-  knowledgeRefreshButton: {
-    backgroundColor: colors.primary[500],
+  knowledgeActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     borderRadius: 8,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
-  knowledgeRefreshButtonDisabled: {
+  knowledgeProcessButton: {
+    backgroundColor: colors.primary[500],
+  },
+  knowledgeRefreshButton: {
+    backgroundColor: colors.primary[500],
+    paddingHorizontal: spacing.sm,
+  },
+  knowledgeActionButtonDisabled: {
     backgroundColor: colors.text.disabled,
   },
-  knowledgeRefreshText: {
+  knowledgeActionButtonText: {
     color: colors.surface,
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,

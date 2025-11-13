@@ -65,8 +65,15 @@ export async function GET(
     drawText(`分析期間：${payload.timeframe.startDate} ~ ${payload.timeframe.endDate}`)
     const analysisVersion =
       typeof payload.analysisVersion === 'string' ? payload.analysisVersion : 'legacy'
+    const analysisModeText =
+      typeof payload.analysisMode === 'string'
+        ? payload.analysisMode === 'chunked'
+          ? 'Chunked（分段）'
+          : 'Single Pass'
+        : 'Single Pass'
     drawText(`產出時間：${new Date(payload.generatedAt).toLocaleString('zh-TW')}`)
     drawText(`分析版本：${analysisVersion}`)
+    drawText(`分析方式：${analysisModeText}`)
 
     if (payload.analysis?.summary) {
       drawTitle('核心摘要')

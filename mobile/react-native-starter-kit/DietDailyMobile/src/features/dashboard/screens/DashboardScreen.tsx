@@ -1149,6 +1149,11 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
                         分析版本：{item.analysisVersion}
                       </Text>
                     ) : null}
+                    {item.analysisMode ? (
+                      <Text style={styles.historyVersion}>
+                        分析方式：{item.analysisMode === 'chunked' ? 'Chunked（分段）' : 'Single Pass'}
+                      </Text>
+                    ) : null}
                     <Text style={styles.historySummary} numberOfLines={3}>
                       {item.summary || '這份報告包含腸道健康的重點洞察。'}
                     </Text>
@@ -1229,6 +1234,11 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
                     {item.analysisVersion ? (
                       <Text style={styles.historyVersion}>
                         分析版本：{item.analysisVersion}
+                      </Text>
+                    ) : null}
+                    {item.analysisMode ? (
+                      <Text style={styles.historyVersion}>
+                        分析方式：{item.analysisMode === 'chunked' ? 'Chunked（分段）' : 'Single Pass'}
                       </Text>
                     ) : null}
                   </View>

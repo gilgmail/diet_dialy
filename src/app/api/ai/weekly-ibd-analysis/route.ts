@@ -27,6 +27,7 @@ interface WeeklyReportPayload {
   timeframe: { startDate: string; endDate: string }
   generatedAt: string
   method: string
+  analysisMode?: string
   analysisVersion?: string
   totals: Record<string, any>
   prompt: string
@@ -125,6 +126,7 @@ async function upsertWeeklyReport(
       timeframe,
       generatedAt: new Date().toISOString(),
       method: analysis.method,
+      analysisMode: analysis.analysis_mode ?? 'single_pass',
       analysisVersion: WEEKLY_ANALYSIS_VERSION,
       totals: analysis.totals,
       prompt: analysis.prompt_used,
@@ -181,6 +183,12 @@ async function fetchWeeklyHistory(userId: string, limit = DEFAULT_HISTORY_LIMIT)
           typeof json.analysisVersion === 'string'
             ? json.analysisVersion
             : 'legacy'
+        const analysisMode =
+          typeof json.analysisMode === 'string'
+            ? json.analysisMode
+            : typeof analysis.analysis_mode === 'string'
+              ? analysis.analysis_mode
+              : undefined
 
         const reportId = encodeKey(fileKey)
         return {
@@ -205,6 +213,7 @@ async function fetchWeeklyHistory(userId: string, limit = DEFAULT_HISTORY_LIMIT)
             experiments: []
           },
           analysisVersion,
+          analysisMode,
           datasetSummary,
         }
       })

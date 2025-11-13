@@ -65,6 +65,7 @@ export interface WeeklyAnalysisHistoryItem {
   summary: string
   pdfPath: string
   followUpActions: string[]
+  analysisMode?: string
   allFoodsOverview?: {
     high_risk_foods: string[]
     moderate_risk_foods: string[]
