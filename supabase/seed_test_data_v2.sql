@@ -326,11 +326,12 @@ INSERT INTO food_analysis_refresh_queue (
 -- 4. 驗證資料
 -- ============================================================
 
-\echo '=== 測試食物 ==='
+-- 測試食物
+SELECT '=== 測試食物 ===' AS section;
 SELECT id, name, category FROM diet_daily_foods WHERE name LIKE 'TEST_%';
 
-\echo ''
-\echo '=== Food Analysis Cache ==='
+-- Food Analysis Cache
+SELECT '=== Food Analysis Cache ===' AS section;
 SELECT
     f.name AS food_name,
     c.analysis_version,
@@ -347,18 +348,18 @@ JOIN diet_daily_foods f ON c.food_id = f.id
 WHERE c.analysis_notes LIKE '%[TEST_DATA]%'
 ORDER BY c.analysis_updated_at DESC;
 
-\echo ''
-\echo '=== Missing Cache Foods ==='
+-- Missing Cache Foods
+SELECT '=== Missing Cache Foods ===' AS section;
 SELECT
     f.id,
     f.name
 FROM diet_daily_foods f
-LEFT JOIN food_analysis_cache c ON f.food_id = c.id
+LEFT JOIN food_analysis_cache c ON f.id = c.food_id
 WHERE f.name LIKE 'TEST_%'
 AND c.id IS NULL;
 
-\echo ''
-\echo '=== Refresh Queue ==='
+-- Refresh Queue
+SELECT '=== Refresh Queue ===' AS section;
 SELECT
     f.name AS food_name,
     q.reason,
@@ -377,8 +378,8 @@ JOIN diet_daily_foods f ON q.food_id = f.id
 WHERE q.metadata->>'test_data' = 'true'
 ORDER BY q.priority DESC, q.scheduled_for;
 
-\echo ''
-\echo '=== 測試資料摘要 ==='
+-- 測試資料摘要
+SELECT '=== 測試資料摘要 ===' AS section;
 SELECT
     (SELECT COUNT(*) FROM diet_daily_foods WHERE name LIKE 'TEST_%') AS test_foods,
     (SELECT COUNT(*) FROM food_analysis_cache WHERE analysis_notes LIKE '%[TEST_DATA]%') AS cached_analyses,
@@ -388,13 +389,11 @@ SELECT
     (SELECT COUNT(*) FROM food_analysis_refresh_queue WHERE metadata->>'test_data' = 'true') AS queue_items,
     (SELECT COUNT(*) FROM food_analysis_refresh_queue WHERE metadata->>'test_data' = 'true' AND status = 'pending') AS pending_items;
 
-\echo ''
-\echo '✅ 測試資料載入完成！'
-\echo ''
-\echo '測試場景:'
-\echo '  1. TEST_白飯: 正常快取 (2天前分析)'
-\echo '  2. TEST_雞胸肉: 過期快取 (35天前分析) + pending 刷新'
-\echo '  3. TEST_青花菜: 即將過期 (25天前分析)'
-\echo '  4. TEST_香蕉: 缺失快取 + pending 刷新'
-\echo '  5. TEST_牛奶: 缺失快取 + in_progress 刷新'
-\echo ''
+-- 完成訊息
+SELECT '✅ 測試資料載入完成！' AS message;
+SELECT '測試場景:' AS scenarios;
+SELECT '1. TEST_白飯: 正常快取 (2天前分析)' AS scenario_1;
+SELECT '2. TEST_雞胸肉: 過期快取 (35天前分析) + pending 刷新' AS scenario_2;
+SELECT '3. TEST_青花菜: 即將過期 (25天前分析)' AS scenario_3;
+SELECT '4. TEST_香蕉: 缺失快取 + pending 刷新' AS scenario_4;
+SELECT '5. TEST_牛奶: 缺失快取 + in_progress 刷新' AS scenario_5;
