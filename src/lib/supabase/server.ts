@@ -78,11 +78,16 @@ export function createAdminClient() {
         let data = ''
         res.on('data', (chunk) => data += chunk)
         res.on('end', () => {
-          const response = new Response(data, {
+          // Response constructor doesn't allow body for 204 No Content
+          // https://developer.mozilla.org/en-US/docs/Web/API/Response/Response
+          const responseInit: ResponseInit = {
             status: res.statusCode,
             statusText: res.statusMessage,
             headers: new Headers(res.headers as HeadersInit)
-          })
+          }
+          const response = (res.statusCode === 204 || res.statusCode === 205 || res.statusCode === 304)
+            ? new Response(null, responseInit)
+            : new Response(data, responseInit)
           resolve(response)
         })
       })
