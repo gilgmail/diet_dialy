@@ -85,7 +85,7 @@ export async function recordAIUsage(params: RecordAIUsageParams): Promise<Record
       .from('ai_usage_events')
       .insert(payload)
       .select('id')
-      .single()
+      .maybeSingle()
 
     if (error) {
       console.error('[recordAIUsage] Failed to insert usage event:', error)
@@ -158,10 +158,14 @@ async function evaluateCostAlerts(
   const channels = settings.alert_channels?.length ? settings.alert_channels : DEFAULT_ALERT_CHANNELS
 
   if (shouldNotify && shouldTriggerAgain(lastTriggeredAt)) {
-    await admin
+    const { error: updateError } = await admin
       .from('ai_usage_alert_settings')
       .update({ last_triggered_at: new Date().toISOString() })
       .eq('id', settings.id)
+
+    if (updateError) {
+      console.warn('[recordAIUsage] Failed to update last_triggered_at:', updateError)
+    }
 
     console.info(
       '[recordAIUsage] Cost threshold reached, notifying user',
