@@ -124,6 +124,18 @@ export interface WeeklyAnalysisStatus {
   reportGenerated: boolean
   analysisVersion?: string
   lastUpdated?: string
+  foodKnowledge?: {
+    missingCount: number
+    staleCount: number
+    warnings: string[]
+    items: Array<{
+      foodId: string
+      foodName: string
+      reason: 'missing' | 'stale'
+      status: 'pending' | 'stale'
+      lastUpdatedAt?: string | null
+    }>
+  }
 }
 
 export interface DashboardData {

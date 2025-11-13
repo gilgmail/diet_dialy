@@ -107,6 +107,44 @@ export class FoodAnalysisCacheService {
     }
   }
 
+  async enqueueRefreshRequests(params: {
+    foodIds: string[]
+    requestedBy?: string
+    reason?: 'missing' | 'stale' | 'manual_request'
+    priority?: number
+    targetVersion?: string
+  }): Promise<void> {
+    const uniqueIds = Array.from(new Set(params.foodIds.filter((id): id is string => Boolean(id))))
+    if (!uniqueIds.length) {
+      return
+    }
+
+    const now = new Date().toISOString()
+    const reason = params.reason ?? 'manual_request'
+    const payload = uniqueIds.map((foodId) => ({
+      food_id: foodId,
+      requested_by: params.requestedBy ?? null,
+      reason,
+      priority: params.priority ?? (reason === 'missing' ? 9 : 5),
+      status: 'pending',
+      target_version: params.targetVersion ?? DEFAULT_FOOD_ANALYSIS_VERSION,
+      metadata: {
+        reason,
+      },
+      scheduled_for: now,
+      last_requested_at: now,
+    }))
+
+    const { error } = await this.client
+      .from('food_analysis_refresh_queue')
+      .upsert(payload, { onConflict: 'food_id' })
+
+    if (error) {
+      console.error('[FoodAnalysisCacheService] Failed to enqueue refresh requests', error)
+      throw error
+    }
+  }
+
   async upsertAnalysis(
     payload: FoodAnalysisCacheInsert | FoodAnalysisCacheUpdate
   ): Promise<FoodAnalysisCache | null> {

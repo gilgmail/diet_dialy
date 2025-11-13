@@ -64,6 +64,18 @@ interface WeeklyAnalysisStatus {
   reportGenerated: boolean
   lastUpdated: string
   analysisVersion: string
+  foodKnowledge?: {
+    missingCount: number
+    staleCount: number
+    warnings: string[]
+    items: Array<{
+      foodId: string
+      foodName: string
+      reason: 'missing' | 'stale'
+      status: 'pending' | 'stale'
+      lastUpdatedAt?: string | null
+    }>
+  }
 }
 
 // Utility functions
@@ -431,6 +443,33 @@ export async function POST(request: NextRequest) {
           ? '資料不足，本次未建立報告。'
           : '此次未成功產生報告。')
 
+    const foodKnowledgeSummary = result.food_knowledge ?? {
+      missingFoods: [],
+      staleFoods: [],
+      warnings: []
+    }
+    const foodKnowledgeStatus = {
+      missingCount: foodKnowledgeSummary.missingFoods.length,
+      staleCount: foodKnowledgeSummary.staleFoods.length,
+      warnings: foodKnowledgeSummary.warnings,
+      items: [
+        ...foodKnowledgeSummary.missingFoods.map((item) => ({
+          foodId: item.food_id,
+          foodName: item.food_name,
+          reason: 'missing' as const,
+          status: 'pending' as const,
+          lastUpdatedAt: item.last_updated_at ?? null
+        })),
+        ...foodKnowledgeSummary.staleFoods.map((item) => ({
+          foodId: item.food_id,
+          foodName: item.food_name,
+          reason: 'stale' as const,
+          status: 'stale' as const,
+          lastUpdatedAt: item.last_updated_at ?? null
+        }))
+      ]
+    }
+
     const analysisStatus: WeeklyAnalysisStatus = {
       datasetSummary: {
         foodEntries: foodEntriesCount,
@@ -473,6 +512,7 @@ export async function POST(request: NextRequest) {
       reportGenerated,
       lastUpdated: analysisCompletedAt,
       analysisVersion: WEEKLY_ANALYSIS_VERSION,
+      foodKnowledge: foodKnowledgeStatus
     }
 
     console.log(`[${requestId}] 🧮 分析狀態:`, analysisStatus)
@@ -492,6 +532,7 @@ export async function POST(request: NextRequest) {
         reportInfo,
         error: errorMessage,
         analysisStatus,
+        foodKnowledge: foodKnowledgeStatus,
         analysisVersion: WEEKLY_ANALYSIS_VERSION,
       },
       { status: result.success ? 200 : 202 }

@@ -63,11 +63,18 @@ describe('FoodAnalysisCacheService', () => {
   function createMockClient(data: FoodAnalysisCache[]) {
     const inFn = jest.fn().mockResolvedValue({ data, error: null })
     const selectFn = jest.fn().mockReturnValue({ in: inFn })
-    const fromFn = jest.fn().mockReturnValue({ select: selectFn })
+    const upsertFn = jest.fn().mockResolvedValue({ data: [], error: null })
+    const fromFn = jest.fn((table: string) => {
+      if (table === 'food_analysis_refresh_queue') {
+        return { upsert: upsertFn }
+      }
+      return { select: selectFn }
+    })
     const rpcFn = jest.fn().mockResolvedValue({ data: null, error: null })
     return {
       from: fromFn,
-      rpc: rpcFn
+      rpc: rpcFn,
+      __mocks: { upsertFn }
     } as any
   }
 
@@ -116,5 +123,27 @@ describe('FoodAnalysisCacheService', () => {
         '22222222-2222-2222-2222-222222222222'
       ]
     })
+  })
+
+  it('enqueues refresh requests with deduplicated ids', async () => {
+    const mockClient = createMockClient([])
+    const service = new FoodAnalysisCacheService(mockClient)
+
+    await service.enqueueRefreshRequests({
+      foodIds: [
+        '11111111-1111-1111-1111-111111111111',
+        '11111111-1111-1111-1111-111111111111',
+        '22222222-2222-2222-2222-222222222222'
+      ],
+      requestedBy: 'user-abc',
+      reason: 'missing'
+    })
+
+    const upsert = mockClient.__mocks.upsertFn as jest.Mock
+    expect(upsert).toHaveBeenCalledTimes(1)
+    const payload = upsert.mock.calls[0][0]
+    expect(payload).toHaveLength(2)
+    expect(payload[0]).toHaveProperty('requested_by', 'user-abc')
+    expect(payload[0]).toHaveProperty('reason', 'missing')
   })
 })

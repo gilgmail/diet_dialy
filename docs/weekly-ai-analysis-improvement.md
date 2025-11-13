@@ -22,7 +22,7 @@
 ## 待辦
 - [x] 建立紀錄文件。
 - [x] 在 Weekly IBD Analysis 服務中加入 token 估算、策略切換與 chunk workflow。
-- [ ] 調整 Dashboard UI，在 `analysis_mode` 為 chunk / low-token 時呈現提示。
+- [x] 調整 Dashboard / 設定頁 UI，顯示 `analysis_mode` 與 foodKnowledge 快取提示。
 - [ ] 新增測試覆蓋 chunk merge 與警示邏輯。
 
 > 以上內容後續若有新 insight 或執行結果，統一更新此文件以便追蹤。
@@ -92,14 +92,13 @@
 3. 由 CI 記錄快取命中率、缺漏與刷新計數，確保 pipeline 變更不會隱性破壞快取邏輯。
 
 ### 5. Queue Worker 與 UI 提示規劃
-- **Queue 工作流程**：
-  1. Weekly Analysis 在組 payload 時若發現 `missing/stale` 食物，寫入 `food_analysis_refresh_queue`（包含 food_id、版本、原因、priority）。
-  2. 背景 Worker（Supabase Edge Function + cron / queue 消費者）定期撈取 queue，呼叫 GPT/Claude 生成新分析並透過 `FoodAnalysisCacheService.upsertAnalysis()` 更新。
-  3. Worker 成功後更新 `analysis_version`、`analysis_updated_at`，並紀錄 token 成本到 `ai_usage_events`。
+- **Queue 工作流程**（已實作）：
+  1. Weekly Analysis 偵測到 `missing/stale` 食物後，透過 `FoodAnalysisCacheService.enqueueRefreshRequests()` 寫入 `food_analysis_refresh_queue`。
+  2. Supabase Edge Function `refresh-food-analysis` 週期性撈取 queue，更新 `food_analysis_cache` 並將佇列標記為完成/失敗。
+  3. 透過 `POST /api/food-knowledge/refresh` 可手動加入佇列，`GET /api/food-knowledge/status` 可查詢使用者的待處理項目。
 - **UI 提示**：
-  - Dashboard 洞察區塊新增「Food Knowledge」提示，若本週分析使用過期資料則顯示黃色 banner：「3 項食物使用舊版快取，刷新中…」。
-  - 提供 `Refresh now` 按鈕，僅將 food_id 丟入 queue，實際刷新仍由背景 Worker 處理，確保使用者體驗不被阻塞。
-  - 若 queue 有 pending 項目，可在設定頁顯示狀態列表，供使用者查看刷新進度。
+  - Dashboard 新增「AI 食物知識庫待更新」banner，會依 `analysisStatus.foodKnowledge` 顯示缺資料/過期項數並導向設定頁。
+  - Settings Screen 加入「AI 食物知識庫」區塊，列出最多 3 個待刷新食物並提供「立即刷新」按鈕（呼叫 `/api/food-knowledge/refresh`）。
 
 ### 6. 進一步優化計畫
 1. **Knowledge-based weighting**：將 `foodKnowledgeBase` 中的風險標籤與個人症狀關聯進行權重合併，建立 `risk_score = prior * 0.4 + personal_observation * 0.6` 模型，提供更穩定的 foods_to_monitor 排序。

@@ -4,7 +4,7 @@
 
 ### 更新內容
 已更新 `supabase/seed_test_data_v2.sql`，新增：
-1. **修正 diet_daily_foods 欄位** - 移除不存在的 `category` 和 `updated_at` 欄位
+1. **修正 diet_daily_foods 欄位** - 雲端資料庫 `category` 為 NOT NULL，已補回 category 和 updated_at 欄位
 2. **新增 food_entries 測試資料** - 為測試用戶 (e7c62e70-7e95-40e3-84c6-f27c84ede44e) 在測試日期範圍 (2024-11-06 ~ 2024-11-12) 建立 8 筆飲食記錄
 
 ### 測試資料明細

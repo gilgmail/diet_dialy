@@ -7,6 +7,7 @@ import {
   DEFAULT_FOOD_ANALYSIS_VERSION,
   FoodAnalysisCacheService
 } from '@/lib/supabase/food-analysis-cache'
+import type { FoodAnalysisLookupResult } from '@/lib/supabase/food-analysis-cache'
 import { createAdminClient } from '@/lib/supabase/server'
 import type { FoodAnalysisCache, FoodEntry } from '@/types/supabase'
 import type { DailySymptomEntry, CoreSymptomScores } from '@/types/medical'
@@ -96,6 +97,20 @@ interface FoodKnowledgeSummary {
   supportive_attributes: unknown[]
   serving_guidelines: unknown[]
   analysis_notes?: string | null
+}
+
+interface FoodKnowledgeAlertEntry {
+  food_id: string
+  food_name: string
+  category?: string | null
+  last_updated_at?: string | null
+  reason: 'missing' | 'stale'
+}
+
+interface FoodKnowledgeAlertSummary {
+  missingFoods: FoodKnowledgeAlertEntry[]
+  staleFoods: FoodKnowledgeAlertEntry[]
+  warnings: string[]
 }
 
 interface WeeklyAnalysisPayload {
@@ -215,6 +230,7 @@ export interface WeeklyIBDAnalysisResult {
   }
   raw_ai_response?: string
   prompt_recommendations?: Array<PromptRecommendation>
+  food_knowledge?: FoodKnowledgeAlertSummary
 }
 
 interface PromptRecommendation {
@@ -1150,6 +1166,10 @@ export class IBDWeeklyAnalysisAgent {
     }
 
     const foodKnowledgeBase = this.buildFoodKnowledgeMap(foodKnowledgeLookup.fresh, foodNameMap)
+    const foodKnowledgeAlerts = this.buildFoodKnowledgeAlerts({
+      lookup: foodKnowledgeLookup,
+      foodNameMap
+    })
 
     console.log('🔨 Building analysis payload...')
     const payload = this.buildAnalysisPayload(dataset, timeframe, foodKnowledgeBase)
@@ -1187,6 +1207,7 @@ export class IBDWeeklyAnalysisAgent {
         mode: strategyDecision.mode,
         chunk_size: strategyDecision.chunkSize
       },
+      food_knowledge: foodKnowledgeAlerts,
       totals: {
         food_entries: payload.payload.trackingSummary.totalFoodEntries,
         unique_foods: payload.payload.trackingSummary.uniqueFoods,
@@ -1199,6 +1220,24 @@ export class IBDWeeklyAnalysisAgent {
     if (options.includePromptRecommendations) {
       baseResult.prompt_recommendations = buildPromptRecommendations()
     }
+
+    if (foodKnowledgeAlerts.warnings.length > 0) {
+      baseResult.token_strategy = {
+        ...(baseResult.token_strategy || {
+          estimated_prompt_tokens: strategyDecision.estimatedTokens,
+          max_tokens: this.config.maxTokens,
+          mode: strategyDecision.mode
+        }),
+        warnings: [
+          ...(baseResult.token_strategy?.warnings || []),
+          ...foodKnowledgeAlerts.warnings
+        ]
+      }
+    }
+
+    await this.enqueueFoodKnowledgeRefreshRequests(userId, foodKnowledgeAlerts).catch((error) => {
+      console.warn('[FoodKnowledge] Failed to enqueue refresh requests:', error)
+    })
 
     if (!payload.hasMinimalData) {
       console.warn('⚠️ Insufficient data for analysis!')
@@ -1784,6 +1823,63 @@ export class IBDWeeklyAnalysisAgent {
       }
     })
     return result
+  }
+
+  private buildFoodKnowledgeAlerts(params: {
+    lookup: FoodAnalysisLookupResult
+    foodNameMap: Record<string, { name: string; category?: string | null }>
+  }): FoodKnowledgeAlertSummary {
+    const missingFoods: FoodKnowledgeAlertEntry[] = params.lookup.missing.map((foodId) => ({
+      food_id: foodId,
+      food_name: params.foodNameMap[foodId]?.name ?? '未知食物',
+      category: params.foodNameMap[foodId]?.category ?? null,
+      reason: 'missing'
+    }))
+
+    const staleFoods: FoodKnowledgeAlertEntry[] = params.lookup.stale.map((record) => ({
+      food_id: record.food_id,
+      food_name: params.foodNameMap[record.food_id]?.name ?? '未知食物',
+      category: params.foodNameMap[record.food_id]?.category ?? null,
+      last_updated_at: record.analysis_updated_at,
+      reason: 'stale'
+    }))
+
+    const warnings: string[] = []
+    if (missingFoods.length > 0) {
+      warnings.push(`有 ${missingFoods.length} 項食物尚未建立 AI 分析`)
+    }
+    if (staleFoods.length > 0) {
+      warnings.push(`有 ${staleFoods.length} 項食物的分析已超過建議的刷新時間`)
+    }
+
+    return {
+      missingFoods,
+      staleFoods,
+      warnings
+    }
+  }
+
+  private async enqueueFoodKnowledgeRefreshRequests(
+    userId: string,
+    alerts: FoodKnowledgeAlertSummary
+  ): Promise<void> {
+    const missingIds = alerts.missingFoods.map((item) => item.food_id)
+    if (missingIds.length > 0) {
+      await this.foodAnalysisService.enqueueRefreshRequests({
+        foodIds: missingIds,
+        requestedBy: userId,
+        reason: 'missing'
+      })
+    }
+
+    const staleIds = alerts.staleFoods.map((item) => item.food_id)
+    if (staleIds.length > 0) {
+      await this.foodAnalysisService.enqueueRefreshRequests({
+        foodIds: staleIds,
+        requestedBy: userId,
+        reason: 'stale'
+      })
+    }
   }
 
   private selectAnalysisStrategy(params: {

@@ -399,6 +399,59 @@ export type Database = {
           updated_at?: string
         }
       }
+      food_analysis_refresh_queue: {
+        Row: {
+          id: string
+          food_id: string
+          requested_by: string | null
+          reason: string
+          priority: number
+          status: 'pending' | 'in_progress' | 'completed' | 'failed'
+          attempts: number
+          failure_reason: string | null
+          scheduled_for: string
+          target_version: string | null
+          metadata: Json
+          last_requested_at: string
+          completed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          food_id: string
+          requested_by?: string | null
+          reason?: string
+          priority?: number
+          status?: 'pending' | 'in_progress' | 'completed' | 'failed'
+          attempts?: number
+          failure_reason?: string | null
+          scheduled_for?: string
+          target_version?: string | null
+          metadata?: Json
+          last_requested_at?: string
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          food_id?: string
+          requested_by?: string | null
+          reason?: string
+          priority?: number
+          status?: 'pending' | 'in_progress' | 'completed' | 'failed'
+          attempts?: number
+          failure_reason?: string | null
+          scheduled_for?: string
+          target_version?: string | null
+          metadata?: Json
+          last_requested_at?: string
+          completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       medical_reports: {
         Row: {
           id: string
@@ -526,6 +579,7 @@ export type User = Database['public']['Tables']['diet_daily_users']['Row']
 export type Food = Database['public']['Tables']['diet_daily_foods']['Row']
 export type FoodEntry = Database['public']['Tables']['food_entries']['Row']
 export type FoodAnalysisCache = Database['public']['Tables']['food_analysis_cache']['Row']
+export type FoodAnalysisRefreshQueue = Database['public']['Tables']['food_analysis_refresh_queue']['Row']
 export type MedicalReport = Database['public']['Tables']['medical_reports']['Row']
 export type SymptomTracking = Database['public']['Tables']['symptom_tracking']['Row']
 export type AIUsageEvent = Database['public']['Tables']['ai_usage_events']['Row']
@@ -535,6 +589,7 @@ export type UserInsert = Database['public']['Tables']['diet_daily_users']['Inser
 export type FoodInsert = Database['public']['Tables']['diet_daily_foods']['Insert']
 export type FoodEntryInsert = Database['public']['Tables']['food_entries']['Insert']
 export type FoodAnalysisCacheInsert = Database['public']['Tables']['food_analysis_cache']['Insert']
+export type FoodAnalysisRefreshQueueInsert = Database['public']['Tables']['food_analysis_refresh_queue']['Insert']
 export type MedicalReportInsert = Database['public']['Tables']['medical_reports']['Insert']
 export type SymptomTrackingInsert = Database['public']['Tables']['symptom_tracking']['Insert']
 
@@ -542,6 +597,7 @@ export type UserUpdate = Database['public']['Tables']['diet_daily_users']['Updat
 export type FoodUpdate = Database['public']['Tables']['diet_daily_foods']['Update']
 export type FoodEntryUpdate = Database['public']['Tables']['food_entries']['Update']
 export type FoodAnalysisCacheUpdate = Database['public']['Tables']['food_analysis_cache']['Update']
+export type FoodAnalysisRefreshQueueUpdate = Database['public']['Tables']['food_analysis_refresh_queue']['Update']
 export type MedicalReportUpdate = Database['public']['Tables']['medical_reports']['Update']
 export type SymptomTrackingUpdate = Database['public']['Tables']['symptom_tracking']['Update']
 export type AIUsageEventInsert = Database['public']['Tables']['ai_usage_events']['Insert']

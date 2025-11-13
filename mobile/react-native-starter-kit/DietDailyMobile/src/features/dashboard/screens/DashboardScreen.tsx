@@ -185,6 +185,36 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     )
   }
 
+  const renderFoodKnowledgeBanner = () => {
+    const summary = analysisStatus?.foodKnowledge
+    if (!summary) {
+      return null
+    }
+    if (summary.missingCount === 0 && summary.staleCount === 0) {
+      return null
+    }
+
+    const warningText =
+      summary.warnings && summary.warnings.length > 0
+        ? summary.warnings[0]
+        : `缺資料 ${summary.missingCount} 項、過期 ${summary.staleCount} 項`
+
+    return (
+      <View style={styles.foodKnowledgeBanner}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.foodKnowledgeTitle}>AI 食物知識庫待更新</Text>
+          <Text style={styles.foodKnowledgeMessage}>{warningText}</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.foodKnowledgeAction}
+          onPress={() => navigation.navigate('Settings')}
+        >
+          <Text style={styles.foodKnowledgeActionText}>前往設定</Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+
   const buildInitialStatus = (
     foodEntries: number,
     symptomEntries: number
@@ -944,6 +974,8 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
         </View>
       )}
 
+      {renderFoodKnowledgeBanner()}
+
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
@@ -1335,6 +1367,39 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
+  },
+  foodKnowledgeBanner: {
+    marginTop: spacing.md,
+    marginHorizontal: spacing.lg,
+    backgroundColor: '#FEF9C3',
+    borderRadius: 12,
+    padding: spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.warning,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  foodKnowledgeTitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  foodKnowledgeMessage: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    marginTop: spacing.xs / 2,
+  },
+  foodKnowledgeAction: {
+    backgroundColor: colors.primary[500],
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 999,
+  },
+  foodKnowledgeActionText: {
+    color: colors.surface,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
   settingsButton: {
     padding: spacing.sm,

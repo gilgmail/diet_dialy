@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import Constants from 'expo-constants'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useSettingsStore } from '../stores/settingsStore'
 import { NotificationService } from '../services/notificationService'
+import { FoodKnowledgeService, type FoodKnowledgeStatusSummary } from '../services/FoodKnowledgeService'
 import {
   CHRONIC_DISEASES,
   TIMEZONES,
@@ -48,6 +49,8 @@ export function SettingsScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false)
   const [selectedMeal, setSelectedMeal] = useState<'breakfast' | 'lunch' | 'dinner' | null>(null)
   const [tempTime, setTempTime] = useState(new Date())
+  const [knowledgeStatus, setKnowledgeStatus] = useState<FoodKnowledgeStatusSummary | null>(null)
+  const [knowledgeLoading, setKnowledgeLoading] = useState(false)
   const currentTimezone = useMemo(
     () => TIMEZONES.find((tz) => tz.value === settings.timezone),
     [settings.timezone]
@@ -89,6 +92,55 @@ export function SettingsScreen() {
       NotificationService.cancelAllMealReminders()
     }
   }, [settings.notificationsEnabled])
+
+  const handleManualKnowledgeRefresh = async () => {
+    if (!user?.id) return
+    if (!knowledgeStatus || knowledgeStatus.items.length === 0) {
+      Alert.alert('提示', '目前沒有排隊的食物，無需刷新。')
+      return
+    }
+    const pendingIds = knowledgeStatus.items
+      .filter((item) => item.status !== 'completed')
+      .map((item) => item.foodId)
+
+    if (pendingIds.length === 0) {
+      Alert.alert('提示', '所有食物都已刷新完成。')
+      return
+    }
+
+    setKnowledgeLoading(true)
+    try {
+      const success = await FoodKnowledgeService.requestRefresh(user.id, pendingIds)
+      if (success) {
+        Alert.alert('已送出', '已將待更新的食物加入刷新佇列。')
+        await loadFoodKnowledgeStatus()
+      } else {
+        Alert.alert('失敗', '無法送出刷新請求，請稍後再試。')
+      }
+    } catch (error) {
+      console.warn('[SettingsScreen] refresh error:', error)
+      Alert.alert('錯誤', '無法送出刷新請求。')
+    } finally {
+      setKnowledgeLoading(false)
+    }
+  }
+
+  const loadFoodKnowledgeStatus = useCallback(async () => {
+    if (!user?.id) return
+    setKnowledgeLoading(true)
+    try {
+      const status = await FoodKnowledgeService.getStatus(user.id)
+      setKnowledgeStatus(status)
+    } catch (error) {
+      console.warn('[SettingsScreen] Failed to load knowledge status:', error)
+    } finally {
+      setKnowledgeLoading(false)
+    }
+  }, [user?.id])
+
+  useEffect(() => {
+    loadFoodKnowledgeStatus()
+  }, [loadFoodKnowledgeStatus])
 
 
   const handleToggleNotifications = async (value: boolean) => {
@@ -351,6 +403,63 @@ Device: ${Platform.OS} ${Platform.Version}
 
   return (
     <ScrollView style={styles.container}>
+      {/* AI Food Knowledge */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>AI 食物知識庫</Text>
+          <TouchableOpacity
+            style={[
+              styles.knowledgeRefreshButton,
+              (!knowledgeStatus || knowledgeLoading) && styles.knowledgeRefreshButtonDisabled
+            ]}
+            onPress={handleManualKnowledgeRefresh}
+            disabled={!knowledgeStatus || knowledgeLoading}
+          >
+            {knowledgeLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.knowledgeRefreshText}>立即刷新</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+        {knowledgeStatus ? (
+          <>
+            <Text style={styles.knowledgeSummaryText}>
+              {knowledgeStatus.missingCount === 0 && knowledgeStatus.staleCount === 0
+                ? '所有食物分析皆為最新。'
+                : `缺資料 ${knowledgeStatus.missingCount} 項，過期 ${knowledgeStatus.staleCount} 項。`}
+            </Text>
+            {knowledgeStatus.items.slice(0, 3).map((item) => (
+              <View key={item.queueId} style={styles.knowledgeItem}>
+                <View style={styles.knowledgeItemText}>
+                  <Text style={styles.knowledgeItemTitle}>{item.foodName}</Text>
+                  <Text style={styles.knowledgeItemSubtitle}>
+                    {item.reason === 'missing' ? '尚未建立分析' : '等待刷新'}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.knowledgeStatusBadge,
+                    item.reason === 'missing'
+                      ? styles.knowledgeStatusMissing
+                      : styles.knowledgeStatusStale
+                  ]}
+                >
+                  <Text style={styles.knowledgeStatusBadgeText}>
+                    {item.reason === 'missing' ? '待建立' : '需更新'}
+                  </Text>
+                </View>
+              </View>
+            ))}
+            {knowledgeStatus.items.length === 0 && (
+              <Text style={styles.settingDescription}>目前沒有排隊中的食物。</Text>
+            )}
+          </>
+        ) : (
+          <Text style={styles.settingDescription}>尚未載入知識庫狀態。</Text>
+        )}
+      </View>
+
       {/* Notifications Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>提醒設定</Text>
@@ -706,6 +815,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     paddingVertical: spacing.sm,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
   sectionTitle: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
@@ -742,6 +858,65 @@ const styles = StyleSheet.create({
   settingDescription: {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
+  },
+  knowledgeRefreshButton: {
+    backgroundColor: colors.primary[500],
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  knowledgeRefreshButtonDisabled: {
+    backgroundColor: colors.text.disabled,
+  },
+  knowledgeRefreshText: {
+    color: colors.surface,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  knowledgeSummaryText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  knowledgeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  knowledgeItemText: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  knowledgeItemTitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
+  },
+  knowledgeItemSubtitle: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    marginTop: spacing.xs / 2,
+  },
+  knowledgeStatusBadge: {
+    borderRadius: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  knowledgeStatusMissing: {
+    backgroundColor: '#FEEBC8',
+  },
+  knowledgeStatusStale: {
+    backgroundColor: '#DBEAFE',
+  },
+  knowledgeStatusBadgeText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
   },
   footer: {
     alignItems: 'center',
