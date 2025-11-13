@@ -15,12 +15,13 @@ DELETE FROM diet_daily_foods WHERE name LIKE 'TEST_%';
 -- 1. 測試食物資料
 -- ============================================================
 
-INSERT INTO diet_daily_foods (id, name, category, description, created_at) VALUES
-    ('11111111-1111-1111-1111-111111111111', 'TEST_白飯', '主食', '測試用白飯', NOW()),
-    ('22222222-2222-2222-2222-222222222222', 'TEST_雞胸肉', '蛋白質', '測試用雞胸肉', NOW()),
-    ('33333333-3333-3333-3333-333333333333', 'TEST_青花菜', '蔬菜', '測試用青花菜', NOW()),
-    ('44444444-4444-4444-4444-444444444444', 'TEST_香蕉', '水果', '測試用香蕉', NOW()),
-    ('55555555-5555-5555-5555-555555555555', 'TEST_牛奶', '乳製品', '測試用牛奶', NOW())
+-- 使用最小欄位集以確保相容性
+INSERT INTO diet_daily_foods (id, name, created_at) VALUES
+    ('11111111-1111-1111-1111-111111111111', 'TEST_白飯', NOW()),
+    ('22222222-2222-2222-2222-222222222222', 'TEST_雞胸肉', NOW()),
+    ('33333333-3333-3333-3333-333333333333', 'TEST_青花菜', NOW()),
+    ('44444444-4444-4444-4444-444444444444', 'TEST_香蕉', NOW()),
+    ('55555555-5555-5555-5555-555555555555', 'TEST_牛奶', NOW())
 ON CONFLICT (name) DO NOTHING;
 
 -- ============================================================
@@ -328,7 +329,7 @@ INSERT INTO food_analysis_refresh_queue (
 
 -- 測試食物
 SELECT '=== 測試食物 ===' AS section;
-SELECT id, name, category FROM diet_daily_foods WHERE name LIKE 'TEST_%';
+SELECT id, name FROM diet_daily_foods WHERE name LIKE 'TEST_%';
 
 -- Food Analysis Cache
 SELECT '=== Food Analysis Cache ===' AS section;
