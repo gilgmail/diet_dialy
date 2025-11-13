@@ -75,18 +75,50 @@ if (ageDays >= refreshThreshold) { return true }
 - 新增 2 個測試案例驗證 record-specific refresh_frequency_days
 - 所有既有測試保持通過
 
-## 已知問題
+## 已修復問題
 
-### Response 204 錯誤
+### ✅ Response 204 錯誤 - 已解決
+
+#### 錯誤內容
 ```
 TypeError: Response constructor: Invalid response status code 204
     at IncomingMessage.<anonymous> (.next/server/app/api/admin/ai-usage/route.js:1:6269)
 ```
 
-**狀態**: 已識別但不影響主要功能
-**影響範圍**: 可能與 Supabase fetch 回應處理有關
-**優先級**: 低（不阻擋當前測試）
-**建議**: 後續獨立調查
+#### 根本原因
+**檔案**: `src/lib/supabase/server.ts:77-93`
+- customFetch 使用 Node.js http/https 模組繞過 Docker 中的 fetch 問題
+- Response 建構函式不允許 204/205/304 狀態碼有 body（即使空字串）
+- Supabase update 操作返回 204 No Content
+- `new Response(data, { status: 204 })` 失敗 → uncaughtException
+
+#### 修復方案
+```typescript
+// 修復前 ❌
+const response = new Response(data, {
+  status: res.statusCode,
+  ...
+})
+
+// 修復後 ✅
+const response = (res.statusCode === 204 || res.statusCode === 205 || res.statusCode === 304)
+  ? new Response(null, responseInit)  // 無 body
+  : new Response(data, responseInit)  // 正常回應
+```
+
+#### 驗證結果
+**測試時間**: 2025-11-13 14:15
+**API 呼叫**: Weekly AI Analysis with test data
+**結果**: ✅ 無任何 TypeError 或 204 錯誤
+**日誌輸出**:
+```
+[FoodKnowledge] Missing analyses for foods: 1
+[FoodKnowledge] Stale analyses detected: 2
+```
+
+**相關提交**:
+- `b51522f` - fix: handle Supabase update 204 response in usage tracker
+- `2dee30a` - fix: handle 204/205/304 responses in custom fetch
 
 ## 測試檔案
 
