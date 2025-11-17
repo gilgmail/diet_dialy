@@ -11,6 +11,9 @@ export async function GET(request: NextRequest) {
   }
 
   const admin = createAdminClient()
+
+  // 不限制 requested_by，顯示所有待處理項目
+  // 因為 Edge Function 處理的項目 requested_by 可能是 NULL
   const { data, error } = await admin
     .from('food_analysis_refresh_queue')
     .select(
@@ -31,8 +34,9 @@ export async function GET(request: NextRequest) {
         )
       `
     )
-    .eq('requested_by', userId)
+    .in('status', ['pending', 'in_progress', 'failed'])
     .order('priority', { ascending: false })
+    .limit(50)
 
   if (error) {
     console.error('[food-knowledge/status] query error:', error)

@@ -93,33 +93,16 @@ export function SettingsScreen() {
     }
   }, [settings.notificationsEnabled])
 
+  // 重新載入佇列狀態（不重新加入佇列）
   const handleManualKnowledgeRefresh = async () => {
     if (!user?.id) return
-    if (!knowledgeStatus || knowledgeStatus.items.length === 0) {
-      Alert.alert('提示', '目前沒有排隊的食物，無需刷新。')
-      return
-    }
-    const pendingIds = knowledgeStatus.items
-      .filter((item) => item.status !== 'completed')
-      .map((item) => item.foodId)
-
-    if (pendingIds.length === 0) {
-      Alert.alert('提示', '所有食物都已刷新完成。')
-      return
-    }
 
     setKnowledgeLoading(true)
     try {
-      const success = await FoodKnowledgeService.requestRefresh(user.id, pendingIds)
-      if (success) {
-        Alert.alert('已送出', '已將待更新的食物加入刷新佇列。')
-        await loadFoodKnowledgeStatus()
-      } else {
-        Alert.alert('失敗', '無法送出刷新請求，請稍後再試。')
-      }
+      await loadFoodKnowledgeStatus()
     } catch (error) {
-      console.warn('[SettingsScreen] refresh error:', error)
-      Alert.alert('錯誤', '無法送出刷新請求。')
+      console.warn('[SettingsScreen] refresh status error:', error)
+      Alert.alert('錯誤', '無法重新載入狀態。')
     } finally {
       setKnowledgeLoading(false)
     }
