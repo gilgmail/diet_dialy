@@ -45,14 +45,17 @@ export interface FilteredAnalysisResult {
  * Medical Access Control Service
  */
 export class MedicalAccessControl {
-  private supabase = createClient()
+  private getSupabaseClient() {
+    return createClient()
+  }
 
   /**
    * Get user's medical profile from database
    */
   async getUserMedicalProfile(userId: string): Promise<UserMedicalProfile | null> {
     try {
-      const { data: user, error } = await this.supabase
+      const supabase = this.getSupabaseClient()
+      const { data: user, error } = await supabase
         .from('diet_daily_users')
         .select('medical_conditions, allergies, dietary_restrictions, is_admin')
         .eq('id', userId)
