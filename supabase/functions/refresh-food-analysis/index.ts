@@ -5,6 +5,7 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')
 const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 const defaultVersion = Deno.env.get('FOOD_ANALYSIS_VERSION') ?? 'queue-auto'
 const MAX_BATCH = Number(Deno.env.get('FOOD_ANALYSIS_MAX_BATCH') ?? '5')
+const apiBaseUrl = Deno.env.get('API_BASE_URL') || 'http://localhost:3000'
 
 if (!supabaseUrl || !serviceKey) {
   throw new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not defined')
@@ -16,6 +17,50 @@ const supabase = createClient(supabaseUrl, serviceKey, {
     autoRefreshToken: false
   }
 })
+
+// 呼叫 AI 分析 API
+async function callAIAnalysisAPI(food: any) {
+  const endpoint = `${apiBaseUrl}/api/ai/analyze-food`
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        food_id: food.id,
+        name: food.name,
+        category: food.category,
+        nutrition: {
+          calories: food.calories,
+          protein: food.protein,
+          carbohydrates: food.carbohydrates,
+          fat: food.fat,
+          fiber: food.fiber,
+          sugar: food.sugar,
+          sodium: food.sodium
+        }
+      })
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`[AI API] Failed to analyze food ${food.name}:`, response.status, errorText)
+      throw new Error(`AI API failed: ${response.status}`)
+    }
+
+    const result = await response.json()
+    if (!result.success || !result.analysis) {
+      throw new Error('AI API returned invalid response')
+    }
+
+    return result.analysis
+  } catch (error) {
+    console.error('[AI API] Error calling analysis endpoint:', error)
+    throw error
+  }
+}
 
 async function processQueueItem(item: any) {
   await supabase
@@ -40,6 +85,10 @@ async function processQueueItem(item: any) {
       throw foodError
     }
 
+    // 呼叫 AI API 進行分析
+    console.log(`[refresh-food-analysis] Analyzing food: ${food.name}`)
+    const aiAnalysis = await callAIAnalysisAPI(food)
+
     const now = new Date().toISOString()
     const nutritionProfile = {
       calories: food?.calories ?? null,
@@ -51,25 +100,24 @@ async function processQueueItem(item: any) {
       sodium: food?.sodium ?? null
     }
 
-    const riskProfile =
-      (item.metadata && item.metadata.risk_profile) ||
-      { triggers: [], severity: item.reason === 'missing' ? 'unknown' : 'moderate' }
-
-    const summary = item.metadata?.summary ?? `自動刷新：${food?.name ?? '未知食物'}`
-
+    // 使用 AI 生成的分析結果
     await supabase
       .from('food_analysis_cache')
       .upsert({
         food_id: item.food_id,
         analysis_version: item.target_version ?? defaultVersion,
-        analysis_source: 'hybrid',
+        analysis_source: 'ai_generated',
         nutrition_profile: nutritionProfile,
-        risk_profile: riskProfile,
-        supportive_attributes: item.metadata?.supportive_attributes ?? [],
-        serving_guidelines: item.metadata?.serving_guidelines ?? [],
-        analysis_payload: { summary },
-        analysis_notes: `Queue worker refreshed (${item.reason})`,
-        analysis_tokens: item.metadata?.analysis_tokens ?? { input: 0, output: 0 },
+        risk_profile: aiAnalysis.risk_profile,
+        supportive_attributes: aiAnalysis.supportive_attributes,
+        serving_guidelines: aiAnalysis.serving_guidelines,
+        analysis_payload: {
+          summary: aiAnalysis.summary,
+          generated_at: now,
+          reason: item.reason
+        },
+        analysis_notes: `AI generated via queue worker (${item.reason})`,
+        analysis_tokens: aiAnalysis.analysis_tokens,
         analysis_usage_count: 0,
         analysis_updated_at: now,
         created_at: item.created_at ?? now,
@@ -86,7 +134,16 @@ async function processQueueItem(item: any) {
       })
       .eq('id', item.id)
 
-    return { id: item.id, status: 'completed' }
+    console.log(
+      `[refresh-food-analysis] Successfully processed: ${food.name} (${aiAnalysis.analysis_tokens.input + aiAnalysis.analysis_tokens.output} tokens)`
+    )
+
+    return {
+      id: item.id,
+      status: 'completed',
+      food_name: food.name,
+      tokens: aiAnalysis.analysis_tokens.input + aiAnalysis.analysis_tokens.output
+    }
   } catch (error) {
     console.error('[refresh-food-analysis] Failed to process queue item:', error)
     await supabase

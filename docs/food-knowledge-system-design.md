@@ -236,7 +236,8 @@ async function handleChunkedAnalysis(body: any) {
 1. 執行 `supabase/seed_test_data_v2.sql` 建立測試食物與 queue 項目。  
 2. 打 `GET /api/food-knowledge/status?userId=<測試用戶>`，確認 queue 顯示 missing/stale 食物。  
 3. 在 Settings → AI 食物知識庫中刷新列表，確定 UI 能看到同樣資料；操作「立即刷新」後 queue 狀態更新。  
-4. 手動或自動觸發 Edge Function，確認 `food_analysis_cache.analysis_updated_at` 變更，Dashboard history 新報告會標註分析版本與方式。***
+4. 在 `/admin/food-knowledge` 網頁管理頁檢視 cache/queue，必要時可於此觸發「立即處理」；確認資料與 iOS 顯示一致。  
+5. 手動或自動觸發 Edge Function，確認 `food_analysis_cache.analysis_updated_at` 變更，Dashboard history 新報告會標註分析版本與方式。***
 ```
 
 ### 資料庫 Schema
