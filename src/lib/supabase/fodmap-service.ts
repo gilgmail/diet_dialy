@@ -1,7 +1,7 @@
 // FODMAP 資料庫服務層
 // 提供完整的 FODMAP 數據管理和個人化分析
 
-import { supabase } from './client'
+import { createClient } from './client'
 
 export interface FODMAPComponents {
   id?: string
@@ -53,9 +53,14 @@ export interface PersonalFODMAPRecommendation {
 }
 
 export class FODMAPService {
+  private getSupabaseClient() {
+    return createClient()
+  }
+
 
   // 獲取食物的 FODMAP 成分
   async getFoodFODMAP(foodId: string): Promise<FODMAPComponents | null> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('fodmap_components')
       .select('*')
@@ -72,6 +77,7 @@ export class FODMAPService {
 
   // 批次獲取 FODMAP 數據
   async getBatchFODMAP(foodIds: string[]): Promise<Map<string, FODMAPComponents>> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('fodmap_components')
       .select('*')
@@ -92,6 +98,7 @@ export class FODMAPService {
 
   // 更新或建立食物的 FODMAP 數據
   async updateFoodFODMAP(fodmapData: FODMAPComponents): Promise<FODMAPComponents | null> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('fodmap_components')
       .upsert({
@@ -114,6 +121,7 @@ export class FODMAPService {
     riskLevel: 'low' | 'medium' | 'high',
     limit = 50
   ): Promise<FODMAPAnalysis[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('fodmap_analysis_view')
       .select('*')
@@ -153,6 +161,7 @@ export class FODMAPService {
 
   // 獲取用戶的 FODMAP 耐受性設定
   async getUserFODMAPTolerance(userId: string): Promise<UserFODMAPTolerance[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('user_fodmap_tolerance')
       .select('*')
@@ -173,6 +182,7 @@ export class FODMAPService {
     fodmapType: UserFODMAPTolerance['fodmap_type'],
     toleranceData: Partial<UserFODMAPTolerance>
   ): Promise<UserFODMAPTolerance | null> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('user_fodmap_tolerance')
       .upsert({
@@ -197,6 +207,7 @@ export class FODMAPService {
     userId: string,
     limit = 100
   ): Promise<PersonalFODMAPRecommendation[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .rpc('get_personal_fodmap_recommendations', {
         p_user_id: userId
@@ -222,6 +233,7 @@ export class FODMAPService {
     primaryFODMAPSources: string[]
     recommendations: string[]
   }> {
+    const supabase = this.getSupabaseClient()
     // 獲取指定期間的飲食記錄
     const { data: foodEntries, error } = await supabase
       .from('diet_daily_food_entries')
@@ -318,6 +330,7 @@ export class FODMAPService {
 
   // 獲取 FODMAP 統計資料
   async getFODMAPStats() {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .rpc('get_fodmap_stats')
 
@@ -334,6 +347,7 @@ export class FODMAPService {
     originalFoodId: string,
     category?: string
   ): Promise<FODMAPAnalysis[]> {
+    const supabase = this.getSupabaseClient()
     let query = supabase
       .from('fodmap_analysis_view')
       .select('*')

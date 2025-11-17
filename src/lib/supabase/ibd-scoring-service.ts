@@ -1,5 +1,5 @@
 // IBD 評分 Supabase 服務層
-import { supabase } from './client'
+import { createClient } from './client'
 import { ibdNutritionistScorer, type IBDFoodScore } from '@/lib/ai/ibd-nutritionist-scorer'
 import type { Food } from '@/types/supabase'
 
@@ -20,9 +20,14 @@ interface ScoringResult {
 }
 
 export class IBDScoringService {
+  private getSupabaseClient() {
+    return createClient()
+  }
+
 
   // 獲取單一食物的 IBD 評分
   async getFoodIBDScore(foodId: string): Promise<IBDScoredFood | null> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
@@ -39,6 +44,7 @@ export class IBDScoringService {
 
   // 獲取指定評分的食物清單
   async getFoodsByIBDScore(score: 0 | 1 | 2 | 3, limit = 50): Promise<IBDScoredFood[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
@@ -62,6 +68,7 @@ export class IBDScoringService {
     category?: string
     limit?: number
   }): Promise<IBDScoredFood[]> {
+    let supabase = this.getSupabaseClient()
     let supabaseQuery = supabase
       .from('diet_daily_foods')
       .select('*')
@@ -229,6 +236,7 @@ export class IBDScoringService {
 
   // 為整個分類的食物進行評分
   async scoreFoodsByCategory(category: string): Promise<ScoringResult> {
+    const supabase = this.getSupabaseClient()
     // 獲取該分類的所有未評分食物
     const { data: foods, error } = await supabase
       .from('diet_daily_foods')
@@ -248,6 +256,7 @@ export class IBDScoringService {
 
   // 更新食物的 IBD 評分
   private async updateFoodScore(foodId: string, score: IBDFoodScore): Promise<void> {
+    const supabase = this.getSupabaseClient()
     const { error } = await supabase
       .from('diet_daily_foods')
       .update({
@@ -269,6 +278,7 @@ export class IBDScoringService {
 
   // 獲取 IBD 評分統計
   async getIBDScoringStats() {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('ibd_scoring_stats')
       .select('*')
@@ -284,6 +294,7 @@ export class IBDScoringService {
 
   // 獲取評分歷史
   async getScoringHistory(foodId: string) {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('ibd_scoring_history')
       .select('*')
@@ -300,6 +311,7 @@ export class IBDScoringService {
 
   // 重新評分已評分的食物
   async rescoreFood(foodId: string): Promise<IBDFoodScore | null> {
+    const supabase = this.getSupabaseClient()
     // 先清除舊評分
     await supabase
       .from('diet_daily_foods')
@@ -319,6 +331,7 @@ export class IBDScoringService {
 
   // 獲取推薦食物（評分 2-3 分）
   async getRecommendedFoods(limit = 20): Promise<IBDScoredFood[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
@@ -338,6 +351,7 @@ export class IBDScoringService {
 
   // 獲取需要避免的食物（評分 0-1 分）
   async getFoodsToAvoid(limit = 20): Promise<IBDScoredFood[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
@@ -364,6 +378,7 @@ export class IBDScoringService {
 
   // 驗證評分系統的準確性
   async validateScoringAccuracy(sampleSize = 10) {
+    const supabase = this.getSupabaseClient()
     // 隨機取樣已評分食物進行重新評分比較
     const { data: foods, error } = await supabase
       .from('diet_daily_foods')

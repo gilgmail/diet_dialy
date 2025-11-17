@@ -1,5 +1,5 @@
 // Supabase 食物資料庫服務
-import { supabase } from './client'
+import { createClient } from './client'
 import type { Food, FoodInsert, FoodUpdate } from '@/types/supabase'
 
 const DB_APPROVED_STATUSES = ['admin_approved', 'ai_approved', 'approved'] as const
@@ -29,9 +29,14 @@ const normalizeFood = (food: any): Food => ({
 const normalizeFoods = (foods: any[] | null): Food[] => foods ? foods.map(normalizeFood) : []
 
 export class SupabaseFoodsService {
+  private getSupabaseClient() {
+    return createClient()
+  }
+
 
   // 獲取所有已驗證的食物
   async getApprovedFoods(): Promise<Food[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
@@ -48,6 +53,7 @@ export class SupabaseFoodsService {
 
   // 搜尋已驗證的食物
   async searchApprovedFoods(searchTerm: string): Promise<Food[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
@@ -66,6 +72,7 @@ export class SupabaseFoodsService {
 
   // 依分類獲取食物
   async getFoodsByCategory(category: string): Promise<Food[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
@@ -88,6 +95,7 @@ export class SupabaseFoodsService {
     includeUnverified?: boolean
     limit?: number
   }): Promise<Food[]> {
+    let supabase = this.getSupabaseClient()
     let supabaseQuery = supabase
       .from('diet_daily_foods')
       .select('*')
@@ -126,6 +134,7 @@ export class SupabaseFoodsService {
 
   // 根據 ID 獲取食物
   async getFoodById(id: string): Promise<Food | null> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
@@ -142,6 +151,7 @@ export class SupabaseFoodsService {
 
   // 建立自訂食物
   async createCustomFood(foodData: FoodInsert): Promise<Food | null> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .insert({
@@ -162,6 +172,7 @@ export class SupabaseFoodsService {
 
   // 建立食物 (通用方法)
   async createFood(foodData: FoodInsert): Promise<Food | null> {
+    const supabase = this.getSupabaseClient()
     const insertData: any = { ...foodData }
 
     if (insertData.verification_status) {
@@ -184,6 +195,7 @@ export class SupabaseFoodsService {
 
   // 更新食物資料
   async updateFood(id: string, updates: FoodUpdate): Promise<Food | null> {
+    const supabase = this.getSupabaseClient()
     const updatePayload: any = { ...updates }
 
     if (updatePayload.verification_status) {
@@ -207,6 +219,7 @@ export class SupabaseFoodsService {
 
   // 獲取待驗證的食物 (僅管理員)
   async getPendingFoods(): Promise<Food[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
@@ -256,6 +269,7 @@ export class SupabaseFoodsService {
     console.log('Updating food with data:', JSON.stringify(updateData, null, 2))
     console.log('Food ID to update:', id)
 
+    const supabase = this.getSupabaseClient()
     try {
       const { data, error } = await supabase
         .from('diet_daily_foods')
@@ -280,6 +294,7 @@ export class SupabaseFoodsService {
 
   // 獲取食物分類
   async getFoodCategories(): Promise<string[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('category')
@@ -297,6 +312,7 @@ export class SupabaseFoodsService {
 
   // 獲取用戶的自訂食物
   async getUserCustomFoods(userId: string): Promise<Food[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
@@ -314,6 +330,7 @@ export class SupabaseFoodsService {
 
   // 刪除自訂食物
   async deleteCustomFood(id: string, userId: string): Promise<boolean> {
+    const supabase = this.getSupabaseClient()
     const { error } = await supabase
       .from('diet_daily_foods')
       .delete()
@@ -331,6 +348,7 @@ export class SupabaseFoodsService {
 
   // 刪除食物 (管理員權限，可刪除任何食物)
   async deleteFood(id: string, adminId: string): Promise<boolean> {
+    const supabase = this.getSupabaseClient()
     const { error } = await supabase
       .from('diet_daily_foods')
       .delete()
@@ -357,6 +375,7 @@ export class SupabaseFoodsService {
 
   // 獲取食物統計資料
   async getFoodsStats() {
+    const supabase = this.getSupabaseClient()
     const [
       { count: totalCount },
       { count: approvedCount },
@@ -385,6 +404,7 @@ export class SupabaseFoodsService {
 
   // 獲取所有食物 (管理員專用，包含所有狀態)
   async getAllFoods(): Promise<Food[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
@@ -406,6 +426,7 @@ export class SupabaseFoodsService {
     taiwan_origin?: boolean
     is_custom?: boolean
   }): Promise<{ data: Food[], total: number, hasMore: boolean }> {
+    const supabase = this.getSupabaseClient()
     let query = supabase
       .from('diet_daily_foods')
       .select('*', { count: 'exact' })
@@ -461,6 +482,7 @@ export class SupabaseFoodsService {
     verifiedBy: string,
     notes?: string
   ): Promise<Food[]> {
+    const supabase = this.getSupabaseClient()
     const normalizedStatus = status === 'approved' ? 'approved' : 'rejected'
     const dbStatus = toDbVerificationStatus(normalizedStatus)
 
@@ -485,6 +507,7 @@ export class SupabaseFoodsService {
 
   // 檢查食物名稱是否重複
   async checkFoodNameExists(name: string, excludeId?: string): Promise<boolean> {
+    const supabase = this.getSupabaseClient()
     let query = supabase
       .from('diet_daily_foods')
       .select('id')
@@ -506,6 +529,7 @@ export class SupabaseFoodsService {
 
   // 獲取熱門食物 (基於使用頻率或評分)
   async getPopularFoods(limit: number = 20): Promise<Food[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_foods')
       .select('*')
@@ -523,6 +547,7 @@ export class SupabaseFoodsService {
 
   // 批量建立食物
   async bulkCreateFoods(foods: FoodInsert[]): Promise<Food[]> {
+    const supabase = this.getSupabaseClient()
     const insertFoods = foods.map(food => {
       const payload: any = { ...food }
       if (payload.verification_status) {
@@ -551,6 +576,7 @@ export class SupabaseFoodsService {
     verifiedBy: string,
     notes?: string
   ): Promise<boolean> {
+    const supabase = this.getSupabaseClient()
     const dbStatus = toDbVerificationStatus(status)
 
     const { error } = await supabase
@@ -607,6 +633,7 @@ export class SupabaseFoodsService {
 
   // 尋找現有食物 (避免重複)
   private async findExistingFood(name: string, brand?: string): Promise<Food | null> {
+    const supabase = this.getSupabaseClient()
     let query = supabase
       .from('diet_daily_foods')
       .select('*')

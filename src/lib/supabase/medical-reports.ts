@@ -1,11 +1,16 @@
 // Supabase 醫療報告服務
-import { supabase } from './client'
+import { createClient } from './client'
 import type { MedicalReport, MedicalReportInsert, MedicalReportUpdate } from '@/types/supabase'
 
 export class SupabaseMedicalReportsService {
+  private getSupabaseClient() {
+    return createClient()
+  }
+
 
   // 建立醫療報告
   async createMedicalReport(reportData: MedicalReportInsert): Promise<MedicalReport | null> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('medical_reports')
       .insert(reportData)
@@ -22,6 +27,7 @@ export class SupabaseMedicalReportsService {
 
   // 獲取用戶的醫療報告
   async getUserMedicalReports(userId: string): Promise<MedicalReport[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('medical_reports')
       .select('*')
@@ -38,6 +44,7 @@ export class SupabaseMedicalReportsService {
 
   // 根據 ID 獲取醫療報告
   async getMedicalReportById(id: string): Promise<MedicalReport | null> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('medical_reports')
       .select('*')
@@ -54,6 +61,7 @@ export class SupabaseMedicalReportsService {
 
   // 更新醫療報告
   async updateMedicalReport(id: string, updates: MedicalReportUpdate): Promise<MedicalReport | null> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('medical_reports')
       .update(updates)
@@ -71,6 +79,7 @@ export class SupabaseMedicalReportsService {
 
   // 刪除醫療報告
   async deleteMedicalReport(id: string): Promise<boolean> {
+    const supabase = this.getSupabaseClient()
     const { error } = await supabase
       .from('medical_reports')
       .delete()
@@ -90,6 +99,7 @@ export class SupabaseMedicalReportsService {
     startDate: string,
     endDate: string
   ): Promise<MedicalReport[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('medical_reports')
       .select('*')
@@ -111,6 +121,7 @@ export class SupabaseMedicalReportsService {
     userId: string,
     reportType: 'daily' | 'weekly' | 'monthly' | 'custom'
   ): Promise<MedicalReport[]> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('medical_reports')
       .select('*')
@@ -132,6 +143,7 @@ export class SupabaseMedicalReportsService {
     startDate: string,
     endDate: string
   ): Promise<any> {
+    const supabase = this.getSupabaseClient()
     // 這裡可以整合食物記錄和症狀追蹤數據來生成報告摘要
     // 實際實現會根據具體的醫療分析需求來設計
 
