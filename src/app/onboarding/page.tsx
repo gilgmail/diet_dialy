@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
 
+export const dynamic = 'force-dynamic'
+
 export default function OnboardingPage() {
   const [formData, setFormData] = useState({
     email: '',
