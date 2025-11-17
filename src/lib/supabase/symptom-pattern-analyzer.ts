@@ -3,7 +3,7 @@
  * Analyzes symptom patterns and trends for users
  */
 
-import { supabase } from './client';
+import { createAdminClient } from './server';
 import { DailySymptomService } from './daily-symptom-service';
 import type {
   SymptomPatternAnalysis,
@@ -29,7 +29,8 @@ export class SymptomPatternAnalyzer {
     period: 'weekly' | 'monthly' | 'quarterly'
   ): Promise<SymptomPatternAnalysis | null> {
     try {
-      const { data, error } = await supabase
+      const admin = createAdminClient();
+      const { data, error } = await admin
         .from('symptom_patterns')
         .select('*')
         .eq('user_id', userId)
@@ -183,7 +184,8 @@ export class SymptomPatternAnalyzer {
    */
   static async deletePatternAnalysis(analysisId: string, userId: string): Promise<boolean> {
     try {
-      const { error } = await supabase
+      const admin = createAdminClient();
+      const { error } = await admin
         .from('symptom_patterns')
         .delete()
         .eq('id', analysisId)
@@ -209,7 +211,8 @@ export class SymptomPatternAnalyzer {
     period: 'weekly' | 'monthly' | 'quarterly'
   ): Promise<boolean> {
     try {
-      const { error } = await supabase
+      const admin = createAdminClient();
+      const { error} = await admin
         .from('symptom_patterns')
         .delete()
         .eq('user_id', userId)
@@ -269,7 +272,8 @@ export class SymptomPatternAnalyzer {
     endDate: Date
   ): Promise<SymptomPatternAnalysis | null> {
     try {
-      const { data, error } = await supabase
+      const admin = createAdminClient();
+      const { data, error } = await admin
         .from('symptom_patterns')
         .select('*')
         .eq('user_id', userId)
@@ -681,9 +685,10 @@ export class SymptomPatternAnalyzer {
     analysis: Omit<SymptomPatternAnalysis, 'id' | 'created_at' | 'updated_at'>
   ): Promise<SymptomPatternAnalysis> {
     try {
+      const admin = createAdminClient();
       const dbData = this.transformPatternForDatabase(analysis);
 
-      const { data, error } = await supabase
+      const { data, error } = await admin
         .from('symptom_patterns')
         .insert(dbData)
         .select()
