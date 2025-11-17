@@ -6,6 +6,13 @@
   1. **藥物使用**：建立療程設定 + 實際施打/服用事件，支援 28/56 天針劑循環與 PRN 口服藥。
   2. **睡眠 & 運動**：可與早餐打卡一併紀錄，並保留從裝置自動帶入資料的空間。
   3. **提醒與同步**：集中管理提醒規則、健康資料來源狀態與同步紀錄。
+  4. **獨立紀錄頁面**：飲食、用藥、運動、睡眠在 iOS App 內各有單純的紀錄畫面，對應 Supabase 單一真實來源，避免重複資料結構。
+  5. **飲食/症狀為核心，其餘模組為輔助**：藥物、睡眠、運動維持簡單輸入（主項目 + 時間/頻率），但 schema 預留 `detail_payload` 類欄位以便將來擴充更細節。
+
+## 設計準則
+- **睡眠以「預計時間 + 時長」為主**：使用者若只輸入預計就寢時間與預計睡眠時長也能完成紀錄；實際開始/結束為進階欄位。
+- **運動僅在有紀錄時寫入**：UI 只要求「主要活動」與「花了多久」，其他感測資料（卡路里、心率）為 optional。
+- **飲食/症狀是核心流程**：因此保持 `meal_logs` 功能完整，其他表格保持輕量，但透過 `detail_payload` 保留擴充能力。
 
 ## 範圍
 - Supabase schema（Postgres）新增的表與欄位。
@@ -14,9 +21,9 @@
 
 ## 資料流程概觀
 1. **療程建檔** → 使用者於 App 定義藥品、頻率（28/56 天或 PRN）、開始日期、提醒偏好。
-2. **生成提醒與排程** → 依 `medication_regimens` 設定建立提醒 (`medication_reminders`) 與週期 (`medication_cycles`)。
+2. **生成提醒與排程** → 所有提醒統一寫入 `user_reminders`（指向療程或健康習慣），並視需要建立週期 (`medication_cycles`)。
 3. **實際紀錄** → 每次施打/服用產生 `medication_administrations`，標註是否症狀觸發與依從狀態。
-4. **日常健康紀錄** → 使用者在早餐時段填寫 `daily_wellness_log`，並可同步 `sleep_sessions`、`activity_sessions`。
+4. **日常健康紀錄** → 使用者透過 Food / Medication / Sleep / Activity 獨立頁面寫入 `meal_logs`、`medication_administrations`、`sleep_sessions`、`activity_sessions`，系統再視需要生成 `daily_wellness_log` 彙總。
 5. **裝置同步** → `health_data_sources` 管理授權狀態，資料先進入 staging（HealthKit/GoogleFit）再轉寫正式表，避免重複。
 
 ## Schema 設計
@@ -69,8 +76,11 @@
 | `captured_via` | text | manual / reminder / wearable |
 | `vitals_snapshot` | jsonb | 可放血壓/體重 |
 | `side_effects` | jsonb | 結構化副作用 |
+| `detail_payload` | jsonb | 預留更細的輸入欄位（例如注射部位） |
 | `notes` | text | 額外描述 |
 | `created_at` | timestamptz |  |
+
+> **用藥紀錄頁（MedicationLogScreen）**：iOS 端僅呈現日期、劑量、施打方式、症狀觸發與備註欄位，所有資料直接寫入 `medication_administrations`，不經其他中介表，確保與 Supabase schema 一致。
 
 #### `medication_cycles`
 用於追蹤 28/56 日期循環（例：下一針日期）。
@@ -87,41 +97,45 @@
 | `status` | text | scheduled / completed |
 | `created_at/updated_at` | timestamptz | |
 
-#### `medication_reminders` & `reminder_logs`
+
+### 2. 飲食 / 睡眠 / 運動紀錄（獨立頁面）
+
+所有紀錄以「單一畫面 → 單一表」為原則，iOS 內的四個頁面（FoodLogScreen、MedicationLogScreen、SleepLogScreen、ActivityLogScreen）直接命中 Supabase 對應表，資料結構完全一致，便於共用提醒與 QA。
+
+#### `meal_logs`
 | 欄位 | 型別 | 說明 |
 | --- | --- | --- |
 | `id` | uuid PK | |
-| `regimen_id` | uuid FK | |
-| `reminder_type` | text | pre-dose / follow-up / refill |
-| `channel` | text | push / sms / email |
-| `lead_time_minutes` | int | 例：提前 1440 分提醒 |
-| `window_start` | time | 例：08:00 |
-| `window_end` | time | |
-| `timezone` | text | IANA |
-| `snooze_minutes` | int | 可選 |
-| `active` | boolean | |
-| `metadata` | jsonb | cron、weekday mask 等 |
+| `user_id` | uuid FK | |
+| `logged_at` | timestamptz | 使用者記錄時間（預設當前） |
+| `meal_type` | text | breakfast / lunch / dinner / snack |
+| `items` | jsonb | { food_name, portion, unit } 陣列 |
+| `is_symptom_triggered` | boolean | 是否因症狀補充營養 |
+| `notes` | text | 味道感受、提醒 |
+| `photo_urls` | text[] | 供 UI 顯示 |
+| `captured_via` | text | ios_manual / wearable / import |
+| `analysis_status` | text | pending / completed（食物分析 pipeline 用） |
 | `created_at/updated_at` | timestamptz | |
 
-`reminder_logs`（對應 `reminder_id`）保存送達、點擊、跳過、因資料已存在而自動解除等狀態，便於調適提醒策略。
+> **FoodLogScreen** 僅呈現時間、餐別、食物項目與備註，新增/編輯都寫入 `meal_logs`。若未填字串亦會自動紀錄當前時間，之後若要做早餐提醒，直接查詢 `meal_type = 'breakfast'`。
 
-### 2. 睡眠 / 運動 / 早餐聯動
+> **症狀關聯**：此表作為 App 的核心資料來源，症狀記錄或分析（例如腸胃症狀）會 reference `meal_logs.id`，因此保留完整食物列表與備註欄位。
 
-#### `daily_wellness_log`
+#### `daily_wellness_log`（選用彙總表）
 | 欄位 | 型別 | 說明 |
 | --- | --- | --- |
 | `user_id` | uuid FK | PK part |
 | `log_date` | date | PK part |
-| `breakfast_time` | timestamptz | 早餐記錄時間 |
-| `sleep_quality_score` | int | 1-5 主觀分數 |
-| `energy_level` | int | 1-5 |
+| `breakfast_time` | timestamptz | 從 `meal_logs` breakfast 自动計算 |
+| `sleep_quality_score` | int | 1-5 主觀分數（來自 `sleep_sessions`） |
+| `energy_level` | int | 1-5（使用者快填） |
 | `mood_score` | int | 1-5 |
-| `activity_minutes` | int | 當日總運動時長 |
+| `activity_minutes` | int | 聚合 `activity_sessions` |
 | `notes` | text | 自由填寫 |
 | `captured_via` | text | manual / auto |
 | `created_at/updated_at` | timestamptz | |
 
-早餐畫面可以一次帶入 `sleep_quality_score`、`activity_minutes` 等欄位。
+> 此表可以是 view 或 materialized view，僅提供儀表板彙總；真正的資料輸入仍在各自的紀錄表內。
 
 #### `sleep_sessions`
 | 欄位 | 型別 | 說明 |
@@ -130,13 +144,18 @@
 | `user_id` | uuid FK | |
 | `source` | text | manual / healthkit / googlefit |
 | `source_record_id` | text | 去重用 |
-| `start_time` | timestamptz | |
-| `end_time` | timestamptz | |
-| `duration_minutes` | int | 冗餘儲存 |
+| `start_time` | timestamptz | 實際開始（可為 NULL） |
+| `end_time` | timestamptz | 實際結束（可為 NULL） |
+| `duration_minutes` | int | 實際時長（缺資料時以預計值帶入） |
+| `planned_start_time` | time | 使用者輸入的預計上床時間（搭配 `timezone`） |
+| `planned_duration_minutes` | int | 使用者輸入的預計睡眠長度 |
 | `is_main_sleep` | boolean | 區分午睡 |
 | `quality_score` | int | 1-5 或 null |
 | `capture_method` | text | breakfast_form / auto_sync |
+| `detail_payload` | jsonb | 更完整資料（例如翻覆次數、心率） |
 | `created_at` | timestamptz | |
+
+> **SleepLogScreen** 預設只需輸入「預計就寢時間」與「預計睡多久」兩個欄位，實際開始/結束僅在使用者願意打更細資料時才填；Edge Function 會以預計值生成提醒與儀表板資訊。
 
 #### `activity_sessions`
 | 欄位 | 型別 | 說明 |
@@ -144,6 +163,7 @@
 | `id` | uuid PK | |
 | `user_id` | uuid FK | |
 | `activity_type` | text | walk / run / yoga… |
+| `activity_title` | text | 使用者自訂主要項目（例：核心訓練） |
 | `intensity` | text | low / moderate / high |
 | `start_time` | timestamptz | |
 | `end_time` | timestamptz | |
@@ -153,27 +173,49 @@
 | `source` | text | manual / healthkit... |
 | `capture_method` | text | breakfast_form / auto_sync |
 | `notes` | text | |
+| `detail_payload` | jsonb | 預留更多感測數據或分段 |
 | `created_at` | timestamptz | |
 
-### 3. Reminders 與健康資料來源
+> **ActivityLogScreen** 只要「做了什麼活動」與「花多久時間」即可送出，其餘強度、卡路里、detail payload 均為選填；沒有填就不會產生紀錄，符合「有記錄才有」的原則。若從裝置匯入則 `source_record_id` 可確保不重複。
 
-#### `habit_reminders`
-可共用於睡眠/運動/早餐提醒。
+### 3. 統一提醒與健康資料來源
 
+#### `user_reminders`
 | 欄位 | 型別 | 說明 |
 | --- | --- | --- |
 | `id` | uuid PK | |
 | `user_id` | uuid FK | |
-| `habit_type` | text | sleep_log / activity_log / breakfast_bundle |
-| `preferred_window_start` | time | 搭配 `timezone` |
-| `preferred_window_end` | time | |
-| `frequency_pattern` | text | daily / weekdays / custom |
-| `auto_complete_condition` | text | 若已存在同日資料則自動完成 |
-| `notification_channel` | text | push / sms |
+| `target_type` | text | medication_regimen / meal_logs / sleep_sessions / activity_sessions |
+| `target_id` | uuid | 指向具體資料（例如 regimen_id），若為純習慣提醒可為 NULL |
+| `reminder_category` | text | medication / food / sleep / activity |
+| `title` | text | iOS 提醒列表顯示文案 |
+| `schedule_type` | text | cron / every_n_days / relative_cycle |
+| `interval_days` | int | 搭配 every_n_days |
+| `window_start` | time | 搭配 `timezone` |
+| `window_end` | time | |
+| `timezone` | text | IANA |
+| `lead_time_minutes` | int | 提前提醒 |
 | `snooze_minutes` | int | |
-| `status` | text | active / paused |
-| `metadata` | jsonb | cron 表達式等 |
+| `auto_dismiss_rule` | text | existing_entry / manual_only |
+| `metadata` | jsonb | cron 字串、cycle offset（針劑）、行為設定 |
+| `status` | text | active / paused / archived |
+| `ios_visible` | boolean | 是否顯示於 iOS 提醒頁 |
 | `created_at/updated_at` | timestamptz | |
+
+> iOS App 的「提醒設定」頁直接讀寫 `user_reminders`，因此 SQL schema 與 App UI 共用一套欄位，不需額外表或 view。若是針劑提醒，`target_type = 'medication_regimen'` 並在 `metadata` 存 `cycle_offset_days`；若是早餐提醒則 `target_type = 'meal_logs'` 並在 `auto_dismiss_rule = 'existing_entry'`。
+
+#### `reminder_logs`
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| `id` | uuid PK | |
+| `reminder_id` | uuid FK → `user_reminders` | |
+| `status` | text | sent / delivered / tapped / dismissed / skipped |
+| `deliver_at` | timestamptz | 實際發送 |
+| `handled_at` | timestamptz | 使用者互動時間 |
+| `context` | jsonb | 包含當時 cycle、預計施打日期等 |
+| `created_at` | timestamptz | |
+
+> Edge Function 會在提醒送出與完成紀錄/自動解除時寫入 `reminder_logs`，提供審計與除錯。
 
 #### `health_data_sources`
 | 欄位 | 型別 | 說明 |
@@ -195,11 +237,12 @@
 ## Phase A 實作優先順序
 1. **Migration 檔**：依上面順序拆成多支 SQL（建議 `009_medication_base.sql`、`010_sleep_activity.sql`、`011_reminders_health_sources.sql`），並更新 `seed_test_data.sql` 方便 QA。
 2. **Supabase Edge Functions**：
-   - 產生/更新療程時建立預設提醒與下一次 cycle。
+   - 產生/更新療程時建立預設 `user_reminders` 與下一次 cycle。
    - 每次 `medication_administration` 寫入後，如與提醒對應則更新 `reminder_logs`。
-3. **早餐頁面 API**：
-   - 新增 `daily_wellness_log` CRUD。
-   - 寫入手動 `sleep_sessions`/`activity_sessions`。
+   - 飲食/睡眠/運動紀錄建立時觸發 auto-dismiss 流程，確保提醒頁狀態與實際紀錄同步。
+3. **紀錄頁 API**：
+   - 建立 `meal_logs`、`sleep_sessions`、`activity_sessions` 手動寫入端點，供 iOS 四個紀錄頁共用。
+   - `daily_wellness_log` 僅提供查詢（或 materialized view refresh）作為儀表板資料。
 4. **健康資料同步骨架**：
    - 先實作 `health_data_sources` 狀態（連動 App UI）。
    - 撰寫 cron job (Edge Function / worker) 將 staging 轉正式表。
@@ -217,4 +260,3 @@
   - `supabase/functions/refresh-food-analysis/index.ts`（Edge Function 風格）
   - `supabase/migrations/007_add_bowel_movement_fields.sql`（命名與 migration 結構）
   - `claudedocs/bowel-movement-feature-design.md`（文件格式示例）
-

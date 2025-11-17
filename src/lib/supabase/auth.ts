@@ -1,11 +1,15 @@
 // Supabase 認證服務
-import { supabase } from './client'
+import { createClient } from './client'
 import type { User, UserInsert, UserUpdate } from '@/types/supabase'
 
 export class SupabaseAuthService {
+  private getSupabaseClient() {
+    return createClient()
+  }
 
   // Google OAuth 登入
   async signInWithGoogle() {
+    const supabase = this.getSupabaseClient()
     const baseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin).replace(/\/+$/, '')
     const redirectTo = `${baseUrl}/auth/callback`
 
@@ -30,6 +34,7 @@ export class SupabaseAuthService {
 
   // 登出
   async signOut() {
+    const supabase = this.getSupabaseClient()
     const { error } = await supabase.auth.signOut()
     if (error) {
       console.error('Sign out error:', error)
@@ -39,6 +44,7 @@ export class SupabaseAuthService {
 
   // 獲取當前用戶
   async getCurrentUser() {
+    const supabase = this.getSupabaseClient()
     const { data: { user }, error } = await supabase.auth.getUser()
     if (error) {
       console.error('Get user error:', error)
@@ -49,6 +55,7 @@ export class SupabaseAuthService {
 
   // 獲取用戶資料
   async getUserProfile(userId: string): Promise<User | null> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_users')
       .select('*')
@@ -65,6 +72,7 @@ export class SupabaseAuthService {
 
   // 建立或更新用戶資料
   async upsertUserProfile(userData: UserInsert): Promise<User | null> {
+    const supabase = this.getSupabaseClient()
     try {
       // 先嘗試按 ID 查找用戶
       const { data: existingUser } = await supabase
@@ -118,6 +126,7 @@ export class SupabaseAuthService {
 
   // 更新用戶資料
   async updateUserProfile(userId: string, updates: UserUpdate): Promise<User | null> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_users')
       .update(updates)
@@ -135,6 +144,7 @@ export class SupabaseAuthService {
 
   // 檢查用戶是否為管理員
   async isUserAdmin(userId: string): Promise<boolean> {
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('diet_daily_users')
       .select('is_admin')
@@ -151,6 +161,7 @@ export class SupabaseAuthService {
 
   // 監聽認證狀態變化
   onAuthStateChange(callback: (event: string, session: any) => void) {
+    const supabase = this.getSupabaseClient()
     return supabase.auth.onAuthStateChange(callback)
   }
 }
