@@ -399,6 +399,563 @@ export type Database = {
           updated_at?: string
         }
       }
+      meal_logs: {
+        Row: {
+          id: string
+          user_id: string
+          logged_at: string
+          meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other'
+          items: Json
+          is_symptom_triggered: boolean
+          notes: string | null
+          photo_urls: string[]
+          captured_via: 'manual' | 'ios_manual' | 'wearable' | 'import' | 'auto'
+          analysis_status: 'pending' | 'completed' | 'error'
+          metadata: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          logged_at?: string
+          meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other'
+          items?: Json
+          is_symptom_triggered?: boolean
+          notes?: string | null
+          photo_urls?: string[]
+          captured_via?: 'manual' | 'ios_manual' | 'wearable' | 'import' | 'auto'
+          analysis_status?: 'pending' | 'completed' | 'error'
+          metadata?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          logged_at?: string
+          meal_type?: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other'
+          items?: Json
+          is_symptom_triggered?: boolean
+          notes?: string | null
+          photo_urls?: string[]
+          captured_via?: 'manual' | 'ios_manual' | 'wearable' | 'import' | 'auto'
+          analysis_status?: 'pending' | 'completed' | 'error'
+          metadata?: Json
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      daily_wellness_log: {
+        Row: {
+          user_id: string
+          log_date: string
+          breakfast_time: string | null
+          sleep_quality_score: number | null
+          energy_level: number | null
+          mood_score: number | null
+          activity_minutes: number | null
+          notes: string | null
+          captured_via: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          log_date: string
+          breakfast_time?: string | null
+          sleep_quality_score?: number | null
+          energy_level?: number | null
+          mood_score?: number | null
+          activity_minutes?: number | null
+          notes?: string | null
+          captured_via?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          log_date?: string
+          breakfast_time?: string | null
+          sleep_quality_score?: number | null
+          energy_level?: number | null
+          mood_score?: number | null
+          activity_minutes?: number | null
+          notes?: string | null
+          captured_via?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      sleep_sessions: {
+        Row: {
+          id: string
+          user_id: string
+          source: string
+          source_record_id: string | null
+          start_time: string | null
+          end_time: string | null
+          duration_minutes: number | null
+          planned_start_time: string | null
+          planned_duration_minutes: number | null
+          is_main_sleep: boolean
+          quality_score: number | null
+          capture_method: string
+          detail_payload: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          source?: string
+          source_record_id?: string | null
+          start_time?: string | null
+          end_time?: string | null
+          duration_minutes?: number | null
+          planned_start_time?: string | null
+          planned_duration_minutes?: number | null
+          is_main_sleep?: boolean
+          quality_score?: number | null
+          capture_method?: string
+          detail_payload?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          source?: string
+          source_record_id?: string | null
+          start_time?: string | null
+          end_time?: string | null
+          duration_minutes?: number | null
+          planned_start_time?: string | null
+          planned_duration_minutes?: number | null
+          is_main_sleep?: boolean
+          quality_score?: number | null
+          capture_method?: string
+          detail_payload?: Json
+          created_at?: string
+        }
+      }
+      activity_sessions: {
+        Row: {
+          id: string
+          user_id: string
+          activity_type: string
+          activity_title: string | null
+          intensity: string | null
+          start_time: string | null
+          end_time: string | null
+          duration_minutes: number | null
+          calories: number | null
+          steps: number | null
+          source: string
+          capture_method: string
+          notes: string | null
+          detail_payload: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          activity_type: string
+          activity_title?: string | null
+          intensity?: string | null
+          start_time?: string | null
+          end_time?: string | null
+          duration_minutes?: number | null
+          calories?: number | null
+          steps?: number | null
+          source?: string
+          capture_method?: string
+          notes?: string | null
+          detail_payload?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          activity_type?: string
+          activity_title?: string | null
+          intensity?: string | null
+          start_time?: string | null
+          end_time?: string | null
+          duration_minutes?: number | null
+          calories?: number | null
+          steps?: number | null
+          source?: string
+          capture_method?: string
+          notes?: string | null
+          detail_payload?: Json
+          created_at?: string
+        }
+      }
+      medication_catalog: {
+        Row: {
+          id: string
+          name: string
+          route: 'oral' | 'injection' | 'other'
+          is_injection: boolean
+          default_interval_days: number | null
+          default_dosage: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          route?: 'oral' | 'injection' | 'other'
+          is_injection?: boolean
+          default_interval_days?: number | null
+          default_dosage?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          route?: 'oral' | 'injection' | 'other'
+          is_injection?: boolean
+          default_interval_days?: number | null
+          default_dosage?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      medication_regimens: {
+        Row: {
+          id: string
+          user_id: string
+          medication_id: string | null
+          custom_name: string | null
+          route: 'oral' | 'injection' | 'other' | null
+          frequency_type: 'every_n_days' | 'prn' | 'cron'
+          interval_days: number | null
+          cycle_anchor_date: string
+          symptom_trigger_allowed: boolean
+          default_dose: string | null
+          status: 'active' | 'paused' | 'ended'
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          medication_id?: string | null
+          custom_name?: string | null
+          route?: 'oral' | 'injection' | 'other' | null
+          frequency_type: 'every_n_days' | 'prn' | 'cron'
+          interval_days?: number | null
+          cycle_anchor_date: string
+          symptom_trigger_allowed?: boolean
+          default_dose?: string | null
+          status?: 'active' | 'paused' | 'ended'
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          medication_id?: string | null
+          custom_name?: string | null
+          route?: 'oral' | 'injection' | 'other' | null
+          frequency_type?: 'every_n_days' | 'prn' | 'cron'
+          interval_days?: number | null
+          cycle_anchor_date?: string
+          symptom_trigger_allowed?: boolean
+          default_dose?: string | null
+          status?: 'active' | 'paused' | 'ended'
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      medication_administrations: {
+        Row: {
+          id: string
+          regimen_id: string
+          scheduled_at: string | null
+          taken_at: string
+          dose: string | null
+          route: 'oral' | 'injection' | 'other' | null
+          symptom_triggered: boolean
+          symptom_notes: string | null
+          adherence_status: 'taken' | 'skipped' | 'delayed' | 'missed'
+          captured_via: 'manual' | 'reminder' | 'wearable' | 'imported'
+          vitals_snapshot: Json
+          side_effects: Json
+          detail_payload: Json
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          regimen_id: string
+          scheduled_at?: string | null
+          taken_at?: string
+          dose?: string | null
+          route?: 'oral' | 'injection' | 'other' | null
+          symptom_triggered?: boolean
+          symptom_notes?: string | null
+          adherence_status?: 'taken' | 'skipped' | 'delayed' | 'missed'
+          captured_via?: 'manual' | 'reminder' | 'wearable' | 'imported'
+          vitals_snapshot?: Json
+          side_effects?: Json
+          detail_payload?: Json
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          regimen_id?: string
+          scheduled_at?: string | null
+          taken_at?: string
+          dose?: string | null
+          route?: 'oral' | 'injection' | 'other' | null
+          symptom_triggered?: boolean
+          symptom_notes?: string | null
+          adherence_status?: 'taken' | 'skipped' | 'delayed' | 'missed'
+          captured_via?: 'manual' | 'reminder' | 'wearable' | 'imported'
+          vitals_snapshot?: Json
+          side_effects?: Json
+          detail_payload?: Json
+          notes?: string | null
+          created_at?: string
+        }
+      }
+      medication_cycles: {
+        Row: {
+          id: string
+          regimen_id: string
+          cycle_number: number
+          cycle_start_date: string
+          expected_next_date: string | null
+          actual_next_date: string | null
+          provider_notes: string | null
+          status: 'scheduled' | 'completed' | 'skipped'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          regimen_id: string
+          cycle_number: number
+          cycle_start_date: string
+          expected_next_date?: string | null
+          actual_next_date?: string | null
+          provider_notes?: string | null
+          status?: 'scheduled' | 'completed' | 'skipped'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          regimen_id?: string
+          cycle_number?: number
+          cycle_start_date?: string
+          expected_next_date?: string | null
+          actual_next_date?: string | null
+          provider_notes?: string | null
+          status?: 'scheduled' | 'completed' | 'skipped'
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      user_reminders: {
+        Row: {
+          id: string
+          user_id: string
+          target_type: 'medication_regimen' | 'meal_logs' | 'sleep_sessions' | 'activity_sessions' | 'custom'
+          target_id: string | null
+          reminder_category: 'medication' | 'food' | 'sleep' | 'activity'
+          title: string
+          schedule_type: 'cron' | 'every_n_days' | 'relative_cycle'
+          interval_days: number | null
+          window_start: string | null
+          window_end: string | null
+          timezone: string
+          lead_time_minutes: number | null
+          snooze_minutes: number | null
+          auto_dismiss_rule: 'existing_entry' | 'manual_only' | 'never'
+          metadata: Json
+          status: 'active' | 'paused' | 'archived'
+          ios_visible: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          target_type: 'medication_regimen' | 'meal_logs' | 'sleep_sessions' | 'activity_sessions' | 'custom'
+          target_id?: string | null
+          reminder_category: 'medication' | 'food' | 'sleep' | 'activity'
+          title: string
+          schedule_type: 'cron' | 'every_n_days' | 'relative_cycle'
+          interval_days?: number | null
+          window_start?: string | null
+          window_end?: string | null
+          timezone?: string
+          lead_time_minutes?: number | null
+          snooze_minutes?: number | null
+          auto_dismiss_rule?: 'existing_entry' | 'manual_only' | 'never'
+          metadata?: Json
+          status?: 'active' | 'paused' | 'archived'
+          ios_visible?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          target_type?: 'medication_regimen' | 'meal_logs' | 'sleep_sessions' | 'activity_sessions' | 'custom'
+          target_id?: string | null
+          reminder_category?: 'medication' | 'food' | 'sleep' | 'activity'
+          title?: string
+          schedule_type?: 'cron' | 'every_n_days' | 'relative_cycle'
+          interval_days?: number | null
+          window_start?: string | null
+          window_end?: string | null
+          timezone?: string
+          lead_time_minutes?: number | null
+          snooze_minutes?: number | null
+          auto_dismiss_rule?: 'existing_entry' | 'manual_only' | 'never'
+          metadata?: Json
+          status?: 'active' | 'paused' | 'archived'
+          ios_visible?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      reminder_logs: {
+        Row: {
+          id: string
+          reminder_id: string
+          status: 'sent' | 'delivered' | 'tapped' | 'dismissed' | 'skipped'
+          deliver_at: string
+          handled_at: string | null
+          context: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          reminder_id: string
+          status: 'sent' | 'delivered' | 'tapped' | 'dismissed' | 'skipped'
+          deliver_at?: string
+          handled_at?: string | null
+          context?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          reminder_id?: string
+          status?: 'sent' | 'delivered' | 'tapped' | 'dismissed' | 'skipped'
+          deliver_at?: string
+          handled_at?: string | null
+          context?: Json
+          created_at?: string
+        }
+      }
+      health_data_sources: {
+        Row: {
+          id: string
+          user_id: string
+          provider: string
+          scopes: string[]
+          status: 'connected' | 'revoked' | 'error' | 'syncing'
+          last_synced_at: string | null
+          sync_cursor: Json
+          error_payload: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          provider: string
+          scopes?: string[]
+          status?: 'connected' | 'revoked' | 'error' | 'syncing'
+          last_synced_at?: string | null
+          sync_cursor?: Json
+          error_payload?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          provider?: string
+          scopes?: string[]
+          status?: 'connected' | 'revoked' | 'error' | 'syncing'
+          last_synced_at?: string | null
+          sync_cursor?: Json
+          error_payload?: Json
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      healthkit_sleep_samples: {
+        Row: {
+          id: string
+          user_id: string
+          source_id: string
+          payload: Json
+          parsed: boolean
+          sleep_session_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          source_id: string
+          payload: Json
+          parsed?: boolean
+          sleep_session_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          source_id?: string
+          payload?: Json
+          parsed?: boolean
+          sleep_session_id?: string | null
+          created_at?: string
+        }
+      }
+      healthkit_workouts: {
+        Row: {
+          id: string
+          user_id: string
+          source_id: string
+          payload: Json
+          parsed: boolean
+          activity_session_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          source_id: string
+          payload: Json
+          parsed?: boolean
+          activity_session_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          source_id?: string
+          payload?: Json
+          parsed?: boolean
+          activity_session_id?: string | null
+          created_at?: string
+        }
+      }
       food_analysis_refresh_queue: {
         Row: {
           id: string

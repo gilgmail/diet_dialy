@@ -255,6 +255,12 @@
 - **健康資料去重策略**：若多來源同時同步（HealthKit + 手動），優先順序需在產品確認。
 - **安全與稽核**：藥物紀錄是否需要 HIPAA 等級稽核？若需要，`medication_administrations` 可能要額外紀錄 who/when 修改。
 
+## 實作進度（2025-11-17）
+- ✅ `supabase/migrations/011_create_medication_tables.sql`：完成藥物字典、療程、紀錄與週期表。
+- ✅ `supabase/migrations/012_create_health_logging_tables.sql`：新增 `meal_logs`、`daily_wellness_log`、`sleep_sessions`、`activity_sessions`。
+- ✅ `supabase/migrations/013_create_reminders_and_health_sources.sql`：統一提醒表與健康資料來源/staging。
+- ✅ 更新 `src/types/supabase.ts`、`DietDailyMobile/src/shared/types/supabase.ts` 讓 web/iOS 均取得最新 schema。
+
 ## 附件 / 參考
 - 相關需求：使用者「2 個月一次針劑」與「症狀才吃口服藥」。
 - 現有檔案參考：
