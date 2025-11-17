@@ -4,15 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { FoodSymptomCorrelator, type CorrelationMatrix } from '@/lib/ai/food-symptom-correlator';
 import { DailySymptomService } from '@/lib/supabase/daily-symptom-service';
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createAdminClient } from '@/lib/supabase/server';
 
 interface CorrelationRequest {
   user_id: string;
@@ -165,7 +159,8 @@ async function getFoodEntriesForUser(
 
     // Query food entries - this assumes there's a food_entries table
     // You may need to adjust this based on your actual table structure
-    const { data: foodHistory, error } = await supabase
+    const admin = createAdminClient()
+    const { data: foodHistory, error } = await admin
       .from('food_history_entries') // Adjust table name as needed
       .select(`
         id,
@@ -213,7 +208,8 @@ async function getCachedCorrelationResult(
     // Create a cache key based on user and options
     const cacheKey = createCacheKey(userId, analysisOptions);
 
-    const { data, error } = await supabase
+    const admin = createAdminClient()
+    const { data, error } = await admin
       .from('correlation_analysis_cache')
       .select('*')
       .eq('cache_key', cacheKey)
@@ -249,7 +245,8 @@ async function cacheCorrelationResult(
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 6); // Cache for 6 hours
 
-    const { error } = await supabase
+    const admin = createAdminClient()
+    const { error } = await admin
       .from('correlation_analysis_cache')
       .upsert({
         cache_key: cacheKey,
@@ -320,7 +317,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     // Get the most recent cached correlation analysis for this user
-    const { data, error } = await supabase
+    const admin = createAdminClient()
+    const { data, error } = await admin
       .from('correlation_analysis_cache')
       .select('*')
       .eq('user_id', userId)
