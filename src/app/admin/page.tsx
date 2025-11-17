@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
+export const dynamic = 'force-dynamic'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
 import Link from 'next/link'
 import {

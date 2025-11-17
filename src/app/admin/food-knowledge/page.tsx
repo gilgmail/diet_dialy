@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+
+export const dynamic = 'force-dynamic'
 import Link from 'next/link'
 import { RefreshCw, Search, AlertTriangle, Database, Loader2 } from 'lucide-react'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
