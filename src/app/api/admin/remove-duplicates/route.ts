@@ -4,7 +4,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase/client'
+import {
+  createUnauthorizedResponse,
+  getAuthenticatedUser,
+} from '@/lib/supabase/server-auth'
+import { createAdminClient } from '@/lib/supabase/server'
 
 interface DuplicateFood {
   name: string
@@ -21,9 +25,23 @@ interface DuplicateFood {
 }
 
 export async function GET(request: NextRequest) {
+  const user = await getAuthenticatedUser(request)
+  if (!user) {
+    return createUnauthorizedResponse('請先登入')
+  }
+
+  const admin = createAdminClient()
+  const isAdmin = await userIsAdmin(user.id, admin)
+  if (!isAdmin) {
+    return NextResponse.json(
+      { success: false, message: '需要管理員權限' },
+      { status: 403 }
+    )
+  }
+
   try {
     // 檢測重複食物
-    const { data: allFoods, error } = await supabase
+    const { data: allFoods, error } = await admin
       .from('diet_daily_foods')
       .select('id, name, brand, category, verification_status, created_at, calories, protein')
       .order('name')
@@ -103,6 +121,20 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const user = await getAuthenticatedUser(request)
+  if (!user) {
+    return createUnauthorizedResponse('請先登入')
+  }
+
+  const admin = createAdminClient()
+  const isAdmin = await userIsAdmin(user.id, admin)
+  if (!isAdmin) {
+    return NextResponse.json(
+      { success: false, message: '需要管理員權限' },
+      { status: 403 }
+    )
+  }
+
   try {
     const { action, foodIds, keepFoodId } = await request.json()
 
@@ -115,7 +147,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      const { error } = await supabase
+      const { error } = await admin
         .from('diet_daily_foods')
         .delete()
         .in('id', foodIds)
@@ -133,7 +165,7 @@ export async function POST(request: NextRequest) {
     } else if (action === 'auto_cleanup') {
       // 自動清理重複食物（保留最佳版本）
       // 重新獲取重複食物資料
-      const { data: allFoods, error: fetchError } = await supabase
+      const { data: allFoods, error: fetchError } = await admin
         .from('diet_daily_foods')
         .select('id, name, brand, category, verification_status, created_at, calories, protein')
         .order('name')
@@ -200,7 +232,7 @@ export async function POST(request: NextRequest) {
           const deleteIds = toDelete.map(food => food.id)
 
           try {
-            const { error } = await supabase
+            const { error } = await admin
               .from('diet_daily_foods')
               .delete()
               .in('id', deleteIds)
@@ -255,6 +287,20 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const user = await getAuthenticatedUser(request)
+  if (!user) {
+    return createUnauthorizedResponse('請先登入')
+  }
+
+  const admin = createAdminClient()
+  const isAdmin = await userIsAdmin(user.id, admin)
+  if (!isAdmin) {
+    return NextResponse.json(
+      { success: false, message: '需要管理員權限' },
+      { status: 403 }
+    )
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const foodId = searchParams.get('id')
@@ -267,7 +313,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 刪除單個食物
-    const { error } = await supabase
+    const { error } = await admin
       .from('diet_daily_foods')
       .delete()
       .eq('id', foodId)
@@ -293,4 +339,19 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+async function userIsAdmin(userId: string, admin: ReturnType<typeof createAdminClient>) {
+  const { data, error } = await admin
+    .from('diet_daily_users')
+    .select('is_admin')
+    .eq('id', userId)
+    .single()
+
+  if (error) {
+    console.error('[userIsAdmin] failed:', error)
+    return false
+  }
+
+  return !!data?.is_admin
 }
