@@ -108,6 +108,42 @@ export function SettingsScreen() {
     }
   }
 
+  // 同步所有缺失的食物分析
+  const handleSyncMissingFoods = async () => {
+    if (!user?.id) return
+
+    Alert.alert(
+      '同步缺失食物',
+      '將找出所有沒有 AI 分析的食物並加入佇列。確定要繼續嗎？',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '同步',
+          onPress: async () => {
+            setKnowledgeLoading(true)
+            try {
+              const result = await FoodKnowledgeService.syncMissingFoods(user.id)
+              if (result.success) {
+                Alert.alert(
+                  '同步完成',
+                  result.message || `已將 ${result.enqueued || 0} 個食物加入分析佇列`
+                )
+                await loadFoodKnowledgeStatus()
+              } else {
+                Alert.alert('同步失敗', result.error || '無法同步食物')
+              }
+            } catch (error) {
+              console.warn('[SettingsScreen] sync missing error:', error)
+              Alert.alert('錯誤', '無法同步食物。')
+            } finally {
+              setKnowledgeLoading(false)
+            }
+          }
+        }
+      ]
+    )
+  }
+
   const handleTriggerProcessor = async () => {
     if (!knowledgeStatus || knowledgeStatus.items.length === 0) {
       Alert.alert('提示', '目前沒有待處理的項目。')
@@ -448,6 +484,24 @@ Device: ${Platform.OS} ${Platform.Version}
             <TouchableOpacity
               style={[
                 styles.knowledgeActionButton,
+                styles.knowledgeSyncButton,
+                knowledgeLoading && styles.knowledgeActionButtonDisabled
+              ]}
+              onPress={handleSyncMissingFoods}
+              disabled={knowledgeLoading}
+            >
+              {knowledgeLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Icon name="sync" size={16} color="#FFFFFF" />
+                  <Text style={styles.knowledgeActionButtonText}>同步</Text>
+                </>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.knowledgeActionButton,
                 styles.knowledgeProcessButton,
                 (!knowledgeStatus || knowledgeLoading) && styles.knowledgeActionButtonDisabled
               ]}
@@ -459,7 +513,7 @@ Device: ${Platform.OS} ${Platform.Version}
               ) : (
                 <>
                   <Icon name="play-circle" size={16} color="#FFFFFF" />
-                  <Text style={styles.knowledgeActionButtonText}>立即處理</Text>
+                  <Text style={styles.knowledgeActionButtonText}>處理</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -920,6 +974,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
+  },
+  knowledgeSyncButton: {
+    backgroundColor: '#10B981', // green-500
   },
   knowledgeProcessButton: {
     backgroundColor: colors.primary[500],

@@ -114,4 +114,34 @@ export class FoodKnowledgeService {
       }
     }
   }
+
+  static async syncMissingFoods(userId: string): Promise<{ success: boolean; enqueued?: number; message?: string; error?: string }> {
+    try {
+      const endpoint = `${this.apiBase}/api/food-knowledge/sync-missing`
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.warn('[FoodKnowledgeService] sync-missing failed:', response.status, errorText)
+        return { success: false, error: `HTTP ${response.status}` }
+      }
+
+      const result = await response.json()
+      return {
+        success: result.success ?? false,
+        enqueued: result.enqueued ?? 0,
+        message: result.message
+      }
+    } catch (error) {
+      console.error('[FoodKnowledgeService] syncMissingFoods error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
 }
