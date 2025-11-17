@@ -10,6 +10,45 @@ DELETE FROM food_analysis_refresh_queue WHERE metadata->>'test_data' = 'true';
 DELETE FROM food_analysis_cache WHERE metadata->>'test_data' = 'true';
 DELETE FROM diet_daily_foods WHERE name LIKE 'TEST_%';
 
+-- 建立測試用戶 (供 Phase A 相關資料使用)
+INSERT INTO diet_daily_users (
+    id,
+    email,
+    google_id,
+    name,
+    avatar_url,
+    is_admin,
+    created_at,
+    updated_at,
+    medical_conditions,
+    allergies,
+    dietary_restrictions,
+    medications,
+    timezone,
+    language,
+    preferences,
+    admin_permissions
+)
+VALUES (
+    '00000000-1111-2222-3333-444444444444',
+    'seed_user@dietdaily.test',
+    NULL,
+    'Seed QA User',
+    NULL,
+    FALSE,
+    NOW(),
+    NOW(),
+    '{}'::jsonb,
+    '{}'::jsonb,
+    '{}'::jsonb,
+    '{}'::jsonb,
+    'UTC',
+    'zh-TW',
+    '{}'::jsonb,
+    '{}'::jsonb
+)
+ON CONFLICT (id) DO NOTHING;
+
 -- ============================================================
 -- 1. 測試食物資料
 -- ============================================================
@@ -302,7 +341,449 @@ INSERT INTO food_analysis_refresh_queue (
 );
 
 -- ============================================================
--- 4. 驗證資料
+-- 4. Phase A - 健康資料與提醒測試樣本
+-- ============================================================
+
+-- 假設測試用戶: 00000000-1111-2222-3333-444444444444
+DELETE FROM reminder_logs
+WHERE reminder_id IN (
+    SELECT id FROM user_reminders
+    WHERE user_id = '00000000-1111-2222-3333-444444444444'
+);
+
+DELETE FROM user_reminders
+WHERE user_id = '00000000-1111-2222-3333-444444444444'
+   OR metadata->>'test_seed' = 'true';
+
+DELETE FROM healthkit_sleep_samples
+WHERE user_id = '00000000-1111-2222-3333-444444444444';
+
+DELETE FROM healthkit_workouts
+WHERE user_id = '00000000-1111-2222-3333-444444444444';
+
+DELETE FROM health_data_sources
+WHERE user_id = '00000000-1111-2222-3333-444444444444';
+
+DELETE FROM sleep_sessions
+WHERE user_id = '00000000-1111-2222-3333-444444444444';
+
+DELETE FROM activity_sessions
+WHERE user_id = '00000000-1111-2222-3333-444444444444';
+
+DELETE FROM daily_wellness_log
+WHERE user_id = '00000000-1111-2222-3333-444444444444';
+
+DELETE FROM medication_administrations
+WHERE regimen_id IN (
+    SELECT id FROM medication_regimens
+    WHERE user_id = '00000000-1111-2222-3333-444444444444'
+);
+
+DELETE FROM medication_cycles
+WHERE regimen_id IN (
+    SELECT id FROM medication_regimens
+    WHERE user_id = '00000000-1111-2222-3333-444444444444'
+);
+
+DELETE FROM medication_regimens
+WHERE user_id = '00000000-1111-2222-3333-444444444444';
+
+DELETE FROM medication_catalog
+WHERE name LIKE 'SEED_%';
+
+INSERT INTO medication_catalog (
+    id,
+    name,
+    route,
+    is_injection,
+    default_interval_days,
+    default_dosage,
+    notes,
+    created_at,
+    updated_at
+) VALUES (
+    '90000000-0000-0000-0000-000000000001',
+    'SEED_Ustekinumab',
+    'injection',
+    TRUE,
+    56,
+    '90mg / injection',
+    'seed_data',
+    NOW(),
+    NOW()
+) ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    notes = EXCLUDED.notes,
+    updated_at = NOW();
+
+INSERT INTO medication_regimens (
+    id,
+    user_id,
+    medication_id,
+    custom_name,
+    route,
+    frequency_type,
+    interval_days,
+    cycle_anchor_date,
+    symptom_trigger_allowed,
+    default_dose,
+    status,
+    notes,
+    created_at,
+    updated_at
+) VALUES (
+    '90000000-0000-0000-0000-000000000101',
+    '00000000-1111-2222-3333-444444444444',
+    '90000000-0000-0000-0000-000000000001',
+    'SEED 每 56 天針劑',
+    'injection',
+    'every_n_days',
+    56,
+    '2024-09-01',
+    TRUE,
+    '90mg',
+    'active',
+    'seed_data_regimen',
+    NOW(),
+    NOW()
+) ON CONFLICT (id) DO UPDATE SET
+    status = EXCLUDED.status,
+    updated_at = NOW();
+
+INSERT INTO medication_cycles (
+    id,
+    regimen_id,
+    cycle_number,
+    cycle_start_date,
+    expected_next_date,
+    actual_next_date,
+    provider_notes,
+    status,
+    created_at,
+    updated_at
+) VALUES (
+    '90000000-0000-0000-0000-000000000301',
+    '90000000-0000-0000-0000-000000000101',
+    3,
+    '2024-11-01',
+    '2024-12-27',
+    NULL,
+    'seed cycle tracking',
+    'scheduled',
+    NOW(),
+    NOW()
+) ON CONFLICT (id) DO UPDATE SET
+    cycle_start_date = EXCLUDED.cycle_start_date,
+    expected_next_date = EXCLUDED.expected_next_date,
+    updated_at = NOW();
+
+INSERT INTO medication_administrations (
+    id,
+    regimen_id,
+    scheduled_at,
+    taken_at,
+    dose,
+    route,
+    symptom_triggered,
+    symptom_notes,
+    adherence_status,
+    captured_via,
+    vitals_snapshot,
+    side_effects,
+    detail_payload,
+    notes,
+    created_at
+) VALUES (
+    '90000000-0000-0000-0000-000000000201',
+    '90000000-0000-0000-0000-000000000101',
+    '2024-11-01 09:00:00+00',
+    '2024-11-01 09:30:00+00',
+    '90mg',
+    'injection',
+    FALSE,
+    NULL,
+    'taken',
+    'manual',
+    jsonb_build_object('blood_pressure', '118/76', 'test_data', true),
+    jsonb_build_array(jsonb_build_object('type', 'mild_pain', 'score', 2)),
+    jsonb_build_object('injection_site', 'left_arm', 'test_data', true),
+    'Seed injection log',
+    NOW()
+) ON CONFLICT (id) DO UPDATE SET
+    taken_at = EXCLUDED.taken_at,
+    detail_payload = EXCLUDED.detail_payload;
+
+INSERT INTO daily_wellness_log (
+    user_id,
+    log_date,
+    breakfast_time,
+    sleep_quality_score,
+    energy_level,
+    mood_score,
+    activity_minutes,
+    notes,
+    captured_via,
+    created_at,
+    updated_at
+) VALUES (
+    '00000000-1111-2222-3333-444444444444',
+    '2024-11-09',
+    '2024-11-09 07:45:00+00',
+    4,
+    3,
+    4,
+    30,
+    'Seed wellness summary',
+    'manual',
+    NOW(),
+    NOW()
+) ON CONFLICT (user_id, log_date) DO UPDATE SET
+    breakfast_time = EXCLUDED.breakfast_time,
+    sleep_quality_score = EXCLUDED.sleep_quality_score,
+    activity_minutes = EXCLUDED.activity_minutes,
+    notes = EXCLUDED.notes,
+    updated_at = NOW();
+
+INSERT INTO sleep_sessions (
+    id,
+    user_id,
+    source,
+    source_record_id,
+    start_time,
+    end_time,
+    duration_minutes,
+    planned_start_time,
+    planned_duration_minutes,
+    is_main_sleep,
+    quality_score,
+    capture_method,
+    detail_payload,
+    created_at
+) VALUES (
+    '90000000-0000-0000-0000-000000000501',
+    '00000000-1111-2222-3333-444444444444',
+    'manual',
+    NULL,
+    '2024-11-08 22:30:00+00',
+    '2024-11-09 06:30:00+00',
+    480,
+    '22:30:00',
+    480,
+    TRUE,
+    4,
+    'ios_manual',
+    jsonb_build_object('test_data', true, 'notes', '預計 vs 實際吻合'),
+    NOW()
+) ON CONFLICT (id) DO UPDATE SET
+    start_time = EXCLUDED.start_time,
+    end_time = EXCLUDED.end_time,
+    duration_minutes = EXCLUDED.duration_minutes;
+
+INSERT INTO activity_sessions (
+    id,
+    user_id,
+    activity_type,
+    activity_title,
+    intensity,
+    start_time,
+    end_time,
+    duration_minutes,
+    calories,
+    steps,
+    source,
+    capture_method,
+    notes,
+    detail_payload,
+    created_at
+) VALUES (
+    '90000000-0000-0000-0000-000000000601',
+    '00000000-1111-2222-3333-444444444444',
+    'walk',
+    'Seed 30min walk',
+    'moderate',
+    '2024-11-09 07:30:00+00',
+    '2024-11-09 08:00:00+00',
+    30,
+    120,
+    3200,
+    'manual',
+    'ios_manual',
+    '早餐前散步',
+    jsonb_build_object('test_data', true),
+    NOW()
+) ON CONFLICT (id) DO UPDATE SET
+    duration_minutes = EXCLUDED.duration_minutes,
+    notes = EXCLUDED.notes,
+    detail_payload = EXCLUDED.detail_payload;
+
+INSERT INTO user_reminders (
+    id,
+    user_id,
+    target_type,
+    target_id,
+    reminder_category,
+    title,
+    schedule_type,
+    interval_days,
+    window_start,
+    window_end,
+    timezone,
+    lead_time_minutes,
+    snooze_minutes,
+    auto_dismiss_rule,
+    metadata,
+    status,
+    ios_visible,
+    created_at,
+    updated_at
+) VALUES
+(
+    '90000000-0000-0000-0000-000000000701',
+    '00000000-1111-2222-3333-444444444444',
+    'meal_logs',
+    NULL,
+    'food',
+    'Seed 早餐提醒',
+    'cron',
+    NULL,
+    '07:30:00',
+    '08:30:00',
+    'Asia/Taipei',
+    15,
+    10,
+    'existing_entry',
+    jsonb_build_object('cron', '0 7 * * *', 'test_seed', true),
+    'active',
+    TRUE,
+    NOW(),
+    NOW()
+),
+(
+    '90000000-0000-0000-0000-000000000702',
+    '00000000-1111-2222-3333-444444444444',
+    'medication_regimen',
+    '90000000-0000-0000-0000-000000000101',
+    'medication',
+    'Seed 56天針劑提醒',
+    'relative_cycle',
+    56,
+    '09:00:00',
+    '12:00:00',
+    'Asia/Taipei',
+    1440,
+    60,
+    'manual_only',
+    jsonb_build_object('days_before', 3, 'test_seed', true),
+    'active',
+    TRUE,
+    NOW(),
+    NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+    metadata = EXCLUDED.metadata,
+    updated_at = NOW();
+
+INSERT INTO reminder_logs (
+    id,
+    reminder_id,
+    status,
+    deliver_at,
+    handled_at,
+    context,
+    created_at
+) VALUES
+(
+    '90000000-0000-0000-0000-000000000801',
+    '90000000-0000-0000-0000-000000000701',
+    'delivered',
+    '2024-11-09 07:35:00+00',
+    '2024-11-09 07:50:00+00',
+    jsonb_build_object('test_seed', true, 'auto_dismiss', true),
+    NOW()
+),
+(
+    '90000000-0000-0000-0000-000000000802',
+    '90000000-0000-0000-0000-000000000702',
+    'sent',
+    '2024-11-01 08:00:00+00',
+    NULL,
+    jsonb_build_object('test_seed', true),
+    NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+    status = EXCLUDED.status,
+    handled_at = EXCLUDED.handled_at,
+    context = EXCLUDED.context;
+
+INSERT INTO health_data_sources (
+    id,
+    user_id,
+    provider,
+    scopes,
+    status,
+    last_synced_at,
+    sync_cursor,
+    error_payload,
+    created_at,
+    updated_at
+) VALUES (
+    '90000000-0000-0000-0000-000000000901',
+    '00000000-1111-2222-3333-444444444444',
+    'apple_healthkit',
+    ARRAY['sleep', 'workout'],
+    'connected',
+    NOW() - INTERVAL '1 day',
+    jsonb_build_object('last_anchor', 'seed_001'),
+    jsonb_build_object('test_seed', true),
+    NOW(),
+    NOW()
+) ON CONFLICT (id) DO UPDATE SET
+    last_synced_at = EXCLUDED.last_synced_at,
+    sync_cursor = EXCLUDED.sync_cursor,
+    updated_at = NOW();
+
+INSERT INTO healthkit_sleep_samples (
+    id,
+    user_id,
+    source_id,
+    payload,
+    parsed,
+    sleep_session_id,
+    created_at
+) VALUES (
+    '90000000-0000-0000-0000-000000001001',
+    '00000000-1111-2222-3333-444444444444',
+    'HKSampleSeed001',
+    jsonb_build_object('summary', 'Sample HK sleep', 'test_seed', true),
+    TRUE,
+    '90000000-0000-0000-0000-000000000501',
+    NOW()
+) ON CONFLICT (id) DO UPDATE SET
+    payload = EXCLUDED.payload,
+    sleep_session_id = EXCLUDED.sleep_session_id;
+
+INSERT INTO healthkit_workouts (
+    id,
+    user_id,
+    source_id,
+    payload,
+    parsed,
+    activity_session_id,
+    created_at
+) VALUES (
+    '90000000-0000-0000-0000-000000001101',
+    '00000000-1111-2222-3333-444444444444',
+    'HKWorkoutSeed001',
+    jsonb_build_object('summary', 'Sample HK workout', 'test_seed', true),
+    TRUE,
+    '90000000-0000-0000-0000-000000000601',
+    NOW()
+) ON CONFLICT (id) DO UPDATE SET
+    payload = EXCLUDED.payload,
+    activity_session_id = EXCLUDED.activity_session_id;
+
+-- ============================================================
+-- 5. 驗證資料
 -- ============================================================
 
 -- 顯示測試食物
