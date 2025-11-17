@@ -32,6 +32,7 @@ import {
 import { colors, typography, spacing } from '@/theme'
 import type { MainStackParamList } from '@/app/navigation/types'
 import { AIModelSelector } from '../components/AIModelSelector'
+import { FoodKnowledgeScreen } from './FoodKnowledgeScreen'
 
 const MEAL_NAMES: Record<'breakfast' | 'lunch' | 'dinner', string> = {
   breakfast: '早餐',
@@ -39,10 +40,13 @@ const MEAL_NAMES: Record<'breakfast' | 'lunch' | 'dinner', string> = {
   dinner: '晚餐',
 }
 
+type TabType = 'general' | 'knowledge'
+
 export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
   const { user } = useAuth()
   const { settings, isLoading, initializeSettings, updateSettings, subscribeToChanges } = useSettingsStore()
+  const [activeTab, setActiveTab] = useState<TabType>('general')
   const [notificationsEnabled, setNotificationsEnabled] = useState(settings.notificationsEnabled)
   const [debugMode, setDebugMode] = useState(settings.debugMode ?? false)
   const [customPrompt, setCustomPrompt] = useState(settings.customPrompt ?? '')
@@ -475,9 +479,45 @@ Device: ${Platform.OS} ${Platform.Version}
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {/* AI Food Knowledge */}
-      <View style={styles.section}>
+    <View style={styles.container}>
+      {/* Tab Navigation */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'general' && styles.activeTab]}
+          onPress={() => setActiveTab('general')}
+        >
+          <Icon
+            name="cog"
+            size={20}
+            color={activeTab === 'general' ? colors.primary[500] : colors.text.secondary}
+          />
+          <Text style={[styles.tabText, activeTab === 'general' && styles.activeTabText]}>
+            一般設定
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'knowledge' && styles.activeTab]}
+          onPress={() => setActiveTab('knowledge')}
+        >
+          <Icon
+            name="brain"
+            size={20}
+            color={activeTab === 'knowledge' ? colors.primary[500] : colors.text.secondary}
+          />
+          <Text style={[styles.tabText, activeTab === 'knowledge' && styles.activeTabText]}>
+            AI 知識庫
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Content */}
+      {activeTab === 'knowledge' ? (
+        <FoodKnowledgeScreen />
+      ) : (
+        <ScrollView style={styles.tabContent}>
+          {/* AI Food Knowledge - Hidden, moved to separate tab */}
+          {false && <View style={styles.section}>
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>AI 食物知識庫</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -566,11 +606,11 @@ Device: ${Platform.OS} ${Platform.Version}
         ) : (
           <Text style={styles.settingDescription}>尚未載入知識庫狀態。</Text>
         )}
-      </View>
+      </View>}
 
-      {/* Notifications Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>提醒設定</Text>
+          {/* Notifications Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>提醒設定</Text>
 
         <View style={styles.settingRow}>
           <View style={styles.settingInfo}>
@@ -909,7 +949,9 @@ Device: ${Platform.OS} ${Platform.Version}
           onChange={handleTimePickerChange}
         />
       )}
-    </ScrollView>
+        </ScrollView>
+      )}
+    </View>
   )
 }
 
@@ -917,6 +959,36 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: colors.primary[500],
+  },
+  tabText: {
+    ...typography.body,
+    color: colors.text.secondary,
+  },
+  activeTabText: {
+    color: colors.primary[500],
+    fontWeight: '600',
+  },
+  tabContent: {
+    flex: 1,
   },
   section: {
     backgroundColor: colors.surface,
