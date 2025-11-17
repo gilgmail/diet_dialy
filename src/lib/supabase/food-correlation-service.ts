@@ -3,7 +3,7 @@
  * Handles integration between food tracking and correlation analysis
  */
 
-import { supabase } from './client';
+import { createClient } from './client';
 import type { DailySymptomEntry } from '@/types/medical';
 
 export interface FoodConsumption {
@@ -27,6 +27,10 @@ export interface CorrelationDataSummary {
 }
 
 export class FoodCorrelationService {
+  private getSupabaseClient() {
+    return createClient()
+  }
+
   /**
    * Get food consumption data for correlation analysis
    */
@@ -169,6 +173,7 @@ export class FoodCorrelationService {
    * Assess data readiness for correlation analysis
    */
   static async assessCorrelationDataReadiness(userId: string): Promise<CorrelationDataSummary> {
+    const supabase = createClient()
     try {
       // Get data counts for the last 3 months
       const endDate = new Date();
@@ -386,6 +391,7 @@ export class FoodCorrelationService {
    * Get user correlation analysis settings
    */
   static async getCorrelationSettings(userId: string): Promise<any> {
+    const supabase = createClient()
     try {
       const { data, error } = await supabase
         .from('correlation_analysis_settings')

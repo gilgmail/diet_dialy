@@ -1,5 +1,5 @@
 // 本地 Supabase 管理工具
-import { supabase } from './client'
+import { createClient } from './client'
 
 export interface DatabaseStats {
   tables: Array<{
@@ -34,10 +34,15 @@ export interface BackupInfo {
 }
 
 export class LocalSupabaseAdmin {
+  private getSupabaseClient() {
+    return createClient()
+  }
+
   private connectionTest: boolean = false
 
   // 測試連接
   async testConnection(): Promise<{ success: boolean; error?: string }> {
+    const supabase = this.getSupabaseClient()
     try {
       const { data, error } = await supabase
         .from('diet_daily_foods')
@@ -57,6 +62,7 @@ export class LocalSupabaseAdmin {
 
   // 獲取數據庫統計信息
   async getDatabaseStats(): Promise<DatabaseStats> {
+    const supabase = this.getSupabaseClient()
     const tables = [
       'diet_daily_foods',
       'diet_daily_users',
@@ -136,6 +142,7 @@ export class LocalSupabaseAdmin {
 
   // 獲取表詳細信息
   async getTableInfo(tableName: string): Promise<TableInfo | null> {
+    const supabase = this.getSupabaseClient()
     try {
       // 獲取記錄數量
       const { count } = await supabase
@@ -371,7 +378,7 @@ export class LocalSupabaseAdmin {
     const tables = ['diet_daily_foods', 'diet_daily_users', 'food_entries']
     for (const table of tables) {
       try {
-        await supabase.from(table).select('id').limit(1)
+    const { data, error } = await supabase.from(table).select('id').limit(1)
         checks.push({
           name: `${table} 表`,
           status: 'pass',

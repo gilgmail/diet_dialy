@@ -1,5 +1,5 @@
 // 多疾病食物服務 - 整合0-5分評分系統
-import { supabase } from './client'
+import { createClient } from './client'
 
 export interface MultiConditionScores {
   ibd?: {
@@ -129,6 +129,10 @@ export interface ConditionConfig {
 }
 
 export class MultiConditionFoodsService {
+  private getSupabaseClient() {
+    return createClient()
+  }
+
 
   /**
    * 搜尋食物並根據多疾病條件排序
@@ -316,7 +320,8 @@ export class MultiConditionFoodsService {
     const properties = foodData.food_properties || {}
 
     // 使用Supabase函數計算多疾病評分
-    const { data: aiScores, error: scoreError } = await supabase.rpc('calculate_multi_condition_score', {
+    const { data: aiScores, error: scoreError } = const supabase = this.getSupabaseClient()
+    const { data, error } = await supabase.rpc('calculate_multi_condition_score', {
       p_nutrition: nutrition,
       p_properties: properties,
       p_conditions: targetConditions
@@ -366,6 +371,7 @@ export class MultiConditionFoodsService {
    * 獲取或創建多疾病患者檔案
    */
   static async getPatientProfile(userId: string): Promise<MultiConditionPatientProfile | null> {
+    const supabase = createClient()
     const { data, error } = await supabase
       .from('patient_profiles')
       .select('*')
@@ -384,6 +390,7 @@ export class MultiConditionFoodsService {
    * 更新或創建多疾病患者檔案
    */
   static async upsertPatientProfile(profileData: MultiConditionPatientProfile): Promise<MultiConditionPatientProfile> {
+    const supabase = createClient()
     const { data, error } = await supabase
       .from('patient_profiles')
       .upsert({
@@ -405,6 +412,7 @@ export class MultiConditionFoodsService {
    * 獲取疾病配置
    */
   static async getConditionConfigs(): Promise<ConditionConfig[]> {
+    const supabase = createClient()
     const { data, error } = await supabase
       .from('medical_condition_configs')
       .select('*')
