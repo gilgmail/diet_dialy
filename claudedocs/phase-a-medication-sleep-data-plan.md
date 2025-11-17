@@ -8,6 +8,7 @@
   3. **提醒與同步**：集中管理提醒規則、健康資料來源狀態與同步紀錄。
   4. **獨立紀錄頁面**：飲食、用藥、運動、睡眠在 iOS App 內各有單純的紀錄畫面，對應 Supabase 單一真實來源，避免重複資料結構。
   5. **飲食/症狀為核心，其餘模組為輔助**：藥物、睡眠、運動維持簡單輸入（主項目 + 時間/頻率），但 schema 預留 `detail_payload` 類欄位以便將來擴充更細節。
+  6. **過渡策略**：現階段保留 `food_entries` 供 web/iOS 現有流程使用，同步規劃 `meal_logs` 方案但暫不落地；待實際需求出現再評估是否進行資料遷移。
 
 ## 設計準則
 - **睡眠以「預計時間 + 時長」為主**：使用者若只輸入預計就寢時間與預計睡眠時長也能完成紀錄；實際開始/結束為進階欄位。
@@ -100,7 +101,7 @@
 
 ### 2. 飲食 / 睡眠 / 運動紀錄（獨立頁面）
 
-所有紀錄以「單一畫面 → 單一表」為原則，iOS 內的四個頁面（FoodLogScreen、MedicationLogScreen、SleepLogScreen、ActivityLogScreen）直接命中 Supabase 對應表，資料結構完全一致，便於共用提醒與 QA。
+所有紀錄以「單一畫面 → 單一表」為原則，iOS 內的四個頁面（FoodLogScreen、MedicationLogScreen、SleepLogScreen、ActivityLogScreen）直接命中 Supabase 對應表，資料結構完全一致，便於共用提醒與 QA。**目前仍會透過 `food_entries` 提供飲食資料給現有流程，`meal_logs` 作為後續升級方案，兩者需維持同步。**
 
 #### `meal_logs`
 | 欄位 | 型別 | 說明 |
