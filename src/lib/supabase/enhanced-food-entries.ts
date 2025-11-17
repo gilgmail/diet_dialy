@@ -1,14 +1,19 @@
 // 增強版食物記錄服務 - 支持表不存在時的優雅處理
-import { supabase } from './client'
+import { createClient } from './client'
 import type { FoodEntry, FoodEntryInsert, FoodEntryUpdate } from '@/types/supabase'
 
 export class EnhancedFoodEntriesService {
+  private getSupabaseClient() {
+    return createClient()
+  }
+
   private tableExists: boolean | null = null
 
   // 檢查表是否存在
   private async checkTableExists(): Promise<boolean> {
     if (this.tableExists !== null) return this.tableExists
 
+    const supabase = this.getSupabaseClient()
     try {
       const { data, error } = await supabase
         .from('food_entries')
@@ -55,6 +60,7 @@ export class EnhancedFoodEntriesService {
   // 建立食物記錄
   async createFoodEntry(entryData: FoodEntryInsert): Promise<FoodEntry | null> {
     return this.safeExecute(async () => {
+      const supabase = this.getSupabaseClient()
       const { data, error } = await supabase
         .from('food_entries')
         .insert(entryData)
@@ -73,6 +79,7 @@ export class EnhancedFoodEntriesService {
   // 批量建立食物記錄
   async bulkCreateFoodEntries(entries: FoodEntryInsert[]): Promise<FoodEntry[]> {
     return this.safeExecute(async () => {
+      const supabase = this.getSupabaseClient()
       const { data, error } = await supabase
         .from('food_entries')
         .insert(entries)
@@ -90,6 +97,7 @@ export class EnhancedFoodEntriesService {
   // 更新食物記錄
   async updateFoodEntry(id: string, updates: FoodEntryUpdate): Promise<FoodEntry | null> {
     return this.safeExecute(async () => {
+      const supabase = this.getSupabaseClient()
       const { data, error } = await supabase
         .from('food_entries')
         .update(updates)
@@ -109,6 +117,7 @@ export class EnhancedFoodEntriesService {
   // 刪除食物記錄
   async deleteFoodEntry(id: string): Promise<boolean> {
     return this.safeExecute(async () => {
+      const supabase = this.getSupabaseClient()
       const { error } = await supabase
         .from('food_entries')
         .delete()
@@ -126,6 +135,7 @@ export class EnhancedFoodEntriesService {
   // 獲取用戶特定日期的食物記錄
   async getUserFoodEntriesByDate(userId: string, date: string): Promise<FoodEntry[]> {
     return this.safeExecute(async () => {
+      const supabase = this.getSupabaseClient()
       const startDate = `${date}T00:00:00.000Z`
       const endDate = `${date}T23:59:59.999Z`
 

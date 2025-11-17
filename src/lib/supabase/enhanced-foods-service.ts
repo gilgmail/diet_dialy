@@ -1,5 +1,5 @@
 // 增強食物服務 - 使用統一的多條件評分系統
-import { supabase } from './client'
+import { createClient } from './client'
 import { MultiConditionScorer, type MultiConditionResult } from '@/lib/ai/multi-condition-scorer'
 
 // Legacy types - will be gradually phased out
@@ -141,6 +141,10 @@ export interface MultiConditionPatientProfile {
 }
 
 export class EnhancedFoodsService {
+  private getSupabaseClient() {
+    return createClient()
+  }
+
 
   /**
    * 搜尋食物並根據IBD階段排序
@@ -359,6 +363,7 @@ export class EnhancedFoodsService {
    * 獲取或創建IBD患者檔案
    */
   static async getIBDPatientProfile(userId: string): Promise<IBDPatientProfileData | null> {
+    const supabase = createClient()
     const { data, error } = await supabase
       .from('ibd_patient_profiles')
       .select('*')
@@ -377,6 +382,7 @@ export class EnhancedFoodsService {
    * 更新或創建IBD患者檔案
    */
   static async upsertIBDPatientProfile(profileData: IBDPatientProfileData): Promise<IBDPatientProfileData> {
+    const supabase = createClient()
     const { data, error } = await supabase
       .from('ibd_patient_profiles')
       .upsert({
@@ -398,6 +404,7 @@ export class EnhancedFoodsService {
    * 獲取IBD階段特定的食物類別
    */
   static async getFoodCategoriesForPhase(phase: 'acute' | 'remission'): Promise<string[]> {
+    const supabase = createClient()
     const minScore = phase === 'acute' ? 3 : 2
 
     const { data, error } = await supabase

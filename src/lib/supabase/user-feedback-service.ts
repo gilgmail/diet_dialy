@@ -1,7 +1,7 @@
 // 用戶反饋服務層
 // 收集 IBD 評分準確性反饋和改進建議
 
-import { supabase } from './client'
+import { createClient } from './client'
 
 export interface UserFoodFeedback {
   id?: string
@@ -72,9 +72,14 @@ export interface UserFeedbackQuality {
 }
 
 export class UserFeedbackService {
+  private getSupabaseClient() {
+    return createClient()
+  }
+
 
   // 提交用戶食物反饋
   async submitFoodFeedback(feedback: UserFoodFeedback): Promise<UserFoodFeedback | null> {
+    const supabase = this.getSupabaseClient()
     try {
       const { data, error } = await supabase
         .from('user_food_feedback')
@@ -103,6 +108,7 @@ export class UserFeedbackService {
     limit = 50,
     offset = 0
   ): Promise<UserFoodFeedback[]> {
+    const supabase = this.getSupabaseClient()
     try {
       const { data, error } = await supabase
         .from('user_food_feedback')
@@ -133,6 +139,7 @@ export class UserFeedbackService {
   async submitImprovementSuggestion(
     suggestion: ScoringImprovementSuggestion
   ): Promise<ScoringImprovementSuggestion | null> {
+    const supabase = this.getSupabaseClient()
     try {
       const { data, error } = await supabase
         .from('scoring_improvement_suggestions')
@@ -157,6 +164,7 @@ export class UserFeedbackService {
 
   // 獲取食物的群體反饋統計
   async getFoodCrowdStats(foodId: string): Promise<CrowdFeedbackStats | null> {
+    const supabase = this.getSupabaseClient()
     try {
       const { data, error } = await supabase
         .from('crowd_feedback_stats')
@@ -178,6 +186,7 @@ export class UserFeedbackService {
 
   // 獲取用戶反饋品質評估
   async getUserFeedbackQuality(userId: string): Promise<UserFeedbackQuality | null> {
+    const supabase = this.getSupabaseClient()
     try {
       const { data, error } = await supabase
         .from('user_feedback_quality')
