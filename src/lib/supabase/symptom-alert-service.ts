@@ -3,7 +3,7 @@
  * Manages symptom alerts, thresholds, and notifications
  */
 
-import { supabase } from './client';
+import { createAdminClient } from './server';
 import { DailySymptomService } from './daily-symptom-service';
 import type {
   SymptomAlert,
@@ -36,7 +36,8 @@ export class SymptomAlertService {
     filters: AlertFilters = {}
   ): Promise<SymptomAlert[]> {
     try {
-      let query = supabase
+      const admin = createAdminClient();
+      let query = admin
         .from('symptom_alerts')
         .select('*')
         .eq('user_id', userId);
@@ -76,9 +77,10 @@ export class SymptomAlertService {
     alertData: Omit<SymptomAlert, 'id' | 'created_at' | 'updated_at'>
   ): Promise<SymptomAlert> {
     try {
+      const admin = createAdminClient();
       const dbData = this.transformAlertForDatabase(alertData);
 
-      const { data, error } = await supabase
+      const { data, error } = await admin
         .from('symptom_alerts')
         .insert(dbData)
         .select()
@@ -105,10 +107,11 @@ export class SymptomAlertService {
     updates: Partial<SymptomAlert>
   ): Promise<SymptomAlert | null> {
     try {
+      const admin = createAdminClient();
       const dbUpdates = this.transformAlertForDatabase(updates);
       dbUpdates.updated_at = new Date().toISOString();
 
-      const { data, error } = await supabase
+      const { data, error } = await admin
         .from('symptom_alerts')
         .update(dbUpdates)
         .eq('id', alertId)
@@ -136,7 +139,8 @@ export class SymptomAlertService {
    */
   static async deleteAlert(alertId: string, userId: string): Promise<boolean> {
     try {
-      const { error } = await supabase
+      const admin = createAdminClient();
+      const { error } = await admin
         .from('symptom_alerts')
         .delete()
         .eq('id', alertId)
@@ -162,7 +166,8 @@ export class SymptomAlertService {
     filters: AlertHistoryFilters = {}
   ): Promise<SymptomAlertHistory[]> {
     try {
-      let query = supabase
+      const admin = createAdminClient();
+      let query = admin
         .from('symptom_alert_history')
         .select(`
           *,
@@ -547,6 +552,8 @@ export class SymptomAlertService {
     try {
       console.log(`🚨 Triggering alert: ${alert.alert_name}`);
 
+      const admin = createAdminClient();
+
       // Create alert history entry
       const alertHistory: Omit<SymptomAlertHistory, 'id' | 'created_at' | 'updated_at'> = {
         alert_id: alert.id,
@@ -560,7 +567,7 @@ export class SymptomAlertService {
         notification_delivery_status: {}
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await admin
         .from('symptom_alert_history')
         .insert(this.transformAlertHistoryForDatabase(alertHistory))
         .select()
@@ -572,7 +579,7 @@ export class SymptomAlertService {
       }
 
       // Update alert trigger count and last triggered time
-      await supabase
+      await admin
         .from('symptom_alerts')
         .update({
           trigger_count: alert.trigger_count + 1,
@@ -626,8 +633,10 @@ export class SymptomAlertService {
         }
       }
 
+      const admin = createAdminClient();
+
       // Update alert history with notification status
-      await supabase
+      await admin
         .from('symptom_alert_history')
         .update({
           notification_sent: true,

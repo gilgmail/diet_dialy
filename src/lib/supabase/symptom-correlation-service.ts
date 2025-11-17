@@ -3,7 +3,7 @@
  * Handles correlation analysis between symptoms and foods
  */
 
-import { supabase } from './client';
+import { createAdminClient } from './server';
 import { DailySymptomService } from './daily-symptom-service';
 import type {
   SymptomFoodCorrelation,
@@ -37,7 +37,8 @@ export class SymptomCorrelationService {
     foodId: string
   ): Promise<SymptomFoodCorrelation | null> {
     try {
-      const { data, error } = await supabase
+      const admin = createAdminClient();
+      const { data, error } = await admin
         .from('symptom_food_correlations')
         .select('*')
         .eq('user_id', userId)
@@ -69,7 +70,8 @@ export class SymptomCorrelationService {
     filters: CorrelationFilters
   ): Promise<SymptomFoodCorrelation[]> {
     try {
-      let query = supabase
+      const admin = createAdminClient();
+      let query = admin
         .from('symptom_food_correlations')
         .select('*')
         .eq('user_id', userId);
@@ -207,10 +209,11 @@ export class SymptomCorrelationService {
     updates: Partial<SymptomFoodCorrelation>
   ): Promise<SymptomFoodCorrelation | null> {
     try {
+      const admin = createAdminClient();
       const dbUpdates = this.transformCorrelationForDatabase(updates);
       dbUpdates.last_updated = new Date().toISOString();
 
-      const { data, error } = await supabase
+      const { data, error } = await admin
         .from('symptom_food_correlations')
         .update(dbUpdates)
         .eq('id', correlationId)
@@ -238,7 +241,8 @@ export class SymptomCorrelationService {
    */
   static async deleteCorrelation(correlationId: string, userId: string): Promise<boolean> {
     try {
-      const { error } = await supabase
+      const admin = createAdminClient();
+      const { error } = await admin
         .from('symptom_food_correlations')
         .delete()
         .eq('id', correlationId)
@@ -261,7 +265,8 @@ export class SymptomCorrelationService {
    */
   static async deleteCorrelationsByFood(userId: string, foodId: string): Promise<boolean> {
     try {
-      const { error } = await supabase
+      const admin = createAdminClient();
+      const { error } = await admin
         .from('symptom_food_correlations')
         .delete()
         .eq('user_id', userId)
@@ -482,7 +487,8 @@ export class SymptomCorrelationService {
 
   private static async getFoodDetails(foodId: string): Promise<{ name: string; category?: string } | null> {
     try {
-      const { data, error } = await supabase
+      const admin = createAdminClient();
+      const { data, error } = await admin
         .from('diet_daily_foods')
         .select('name, category')
         .eq('id', foodId)
@@ -507,10 +513,11 @@ export class SymptomCorrelationService {
     correlation: Omit<SymptomFoodCorrelation, 'id' | 'created_at' | 'updated_at'>
   ): Promise<SymptomFoodCorrelation> {
     try {
+      const admin = createAdminClient();
       const dbData = this.transformCorrelationForDatabase(correlation);
 
       // Use upsert to handle duplicates
-      const { data, error } = await supabase
+      const { data, error } = await admin
         .from('symptom_food_correlations')
         .upsert(dbData, {
           onConflict: 'user_id,food_id,analysis_start_date,analysis_end_date'
