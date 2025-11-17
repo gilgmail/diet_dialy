@@ -483,6 +483,7 @@ Device: ${Platform.OS} ${Platform.Version}
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>設定</Text>
+        <Text style={styles.headerSubtitle}>個人偏好與應用程式設定</Text>
       </View>
 
       {/* Tab Navigation */}
@@ -969,7 +970,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
@@ -977,6 +978,11 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  headerSubtitle: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
   },
   tabContainer: {
     flexDirection: 'row',
