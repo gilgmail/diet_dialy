@@ -237,7 +237,6 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   const [reportPickerTarget, setReportPickerTarget] = useState<'start' | 'end'>('start')
   const [tempReportDate, setTempReportDate] = useState(defaultReportRange.start)
   const [isGeneratingWeeklyReport, setIsGeneratingWeeklyReport] = useState(false)
-  const [reportFormat, setReportFormat] = useState<'pdf' | 'markdown'>('pdf')
   const scrollViewRef = React.useRef<ScrollView>(null)
   const totalHistoryCount = Math.max(analysisHistoryTotal ?? 0, history.length)
   const hasPendingServerHistory = !hasAllHistory && totalHistoryCount > history.length
