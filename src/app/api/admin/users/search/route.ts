@@ -8,7 +8,7 @@ const MAX_LIMIT = 50
 interface DietDailyUserRow {
   id: string
   email: string | null
-  full_name?: string | null
+  name?: string | null
   created_at?: string
   is_admin?: boolean
 }
@@ -46,13 +46,13 @@ export async function GET(request: NextRequest) {
   try {
     let query = adminClient
       .from('diet_daily_users')
-      .select('id,email,full_name,created_at')
+      .select('id,email,name,created_at')
       .order('email', { ascending: true })
       .limit(limit)
 
     if (search && search.length > 0) {
       const likeValue = `%${search}%`
-      query = query.or(`email.ilike.${likeValue},full_name.ilike.${likeValue}`)
+      query = query.or(`email.ilike.${likeValue},name.ilike.${likeValue}`)
     }
 
     const { data, error } = await query
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       .map((row) => ({
         id: row.id,
         email: row.email!,
-        name: row.full_name ?? null,
+        name: row.name ?? null,
         createdAt: row.created_at ?? null
       }))
 
