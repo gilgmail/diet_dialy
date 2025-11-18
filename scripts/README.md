@@ -67,6 +67,19 @@
 
 ---
 
+### pi-dev-init.sh
+**用途**: 一次性將 `pi_docker/docker-compose.dev.yml` 上傳到 Pi，讓 dev 模式可運作
+**使用方式**:
+```bash
+./scripts/pi-dev-init.sh
+```
+
+**注意**:
+- 必須先執行一次（或在 dev compose 有變更時再次執行），之後才能用 `pi-dev-sync.sh`
+- 依賴 `.env` 中的 `PI_USER / PI_HOST / PI_DIR` 設定
+
+---
+
 ### deploy-to-gil-golden.sh
 **用途**: 部署到實體 iOS 測試設備
 **使用方式**:
