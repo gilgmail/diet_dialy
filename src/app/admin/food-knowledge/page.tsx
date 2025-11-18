@@ -46,6 +46,13 @@ interface CacheItem {
   servingGuidelines?: unknown
 }
 
+interface AdminUserOption {
+  id: string
+  email: string
+  name?: string | null
+  createdAt?: string | null
+}
+
 const severityOptions = [
   { label: '全部', value: 'all' },
   { label: '低風險', value: 'low' },
@@ -54,7 +61,7 @@ const severityOptions = [
 ]
 
 export default function FoodKnowledgeAdminPage() {
-  const { isAuthenticated, user, isLoading: authLoading } = useSupabaseAuth()
+  const { isAuthenticated, user, isLoading: authLoading, isAdmin } = useSupabaseAuth()
   const [userIdInput, setUserIdInput] = useState('')
   const [queueSummary, setQueueSummary] = useState<QueueSummary | null>(null)
   const [queueLoading, setQueueLoading] = useState(false)
@@ -67,6 +74,10 @@ export default function FoodKnowledgeAdminPage() {
   const [cacheCursor, setCacheCursor] = useState<string | null>(null)
   const [cacheHasMore, setCacheHasMore] = useState(false)
   const [selectedItem, setSelectedItem] = useState<CacheItem | null>(null)
+  const [availableUsers, setAvailableUsers] = useState<AdminUserOption[]>([])
+  const [userSearch, setUserSearch] = useState('')
+  const [userSearchLoading, setUserSearchLoading] = useState(false)
+  const [userSearchError, setUserSearchError] = useState<string | null>(null)
 
   // Prefill userId with current user to make testing easier
   useEffect(() => {
@@ -74,6 +85,15 @@ export default function FoodKnowledgeAdminPage() {
       setUserIdInput(user.id)
     }
   }, [user?.id, userIdInput])
+
+  useEffect(() => {
+    if (!isAdmin) {
+      setAvailableUsers([])
+      setUserSearch('')
+      setUserSearchError(null)
+      setUserSearchLoading(false)
+    }
+  }, [isAdmin])
 
   const fetchQueueStatus = async () => {
     if (!userIdInput) {
@@ -196,6 +216,47 @@ export default function FoodKnowledgeAdminPage() {
     return found ? found.label : value
   }
 
+  const fetchAvailableUsers = async () => {
+    if (!isAdmin) {
+      setUserSearchError('需要管理員權限')
+      return
+    }
+
+    try {
+      setUserSearchLoading(true)
+      setUserSearchError(null)
+      const params = new URLSearchParams()
+      const trimmedSearch = userSearch.trim()
+      if (trimmedSearch) {
+        params.set('q', trimmedSearch)
+      }
+      const queryString = params.toString()
+      const endpoint = queryString.length > 0 ? `/api/admin/users/search?${queryString}` : '/api/admin/users/search'
+      const response = await fetch(endpoint)
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('需要管理員權限')
+        }
+        throw new Error(`HTTP ${response.status}`)
+      }
+      const payload = (await response.json()) as {
+        success: boolean
+        users?: AdminUserOption[]
+        error?: string
+      }
+      if (!payload.success || !payload.users) {
+        throw new Error(payload.error || '無法取得使用者列表')
+      }
+      setAvailableUsers(payload.users)
+    } catch (error) {
+      console.error('[FoodKnowledgeAdmin] user search error:', error)
+      setUserSearchError(error instanceof Error ? error.message : '無法讀取使用者列表')
+      setAvailableUsers([])
+    } finally {
+      setUserSearchLoading(false)
+    }
+  }
+
   const renderQueueSummary = () => {
     if (queueLoading) {
       return <p className="text-sm text-gray-500">讀取中...</p>
@@ -298,6 +359,74 @@ export default function FoodKnowledgeAdminPage() {
               </button>
             </div>
           </div>
+
+          {isAdmin ? (
+            <div className="mt-4 rounded-lg border bg-gray-50 p-4">
+              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <div className="flex-1">
+                  <label className="text-sm font-medium text-gray-700">或搜尋註冊 Email</label>
+                  <input
+                    type="text"
+                    className="mt-1 w-full rounded-lg border px-3 py-2"
+                    placeholder="輸入 email 關鍵字..."
+                    value={userSearch}
+                    onChange={(event) => setUserSearch(event.target.value)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={fetchAvailableUsers}
+                  disabled={userSearchLoading}
+                  className="flex items-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                >
+                  {userSearchLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                  列出可查 Email
+                </button>
+              </div>
+              {userSearchError ? (
+                <p className="mt-2 text-sm text-red-500">{userSearchError}</p>
+              ) : null}
+              {availableUsers.length > 0 ? (
+                <div className="mt-3 max-h-60 overflow-y-auto rounded-lg border bg-white">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-gray-50 text-left text-xs font-medium uppercase text-gray-500">
+                        <th className="px-3 py-2">Email</th>
+                        <th className="px-3 py-2">姓名</th>
+                        <th className="px-3 py-2">建立時間</th>
+                        <th className="px-3 py-2">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {availableUsers.map((option) => (
+                        <tr key={option.id} className="border-b last:border-0">
+                          <td className="px-3 py-3">
+                            <div className="font-medium text-gray-900">{option.email}</div>
+                            <div className="text-xs text-gray-500">{option.id}</div>
+                          </td>
+                          <td className="px-3 py-3">{option.name || '-'}</td>
+                          <td className="px-3 py-3 text-xs text-gray-500">
+                            {option.createdAt ? new Date(option.createdAt).toLocaleDateString('zh-TW') : '-'}
+                          </td>
+                          <td className="px-3 py-3">
+                            <button
+                              type="button"
+                              onClick={() => setUserIdInput(option.id)}
+                              className="rounded bg-primary px-3 py-1 text-xs font-semibold text-white hover:bg-primary/90"
+                            >
+                              使用此 userId
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : !userSearchError && !userSearchLoading ? (
+                <p className="mt-2 text-xs text-gray-500">輸入 email 關鍵字後點擊搜尋，即可列出可用帳號。</p>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="mt-6">{renderQueueSummary()}</div>
 
