@@ -97,6 +97,7 @@ export interface WeeklyAnalysisHistoryItem {
     experiments?: string[]
   }
   analysisVersion?: string
+  aiModel?: string
 }
 
 export type WeeklyAnalysisStatusState = 'pending' | 'in_progress' | 'completed' | 'failed'

@@ -19,6 +19,10 @@ export const appConfig = {
     process.env.EXPO_PUBLIC_REQUIRE_DATABASE_FOOD,
     false
   ),
+  enableAIUI: parseBoolean(
+    process.env.EXPO_PUBLIC_ENABLE_AI_UI,
+    false
+  ),
 }
 
 export type AppConfig = typeof appConfig

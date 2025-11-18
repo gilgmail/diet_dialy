@@ -9,15 +9,16 @@ import {
   TouchableOpacity,
   Share,
   Modal,
+  Alert,
 } from 'react-native'
 import { Linking, Platform } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { Buffer } from 'buffer'
-import FileSystem from 'expo-file-system'
-import { getContentUriAsync } from 'expo-file-system/legacy'
+import { Paths, File } from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 import Constants from 'expo-constants'
+import DateTimePicker from '@react-native-community/datetimepicker'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useDashboard } from '../hooks/useDashboard'
 import { DashboardService } from '../services/DashboardService'
@@ -30,6 +31,7 @@ import { DashboardSkeleton } from '../components/DashboardSkeleton'
 import { colors, typography, spacing } from '@/theme'
 import { MEAL_TYPES } from '@/features/food-diary/types'
 import { SEVERITY_LEVELS } from '@/features/symptom-diary/types'
+import { appConfig } from '@/shared/config/appConfig'
 import type {
   WeeklyAnalysisStatus,
   WeeklyAnalysisStatusStep,
@@ -40,18 +42,8 @@ interface DashboardScreenProps {
   hideHeader?: boolean
 }
 
-type FileSystemDirectoryContext = {
-  cacheDirectory?: string | null
-  documentDirectory?: string | null
-}
-
-function resolveWritableDirectory(): string {
-  const directories = FileSystem as FileSystemDirectoryContext
-  const directory = directories.cacheDirectory ?? directories.documentDirectory
-  if (!directory) {
-    throw new Error('No writable directory available for sharing summary')
-  }
-  return directory.endsWith('/') ? directory : `${directory}/`
+function getReportDirectory(): typeof Paths.cache {
+  return Paths.cache
 }
 
 /**
@@ -68,9 +60,34 @@ function getModelDisplayName(modelId: string): string {
   return modelMap[modelId] || modelId
 }
 
+function normalizeDateOnly(input: Date): Date {
+  const date = new Date(input)
+  date.setHours(0, 0, 0, 0)
+  return date
+}
+
+function formatDateLabel(date: Date): string {
+  const year = date.getFullYear()
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function formatDateKey(date: Date): string {
+  return formatDateLabel(date)
+}
+
+function getDefaultReportRange() {
+  const end = normalizeDateOnly(new Date())
+  const start = normalizeDateOnly(new Date(end))
+  start.setDate(end.getDate() - 6)
+  return { start, end }
+}
+
 export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {}) {
   const screenMountTime = React.useRef(Date.now())
   const { user, signOut } = useAuth()
+  const { enableAIUI } = appConfig
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
   const {
     stats,
@@ -107,6 +124,13 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   const [hasAllHistory, setHasAllHistory] = useState(false)
   const [isHistoryLoading, setIsHistoryLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'stats' | 'trends' | 'insights' | 'reports'>('stats')
+  const defaultReportRange = React.useMemo(() => getDefaultReportRange(), [])
+  const [reportRangeStart, setReportRangeStart] = useState<Date>(defaultReportRange.start)
+  const [reportRangeEnd, setReportRangeEnd] = useState<Date>(defaultReportRange.end)
+  const [reportPickerVisible, setReportPickerVisible] = useState(false)
+  const [reportPickerTarget, setReportPickerTarget] = useState<'start' | 'end'>('start')
+  const [tempReportDate, setTempReportDate] = useState(defaultReportRange.start)
+  const [isGeneratingWeeklyReport, setIsGeneratingWeeklyReport] = useState(false)
   const scrollViewRef = React.useRef<ScrollView>(null)
   const totalHistoryCount = Math.max(analysisHistoryTotal ?? 0, history.length)
   const hasPendingServerHistory = !hasAllHistory && totalHistoryCount > history.length
@@ -138,6 +162,12 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       return analysisHistory
     })
   }, [analysisHistory, analysisHistoryTotal, hasAllHistory])
+
+  useEffect(() => {
+    if (!enableAIUI && activeTab === 'insights') {
+      setActiveTab('stats')
+    }
+  }, [enableAIUI, activeTab])
 
   const formatTimestamp = (value?: string) => {
     if (!value) {
@@ -186,6 +216,10 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   }
 
   const renderFoodKnowledgeBanner = () => {
+    if (!enableAIUI) {
+      return null
+    }
+
     const summary = analysisStatus?.foodKnowledge
     if (!summary) {
       return null
@@ -207,12 +241,190 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
         </View>
         <TouchableOpacity
           style={styles.foodKnowledgeAction}
-          onPress={() => navigation.navigate('Settings')}
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Settings' } as any)}
         >
           <Text style={styles.foodKnowledgeActionText}>前往設定</Text>
         </TouchableOpacity>
       </View>
     )
+  }
+
+  const applyReportDate = (target: 'start' | 'end', date: Date) => {
+    const normalized = normalizeDateOnly(date)
+    if (target === 'start') {
+      setReportRangeStart(normalized)
+      if (normalized > reportRangeEnd) {
+        setReportRangeEnd(normalized)
+      }
+    } else {
+      setReportRangeEnd(normalized)
+      if (normalized < reportRangeStart) {
+        setReportRangeStart(normalized)
+      }
+    }
+  }
+
+  const handleOpenReportPicker = (target: 'start' | 'end') => {
+    setReportPickerTarget(target)
+    setTempReportDate(target === 'start' ? reportRangeStart : reportRangeEnd)
+    setReportPickerVisible(true)
+  }
+
+  const handleReportPickerChange = (_event: unknown, selectedDate?: Date) => {
+    if (!selectedDate) {
+      if (Platform.OS === 'android') {
+        setReportPickerVisible(false)
+      }
+      return
+    }
+
+    if (Platform.OS === 'android') {
+      setReportPickerVisible(false)
+      applyReportDate(reportPickerTarget, selectedDate)
+    } else {
+      setTempReportDate(selectedDate)
+    }
+  }
+
+  const handleConfirmReportPickerIOS = () => {
+    applyReportDate(reportPickerTarget, tempReportDate)
+    setReportPickerVisible(false)
+  }
+
+  const handleCancelReportPickerIOS = () => {
+    setReportPickerVisible(false)
+  }
+
+  const buildWeeklyReportMarkdown = () => {
+    if (!weeklyTrend) {
+      return ''
+    }
+
+    const startLabel = formatDateLabel(reportRangeStart)
+    const endLabel = formatDateLabel(reportRangeEnd)
+    const startKey = formatDateKey(reportRangeStart)
+    const endKey = formatDateKey(reportRangeEnd)
+    const filteredDays = weeklyTrend.week.filter(
+      (day) => day.date >= startKey && day.date <= endKey
+    )
+    const totalFoodEntries = filteredDays.reduce((sum, day) => sum + day.foodCount, 0)
+    const totalSymptomEntries = filteredDays.reduce((sum, day) => sum + day.symptomCount, 0)
+    const totalCalories = filteredDays.reduce((sum, day) => sum + (day.totalCalories || 0), 0)
+    const averageCalories = filteredDays.length
+      ? Math.round(totalCalories / filteredDays.length)
+      : 0
+    const mealDistribution = weeklyTrend.mealDistribution ?? {
+      breakfast: 0,
+      lunch: 0,
+      dinner: 0,
+      snack: 0,
+    }
+    const severityDistribution = weeklyTrend.severityDistribution ?? {
+      mild: 0,
+      moderate: 0,
+      severe: 0,
+    }
+
+    const lines: string[] = [
+      '# 每週健康報表',
+      '',
+      `- 產出時間：${new Date().toLocaleString('zh-TW')}`,
+      `- 統計區間：${startLabel} ~ ${endLabel}`,
+      '',
+      '## 數據概覽',
+      `- 區間內飲食記錄：${totalFoodEntries} 筆`,
+      `- 區間內症狀記錄：${totalSymptomEntries} 筆`,
+    ]
+
+    if (stats) {
+      lines.push(
+        `- 累積飲食記錄：${stats.totalFoodEntries} 筆，症狀記錄：${stats.totalSymptomEntries} 筆`,
+        `- 本週飲食 ${stats.weekFoodEntries} 筆、症狀 ${stats.weekSymptomEntries} 筆`,
+      )
+    } else {
+      lines.push('- 累積統計尚未載入')
+    }
+
+    lines.push(
+      stats?.mostCommonSymptom
+        ? `- 最常見症狀：${stats.mostCommonSymptom}`
+        : '- 最常見症狀：尚無資料',
+      filteredDays.length
+        ? `- 平均每日卡路里：約 ${averageCalories} kcal`
+        : '- 此區間尚無卡路里資料',
+      '',
+      '## 餐次分佈',
+      '| 餐次 | 次數 |',
+      '| --- | --- |',
+      `| 早餐 | ${mealDistribution.breakfast ?? 0} |`,
+      `| 午餐 | ${mealDistribution.lunch ?? 0} |`,
+      `| 晚餐 | ${mealDistribution.dinner ?? 0} |`,
+      `| 點心 | ${mealDistribution.snack ?? 0} |`,
+      '',
+      '## 症狀嚴重度',
+      '| 等級 | 次數 |',
+      '| --- | --- |',
+      `| 輕度 | ${severityDistribution.mild ?? 0} |`,
+      `| 中度 | ${severityDistribution.moderate ?? 0} |`,
+      `| 重度 | ${severityDistribution.severe ?? 0} |`,
+      '',
+      '## 每日概況',
+    )
+
+    if (filteredDays.length) {
+      filteredDays.forEach((day) => {
+        lines.push(
+          `- ${day.date}：飲食 ${day.foodCount} 筆、症狀 ${day.symptomCount} 筆、總卡路里 ${
+            day.totalCalories || 0
+          } kcal`
+        )
+      })
+    } else {
+      lines.push('此區間沒有每日詳細記錄。')
+    }
+
+    lines.push(
+      '',
+      '---',
+      '此報表由 DietDaily 自動產生，提供飲食與腸道症狀的簡易整理，方便與團隊或醫師分享。'
+    )
+
+    return lines.join('\n')
+  }
+
+  const handleGenerateWeeklyReport = async () => {
+    if (!weeklyTrend) {
+      Alert.alert('資料尚未載入', '請等待趨勢統計載入完成後再試一次。')
+      return
+    }
+
+    setIsGeneratingWeeklyReport(true)
+    try {
+      const markdown = buildWeeklyReportMarkdown()
+      const startKey = formatDateKey(reportRangeStart)
+      const endKey = formatDateKey(reportRangeEnd)
+      const fileName = `diet-weekly-report-${startKey}-${endKey}.md`
+      const file = new File(getReportDirectory(), fileName)
+
+      file.create({ overwrite: true })
+      file.write(markdown)
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(file.uri, {
+          mimeType: 'text/markdown',
+          dialogTitle: '分享每週報表',
+        })
+      } else {
+        await Share.share({
+          message: markdown,
+        })
+      }
+    } catch (error) {
+      console.error('[Dashboard] Failed to generate weekly report:', error)
+      Alert.alert('產生失敗', '建立報表時發生錯誤，請稍後再試。')
+    } finally {
+      setIsGeneratingWeeklyReport(false)
+    }
   }
 
   const buildInitialStatus = (
@@ -759,22 +971,16 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
         /[^\w.-]/g,
         '_'
       )
-      const fileUri = `${resolveWritableDirectory()}${sanitizedFileName}.html`
-      await FileSystem.writeAsStringAsync(fileUri, html)
+      const htmlFileName = `${sanitizedFileName}.html`
+      const file = new File(getReportDirectory(), htmlFileName)
 
-      let shareUri = fileUri
-      if (Platform.OS === 'android') {
-        try {
-          shareUri = await getContentUriAsync(fileUri)
-        } catch (androidError) {
-          console.warn('[Dashboard] Unable to convert file URI for Android sharing', androidError)
-        }
-      }
+      file.create({ overwrite: true })
+      file.write(html)
 
       // 使用系統分享功能開啟
       const canShare = await Sharing.isAvailableAsync()
       if (canShare) {
-        await Sharing.shareAsync(shareUri, {
+        await Sharing.shareAsync(file.uri, {
           mimeType: 'text/html',
           dialogTitle: item.title,
           UTI: 'public.html',
@@ -782,7 +988,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       } else {
         console.warn('[Dashboard] Sharing not available')
         // fallback: 嘗試直接用瀏覽器開啟（可能失敗）
-        await Linking.openURL(fileUri)
+        await Linking.openURL(file.uri)
       }
     } catch (error) {
       console.error('[Dashboard] Failed to open summary:', error)
@@ -963,7 +1169,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
           <View style={styles.headerRight}>
             <TouchableOpacity
               style={styles.settingsButton}
-              onPress={() => navigation.navigate('Settings')}
+              onPress={() => navigation.navigate('MainTabs', { screen: 'Settings' } as any)}
             >
               <Text style={styles.settingsIcon}>⚙️</Text>
             </TouchableOpacity>
@@ -994,14 +1200,16 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
             📈 趨勢
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'insights' && styles.tabActive]}
-          onPress={() => setActiveTab('insights')}
-        >
-          <Text style={[styles.tabText, activeTab === 'insights' && styles.tabTextActive]}>
-            💡 洞察
-          </Text>
-        </TouchableOpacity>
+        {enableAIUI && (
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'insights' && styles.tabActive]}
+            onPress={() => setActiveTab('insights')}
+          >
+            <Text style={[styles.tabText, activeTab === 'insights' && styles.tabTextActive]}>
+              💡 洞察
+            </Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={[styles.tab, activeTab === 'reports' && styles.tabActive]}
           onPress={() => setActiveTab('reports')}
@@ -1036,6 +1244,244 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       </View>
       )}
 
+      {activeTab === 'reports' && (
+        <>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>每週報表</Text>
+            <Text style={styles.reportGeneratorDescription}>
+              輕鬆匯出 Markdown 報表，分享給團隊或醫師。可指定 7 天區間，內容包含飲食、症狀與趨勢摘要。
+            </Text>
+            <View style={styles.reportRangeContainer}>
+              <TouchableOpacity
+                style={styles.reportRangePicker}
+                onPress={() => handleOpenReportPicker('start')}
+              >
+                <Text style={styles.reportRangeLabel}>起始日期</Text>
+                <Text style={styles.reportRangeValue}>{formatDateLabel(reportRangeStart)}</Text>
+              </TouchableOpacity>
+              <View style={styles.reportRangeDivider}>
+                <Text style={styles.reportRangeDividerText}>至</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.reportRangePicker}
+                onPress={() => handleOpenReportPicker('end')}
+              >
+                <Text style={styles.reportRangeLabel}>結束日期</Text>
+                <Text style={styles.reportRangeValue}>{formatDateLabel(reportRangeEnd)}</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.generateReportButton,
+                isGeneratingWeeklyReport && styles.generateReportButtonDisabled,
+              ]}
+              onPress={handleGenerateWeeklyReport}
+              disabled={isGeneratingWeeklyReport}
+            >
+              {isGeneratingWeeklyReport ? (
+                <ActivityIndicator size="small" color={colors.surface} />
+              ) : (
+                <Text style={styles.generateReportButtonText}>產生一週報表（Markdown）</Text>
+              )}
+            </TouchableOpacity>
+            {!enableAIUI && (
+              <Text style={styles.reportPausedNote}>
+                AI 洞察暫停開發中，目前僅提供手動報表工具。
+              </Text>
+            )}
+          </View>
+
+          {enableAIUI && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>AI 分析報告歷史</Text>
+              {insights.some((insight) => insight.id.startsWith('ai-timeout')) && (
+                <View style={styles.analysisPendingBanner}>
+                  <Text style={styles.analysisPendingText}>
+                    AI 分析仍在生成中，完成後將自動更新最新報告。
+                  </Text>
+                </View>
+              )}
+              {analysisStatus && !analysisStatus.reportGenerated ? (
+                <View style={styles.analysisStatusCard}>
+                  <Text style={styles.analysisStatusTitle}>AI 分析仍在進行</Text>
+                  <Text style={styles.analysisStatusSummary}>
+                    {`資料筆數：${analysisStatus.datasetSummary.totalRecords}（飲食 ${analysisStatus.datasetSummary.foodEntries}、症狀 ${analysisStatus.datasetSummary.symptomEntries}）`}
+                  </Text>
+                  {analysisStatus.lastUpdated ? (
+                    <Text style={styles.analysisStatusTimestamp}>
+                      最後更新：{new Date(analysisStatus.lastUpdated).toLocaleString('zh-TW')}
+                    </Text>
+                  ) : null}
+                  {analysisStatus.steps?.map((step) => renderStatusStep(step, 'report-'))}
+                </View>
+              ) : null}
+              {history.length > 0 ? (
+                <>
+                  {history.slice(0, 2).map((item) => (
+                    <View
+                      key={item.id}
+                      style={[
+                        styles.historyCard,
+                        item.id === latestReportId && styles.historyCardNew
+                      ]}
+                    >
+                      <View style={styles.historyHeader}>
+                        <View style={{ flex: 1 }}>
+                          <View style={styles.historyTitleRow}>
+                            <Text style={styles.historyTitle}>{item.title}</Text>
+                            {item.id === latestReportId && (
+                              <View style={styles.newBadge}>
+                                <Text style={styles.newBadgeText}>最新</Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text style={styles.historySubtitle}>
+                            {`${item.startDate} ~ ${item.endDate}`}
+                          </Text>
+                          {item.createdAt && (
+                            <Text style={styles.historyTimestamp}>
+                              產出時間：{new Date(item.createdAt).toLocaleString('zh-TW', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </Text>
+                          )}
+                          {item.analysisVersion ? (
+                            <Text style={styles.historyVersion}>
+                              分析版本：{item.analysisVersion}
+                            </Text>
+                          ) : null}
+                          {item.analysisMode ? (
+                            <Text style={styles.historyVersion}>
+                              分析方式：{item.analysisMode === 'chunked' ? 'Chunked（分段）' : 'Single Pass'}
+                            </Text>
+                          ) : null}
+                          <Text style={styles.historySummary} numberOfLines={3}>
+                            {item.summary || '這份報告包含腸道健康的重點洞察。'}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.historyActions}>
+                        <TouchableOpacity
+                          style={styles.historyButton}
+                          onPress={() => handleViewReport(item)}
+                        >
+                          <Text style={styles.historyButtonText}>查看完整報告</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.historyButton, styles.historyButtonSecondary]}
+                          onPress={() => handleShareAnalysis(item)}
+                        >
+                          <Text style={styles.historyButtonSecondaryText}>分享摘要</Text>
+                        </TouchableOpacity>
+                      </View>
+                      {item.followUpActions.length > 0 && (
+                        <View style={styles.historyFollowUps}>
+                          {item.followUpActions.slice(0, 2).map((action, index) => (
+                            <Text key={`${item.id}-follow-${index}`} style={styles.historyFollowUpText}>
+                              • {action}
+                            </Text>
+                          ))}
+                        </View>
+                      )}
+                      {renderReportHighlights(item)}
+                    </View>
+                  ))}
+
+                  {showExpandButton && (
+                    <TouchableOpacity
+                      style={styles.expandButton}
+                      onPress={handleToggleAllReports}
+                    >
+                      <Text style={styles.expandButtonText}>
+                        {hasPendingServerHistory
+                          ? `載入更多報告${remainingServerCount > 0 ? `（尚有 ${remainingServerCount} 週）` : ''}`
+                          : `還有 ${Math.max(history.length - 2, 0)} 週的報告`}
+                      </Text>
+                      <Text style={styles.expandButtonIcon}>▼</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {isHistoryLoading && !showAllReports ? (
+                    <View style={styles.historyLoading}>
+                      <ActivityIndicator size="small" color={colors.primary[500]} />
+                      <Text style={styles.historyLoadingText}>載入更多報告中...</Text>
+                    </View>
+                  ) : null}
+
+                  {showAllReports && history.slice(2).map((item) => (
+                    <View
+                      key={item.id}
+                      style={styles.historyCard}
+                    >
+                      <View style={styles.historyHeader}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.historyTitle}>{item.title}</Text>
+                          <Text style={styles.historySubtitle}>
+                            {`${item.startDate} ~ ${item.endDate}`}
+                          </Text>
+                          {item.createdAt && (
+                            <Text style={styles.historyTimestamp}>
+                              產出時間：{new Date(item.createdAt).toLocaleString('zh-TW', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </Text>
+                          )}
+                          {item.analysisVersion ? (
+                            <Text style={styles.historyVersion}>
+                              分析版本：{item.analysisVersion}
+                            </Text>
+                          ) : null}
+                          {item.analysisMode ? (
+                            <Text style={styles.historyVersion}>
+                              分析方式：{item.analysisMode === 'chunked' ? 'Chunked（分段）' : 'Single Pass'}
+                            </Text>
+                          ) : null}
+                        </View>
+                      </View>
+                      <View style={styles.historyActions}>
+                        <TouchableOpacity
+                          style={styles.historyButton}
+                          onPress={() => handleViewReport(item)}
+                        >
+                          <Text style={styles.historyButtonText}>查看報告</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.historyButton, styles.historyButtonSecondary]}
+                          onPress={() => handleShareAnalysis(item)}
+                        >
+                          <Text style={styles.historyButtonSecondaryText}>分享</Text>
+                        </TouchableOpacity>
+                      </View>
+                      {renderReportHighlights(item)}
+                    </View>
+                  ))}
+
+                  {showAllReports && history.length > 2 && (
+                    <TouchableOpacity
+                      style={styles.collapseButton}
+                      onPress={handleToggleAllReports}
+                    >
+                      <Text style={styles.expandButtonText}>收起舊報告</Text>
+                      <Text style={styles.expandButtonIcon}>▲</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              ) : (
+                <Text style={styles.historyEmptyText}>尚未產生任何 AI 報告。</Text>
+              )}
+            </View>
+          )}
+        </>
+      )}
+
       {/* Weekly Charts */}
       {activeTab === 'trends' && weeklyTrend && (
         <View style={styles.section}>
@@ -1057,7 +1503,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
 
 
       {/* Health Insights */}
-      {activeTab === 'insights' && (
+      {enableAIUI && activeTab === 'insights' && (
       <View style={styles.section}>
         <View style={styles.sectionHeaderRow}>
           <Text style={[styles.sectionTitle, styles.sectionTitleInline]}>健康洞察</Text>
@@ -1084,202 +1530,6 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
         )}
       </View>
       )}
-
-      {/* AI Analysis History */}
-      {activeTab === 'reports' && (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>AI 分析報告歷史</Text>
-        {insights.some((insight) => insight.id.startsWith('ai-timeout')) && (
-          <View style={styles.analysisPendingBanner}>
-            <Text style={styles.analysisPendingText}>
-              AI 分析仍在生成中，完成後將自動更新最新報告。
-            </Text>
-          </View>
-        )}
-        {analysisStatus && !analysisStatus.reportGenerated ? (
-          <View style={styles.analysisStatusCard}>
-            <Text style={styles.analysisStatusTitle}>AI 分析仍在進行</Text>
-            <Text style={styles.analysisStatusSummary}>
-              {`資料筆數：${analysisStatus.datasetSummary.totalRecords}（飲食 ${analysisStatus.datasetSummary.foodEntries}、症狀 ${analysisStatus.datasetSummary.symptomEntries}）`}
-            </Text>
-            {analysisStatus.lastUpdated ? (
-              <Text style={styles.analysisStatusTimestamp}>
-                最後更新：{new Date(analysisStatus.lastUpdated).toLocaleString('zh-TW')}
-              </Text>
-            ) : null}
-            {analysisStatus.steps?.map((step) => renderStatusStep(step, 'report-'))}
-          </View>
-        ) : null}
-        {history.length > 0 ? (
-          <>
-            {history.slice(0, 2).map((item) => (
-              <View
-                key={item.id}
-                style={[
-                  styles.historyCard,
-                  item.id === latestReportId && styles.historyCardNew
-                ]}
-              >
-                <View style={styles.historyHeader}>
-                  <View style={{ flex: 1 }}>
-                    <View style={styles.historyTitleRow}>
-                      <Text style={styles.historyTitle}>{item.title}</Text>
-                      {item.id === latestReportId && (
-                        <View style={styles.newBadge}>
-                          <Text style={styles.newBadgeText}>最新</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={styles.historySubtitle}>
-                      {`${item.startDate} ~ ${item.endDate}`}
-                    </Text>
-                    {item.createdAt && (
-                      <Text style={styles.historyTimestamp}>
-                        產出時間：{new Date(item.createdAt).toLocaleString('zh-TW', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </Text>
-                    )}
-                    {item.analysisVersion ? (
-                      <Text style={styles.historyVersion}>
-                        分析版本：{item.analysisVersion}
-                      </Text>
-                    ) : null}
-                    {item.analysisMode ? (
-                      <Text style={styles.historyVersion}>
-                        分析方式：{item.analysisMode === 'chunked' ? 'Chunked（分段）' : 'Single Pass'}
-                      </Text>
-                    ) : null}
-                    <Text style={styles.historySummary} numberOfLines={3}>
-                      {item.summary || '這份報告包含腸道健康的重點洞察。'}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.historyActions}>
-                  <TouchableOpacity
-                    style={styles.historyButton}
-                    onPress={() => handleViewReport(item)}
-                  >
-                    <Text style={styles.historyButtonText}>查看完整報告</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.historyButton, styles.historyButtonSecondary]}
-                    onPress={() => handleShareAnalysis(item)}
-                  >
-                    <Text style={styles.historyButtonSecondaryText}>分享摘要</Text>
-                  </TouchableOpacity>
-                </View>
-                {item.followUpActions.length > 0 && (
-                  <View style={styles.historyFollowUps}>
-                    {item.followUpActions.slice(0, 2).map((action, index) => (
-                      <Text key={`${item.id}-follow-${index}`} style={styles.historyFollowUpText}>
-                        • {action}
-                      </Text>
-                    ))}
-                  </View>
-                )}
-                {renderReportHighlights(item)}
-              </View>
-            ))}
-
-            {/* Show collapsed older reports if more than 2 */}
-            {showExpandButton && (
-              <TouchableOpacity
-                style={styles.expandButton}
-                onPress={handleToggleAllReports}
-              >
-                <Text style={styles.expandButtonText}>
-                  {hasPendingServerHistory
-                    ? `載入更多報告${remainingServerCount > 0 ? `（尚有 ${remainingServerCount} 週）` : ''}`
-                    : `還有 ${Math.max(history.length - 2, 0)} 週的報告`}
-                </Text>
-                <Text style={styles.expandButtonIcon}>▼</Text>
-              </TouchableOpacity>
-            )}
-
-            {isHistoryLoading && !showAllReports ? (
-              <View style={styles.historyLoading}>
-                <ActivityIndicator size="small" color={colors.primary[500]} />
-                <Text style={styles.historyLoadingText}>載入更多報告中...</Text>
-              </View>
-            ) : null}
-
-            {/* Show remaining reports when expanded */}
-            {showAllReports && history.slice(2).map((item) => (
-              <View
-                key={item.id}
-                style={styles.historyCard}
-              >
-                <View style={styles.historyHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.historyTitle}>{item.title}</Text>
-                    <Text style={styles.historySubtitle}>
-                      {`${item.startDate} ~ ${item.endDate}`}
-                    </Text>
-                    {item.createdAt && (
-                      <Text style={styles.historyTimestamp}>
-                        產出時間：{new Date(item.createdAt).toLocaleString('zh-TW', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </Text>
-                    )}
-                    {item.analysisVersion ? (
-                      <Text style={styles.historyVersion}>
-                        分析版本：{item.analysisVersion}
-                      </Text>
-                    ) : null}
-                    {item.analysisMode ? (
-                      <Text style={styles.historyVersion}>
-                        分析方式：{item.analysisMode === 'chunked' ? 'Chunked（分段）' : 'Single Pass'}
-                      </Text>
-                    ) : null}
-                  </View>
-                </View>
-                <View style={styles.historyActions}>
-                  <TouchableOpacity
-                    style={styles.historyButton}
-                    onPress={() => handleViewReport(item)}
-                  >
-                    <Text style={styles.historyButtonText}>查看報告</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.historyButton, styles.historyButtonSecondary]}
-                    onPress={() => handleShareAnalysis(item)}
-                  >
-                    <Text style={styles.historyButtonSecondaryText}>分享</Text>
-                  </TouchableOpacity>
-                </View>
-                {renderReportHighlights(item)}
-              </View>
-            ))}
-
-            {/* Collapse button */}
-            {showAllReports && history.length > 2 && (
-              <TouchableOpacity
-                style={styles.collapseButton}
-                onPress={handleToggleAllReports}
-              >
-                <Text style={styles.expandButtonText}>收起舊報告</Text>
-                <Text style={styles.expandButtonIcon}>▲</Text>
-              </TouchableOpacity>
-            )}
-          </>
-        ) : (
-          <Text style={styles.emptyInsightText}>
-            尚未建立 AI 報告歷史。執行「一週 AI 分析」後，報告會自動儲存於此。
-          </Text>
-        )}
-      </View>
-      )}
-
       {/* Empty State */}
       {!stats?.totalFoodEntries && !stats?.totalSymptomEntries && (
         <View style={styles.emptyContainer}>
@@ -1306,6 +1556,62 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
         </Text>
       </View>
       </ScrollView>
+
+      {Platform.OS === 'ios' && reportPickerVisible && (
+        <Modal
+          visible={reportPickerVisible}
+          transparent
+          animationType="slide"
+        >
+          <View style={styles.reportPickerModalOverlay}>
+            <View style={styles.reportPickerModal}>
+              <Text style={styles.reportPickerTitle}>
+                選擇{reportPickerTarget === 'start' ? '起始' : '結束'}日期
+              </Text>
+              <DateTimePicker
+                value={tempReportDate}
+                mode="date"
+                display="inline"
+                onChange={(_, date) => {
+                  if (date) {
+                    setTempReportDate(date)
+                  }
+                }}
+              />
+              <View style={styles.reportPickerActions}>
+                <TouchableOpacity
+                  style={styles.reportPickerButton}
+                  onPress={handleCancelReportPickerIOS}
+                >
+                  <Text style={styles.reportPickerButtonText}>取消</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.reportPickerButton, styles.reportPickerButtonPrimary]}
+                  onPress={handleConfirmReportPickerIOS}
+                >
+                  <Text
+                    style={[
+                      styles.reportPickerButtonText,
+                      styles.reportPickerButtonPrimaryText
+                    ]}
+                  >
+                    確認
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {Platform.OS === 'android' && reportPickerVisible && (
+        <DateTimePicker
+          value={tempReportDate}
+          mode="date"
+          display="default"
+          onChange={handleReportPickerChange}
+        />
+      )}
 
       <Modal visible={isAnalyzing} transparent animationType="fade">
         <View style={styles.modalOverlay}>
@@ -1469,6 +1775,67 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     marginBottom: spacing.md,
   },
+  reportGeneratorDescription: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    lineHeight: 20,
+    marginBottom: spacing.md,
+  },
+  reportRangeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  reportRangePicker: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  reportRangeLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  reportRangeValue: {
+    marginTop: spacing.xs,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  reportRangeDivider: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xs,
+  },
+  reportRangeDividerText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+  },
+  generateReportButton: {
+    backgroundColor: colors.primary[600],
+    paddingVertical: spacing.md,
+    borderRadius: 999,
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  generateReportButtonDisabled: {
+    opacity: 0.7,
+  },
+  generateReportButtonText: {
+    color: colors.surface,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  reportPausedNote: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+  },
   analysisPendingBanner: {
     backgroundColor: colors.primary[50],
     borderRadius: 12,
@@ -1619,6 +1986,10 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
     lineHeight: 20,
+  },
+  historyEmptyText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
   },
   historyCard: {
     backgroundColor: colors.surface,
@@ -1774,6 +2145,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
   },
+  expandButtonText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    fontWeight: typography.fontWeight.medium,
+  },
+  expandButtonIcon: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+  },
   collapseButton: {
     backgroundColor: colors.surface,
     borderRadius: 8,
@@ -1785,15 +2165,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-  },
-  expandButtonText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    fontWeight: typography.fontWeight.medium,
-  },
-  expandButtonIcon: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
   },
   modalOverlay: {
     flex: 1,
@@ -1829,6 +2200,50 @@ const styles = StyleSheet.create({
   modalStatusContainer: {
     width: '100%',
     marginTop: spacing.sm,
+  },
+  reportPickerModalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: '#00000080',
+  },
+  reportPickerModal: {
+    backgroundColor: colors.surface,
+    padding: spacing.lg,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  reportPickerTitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  reportPickerActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  reportPickerButton: {
+    flex: 1,
+    borderRadius: 10,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  reportPickerButtonPrimary: {
+    backgroundColor: colors.primary[600],
+    borderColor: colors.primary[600],
+  },
+  reportPickerButtonText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
+  },
+  reportPickerButtonPrimaryText: {
+    color: colors.surface,
   },
   versionContainer: {
     alignItems: 'center',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   View,
   Text,
@@ -22,7 +22,6 @@ import Constants from 'expo-constants'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useSettingsStore } from '../stores/settingsStore'
 import { NotificationService } from '../services/notificationService'
-import { FoodKnowledgeService, type FoodKnowledgeStatusSummary } from '../services/FoodKnowledgeService'
 import {
   CHRONIC_DISEASES,
   TIMEZONES,
@@ -33,6 +32,7 @@ import { colors, typography, spacing } from '@/theme'
 import type { MainStackParamList } from '@/app/navigation/types'
 import { AIModelSelector } from '../components/AIModelSelector'
 import { FoodKnowledgeScreen } from './FoodKnowledgeScreen'
+import { appConfig } from '@/shared/config/appConfig'
 
 const MEAL_NAMES: Record<'breakfast' | 'lunch' | 'dinner', string> = {
   breakfast: '早餐',
@@ -40,21 +40,29 @@ const MEAL_NAMES: Record<'breakfast' | 'lunch' | 'dinner', string> = {
   dinner: '晚餐',
 }
 
-type TabType = 'general' | 'knowledge'
+type TabType = 'general' | 'knowledge' | 'ai'
+
+const TAB_CONFIG: Record<TabType, { icon: string; label: string }> = {
+  general: { icon: 'cog', label: '一般設定' },
+  knowledge: { icon: 'brain', label: 'AI 知識庫' },
+  ai: { icon: 'robot', label: 'AI 設定' },
+}
 
 export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
   const { user } = useAuth()
   const { settings, isLoading, initializeSettings, updateSettings, subscribeToChanges } = useSettingsStore()
-  const [activeTab, setActiveTab] = useState<TabType>('general')
+  const { enableAIUI } = appConfig
+  const availableTabs = useMemo<TabType[]>(() => {
+    return enableAIUI ? ['general', 'knowledge', 'ai'] : ['general']
+  }, [enableAIUI])
+  const [activeTab, setActiveTab] = useState<TabType>(availableTabs[0])
   const [notificationsEnabled, setNotificationsEnabled] = useState(settings.notificationsEnabled)
   const [debugMode, setDebugMode] = useState(settings.debugMode ?? false)
   const [customPrompt, setCustomPrompt] = useState(settings.customPrompt ?? '')
   const [showTimePicker, setShowTimePicker] = useState(false)
   const [selectedMeal, setSelectedMeal] = useState<'breakfast' | 'lunch' | 'dinner' | null>(null)
   const [tempTime, setTempTime] = useState(new Date())
-  const [knowledgeStatus, setKnowledgeStatus] = useState<FoodKnowledgeStatusSummary | null>(null)
-  const [knowledgeLoading, setKnowledgeLoading] = useState(false)
   const currentTimezone = useMemo(
     () => TIMEZONES.find((tz) => tz.value === settings.timezone),
     [settings.timezone]
@@ -72,6 +80,12 @@ export function SettingsScreen() {
     const suffix = settings.knownAllergies.length > 3 ? ` 等 ${settings.knownAllergies.length} 項` : ''
     return `${preview}${suffix}`
   }, [settings.knownAllergies])
+
+  useEffect(() => {
+    if (!availableTabs.includes(activeTab)) {
+      setActiveTab(availableTabs[0])
+    }
+  }, [availableTabs, activeTab])
 
   useEffect(() => {
     if (!user?.id) return
@@ -96,128 +110,6 @@ export function SettingsScreen() {
       NotificationService.cancelAllMealReminders()
     }
   }, [settings.notificationsEnabled])
-
-  // 重新載入佇列狀態（不重新加入佇列）
-  const handleManualKnowledgeRefresh = async () => {
-    if (!user?.id) return
-
-    setKnowledgeLoading(true)
-    try {
-      await loadFoodKnowledgeStatus()
-    } catch (error) {
-      console.warn('[SettingsScreen] refresh status error:', error)
-      Alert.alert('錯誤', '無法重新載入狀態。')
-    } finally {
-      setKnowledgeLoading(false)
-    }
-  }
-
-  // 同步所有缺失的食物分析
-  const handleSyncMissingFoods = async () => {
-    if (!user?.id) return
-
-    Alert.alert(
-      '同步缺失食物',
-      '將找出所有沒有 AI 分析的食物並加入佇列。確定要繼續嗎？',
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '同步',
-          onPress: async () => {
-            setKnowledgeLoading(true)
-            try {
-              const result = await FoodKnowledgeService.syncMissingFoods(user.id)
-              if (result.success) {
-                Alert.alert(
-                  '同步完成',
-                  result.message || `已將 ${result.enqueued || 0} 個食物加入分析佇列`
-                )
-                await loadFoodKnowledgeStatus()
-              } else {
-                Alert.alert('同步失敗', result.error || '無法同步食物')
-              }
-            } catch (error) {
-              console.warn('[SettingsScreen] sync missing error:', error)
-              Alert.alert('錯誤', '無法同步食物。')
-            } finally {
-              setKnowledgeLoading(false)
-            }
-          }
-        }
-      ]
-    )
-  }
-
-  const handleTriggerProcessor = async () => {
-    if (!knowledgeStatus || knowledgeStatus.items.length === 0) {
-      Alert.alert('提示', '目前沒有待處理的項目。')
-      return
-    }
-
-    const pendingCount = knowledgeStatus.items.filter(
-      (item) => item.status === 'pending'
-    ).length
-
-    if (pendingCount === 0) {
-      Alert.alert('提示', '沒有等待處理的項目，可能已經在處理中或已完成。')
-      return
-    }
-
-    Alert.alert(
-      '立即處理佇列',
-      `將立即處理 ${pendingCount} 個待處理項目，這可能需要幾分鐘時間。`,
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '開始處理',
-          onPress: async () => {
-            setKnowledgeLoading(true)
-            try {
-              const result = await FoodKnowledgeService.triggerProcessor()
-              if (result.success) {
-                Alert.alert(
-                  '處理完成',
-                  `成功處理了 ${result.processed ?? 0} 個項目。`,
-                  [
-                    {
-                      text: '確定',
-                      onPress: async () => {
-                        await loadFoodKnowledgeStatus()
-                      }
-                    }
-                  ]
-                )
-              } else {
-                Alert.alert('處理失敗', result.error ?? '無法觸發處理器，請稍後再試。')
-              }
-            } catch (error) {
-              console.warn('[SettingsScreen] trigger processor error:', error)
-              Alert.alert('錯誤', '無法觸發處理器。')
-            } finally {
-              setKnowledgeLoading(false)
-            }
-          }
-        }
-      ]
-    )
-  }
-
-  const loadFoodKnowledgeStatus = useCallback(async () => {
-    if (!user?.id) return
-    setKnowledgeLoading(true)
-    try {
-      const status = await FoodKnowledgeService.getStatus(user.id)
-      setKnowledgeStatus(status)
-    } catch (error) {
-      console.warn('[SettingsScreen] Failed to load knowledge status:', error)
-    } finally {
-      setKnowledgeLoading(false)
-    }
-  }, [user?.id])
-
-  useEffect(() => {
-    loadFoodKnowledgeStatus()
-  }, [loadFoodKnowledgeStatus])
 
 
   const handleToggleNotifications = async (value: boolean) => {
@@ -488,132 +380,27 @@ Device: ${Platform.OS} ${Platform.Version}
 
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'general' && styles.activeTab]}
-          onPress={() => setActiveTab('general')}
-        >
-          <Icon
-            name="cog"
-            size={20}
-            color={activeTab === 'general' ? colors.primary[500] : colors.text.secondary}
-          />
-          <Text style={[styles.tabText, activeTab === 'general' && styles.activeTabText]}>
-            一般設定
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'knowledge' && styles.activeTab]}
-          onPress={() => setActiveTab('knowledge')}
-        >
-          <Icon
-            name="brain"
-            size={20}
-            color={activeTab === 'knowledge' ? colors.primary[500] : colors.text.secondary}
-          />
-          <Text style={[styles.tabText, activeTab === 'knowledge' && styles.activeTabText]}>
-            AI 知識庫
-          </Text>
-        </TouchableOpacity>
+        {availableTabs.map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.activeTab]}
+            onPress={() => setActiveTab(tab)}
+          >
+            <Icon
+              name={TAB_CONFIG[tab].icon}
+              size={20}
+              color={activeTab === tab ? colors.primary[500] : colors.text.secondary}
+            />
+            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
+              {TAB_CONFIG[tab].label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Content */}
-      {activeTab === 'knowledge' ? (
-        <FoodKnowledgeScreen />
-      ) : (
+      {activeTab === 'general' && (
         <ScrollView style={styles.tabContent}>
-          {/* AI Food Knowledge - Hidden, moved to separate tab */}
-          {false && <View style={styles.section}>
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>AI 食物知識庫</Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TouchableOpacity
-              style={[
-                styles.knowledgeActionButton,
-                styles.knowledgeSyncButton,
-                knowledgeLoading && styles.knowledgeActionButtonDisabled
-              ]}
-              onPress={handleSyncMissingFoods}
-              disabled={knowledgeLoading}
-            >
-              {knowledgeLoading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <Icon name="sync" size={16} color="#FFFFFF" />
-                  <Text style={styles.knowledgeActionButtonText}>同步</Text>
-                </>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.knowledgeActionButton,
-                styles.knowledgeProcessButton,
-                (!knowledgeStatus || knowledgeLoading) && styles.knowledgeActionButtonDisabled
-              ]}
-              onPress={handleTriggerProcessor}
-              disabled={!knowledgeStatus || knowledgeLoading}
-            >
-              {knowledgeLoading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <Icon name="play-circle" size={16} color="#FFFFFF" />
-                  <Text style={styles.knowledgeActionButtonText}>處理</Text>
-                </>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.knowledgeActionButton,
-                styles.knowledgeRefreshButton,
-                (!knowledgeStatus || knowledgeLoading) && styles.knowledgeActionButtonDisabled
-              ]}
-              onPress={handleManualKnowledgeRefresh}
-              disabled={!knowledgeStatus || knowledgeLoading}
-            >
-              <Icon name="refresh" size={16} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-        </View>
-        {knowledgeStatus ? (
-          <>
-            <Text style={styles.knowledgeSummaryText}>
-              {knowledgeStatus.missingCount === 0 && knowledgeStatus.staleCount === 0
-                ? '所有食物分析皆為最新。'
-                : `缺資料 ${knowledgeStatus.missingCount} 項，過期 ${knowledgeStatus.staleCount} 項。`}
-            </Text>
-            {knowledgeStatus.items.slice(0, 3).map((item) => (
-              <View key={item.queueId} style={styles.knowledgeItem}>
-                <View style={styles.knowledgeItemText}>
-                  <Text style={styles.knowledgeItemTitle}>{item.foodName}</Text>
-                  <Text style={styles.knowledgeItemSubtitle}>
-                    {item.reason === 'missing' ? '尚未建立分析' : '等待刷新'}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.knowledgeStatusBadge,
-                    item.reason === 'missing'
-                      ? styles.knowledgeStatusMissing
-                      : styles.knowledgeStatusStale
-                  ]}
-                >
-                  <Text style={styles.knowledgeStatusBadgeText}>
-                    {item.reason === 'missing' ? '待建立' : '需更新'}
-                  </Text>
-                </View>
-              </View>
-            ))}
-            {knowledgeStatus.items.length === 0 && (
-              <Text style={styles.settingDescription}>目前沒有排隊中的食物。</Text>
-            )}
-          </>
-        ) : (
-          <Text style={styles.settingDescription}>尚未載入知識庫狀態。</Text>
-        )}
-      </View>}
-
           {/* Notifications Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>提醒設定</Text>
@@ -728,12 +515,6 @@ Device: ${Platform.OS} ${Platform.Version}
         </TouchableOpacity>
       </View>
 
-      {/* AI Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>AI 設定</Text>
-        <AIModelSelector />
-      </View>
-
       {/* About Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>關於</Text>
@@ -768,130 +549,6 @@ Device: ${Platform.OS} ${Platform.Version}
           </View>
           <Icon name="chevron-right" size={24} color={colors.text.secondary} />
         </TouchableOpacity>
-      </View>
-
-      {/* Debug Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>開發者選項</Text>
-
-        <View style={styles.settingRow}>
-          <View style={styles.settingInfo}>
-            <Icon name="bug" size={24} color={colors.warning} />
-            <View style={styles.settingTextContainer}>
-              <Text style={styles.settingLabel}>Debug 模式</Text>
-              <Text style={styles.settingDescription}>
-                {debugMode ? '已啟用 - 可調整 AI 提示詞' : '已關閉'}
-              </Text>
-            </View>
-          </View>
-          <Switch
-            value={debugMode}
-            onValueChange={async (value) => {
-              setDebugMode(value)
-              if (user?.id) {
-                await updateSettings(user.id, { debugMode: value })
-              }
-            }}
-            trackColor={{ false: colors.border, true: colors.warning }}
-            thumbColor={debugMode ? colors.warning : colors.text.disabled}
-          />
-        </View>
-
-        {debugMode && (
-          <View style={styles.promptContainer}>
-            <View style={styles.promptHeader}>
-              <Text style={styles.promptLabel}>自訂 AI 提示詞（選填）</Text>
-              <TouchableOpacity
-                style={styles.loadDefaultButton}
-                onPress={async () => {
-                  try {
-                    const apiBase = process.env.EXPO_PUBLIC_API_URL
-                    if (!apiBase) {
-                      Alert.alert('錯誤', 'API URL 未設定')
-                      return
-                    }
-
-                    const response = await fetch(`${apiBase}/api/ai/default-prompt`)
-                    const data = await response.json()
-
-                    if (data.success && data.prompt) {
-                      setCustomPrompt(data.prompt)
-                      Alert.alert(
-                        '已載入預設提示詞',
-                        `變體：${data.label}\n\n${data.description}\n\n您可以在此基礎上修改。`,
-                        [{ text: '確定' }]
-                      )
-                    } else {
-                      Alert.alert('錯誤', '無法載入預設提示詞')
-                    }
-                  } catch (error) {
-                    console.error('Failed to load default prompt:', error)
-                    Alert.alert('錯誤', '載入失敗，請檢查網路連線')
-                  }
-                }}
-              >
-                <Icon name="download" size={16} color={colors.primary[600]} />
-                <Text style={styles.loadDefaultButtonText}>載入預設</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.promptHint}>
-              留空則使用預設提示詞。點擊「載入預設」查看完整提示詞並修改。
-            </Text>
-            <TextInput
-              style={styles.promptInput}
-              value={customPrompt}
-              onChangeText={setCustomPrompt}
-              placeholder="例如：請特別關注高 FODMAP 食物..."
-              placeholderTextColor={colors.text.disabled}
-              multiline
-              numberOfLines={6}
-              textAlignVertical="top"
-              onBlur={async () => {
-                if (user?.id) {
-                  await updateSettings(user.id, { customPrompt })
-                }
-              }}
-            />
-            <View style={styles.promptActions}>
-              <TouchableOpacity
-                style={styles.clearButton}
-                onPress={() => {
-                  Alert.alert(
-                    '清除提示詞',
-                    '確定要清除自訂提示詞？將恢復使用預設提示詞。',
-                    [
-                      { text: '取消', style: 'cancel' },
-                      {
-                        text: '清除',
-                        style: 'destructive',
-                        onPress: async () => {
-                          setCustomPrompt('')
-                          if (user?.id) {
-                            await updateSettings(user.id, { customPrompt: '' })
-                            Alert.alert('已清除', '已恢復使用預設提示詞')
-                          }
-                        },
-                      },
-                    ]
-                  )
-                }}
-              >
-                <Text style={styles.clearButtonText}>清除</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.promptSaveButton}
-                onPress={async () => {
-                  if (user?.id) {
-                    await updateSettings(user.id, { customPrompt })
-                    Alert.alert('已儲存', '自訂提示詞已更新')
-                  }
-                }}
-              >
-                <Text style={styles.promptSaveButtonText}>儲存提示詞</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
       </View>
 
       {/* Footer */}
@@ -955,6 +612,138 @@ Device: ${Platform.OS} ${Platform.Version}
           onChange={handleTimePickerChange}
         />
       )}
+        </ScrollView>
+      )}
+
+      {enableAIUI && activeTab === 'knowledge' && <FoodKnowledgeScreen />}
+
+      {enableAIUI && activeTab === 'ai' && (
+        <ScrollView style={styles.tabContent}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>AI 設定</Text>
+            <AIModelSelector />
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>開發者選項</Text>
+
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <Icon name="bug" size={24} color={colors.warning} />
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingLabel}>Debug 模式</Text>
+                  <Text style={styles.settingDescription}>
+                    {debugMode ? '已啟用 - 可調整 AI 提示詞' : '已關閉'}
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={debugMode}
+                onValueChange={async (value) => {
+                  setDebugMode(value)
+                  if (user?.id) {
+                    await updateSettings(user.id, { debugMode: value })
+                  }
+                }}
+                trackColor={{ false: colors.border, true: colors.warning }}
+                thumbColor={debugMode ? colors.warning : colors.text.disabled}
+              />
+            </View>
+
+            {debugMode && (
+              <View style={styles.promptContainer}>
+                <View style={styles.promptHeader}>
+                  <Text style={styles.promptLabel}>自訂 AI 提示詞（選填）</Text>
+                  <TouchableOpacity
+                    style={styles.loadDefaultButton}
+                    onPress={async () => {
+                      try {
+                        const apiBase = process.env.EXPO_PUBLIC_API_URL
+                        if (!apiBase) {
+                          Alert.alert('錯誤', 'API URL 未設定')
+                          return
+                        }
+
+                        const response = await fetch(`${apiBase}/api/ai/default-prompt`)
+                        const data = await response.json()
+
+                        if (data.success && data.prompt) {
+                          setCustomPrompt(data.prompt)
+                          Alert.alert(
+                            '已載入預設提示詞',
+                            `變體：${data.label}\n\n${data.description}\n\n您可以在此基礎上修改。`,
+                            [{ text: '確定' }]
+                          )
+                        } else {
+                          Alert.alert('錯誤', '無法載入預設提示詞')
+                        }
+                      } catch (error) {
+                        console.error('Failed to load default prompt:', error)
+                        Alert.alert('錯誤', '載入失敗，請檢查網路連線')
+                      }
+                    }}
+                  >
+                    <Icon name="download" size={16} color={colors.primary[600]} />
+                    <Text style={styles.loadDefaultButtonText}>載入預設</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.promptHint}>
+                  留空則使用預設提示詞。點擊「載入預設」查看完整提示詞並修改。
+                </Text>
+                <TextInput
+                  style={styles.promptInput}
+                  placeholder="輸入自訂提示詞..."
+                  multiline
+                  value={customPrompt}
+                  onChangeText={setCustomPrompt}
+                  placeholderTextColor={colors.text.secondary}
+                  onBlur={async () => {
+                    if (user?.id) {
+                      await updateSettings(user.id, { customPrompt })
+                    }
+                  }}
+                />
+                <View style={styles.promptActions}>
+                  <TouchableOpacity
+                    style={styles.clearButton}
+                    onPress={() => {
+                      Alert.alert(
+                        '清除提示詞',
+                        '確定要清除自訂提示詞？將恢復使用預設提示詞。',
+                        [
+                          { text: '取消', style: 'cancel' },
+                          {
+                            text: '清除',
+                            style: 'destructive',
+                            onPress: async () => {
+                              setCustomPrompt('')
+                              if (user?.id) {
+                                await updateSettings(user.id, { customPrompt: '' })
+                                Alert.alert('已清除', '已恢復使用預設提示詞')
+                              }
+                            },
+                          },
+                        ]
+                      )
+                    }}
+                  >
+                    <Text style={styles.clearButtonText}>清除</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.promptSaveButton}
+                    onPress={async () => {
+                      if (user?.id) {
+                        await updateSettings(user.id, { customPrompt })
+                        Alert.alert('已儲存', '自訂提示詞已更新')
+                      }
+                    }}
+                  >
+                    <Text style={styles.promptSaveButtonText}>儲存提示詞</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
         </ScrollView>
       )}
     </View>
@@ -1062,77 +851,6 @@ const styles = StyleSheet.create({
   settingDescription: {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
-  },
-  knowledgeActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  knowledgeSyncButton: {
-    backgroundColor: '#10B981', // green-500
-  },
-  knowledgeProcessButton: {
-    backgroundColor: colors.primary[500],
-  },
-  knowledgeRefreshButton: {
-    backgroundColor: colors.primary[500],
-    paddingHorizontal: spacing.sm,
-  },
-  knowledgeActionButtonDisabled: {
-    backgroundColor: colors.text.disabled,
-  },
-  knowledgeActionButtonText: {
-    color: colors.surface,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-  },
-  knowledgeSummaryText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-  },
-  knowledgeItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  knowledgeItemText: {
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  knowledgeItemTitle: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
-  },
-  knowledgeItemSubtitle: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    marginTop: spacing.xs / 2,
-  },
-  knowledgeStatusBadge: {
-    borderRadius: 6,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  knowledgeStatusMissing: {
-    backgroundColor: '#FEEBC8',
-  },
-  knowledgeStatusStale: {
-    backgroundColor: '#DBEAFE',
-  },
-  knowledgeStatusBadgeText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text.primary,
   },
   footer: {
     alignItems: 'center',
