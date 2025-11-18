@@ -15,6 +15,7 @@ import { Linking, Platform } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { Buffer } from 'buffer'
+import * as FileSystem from 'expo-file-system'
 import * as Print from 'expo-print'
 import * as Sharing from 'expo-sharing'
 import Constants from 'expo-constants'
@@ -42,6 +43,31 @@ import type {
 
 interface DashboardScreenProps {
   hideHeader?: boolean
+}
+
+type FileSystemDirectoryContext = {
+  cacheDirectory?: string | null
+  documentDirectory?: string | null
+}
+
+type CombinedRecord = {
+  sortValue: number
+  dateLabel: string
+  timeLabel: string
+  category: string
+  description: string
+}
+
+type WeeklyReportData = {
+  startLabel: string
+  endLabel: string
+  startKey: string
+  endKey: string
+  generatedLabel: string
+  summaryRows: { label: string; value: string }[]
+  mealDistribution: Record<MealType, number>
+  severityDistribution: Record<SeverityLevel, number>
+  combinedRecords: CombinedRecord[]
 }
 
 const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
@@ -88,6 +114,39 @@ function formatTime(date: Date) {
 
 function getWeekdayLabel(date: Date) {
   return WEEKDAY_LABELS[date.getDay()]
+}
+
+const NO_WRITABLE_DIR_ERROR = 'NO_WRITABLE_DIRECTORY'
+
+function resolveWritableDirectory(): string {
+  const directories = FileSystem as FileSystemDirectoryContext
+  const possibleDirectories = [
+    directories.cacheDirectory,
+    directories.documentDirectory,
+  ].filter((dir): dir is string => typeof dir === 'string' && dir.length > 0)
+
+  if (possibleDirectories.length === 0) {
+    throw new Error(NO_WRITABLE_DIR_ERROR)
+  }
+
+  const directory = possibleDirectories[0]
+  return directory.endsWith('/') ? directory : `${directory}/`
+}
+
+async function writeTextFile(fileName: string, contents: string) {
+  const targetPath = `${resolveWritableDirectory()}${fileName}`
+  await FileSystem.writeAsStringAsync(targetPath, contents, {
+    encoding: FileSystem.EncodingType.UTF8,
+  })
+  return targetPath
+}
+
+async function fallbackShareText(message: string) {
+  await Share.share({ message })
+}
+
+function showWritableError(message: string) {
+  Alert.alert('無法建立檔案', message)
 }
 
 
@@ -178,6 +237,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   const [reportPickerTarget, setReportPickerTarget] = useState<'start' | 'end'>('start')
   const [tempReportDate, setTempReportDate] = useState(defaultReportRange.start)
   const [isGeneratingWeeklyReport, setIsGeneratingWeeklyReport] = useState(false)
+  const [reportFormat, setReportFormat] = useState<'pdf' | 'markdown'>('pdf')
   const scrollViewRef = React.useRef<ScrollView>(null)
   const totalHistoryCount = Math.max(analysisHistoryTotal ?? 0, history.length)
   const hasPendingServerHistory = !hasAllHistory && totalHistoryCount > history.length
@@ -342,13 +402,12 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     setReportPickerVisible(false)
   }
 
-  const buildWeeklyReportHtml = () => {
+  const buildWeeklyReportData = (): WeeklyReportData => {
     const startLabel = formatDateLabel(reportRangeStart)
     const endLabel = formatDateLabel(reportRangeEnd)
     const startKey = formatDateKey(reportRangeStart)
     const endKey = formatDateKey(reportRangeEnd)
-    const generatedAt = new Date()
-    const generatedLabel = generatedAt.toLocaleString('zh-TW')
+    const generatedLabel = new Date().toLocaleString('zh-TW')
 
     const filteredFoodEntries = (foodEntries || [])
       .filter((entry) => {
@@ -357,10 +416,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
         const normalized = normalizeDateOnly(entryDate)
         return normalized >= reportRangeStart && normalized <= reportRangeEnd
       })
-      .sort(
-        (a, b) =>
-          new Date(a.consumed_at).getTime() - new Date(b.consumed_at).getTime()
-      )
+      .sort((a, b) => new Date(a.consumed_at).getTime() - new Date(b.consumed_at).getTime())
 
     const filteredSymptomEntries = (symptomEntries || [])
       .filter((entry) => {
@@ -369,116 +425,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
         const normalized = normalizeDateOnly(entryDate)
         return normalized >= reportRangeStart && normalized <= reportRangeEnd
       })
-      .sort(
-        (a, b) =>
-          new Date(a.recorded_at).getTime() -
-          new Date(b.recorded_at).getTime()
-      )
-
-    type MealGroup = {
-      dateKey: string
-      dateLabel: string
-      weekdayLabel: string
-      mealType: MealType
-      mealLabel: string
-      icon?: string
-      time: Date
-      foods: string[]
-      notes: string[]
-    }
-
-    const mealGroupsMap = new Map<string, MealGroup>()
-
-    filteredFoodEntries.forEach((entry) => {
-      const consumedAt = new Date(entry.consumed_at)
-      const dateOnly = normalizeDateOnly(consumedAt)
-      const dateKey = formatDateKey(dateOnly)
-      const mapKey = `${dateKey}-${entry.meal_type}`
-      if (!mealGroupsMap.has(mapKey)) {
-        const meta = MEAL_TYPE_META[entry.meal_type]
-        mealGroupsMap.set(mapKey, {
-          dateKey,
-          dateLabel: formatDateLabel(dateOnly),
-          weekdayLabel: getWeekdayLabel(dateOnly),
-          mealType: entry.meal_type,
-          mealLabel: meta?.label || entry.meal_type,
-          icon: meta?.icon,
-          time: consumedAt,
-          foods: [],
-          notes: [],
-        })
-      }
-
-      const group = mealGroupsMap.get(mapKey)!
-      if (consumedAt.getTime() < group.time.getTime()) {
-        group.time = consumedAt
-      }
-      group.foods.push(entry.food_name)
-      if (entry.notes) {
-        group.notes.push(entry.notes)
-      }
-    })
-
-    const mealGroups = Array.from(mealGroupsMap.values()).sort((a, b) => {
-      if (a.dateKey !== b.dateKey) {
-        return a.dateKey.localeCompare(b.dateKey)
-      }
-      if (MEAL_TYPE_ORDER[a.mealType] !== MEAL_TYPE_ORDER[b.mealType]) {
-        return MEAL_TYPE_ORDER[a.mealType] - MEAL_TYPE_ORDER[b.mealType]
-      }
-      return a.time.getTime() - b.time.getTime()
-    })
-
-    const mealsByDate = mealGroups.reduce((acc, group) => {
-      const list = acc.get(group.dateKey) ?? []
-      list.push(group)
-      acc.set(group.dateKey, list)
-      return acc
-    }, new Map<string, MealGroup[]>())
-
-    type SymptomTimelineItem = {
-      dateKey: string
-      dateLabel: string
-      weekdayLabel: string
-      time: Date
-      symptom: string
-      severityLabel: string
-      severityColor: string
-      notes?: string
-    }
-
-    const symptomItems: SymptomTimelineItem[] = filteredSymptomEntries.map(
-      (entry) => {
-        const recordedAt = new Date(entry.recorded_at)
-        const dateOnly = normalizeDateOnly(recordedAt)
-        const meta = SEVERITY_META[entry.severity]
-        return {
-          dateKey: formatDateKey(dateOnly),
-          dateLabel: formatDateLabel(dateOnly),
-          weekdayLabel: getWeekdayLabel(dateOnly),
-          time: recordedAt,
-          symptom: entry.symptom_name || '症狀紀錄',
-          severityLabel: meta?.label || entry.severity,
-          severityColor: meta?.color || colors.text.primary,
-          notes: entry.notes,
-        }
-      }
-    )
-
-    const symptomsByDate = symptomItems.reduce((acc, item) => {
-      const list = acc.get(item.dateKey) ?? []
-      list.push(item)
-      acc.set(item.dateKey, list)
-      return acc
-    }, new Map<string, SymptomTimelineItem[]>())
-
-    type CombinedRecord = {
-      sortValue: number
-      dateLabel: string
-      timeLabel: string
-      category: string
-      description: string
-    }
+      .sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime())
 
     const combinedRecords: CombinedRecord[] = [
       ...filteredFoodEntries.map((entry) => {
@@ -519,7 +466,89 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       }),
     ].sort((a, b) => a.sortValue - b.sortValue)
 
-    const combinedRecordsHtml = combinedRecords.length
+    const summaryRows: WeeklyReportData['summaryRows'] = [
+      { label: '產出時間', value: generatedLabel },
+      { label: '統計區間', value: `${startLabel} ~ ${endLabel}` },
+      { label: '飲食紀錄（原始筆數）', value: `${filteredFoodEntries.length} 筆` },
+      { label: '症狀紀錄', value: `${filteredSymptomEntries.length} 筆` },
+    ]
+
+    if (stats) {
+      summaryRows.push(
+        { label: '累積飲食紀錄', value: `${stats.totalFoodEntries} 筆` },
+        { label: '累積症狀紀錄', value: `${stats.totalSymptomEntries} 筆` },
+        { label: '本週飲食筆數', value: `${stats.weekFoodEntries} 筆` },
+        { label: '本週症狀筆數', value: `${stats.weekSymptomEntries} 筆` },
+      )
+    }
+
+    const mealDistribution = filteredFoodEntries.reduce(
+      (acc, entry) => {
+        acc[entry.meal_type] = (acc[entry.meal_type] || 0) + 1
+        return acc
+      },
+      { breakfast: 0, lunch: 0, dinner: 0, snack: 0 } as Record<MealType, number>
+    )
+
+    const severityDistribution = filteredSymptomEntries.reduce(
+      (acc, entry) => {
+        acc[entry.severity] = (acc[entry.severity] || 0) + 1
+        return acc
+      },
+      { mild: 0, moderate: 0, severe: 0 } as Record<SeverityLevel, number>
+    )
+
+    return {
+      startLabel,
+      endLabel,
+      startKey,
+      endKey,
+      generatedLabel,
+      summaryRows,
+      mealDistribution,
+      severityDistribution,
+      combinedRecords,
+    }
+  }
+
+
+  const buildWeeklyReportHtml = (reportData: WeeklyReportData = buildWeeklyReportData()) => {
+    const summaryHtml = reportData.summaryRows
+      .map(
+        (row) => `
+        <div class="summary-row">
+          <span>${escapeHtml(row.label)}</span>
+          <span>${escapeHtml(row.value)}</span>
+        </div>
+      `
+      )
+      .join('')
+
+    const distributionHtml = `
+      <section class="card-grid">
+        <div class="grid">
+          <div class="card">
+            <h3>餐次概況（區間內）</h3>
+            <ul class="metric-list">
+              <li>早餐：${reportData.mealDistribution.breakfast}</li>
+              <li>午餐：${reportData.mealDistribution.lunch}</li>
+              <li>晚餐：${reportData.mealDistribution.dinner}</li>
+              <li>點心：${reportData.mealDistribution.snack}</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>症狀嚴重度（區間內）</h3>
+            <ul class="metric-list">
+              <li>輕度：${reportData.severityDistribution.mild}</li>
+              <li>中度：${reportData.severityDistribution.moderate}</li>
+              <li>重度：${reportData.severityDistribution.severe}</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    `
+
+    const combinedRecordsHtml = reportData.combinedRecords.length
       ? `
         <div class="table-wrapper">
           <table class="record-table">
@@ -532,7 +561,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
               </tr>
             </thead>
             <tbody>
-              ${combinedRecords
+              ${reportData.combinedRecords
                 .map(
                   (record) => `
                     <tr>
@@ -549,93 +578,6 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
         </div>
       `
       : '<p class="empty">此區間沒有飲食或症狀紀錄。</p>'
-
-    const summaryRows = [
-      { label: '產出時間', value: generatedLabel },
-      { label: '統計區間', value: `${startLabel} ~ ${endLabel}` },
-      {
-        label: '飲食紀錄（原始筆數）',
-        value: `${filteredFoodEntries.length} 筆`,
-      },
-      {
-        label: '飲食餐次（合併後）',
-        value: `${mealGroups.length} 筆`,
-      },
-      {
-        label: '症狀紀錄',
-        value: `${filteredSymptomEntries.length} 筆`,
-      },
-    ]
-
-    if (stats) {
-      summaryRows.push(
-        {
-          label: '累積飲食紀錄',
-          value: `${stats.totalFoodEntries} 筆`,
-        },
-        {
-          label: '累積症狀紀錄',
-          value: `${stats.totalSymptomEntries} 筆`,
-        },
-        {
-          label: '本週飲食筆數',
-          value: `${stats.weekFoodEntries} 筆`,
-        },
-        {
-          label: '本週症狀筆數',
-          value: `${stats.weekSymptomEntries} 筆`,
-        }
-      )
-    }
-
-    const summaryHtml = summaryRows
-      .map(
-        (row) => `
-        <div class="summary-row">
-          <span>${escapeHtml(row.label)}</span>
-          <span>${escapeHtml(row.value)}</span>
-        </div>
-      `
-      )
-      .join('')
-
-    const mealDistributionForRange = filteredFoodEntries.reduce(
-      (acc, entry) => {
-        acc[entry.meal_type] = (acc[entry.meal_type] || 0) + 1
-        return acc
-      },
-      { breakfast: 0, lunch: 0, dinner: 0, snack: 0 } as Record<MealType, number>
-    )
-
-    const severityDistributionForRange = filteredSymptomEntries.reduce(
-      (acc, entry) => {
-        acc[entry.severity] = (acc[entry.severity] || 0) + 1
-        return acc
-      },
-      { mild: 0, moderate: 0, severe: 0 } as Record<SeverityLevel, number>
-    )
-
-    const distributionHtml = `
-      <div class="grid">
-        <div class="card">
-          <h3>餐次概況（區間內）</h3>
-          <ul class="metric-list">
-            <li>早餐：${mealDistributionForRange.breakfast}</li>
-            <li>午餐：${mealDistributionForRange.lunch}</li>
-            <li>晚餐：${mealDistributionForRange.dinner}</li>
-            <li>點心：${mealDistributionForRange.snack}</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h3>症狀嚴重度（區間內）</h3>
-          <ul class="metric-list">
-            <li>輕度：${severityDistributionForRange.mild}</li>
-            <li>中度：${severityDistributionForRange.moderate}</li>
-            <li>重度：${severityDistributionForRange.severe}</li>
-          </ul>
-        </div>
-      </div>
-    `
 
     return `
       <!DOCTYPE html>
@@ -767,8 +709,8 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
           <main class="report-container">
             <header class="report-header">
               <h1>DietDaily 每週健康報表</h1>
-              <p>自 ${escapeHtml(startLabel)} 至 ${escapeHtml(endLabel)} ｜ 報表產出：${escapeHtml(
-                generatedLabel
+              <p>自 ${escapeHtml(reportData.startLabel)} 至 ${escapeHtml(reportData.endLabel)} ｜ 報表產出：${escapeHtml(
+                reportData.generatedLabel
               )}</p>
             </header>
 
@@ -790,28 +732,61 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
     `
   }
 
-  const handleGenerateWeeklyReport = async () => {
-    const hasFood = (foodEntries?.length ?? 0) > 0
-    const hasSymptoms = (symptomEntries?.length ?? 0) > 0
+  function escapeMarkdownCell(value: string) {
+    if (!value) return ''
+    return value.replace(/\|/g, '｜').replace(/\r?\n/g, ' ')
+  }
 
-    if (!hasFood && !hasSymptoms) {
-      Alert.alert('尚無資料', '請至少記錄一筆飲食或症狀後再產生報表。')
-      return
+  const buildWeeklyReportMarkdown = (reportData: WeeklyReportData = buildWeeklyReportData()) => {
+    const lines: string[] = []
+    lines.push('# DietDaily 每週健康報表', '')
+    lines.push(`- 統計區間：${reportData.startLabel} ~ ${reportData.endLabel}`)
+    lines.push(`- 產出時間：${reportData.generatedLabel}`)
+    lines.push('')
+    lines.push('## 數據概覽')
+    reportData.summaryRows.forEach(row => {
+      lines.push(`- ${row.label}：${row.value}`)
+    })
+    lines.push('')
+    lines.push('## 餐次概況（區間內）')
+    lines.push('| 餐次 | 次數 |')
+    lines.push('| --- | --- |')
+    lines.push(`| 早餐 | ${reportData.mealDistribution.breakfast} |`)
+    lines.push(`| 午餐 | ${reportData.mealDistribution.lunch} |`)
+    lines.push(`| 晚餐 | ${reportData.mealDistribution.dinner} |`)
+    lines.push(`| 點心 | ${reportData.mealDistribution.snack} |`)
+    lines.push('')
+    lines.push('## 症狀嚴重度（區間內）')
+    lines.push('| 等級 | 次數 |')
+    lines.push('| --- | --- |')
+    lines.push(`| 輕度 | ${reportData.severityDistribution.mild} |`)
+    lines.push(`| 中度 | ${reportData.severityDistribution.moderate} |`)
+    lines.push(`| 重度 | ${reportData.severityDistribution.severe} |`)
+    lines.push('')
+    lines.push('## 飲食與症狀紀錄（依時間順序）')
+    if (reportData.combinedRecords.length) {
+      lines.push('| 日期 | 記錄時間 | 餐別 / 類別 | 內容 |')
+      lines.push('| --- | --- | --- | --- |')
+      for (const record of reportData.combinedRecords) {
+        lines.push(`| ${escapeMarkdownCell(record.dateLabel)} | ${escapeMarkdownCell(record.timeLabel)} | ${escapeMarkdownCell(record.category)} | ${escapeMarkdownCell(record.description)} |`)
+      }
+    } else {
+      lines.push('此區間沒有飲食或症狀紀錄。')
     }
+    lines.push('')
+    lines.push('---')
+    lines.push('此報表由 DietDaily 生成，整合飲食與症狀記錄，提供溝通與追蹤參考。')
+    return lines.join('\n')
+  }
 
-    setIsGeneratingWeeklyReport(true)
+  const shareReportAsPDF = async (reportData: WeeklyReportData) => {
+    const html = buildWeeklyReportHtml(reportData)
     try {
-      const html = buildWeeklyReportHtml()
-      const startKey = formatDateKey(reportRangeStart)
-      const endKey = formatDateKey(reportRangeEnd)
-
-      // Generate PDF using expo-print
       const pdfResult = await Print.printToFileAsync({
         html,
         base64: false,
       })
 
-      // Share the generated PDF directly
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(pdfResult.uri, {
           mimeType: 'application/pdf',
@@ -821,15 +796,73 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       } else {
         await Share.share({
           url: pdfResult.uri,
-          message: `DietDaily 每週健康報表（${startKey} ~ ${endKey}）`,
+          message: `DietDaily 每週健康報表（${reportData.startLabel} ~ ${reportData.endLabel}）`,
         })
       }
     } catch (error) {
-      console.error('[Dashboard] Failed to generate weekly report:', error)
-      Alert.alert('產生失敗', '建立報表時發生錯誤，請稍後再試。')
-    } finally {
-      setIsGeneratingWeeklyReport(false)
+      if (error instanceof Error && error.message === NO_WRITABLE_DIR_ERROR) {
+        Alert.alert('無法建立 PDF', '目前環境無法建立 PDF 檔案，已改為分享文字內容。')
+        await fallbackShareText(buildWeeklyReportMarkdown(reportData))
+        return
+      }
+      throw error
     }
+  }
+
+  const shareReportAsMarkdown = async (reportData: WeeklyReportData) => {
+    const markdown = buildWeeklyReportMarkdown(reportData)
+    // 直接分享文字內容（Markdown 格式）
+    await Share.share({
+      message: markdown,
+      title: `DietDaily 每週健康報表（${reportData.startLabel} ~ ${reportData.endLabel}）`,
+    })
+  }
+
+  const handleGenerateWeeklyReport = () => {
+    const hasFood = (foodEntries?.length ?? 0) > 0
+    const hasSymptoms = (symptomEntries?.length ?? 0) > 0
+
+    if (!hasFood && !hasSymptoms) {
+      Alert.alert('尚無資料', '請至少記錄一筆飲食或症狀後再產生報表。')
+      return
+    }
+
+    const handleSelection = async (format: 'pdf' | 'markdown') => {
+      setIsGeneratingWeeklyReport(true)
+      try {
+        const reportData = buildWeeklyReportData()
+        if (format === 'pdf') {
+          await shareReportAsPDF(reportData)
+        } else {
+          await shareReportAsMarkdown(reportData)
+        }
+      } catch (error) {
+        console.error('[Dashboard] Failed to generate weekly report:', error)
+        Alert.alert('產生失敗', '建立報表時發生錯誤，請稍後再試。')
+      } finally {
+        setIsGeneratingWeeklyReport(false)
+      }
+    }
+
+    Alert.alert(
+      '選擇報表格式',
+      '請選擇要輸出的報表格式。',
+      [
+        {
+          text: 'PDF (含排版)',
+          onPress: () => {
+            void handleSelection('pdf')
+          },
+        },
+        {
+          text: 'Markdown (文字)',
+          onPress: () => {
+            void handleSelection('markdown')
+          },
+        },
+        { text: '取消', style: 'cancel' },
+      ]
+    )
   }
 
   const buildInitialStatus = (
@@ -1692,7 +1725,7 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
               {isGeneratingWeeklyReport ? (
                 <ActivityIndicator size="small" color={colors.surface} />
               ) : (
-                <Text style={styles.generateReportButtonText}>產生一週報表（Markdown）</Text>
+                <Text style={styles.generateReportButtonText}>產生一週報表</Text>
               )}
             </TouchableOpacity>
             {!enableAIUI && (
