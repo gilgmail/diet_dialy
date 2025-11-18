@@ -1,3 +1,6 @@
+import type { FoodEntry } from '@/features/food-diary/types'
+import type { SymptomEntry } from '@/features/symptom-diary/types'
+
 // Dashboard Types
 
 export interface DashboardStats {
@@ -147,6 +150,8 @@ export interface DashboardData {
   analysisHistory?: WeeklyAnalysisHistoryItem[]
   analysisHistoryTotal?: number
   analysisStatus?: WeeklyAnalysisStatus | null
+  foodEntries: FoodEntry[]
+  symptomEntries: SymptomEntry[]
 }
 
 // Chart Data Types

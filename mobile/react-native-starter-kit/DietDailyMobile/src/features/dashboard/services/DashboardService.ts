@@ -204,6 +204,8 @@ export class DashboardService {
           analysisHistory: history,
           analysisHistoryTotal: historyTotal,
           analysisStatus,
+          foodEntries,
+          symptomEntries,
         },
         error: null,
       }

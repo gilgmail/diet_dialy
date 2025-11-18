@@ -57,6 +57,8 @@ export function useDashboard() {
       dashboardData?.analysisHistoryTotal ??
       (dashboardData?.analysisHistory ? dashboardData.analysisHistory.length : 0),
     analysisStatus: dashboardData?.analysisStatus || null,
+    foodEntries: dashboardData?.foodEntries || [],
+    symptomEntries: dashboardData?.symptomEntries || [],
     isLoading,
     error: error?.message || null,
 
