@@ -48,38 +48,6 @@
 
 ---
 
-### pi-dev-sync.sh
-**用途**: 針對開發模式，將 `src/app` 的 Git 變更快速同步到 Pi，並確保 dev server 容器啟動
-**使用方式**:
-```bash
-./scripts/pi-dev-sync.sh
-```
-
-**功能**:
-- 掃描 `src/app` 目錄的新增/修改/刪除
-- 透過 `rsync --relative` 僅同步變更檔案並刪除舊檔
-- 在 Pi 上執行 `docker compose -f docker-compose.dev.yml up -d`，啟動掛載原始碼的 dev 容器
-
-**注意**:
-- Dev 模式使用 `pi_docker/docker-compose.dev.yml`，會將整個 repo 掛載到容器並使用 `npm run dev`
-- 預設啟動於 `PI_DEV_PORT`（預設 3100），可在 `.env` 設定
-- 適合快速驗證頁面/API，不會重新 build production 映像
-
----
-
-### pi-dev-init.sh
-**用途**: 一次性將 `pi_docker/docker-compose.dev.yml` 上傳到 Pi，讓 dev 模式可運作
-**使用方式**:
-```bash
-./scripts/pi-dev-init.sh
-```
-
-**注意**:
-- 必須先執行一次（或在 dev compose 有變更時再次執行），之後才能用 `pi-dev-sync.sh`
-- 依賴 `.env` 中的 `PI_USER / PI_HOST / PI_DIR` 設定
-
----
-
 ### deploy-to-gil-golden.sh
 **用途**: 部署到實體 iOS 測試設備
 **使用方式**:
