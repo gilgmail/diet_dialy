@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 
 export const dynamic = 'force-dynamic'
 import Link from 'next/link'
-import { RefreshCw, Search, AlertTriangle, Database, Loader2 } from 'lucide-react'
+import { RefreshCw, Search, AlertTriangle, Database, Loader2, Eye } from 'lucide-react'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
 
 interface QueueItem {
@@ -66,6 +66,7 @@ export default function FoodKnowledgeAdminPage() {
   const [cacheSeverity, setCacheSeverity] = useState('all')
   const [cacheCursor, setCacheCursor] = useState<string | null>(null)
   const [cacheHasMore, setCacheHasMore] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<CacheItem | null>(null)
 
   // Prefill userId with current user to make testing easier
   useEffect(() => {
@@ -398,6 +399,7 @@ export default function FoodKnowledgeAdminPage() {
                   <th className="px-3 py-2">更新時間</th>
                   <th className="px-3 py-2">風險</th>
                   <th className="px-3 py-2">使用次數</th>
+                  <th className="px-3 py-2">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -423,11 +425,20 @@ export default function FoodKnowledgeAdminPage() {
                       </span>
                     </td>
                     <td className="px-3 py-4 text-center">{item.usageCount}</td>
+                    <td className="px-3 py-4">
+                      <button
+                        onClick={() => setSelectedItem(item)}
+                        className="flex items-center gap-1 rounded bg-blue-50 px-2 py-1 text-xs text-blue-700 hover:bg-blue-100"
+                      >
+                        <Eye className="h-3 w-3" />
+                        查看
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {cacheItems.length === 0 && !cacheLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-3 py-6 text-center text-sm text-gray-500">
+                    <td colSpan={6} className="px-3 py-6 text-center text-sm text-gray-500">
                       尚無資料。
                     </td>
                   </tr>
@@ -473,6 +484,111 @@ export default function FoodKnowledgeAdminPage() {
           </ul>
         </section>
       </div>
+
+      {/* Analysis Detail Modal */}
+      {selectedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white shadow-xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white p-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                AI 分析詳情 - {selectedItem.foodName}
+              </h3>
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="rounded p-1 hover:bg-gray-100"
+              >
+                <span className="text-2xl">&times;</span>
+              </button>
+            </div>
+
+            <div className="space-y-4 p-6">
+              {/* Basic Info */}
+              <div className="rounded-lg border bg-gray-50 p-4">
+                <h4 className="mb-3 font-medium text-gray-900">基本資訊</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-gray-600">食物名稱:</span>
+                    <span className="ml-2 font-medium">{selectedItem.foodName}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">分類:</span>
+                    <span className="ml-2 font-medium">{selectedItem.category || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">分析版本:</span>
+                    <span className="ml-2 font-medium">{selectedItem.analysisVersion || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">資料來源:</span>
+                    <span className="ml-2 font-medium">{selectedItem.analysisSource || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">更新時間:</span>
+                    <span className="ml-2 font-medium">
+                      {selectedItem.analysisUpdatedAt
+                        ? new Date(selectedItem.analysisUpdatedAt).toLocaleString('zh-TW')
+                        : '-'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">使用次數:</span>
+                    <span className="ml-2 font-medium">{selectedItem.usageCount}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Risk Profile */}
+              {selectedItem.riskProfile && (
+                <div className="rounded-lg border bg-red-50 p-4">
+                  <h4 className="mb-3 font-medium text-red-900">風險評估</h4>
+                  <pre className="overflow-x-auto rounded bg-white p-3 text-xs">
+                    {JSON.stringify(selectedItem.riskProfile as Record<string, unknown>, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {/* Nutrition Profile */}
+              {selectedItem.nutritionProfile && (
+                <div className="rounded-lg border bg-green-50 p-4">
+                  <h4 className="mb-3 font-medium text-green-900">營養分析</h4>
+                  <pre className="overflow-x-auto rounded bg-white p-3 text-xs">
+                    {JSON.stringify(selectedItem.nutritionProfile as Record<string, unknown>, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {/* Supportive Attributes */}
+              {selectedItem.supportiveAttributes && (
+                <div className="rounded-lg border bg-blue-50 p-4">
+                  <h4 className="mb-3 font-medium text-blue-900">支持性特徵</h4>
+                  <pre className="overflow-x-auto rounded bg-white p-3 text-xs">
+                    {JSON.stringify(selectedItem.supportiveAttributes as Record<string, unknown>, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {/* Serving Guidelines */}
+              {selectedItem.servingGuidelines && (
+                <div className="rounded-lg border bg-yellow-50 p-4">
+                  <h4 className="mb-3 font-medium text-yellow-900">食用建議</h4>
+                  <pre className="overflow-x-auto rounded bg-white p-3 text-xs">
+                    {JSON.stringify(selectedItem.servingGuidelines as Record<string, unknown>, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {!selectedItem.riskProfile &&
+                !selectedItem.nutritionProfile &&
+                !selectedItem.supportiveAttributes &&
+                !selectedItem.servingGuidelines && (
+                  <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+                    <p className="text-sm text-gray-500">此食物暫無詳細分析資料</p>
+                  </div>
+                )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
