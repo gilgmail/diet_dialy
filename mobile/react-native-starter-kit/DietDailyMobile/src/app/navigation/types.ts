@@ -26,7 +26,9 @@ export type MainStackParamList = {
     date?: string // Optional date for adding to specific date
     entryId?: string // Optional entry ID for editing
   }
-  MedicationLog: undefined
+  MedicationLog: {
+    regimenId?: string
+  } | undefined
   SleepLog: undefined
   ActivityLog: undefined
   FoodDayDetail: {

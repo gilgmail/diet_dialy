@@ -15,6 +15,13 @@ export interface UserSettings {
   notificationsEnabled: boolean
   debugMode?: boolean // Debug 模式開關
   customPrompt?: string // 自訂 AI 提示詞
+  modules?: ModuleToggleSettings
+}
+
+export interface ModuleToggleSettings {
+  medication: boolean
+  sleep: boolean
+  activity: boolean
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -30,6 +37,11 @@ export const DEFAULT_SETTINGS: UserSettings = {
   notificationsEnabled: true,
   debugMode: false,
   customPrompt: '',
+  modules: {
+    medication: true,
+    sleep: true,
+    activity: true,
+  },
 }
 
 export const CHRONIC_DISEASES = [

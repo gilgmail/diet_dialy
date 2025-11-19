@@ -31,9 +31,10 @@ const STATUS_OPTIONS = [
   { value: 'missed', label: '忘記' },
 ] as const
 
-export function MedicationLogScreen({ navigation }: MedicationLogScreenProps) {
+export function MedicationLogScreen({ navigation, route }: MedicationLogScreenProps) {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
+  const targetRegimenId = route?.params?.regimenId
   const [takenAt, setTakenAt] = useState(new Date())
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [selectedRegimen, setSelectedRegimen] = useState<MedicationRegimenSummary | null>(null)
@@ -93,13 +94,27 @@ export function MedicationLogScreen({ navigation }: MedicationLogScreenProps) {
   })
 
   useEffect(() => {
-    if (prioritizedRegimens.length > 0) {
-      setSelectedRegimen((prev) => prev ?? prioritizedRegimens[0])
-      if (!dose) {
-        setDose(prioritizedRegimens[0].default_dose ?? '')
+    if (prioritizedRegimens.length === 0) return
+
+    if (targetRegimenId) {
+      const matched = prioritizedRegimens.find((item) => item.id === targetRegimenId)
+      if (matched && matched.id !== selectedRegimen?.id) {
+        setSelectedRegimen(matched)
+        if (!dose) {
+          setDose(matched.default_dose ?? '')
+        }
+        return
       }
     }
-  }, [prioritizedRegimens, dose])
+
+    if (!selectedRegimen) {
+      const first = prioritizedRegimens[0]
+      setSelectedRegimen(first)
+      if (!dose) {
+        setDose(first.default_dose ?? '')
+      }
+    }
+  }, [prioritizedRegimens, targetRegimenId, selectedRegimen?.id, dose])
 
   const handleChangeRegimen = (regimen: MedicationRegimenSummary) => {
     setSelectedRegimen(regimen)
