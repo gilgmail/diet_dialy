@@ -165,7 +165,8 @@ BEGIN
         test_user_1_id, 'medication_regimen', regimen_2_id, 'medication',
         'Pentasa 口服提醒', 'every_n_days', 1, '08:00', '09:00',
         'Asia/Taipei', 'active', true
-    );
+    )
+    RETURNING id INTO reminder_2_id;
 
     RAISE NOTICE 'User 1: 已建立 Humira 與 Pentasa 療程';
 
