@@ -7,6 +7,8 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
 import { useAuth } from '@/features/auth/hooks/useAuth'
+import { useSettingsStore } from '@/features/settings/stores/settingsStore'
+import { DEFAULT_SETTINGS } from '@/features/settings/types'
 import { DashboardScreen } from '@/features/dashboard/screens/DashboardScreen'
 import { ReportDetailScreen } from '@/features/dashboard/screens/ReportDetailScreen'
 import { FoodDayDetailScreen } from '@/features/food-diary/screens/FoodDayDetailScreen'
@@ -141,6 +143,15 @@ const tabBarStyles = StyleSheet.create({
 function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const mainNavigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
+  const { settings } = useSettingsStore()
+
+  const moduleVisibility =
+    settings?.modules ??
+    DEFAULT_SETTINGS.modules ?? {
+      medication: true,
+      sleep: true,
+      activity: true,
+    }
 
   const handleAddFood = () => {
     setShowQuickAdd(false)
@@ -310,32 +321,38 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               <Text style={tabBarStyles.quickAddText}>大便記錄</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[tabBarStyles.quickAddItem, tabBarStyles.quickAddMedication]}
-              onPress={handleAddMedication}
-              activeOpacity={0.7}
-            >
-              <Icon name="pill" size={24} color={colors.primary[500]} />
-              <Text style={tabBarStyles.quickAddText}>用藥紀錄</Text>
-            </TouchableOpacity>
+            {moduleVisibility.medication && (
+              <TouchableOpacity
+                style={[tabBarStyles.quickAddItem, tabBarStyles.quickAddMedication]}
+                onPress={handleAddMedication}
+                activeOpacity={0.7}
+              >
+                <Icon name="pill" size={24} color={colors.primary[500]} />
+                <Text style={tabBarStyles.quickAddText}>用藥紀錄</Text>
+              </TouchableOpacity>
+            )}
 
-            <TouchableOpacity
-              style={[tabBarStyles.quickAddItem, tabBarStyles.quickAddSleep]}
-              onPress={handleAddSleep}
-              activeOpacity={0.7}
-            >
-              <Icon name="sleep" size={24} color={colors.secondary[500]} />
-              <Text style={tabBarStyles.quickAddText}>睡眠紀錄</Text>
-            </TouchableOpacity>
+            {moduleVisibility.sleep && (
+              <TouchableOpacity
+                style={[tabBarStyles.quickAddItem, tabBarStyles.quickAddSleep]}
+                onPress={handleAddSleep}
+                activeOpacity={0.7}
+              >
+                <Icon name="sleep" size={24} color={colors.secondary[500]} />
+                <Text style={tabBarStyles.quickAddText}>睡眠紀錄</Text>
+              </TouchableOpacity>
+            )}
 
-            <TouchableOpacity
-              style={[tabBarStyles.quickAddItem, tabBarStyles.quickAddActivity]}
-              onPress={handleAddActivity}
-              activeOpacity={0.7}
-            >
-              <Icon name="run" size={24} color={colors.info} />
-              <Text style={tabBarStyles.quickAddText}>運動紀錄</Text>
-            </TouchableOpacity>
+            {moduleVisibility.activity && (
+              <TouchableOpacity
+                style={[tabBarStyles.quickAddItem, tabBarStyles.quickAddActivity]}
+                onPress={handleAddActivity}
+                activeOpacity={0.7}
+              >
+                <Icon name="run" size={24} color={colors.info} />
+                <Text style={tabBarStyles.quickAddText}>運動紀錄</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </Pressable>
       </Modal>
