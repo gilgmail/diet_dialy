@@ -6,6 +6,7 @@ import {
   type MealReminderConfig,
   type UserSettings,
   type ChronicDiseaseValue,
+  type ModuleToggleSettings,
 } from '../types'
 
 interface DbUserRow {
@@ -21,6 +22,7 @@ type MobileSettingsPreferences = {
   timezoneOffset?: string
   notificationsEnabled?: boolean
   mealReminders?: MealReminderConfig
+  modules?: ModuleToggleSettings
 }
 
 const CHRONIC_DISEASE_VALUES = CHRONIC_DISEASES.map((item) => item.value)
@@ -87,6 +89,25 @@ function extractMobileSettings(preferences: unknown): MobileSettingsPreferences 
     result.mealReminders = merged
   }
 
+  if (mobileSettings.modules && typeof mobileSettings.modules === 'object') {
+    const modules = mobileSettings.modules as Record<string, any>
+    const merged: ModuleToggleSettings = {
+      medication:
+        typeof modules.medication === 'boolean'
+          ? modules.medication
+          : DEFAULT_SETTINGS.modules?.medication ?? true,
+      sleep:
+        typeof modules.sleep === 'boolean'
+          ? modules.sleep
+          : DEFAULT_SETTINGS.modules?.sleep ?? true,
+      activity:
+        typeof modules.activity === 'boolean'
+          ? modules.activity
+          : DEFAULT_SETTINGS.modules?.activity ?? true,
+    }
+    result.modules = merged
+  }
+
   return result
 }
 
@@ -108,6 +129,12 @@ function mergeMobileSettings(
   }
   if (updates.mealReminders) {
     existingMobile.mealReminders = updates.mealReminders
+  }
+  if (updates.modules) {
+    existingMobile.modules = {
+      ...(existingMobile.modules || {}),
+      ...updates.modules,
+    }
   }
 
   if (Object.keys(existingMobile).length > 0) {
@@ -193,11 +220,17 @@ export class SettingsService {
         mobilePreferenceUpdates.notificationsEnabled = settings.notificationsEnabled
       }
       if (settings.mealReminders) {
-        mobilePreferenceUpdates.mealReminders = {
-          ...DEFAULT_SETTINGS.mealReminders,
-          ...settings.mealReminders,
-        }
+      mobilePreferenceUpdates.mealReminders = {
+        ...DEFAULT_SETTINGS.mealReminders,
+        ...settings.mealReminders,
       }
+    }
+    if (settings.modules) {
+      mobilePreferenceUpdates.modules = {
+        ...DEFAULT_SETTINGS.modules,
+        ...settings.modules,
+      }
+    }
 
       if (settings.chronicDisease !== undefined) {
         const existingConditions = extractArray(existing.medical_conditions)
@@ -222,7 +255,8 @@ export class SettingsService {
       const hasPreferenceUpdates =
         mobilePreferenceUpdates.notificationsEnabled !== undefined ||
         mobilePreferenceUpdates.mealReminders !== undefined ||
-        mobilePreferenceUpdates.timezoneOffset !== undefined
+        mobilePreferenceUpdates.timezoneOffset !== undefined ||
+        mobilePreferenceUpdates.modules !== undefined
 
       if (hasPreferenceUpdates) {
         updatePayload.preferences = mergeMobileSettings(
@@ -312,6 +346,7 @@ export class SettingsService {
       notificationsEnabled:
         mobileSettings.notificationsEnabled ?? DEFAULT_SETTINGS.notificationsEnabled,
       mealReminders: mobileSettings.mealReminders ?? { ...DEFAULT_SETTINGS.mealReminders },
+      modules: mobileSettings.modules ?? DEFAULT_SETTINGS.modules,
     }
   }
 }
