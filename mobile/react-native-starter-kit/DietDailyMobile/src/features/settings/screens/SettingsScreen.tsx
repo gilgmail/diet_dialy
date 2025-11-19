@@ -26,7 +26,9 @@ import {
   CHRONIC_DISEASES,
   TIMEZONES,
   COMMON_ALLERGENS,
+  DEFAULT_SETTINGS,
   type ChronicDiseaseValue,
+  type ModuleToggleSettings,
 } from '../types'
 import { colors, typography, spacing } from '@/theme'
 import type { MainStackParamList } from '@/app/navigation/types'
@@ -40,10 +42,11 @@ const MEAL_NAMES: Record<'breakfast' | 'lunch' | 'dinner', string> = {
   dinner: '晚餐',
 }
 
-type TabType = 'general' | 'knowledge' | 'ai'
+type TabType = 'general' | 'modules' | 'knowledge' | 'ai'
 
 const TAB_CONFIG: Record<TabType, { icon: string; label: string }> = {
   general: { icon: 'cog', label: '一般設定' },
+  modules: { icon: 'view-grid-plus', label: '模組設定' },
   knowledge: { icon: 'brain', label: 'AI 知識庫' },
   ai: { icon: 'robot', label: 'AI 設定' },
 }
@@ -54,7 +57,11 @@ export function SettingsScreen() {
   const { settings, isLoading, initializeSettings, updateSettings, subscribeToChanges } = useSettingsStore()
   const { enableAIUI } = appConfig
   const availableTabs = useMemo<TabType[]>(() => {
-    return enableAIUI ? ['general', 'knowledge', 'ai'] : ['general']
+    const base: TabType[] = ['general', 'modules']
+    if (enableAIUI) {
+      base.push('knowledge', 'ai')
+    }
+    return base
   }, [enableAIUI])
   const [activeTab, setActiveTab] = useState<TabType>(availableTabs[0])
   const [notificationsEnabled, setNotificationsEnabled] = useState(settings.notificationsEnabled)
@@ -80,6 +87,12 @@ export function SettingsScreen() {
     const suffix = settings.knownAllergies.length > 3 ? ` 等 ${settings.knownAllergies.length} 項` : ''
     return `${preview}${suffix}`
   }, [settings.knownAllergies])
+  const moduleSettings: ModuleToggleSettings =
+    settings.modules ?? DEFAULT_SETTINGS.modules ?? {
+      medication: true,
+      sleep: true,
+      activity: true,
+    }
 
   useEffect(() => {
     if (!availableTabs.includes(activeTab)) {
@@ -257,6 +270,36 @@ export function SettingsScreen() {
     Alert.alert('管理已知過敏原', currentAllergies.length > 0 ? '已選擇的過敏原可點擊移除' : '', options)
   }
 
+  const handleToggleModule = (moduleKey: keyof ModuleToggleSettings, value: boolean) => {
+    if (!user?.id) return
+    const nextModules = {
+      ...moduleSettings,
+      [moduleKey]: value,
+    }
+    updateSettings(user.id, { modules: nextModules })
+  }
+
+  const moduleToggleItems = [
+    {
+      key: 'medication' as const,
+      icon: 'needle',
+      label: '用藥紀錄',
+      description: '控制是否顯示用藥相關頁面與提醒',
+    },
+    {
+      key: 'sleep' as const,
+      icon: 'sleep',
+      label: '睡眠紀錄',
+      description: '開關睡眠表單與今日摘要',
+    },
+    {
+      key: 'activity' as const,
+      icon: 'run',
+      label: '運動紀錄',
+      description: '開關運動表單與統計模組',
+    },
+  ]
+
   const handleChangeMealTime = (meal: 'breakfast' | 'lunch' | 'dinner') => {
     if (!user?.id) return
 
@@ -405,27 +448,27 @@ Device: ${Platform.OS} ${Platform.Version}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>提醒設定</Text>
 
-        <View style={styles.settingRow}>
-          <View style={styles.settingInfo}>
-            <Icon name="bell-outline" size={24} color={colors.primary[500]} />
-            <View style={styles.settingTextContainer}>
-              <Text style={styles.settingLabel}>用餐提醒</Text>
-              <Text style={styles.settingDescription}>
-                {notificationsEnabled ? '已啟用' : '已關閉'}
-              </Text>
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <Icon name="bell-outline" size={24} color={colors.primary[500]} />
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingLabel}>用餐提醒</Text>
+                  <Text style={styles.settingDescription}>
+                    {notificationsEnabled ? '已啟用' : '已關閉'}
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleToggleNotifications}
+                trackColor={{ false: colors.border, true: colors.primary[300] }}
+                thumbColor={notificationsEnabled ? colors.primary[500] : colors.text.disabled}
+              />
             </View>
-          </View>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={handleToggleNotifications}
-            trackColor={{ false: colors.border, true: colors.primary[300] }}
-            thumbColor={notificationsEnabled ? colors.primary[500] : colors.text.disabled}
-          />
-        </View>
 
-        {notificationsEnabled && (
-          <>
-            <TouchableOpacity
+            {notificationsEnabled && (
+              <>
+                <TouchableOpacity
               style={styles.settingRow}
               onPress={() => handleChangeMealTime('breakfast')}
             >
@@ -602,16 +645,52 @@ Device: ${Platform.OS} ${Platform.Version}
         </Modal>
       )}
 
-      {/* Time Picker for Android */}
-      {Platform.OS === 'android' && showTimePicker && selectedMeal && (
-        <DateTimePicker
-          value={tempTime}
-          mode="time"
-          is24Hour={true}
-          display="default"
-          onChange={handleTimePickerChange}
-        />
+          {/* Time Picker for Android */}
+          {Platform.OS === 'android' && showTimePicker && selectedMeal && (
+            <DateTimePicker
+              value={tempTime}
+              mode="time"
+              is24Hour={true}
+              display="default"
+              onChange={handleTimePickerChange}
+            />
+          )}
+        </ScrollView>
       )}
+
+      {activeTab === 'modules' && (
+        <ScrollView style={styles.tabContent}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>健康模組</Text>
+            <Text style={styles.sectionDescription}>
+              可依照使用情境開關用藥、睡眠、運動紀錄模組
+            </Text>
+            {moduleToggleItems.map((item) => (
+              <View key={item.key} style={styles.settingRow}>
+                <View style={styles.settingInfo}>
+                  <Icon name={item.icon} size={24} color={colors.primary[500]} />
+                  <View style={styles.settingTextContainer}>
+                    <Text style={styles.settingLabel}>{item.label}</Text>
+                    <Text style={styles.settingDescription}>{item.description}</Text>
+                  </View>
+                </View>
+                <Switch
+                  value={moduleSettings[item.key]}
+                  onValueChange={(value) => handleToggleModule(item.key, value)}
+                  trackColor={{ false: colors.border, true: colors.primary[300] }}
+                  thumbColor={
+                    moduleSettings[item.key] ? colors.primary[500] : colors.text.disabled
+                  }
+                />
+              </View>
+            ))}
+          </View>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>提示</Text>
+            <Text style={styles.helperText}>
+              關閉模組後，對應的快速新增與今日摘要會隱藏，但既有資料仍保留於帳號中。
+            </Text>
+          </View>
         </ScrollView>
       )}
 
@@ -793,7 +872,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.primary[500],
   },
   tabText: {
-    ...typography.body,
+    fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
   },
   activeTabText: {
@@ -823,6 +902,20 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  sectionDescription: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    lineHeight: typography.fontSize.sm * 1.5,
+  },
+  helperText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    lineHeight: typography.fontSize.sm * 1.5,
   },
   settingRow: {
     flexDirection: 'row',
