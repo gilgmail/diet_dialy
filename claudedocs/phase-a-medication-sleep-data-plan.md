@@ -855,7 +855,7 @@ async function getDailyWellness(userId: string, date: string) {
 | 時區轉換錯誤 | 提醒時間不準確 | 完整測試案例、使用成熟函式庫 | 🔴 高 |
 | jsonb schema 演化失控 | 資料不一致、查詢困難 | 版本控制策略（見 4.5）、Migration 腳本 | 🟢 低 |
 
-## 實作進度（2025-11-17）
+## 實作進度（2025-11-19 更新）
 
 ### Schema & Migration (100% 完成)
 - ✅ `supabase/migrations/011_create_medication_tables.sql`
@@ -870,26 +870,69 @@ async function getDailyWellness(userId: string, date: string) {
   - ✅ user_reminders 支援多種 schedule_type
   - ✅ health_data_sources 與 staging 表結構
   - ✅ reminder_logs 審計表
+- ✅ `supabase/migrations/014_create_sync_triggers.sql` **[新增]**
+  - ✅ meal_logs → food_entries 同步 Trigger
+  - ✅ auto_dismiss_reminder() 通用函式
+  - ✅ updated_at 自動更新 Triggers
+  - ✅ meal_sync_check 驗證視圖
+- ✅ `supabase/migrations/015_create_helper_functions.sql` **[新增]**
+  - ✅ upsert_sleep_session() 去重函式
+  - ✅ upsert_activity_session() 去重函式
+  - ✅ health_data_conflicts 衝突記錄表
+  - ✅ calculate_next_cycle_reminder() 針劑提醒計算
+  - ✅ calculate_next_daily_reminder() 口服藥提醒計算
+  - ✅ refresh_daily_wellness_for_user() 彙總更新
+  - ✅ to_user_timezone() / from_user_timezone() 時區轉換
 - ✅ 更新 Type 定義
   - ✅ `src/types/supabase.ts` (Web)
   - ✅ `DietDailyMobile/src/shared/types/supabase.ts` (iOS)
 
-### 資料同步與一致性 (0% 實作，100% 設計)
-- ⏳ **待實作**: food_entries ↔ meal_logs 同步 Trigger (設計完成，見 4.1)
-- ⏳ **待實作**: 健康資料去重 upsert_sleep_session() 函式 (設計完成，見 4.3)
-- ⏳ **待實作**: auto_dismiss_reminder() Trigger (設計完成，見 4.2)
-- ⏳ **待實作**: daily_wellness_log Materialized View (設計完成，見 4.6)
+### 資料同步與一致性 (100% 實作)
+- ✅ **已實作**: food_entries ↔ meal_logs 同步 Trigger (014 migration)
+- ✅ **已實作**: 健康資料去重 upsert_sleep_session() 函式 (015 migration)
+- ✅ **已實作**: auto_dismiss_reminder() Trigger (014 migration)
+- ✅ **已實作**: refresh_daily_wellness_for_user() 函式 (015 migration)
 
-### Edge Functions & API (0% 實作)
-- ⏳ **待實作**: medication-regimen-sync Edge Function
+### Edge Functions (20% 實作)
+- ✅ **已實作**: medication-regimen-sync Edge Function
+  - ✅ 支援 create/update/pause/resume 操作
+  - ✅ 自動建立/更新 medication_cycles
+  - ✅ 自動建立/更新 user_reminders
+  - ✅ 支援 relative_cycle / every_n_days / cron 三種模式
+  - ✅ PRN 藥物自動暫停提醒
 - ⏳ **待實作**: medication-reminder-handler Edge Function
-- ⏳ **待實作**: health-log-auto-dismiss Edge Function
 - ⏳ **待實作**: health-data-import-worker Edge Function
-- ⏳ **待實作**: API Route Handlers (/api/medications/*, /api/sleep-sessions, etc.)
+- ⏳ **待實作**: daily-wellness-refresh Cron Job
 
-### Seed Data (0% 實作)
-- ⏳ **待實作**: IBD 常用藥品 seed data (10+ 藥品)
-- ⏳ **待實作**: 測試用戶與療程 seed data
+### API Route Handlers (0% 實作)
+- ⏳ **待實作**: `/api/medications/regimens` (POST, GET, PATCH, DELETE)
+- ⏳ **待實作**: `/api/medications/administrations` (POST, GET, PATCH)
+- ⏳ **待實作**: `/api/sleep-sessions` (POST, GET, PATCH)
+- ⏳ **待實作**: `/api/activity-sessions` (POST, GET, PATCH)
+- ⏳ **待實作**: `/api/daily-wellness-log` (GET)
+
+### Seed Data (100% 完成)
+- ✅ **已實作**: `supabase/seed_medication_catalog.sql`
+  - ✅ 24 種常見 IBD 藥品
+  - ✅ 涵蓋生物製劑（5）、免疫調節劑（3）、5-ASA（3）
+  - ✅ 類固醇（2）、小分子藥物（3）、症狀緩解（2）
+  - ✅ 輔助補充劑（4）、含 PRN 藥物
+- ✅ **已實作**: `supabase/seed_phase_a_test_data.sql`
+  - ✅ 3 位測試用戶（不同時區與療程類型）
+  - ✅ 4 個療程範例（Humira, Pentasa, Entyvio, Imodium PRN）
+  - ✅ medication_cycles 與 user_reminders 測試資料
+  - ✅ 飲食、睡眠、運動健康紀錄範例
+  - ✅ reminder_logs 測試資料
+
+### 整體進度總覽
+- **A1 Schema / 種子資料**: 100% 完成 ✅
+- **A2 Edge Functions**: 20% 完成（1/4 完成）
+- **A3 Database Functions**: 100% 完成 ✅
+- **A4 API Gateway**: 0% 完成
+- **A5 Mobile / Web UI**: 0% 完成
+- **A6 QA & 測試**: 0% 完成
+
+**目前總進度**: ~40% (Schema + Functions + Seed Data 完成)
 
 ## 開發拆解與時程（Phase A）
 

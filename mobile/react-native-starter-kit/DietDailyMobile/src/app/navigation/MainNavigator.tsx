@@ -17,6 +17,9 @@ import { TodayScreen } from '@/features/today/screens/TodayScreen'
 import { HistoryScreen } from '@/features/history/screens/HistoryScreen'
 import { InsightsScreen } from '@/features/insights/screens/InsightsScreen'
 import { SettingsScreen } from '@/features/settings/screens/SettingsScreen'
+import { MedicationLogScreen } from '@/features/health-logs/screens/MedicationLogScreen'
+import { SleepLogScreen } from '@/features/health-logs/screens/SleepLogScreen'
+import { ActivityLogScreen } from '@/features/health-logs/screens/ActivityLogScreen'
 import { colors, typography, spacing } from '@/theme'
 import type { MainStackParamList, MainTabParamList } from './types'
 
@@ -112,6 +115,21 @@ const tabBarStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D2691E' + '30',
   },
+  quickAddMedication: {
+    backgroundColor: colors.primary[100],
+    borderWidth: 1,
+    borderColor: colors.primary[300],
+  },
+  quickAddSleep: {
+    backgroundColor: colors.secondary[100],
+    borderWidth: 1,
+    borderColor: colors.secondary[300],
+  },
+  quickAddActivity: {
+    backgroundColor: colors.info + '10',
+    borderWidth: 1,
+    borderColor: colors.info + '30',
+  },
   quickAddText: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
@@ -137,6 +155,21 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const handleAddBowelMovement = () => {
     setShowQuickAdd(false)
     mainNavigation.navigate('AddBowelMovement', { date: undefined })
+  }
+
+  const handleAddMedication = () => {
+    setShowQuickAdd(false)
+    mainNavigation.navigate('MedicationLog')
+  }
+
+  const handleAddSleep = () => {
+    setShowQuickAdd(false)
+    mainNavigation.navigate('SleepLog')
+  }
+
+  const handleAddActivity = () => {
+    setShowQuickAdd(false)
+    mainNavigation.navigate('ActivityLog')
   }
 
   return (
@@ -276,6 +309,33 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               <Icon name="toilet" size={24} color="#D2691E" />
               <Text style={tabBarStyles.quickAddText}>大便記錄</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[tabBarStyles.quickAddItem, tabBarStyles.quickAddMedication]}
+              onPress={handleAddMedication}
+              activeOpacity={0.7}
+            >
+              <Icon name="pill" size={24} color={colors.primary[500]} />
+              <Text style={tabBarStyles.quickAddText}>用藥紀錄</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[tabBarStyles.quickAddItem, tabBarStyles.quickAddSleep]}
+              onPress={handleAddSleep}
+              activeOpacity={0.7}
+            >
+              <Icon name="sleep" size={24} color={colors.secondary[500]} />
+              <Text style={tabBarStyles.quickAddText}>睡眠紀錄</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[tabBarStyles.quickAddItem, tabBarStyles.quickAddActivity]}
+              onPress={handleAddActivity}
+              activeOpacity={0.7}
+            >
+              <Icon name="run" size={24} color={colors.info} />
+              <Text style={tabBarStyles.quickAddText}>運動紀錄</Text>
+            </TouchableOpacity>
           </View>
         </Pressable>
       </Modal>
@@ -378,6 +438,42 @@ export function MainNavigator() {
         options={{
           headerShown: true,
           title: '大便記錄',
+          headerStyle: {
+            backgroundColor: colors.surface,
+          },
+          headerTintColor: colors.text.primary,
+        }}
+      />
+      <Stack.Screen
+        name="MedicationLog"
+        component={MedicationLogScreen}
+        options={{
+          headerShown: true,
+          title: '用藥紀錄',
+          headerStyle: {
+            backgroundColor: colors.surface,
+          },
+          headerTintColor: colors.text.primary,
+        }}
+      />
+      <Stack.Screen
+        name="SleepLog"
+        component={SleepLogScreen}
+        options={{
+          headerShown: true,
+          title: '睡眠紀錄',
+          headerStyle: {
+            backgroundColor: colors.surface,
+          },
+          headerTintColor: colors.text.primary,
+        }}
+      />
+      <Stack.Screen
+        name="ActivityLog"
+        component={ActivityLogScreen}
+        options={{
+          headerShown: true,
+          title: '運動紀錄',
           headerStyle: {
             backgroundColor: colors.surface,
           },
