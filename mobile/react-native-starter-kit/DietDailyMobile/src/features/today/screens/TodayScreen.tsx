@@ -9,6 +9,8 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  Modal,
+  Alert,
 } from 'react-native'
 
 // Enable LayoutAnimation on Android
@@ -57,6 +59,19 @@ export function TodayScreen() {
   // Tab state
   const [activeTab, setActiveTab] = useState<TabType>('summary')
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+
+  // Delete confirmation dialog state
+  const [deleteDialog, setDeleteDialog] = useState<{
+    visible: boolean
+    type: 'food' | 'symptom' | 'medication' | 'sleep' | 'activity' | null
+    id: string | null
+    name: string
+  }>({
+    visible: false,
+    type: null,
+    id: null,
+    name: '',
+  })
 
   // Initialize settings when user is available
   React.useEffect(() => {
@@ -253,13 +268,76 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
     })
   }
 
-  return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+  // Show delete confirmation dialog
+  const showDeleteDialog = (
+    type: 'food' | 'symptom' | 'medication' | 'sleep' | 'activity',
+    id: string,
+    name: string
+  ) => {
+    setDeleteDialog({
+      visible: true,
+      type,
+      id,
+      name,
+    })
+  }
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setDeleteDialog({
+      visible: false,
+      type: null,
+      id: null,
+      name: '',
+    })
+  }
+
+  // Confirm delete
+  const confirmDelete = async () => {
+    if (!deleteDialog.id || !deleteDialog.type || !user?.id) {
+      cancelDelete()
+      return
+    }
+
+    try {
+      switch (deleteDialog.type) {
+        case 'food':
+          await FoodDiaryService.deleteFoodEntry(deleteDialog.id, user.id)
+          refetchFood()
+          break
+        case 'symptom':
+          await SymptomDiaryService.deleteSymptomEntry(deleteDialog.id, user.id)
+          refetchSymptoms()
+          break
+        case 'medication':
+          await HealthLogService.deleteMedicationLog(deleteDialog.id)
+          medicationQuery.refetch()
+          break
+        case 'sleep':
+          await HealthLogService.deleteSleepSession(deleteDialog.id)
+          sleepQuery.refetch()
+          break
+        case 'activity':
+          await HealthLogService.deleteActivitySession(deleteDialog.id)
+          activityQuery.refetch()
+          break
       }
-    >
+      cancelDelete()
+    } catch (error) {
+      console.error('Delete error:', error)
+      Alert.alert('錯誤', '刪除失敗，請稍後再試')
+      cancelDelete()
+    }
+  }
+
+  return (
+    <>
+      <ScrollView
+        style={styles.container}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+        }
+      >
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>今日記錄</Text>
@@ -661,16 +739,40 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
                     <View
                       key={entry.id}
                       style={[
-                        styles.timelineItem,
-                        index === entries.length - 1 && styles.timelineItemLast,
+                        styles.detailCard,
+                        index === entries.length - 1 && styles.detailCardLast,
                       ]}
                     >
-                      <View style={styles.timelineDot} />
-                      <View style={styles.timelineContent}>
-                        <Text style={styles.timelineFood}>{entry.food_name}</Text>
-                        <Text style={styles.timelineTime}>
+                      <View style={styles.detailCardHeader}>
+                        <Text style={styles.detailCardTime}>
                           {format(new Date(entry.consumed_at), 'HH:mm')}
                         </Text>
+                        <View style={styles.detailCardActions}>
+                          <TouchableOpacity
+                            onPress={() =>
+                              navigation.navigate('AddFoodEntry', {
+                                date: entry.consumed_at,
+                                entryId: entry.id,
+                              })
+                            }
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          >
+                            <Icon name="pencil" size={20} color={colors.text.secondary} />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => showDeleteDialog('food', entry.id, entry.food_name)}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            style={styles.deleteButton}
+                          >
+                            <Icon name="delete" size={20} color={colors.error} />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                      <View style={styles.detailCardContent}>
+                        <Text style={styles.detailCardTitle}>{entry.food_name}</Text>
+                        {entry.notes && (
+                          <Text style={styles.detailCardNotes}>{entry.notes}</Text>
+                        )}
                       </View>
                     </View>
                   ))}
@@ -703,18 +805,42 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
             {symptomEntries.map((entry: SymptomEntry) => {
               const severityInfo = SEVERITY_LEVELS.find((s) => s.value === entry.severity)
               return (
-                <View key={entry.id} style={styles.symptomItem}>
-                  <Text style={styles.symptomIcon}>{severityInfo?.icon}</Text>
-                  <View style={styles.symptomContent}>
-                    <Text style={styles.symptomName}>{entry.symptom_name}</Text>
-                    <View style={styles.symptomMeta}>
-                      <Text style={styles.symptomSeverity}>{severityInfo?.label}</Text>
-                      <Text style={styles.symptomTime}>
-                        {format(new Date(entry.recorded_at), 'HH:mm')}
-                      </Text>
+                <View key={entry.id} style={styles.detailCard}>
+                  <View style={styles.detailCardHeader}>
+                    <Text style={styles.detailCardTime}>
+                      {format(new Date(entry.recorded_at), 'HH:mm')}
+                    </Text>
+                    <View style={styles.detailCardActions}>
+                      <TouchableOpacity
+                        onPress={() =>
+                          navigation.navigate('AddSymptomEntry', {
+                            date: entry.recorded_at,
+                            entryId: entry.id,
+                          })
+                        }
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <Icon name="pencil" size={20} color={colors.text.secondary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() =>
+                          showDeleteDialog('symptom', entry.id, entry.symptom_name)
+                        }
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        style={styles.deleteButton}
+                      >
+                        <Icon name="delete" size={20} color={colors.error} />
+                      </TouchableOpacity>
                     </View>
+                  </View>
+                  <View style={styles.detailCardContent}>
+                    <View style={styles.symptomHeader}>
+                      <Text style={styles.symptomIcon}>{severityInfo?.icon}</Text>
+                      <Text style={styles.detailCardTitle}>{entry.symptom_name}</Text>
+                    </View>
+                    <Text style={styles.symptomSeverity}>{severityInfo?.label}</Text>
                     {entry.notes && (
-                      <Text style={styles.symptomNotes}>{entry.notes}</Text>
+                      <Text style={styles.detailCardNotes}>{entry.notes}</Text>
                     )}
                   </View>
                 </View>
@@ -742,25 +868,44 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
               </View>
             ) : (
               mLogs.map((log: MedicationLogEntry) => (
-                <View key={log.id} style={styles.listCard}>
-                  <View style={styles.listCardHeader}>
-                    <Text style={styles.listCardTitle}>{log.regimen_name}</Text>
-                    <Text style={styles.listCardTime}>
+                <View key={log.id} style={styles.detailCard}>
+                  <View style={styles.detailCardHeader}>
+                    <Text style={styles.detailCardTime}>
                       {format(new Date(log.taken_at), 'HH:mm')}
                     </Text>
+                    <View style={styles.detailCardActions}>
+                      <TouchableOpacity
+                        onPress={() => navigation.navigate('MedicationLog')}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <Icon name="pencil" size={20} color={colors.text.secondary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() =>
+                          showDeleteDialog('medication', log.id, log.regimen_name)
+                        }
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        style={styles.deleteButton}
+                      >
+                        <Icon name="delete" size={20} color={colors.error} />
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                  <Text style={styles.listCardMeta}>
-                    {log.dose || '未填劑量'} ·{' '}
-                    {log.adherence_status === 'taken'
-                      ? '準時'
-                      : log.adherence_status === 'delayed'
-                      ? '延遲'
-                      : log.adherence_status === 'skipped'
-                      ? '略過'
-                      : '忘記'}
-                    {log.symptom_triggered ? ' · 症狀觸發' : ''}
-                  </Text>
-                  {log.notes ? <Text style={styles.listCardNote}>{log.notes}</Text> : null}
+                  <View style={styles.detailCardContent}>
+                    <Text style={styles.detailCardTitle}>{log.regimen_name}</Text>
+                    <Text style={styles.listCardMeta}>
+                      {log.dose || '未填劑量'} ·{' '}
+                      {log.adherence_status === 'taken'
+                        ? '準時'
+                        : log.adherence_status === 'delayed'
+                        ? '延遲'
+                        : log.adherence_status === 'skipped'
+                        ? '略過'
+                        : '忘記'}
+                      {log.symptom_triggered ? ' · 症狀觸發' : ''}
+                    </Text>
+                    {log.notes ? <Text style={styles.listCardNote}>{log.notes}</Text> : null}
+                  </View>
                 </View>
               ))
             )}
@@ -850,12 +995,9 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
             </View>
           ) : (
             sSessions.map((session: SleepSessionEntry) => (
-              <View key={session.id} style={styles.listCard}>
-                <View style={styles.listCardHeader}>
-                  <Text style={styles.listCardTitle}>
-                    {session.is_main_sleep ? '主要睡眠' : '小睡'}
-                  </Text>
-                  <Text style={styles.listCardTime}>
+              <View key={session.id} style={styles.detailCard}>
+                <View style={styles.detailCardHeader}>
+                  <Text style={styles.detailCardTime}>
                     {session.start_time && session.end_time
                       ? `${format(new Date(session.start_time), 'HH:mm')} - ${format(
                           new Date(session.end_time),
@@ -865,15 +1007,41 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
                       ? `預計 ${session.planned_start_time}`
                       : '未填時間'}
                   </Text>
+                  <View style={styles.detailCardActions}>
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate('SleepLog')}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Icon name="pencil" size={20} color={colors.text.secondary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                        showDeleteDialog(
+                          'sleep',
+                          session.id,
+                          session.is_main_sleep ? '主要睡眠' : '小睡'
+                        )
+                      }
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      style={styles.deleteButton}
+                    >
+                      <Icon name="delete" size={20} color={colors.error} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <Text style={styles.listCardMeta}>
-                  {session.duration_minutes
-                    ? `${(session.duration_minutes / 60).toFixed(1)} 小時`
-                    : session.planned_duration_minutes
-                    ? `${(session.planned_duration_minutes / 60).toFixed(1)} 小時 (預計)`
-                    : '未填時長'}
-                  {session.quality_score ? ` · 品質 ${session.quality_score}/5` : ''}
-                </Text>
+                <View style={styles.detailCardContent}>
+                  <Text style={styles.detailCardTitle}>
+                    {session.is_main_sleep ? '主要睡眠' : '小睡'}
+                  </Text>
+                  <Text style={styles.listCardMeta}>
+                    {session.duration_minutes
+                      ? `${(session.duration_minutes / 60).toFixed(1)} 小時`
+                      : session.planned_duration_minutes
+                      ? `${(session.planned_duration_minutes / 60).toFixed(1)} 小時 (預計)`
+                      : '未填時長'}
+                    {session.quality_score ? ` · 品質 ${session.quality_score}/5` : ''}
+                  </Text>
+                </View>
               </View>
             ))
           )}
@@ -896,12 +1064,9 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
             </View>
           ) : (
             aSessions.map((activity: ActivitySessionEntry) => (
-              <View key={activity.id} style={styles.listCard}>
-                <View style={styles.listCardHeader}>
-                  <Text style={styles.listCardTitle}>
-                    {activity.activity_title || activity.activity_type}
-                  </Text>
-                  <Text style={styles.listCardTime}>
+              <View key={activity.id} style={styles.detailCard}>
+                <View style={styles.detailCardHeader}>
+                  <Text style={styles.detailCardTime}>
                     {activity.duration_minutes
                       ? `${activity.duration_minutes} 分`
                       : activity.start_time && activity.end_time
@@ -911,11 +1076,37 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
                         )}`
                       : ''}
                   </Text>
+                  <View style={styles.detailCardActions}>
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate('ActivityLog')}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Icon name="pencil" size={20} color={colors.text.secondary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                        showDeleteDialog(
+                          'activity',
+                          activity.id,
+                          activity.activity_title || activity.activity_type
+                        )
+                      }
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      style={styles.deleteButton}
+                    >
+                      <Icon name="delete" size={20} color={colors.error} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <Text style={styles.listCardMeta}>
-                  {activity.intensity ? `${activity.intensity} 強度` : '一般強度'}
-                </Text>
-                {activity.notes ? <Text style={styles.listCardNote}>{activity.notes}</Text> : null}
+                <View style={styles.detailCardContent}>
+                  <Text style={styles.detailCardTitle}>
+                    {activity.activity_title || activity.activity_type}
+                  </Text>
+                  <Text style={styles.listCardMeta}>
+                    {activity.intensity ? `${activity.intensity} 強度` : '一般強度'}
+                  </Text>
+                  {activity.notes ? <Text style={styles.listCardNote}>{activity.notes}</Text> : null}
+                </View>
               </View>
             ))
           )}
@@ -927,7 +1118,45 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
 
       {/* Bottom Spacer */}
       <View style={styles.bottomSpacer} />
-    </ScrollView>
+      </ScrollView>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={deleteDialog.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={cancelDelete}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Icon name="alert-circle" size={48} color={colors.error} />
+            </View>
+            <Text style={styles.modalTitle}>確認刪除</Text>
+            <Text style={styles.modalMessage}>
+              確定要刪除「{deleteDialog.name}」嗎？{'\n'}
+              此操作無法復原。
+            </Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={cancelDelete}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalButtonTextCancel}>取消</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={confirmDelete}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalButtonTextConfirm}>刪除</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
   )
 }
 
@@ -1352,6 +1581,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.xs,
   },
+  symptomHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   symptomSeverity: {
     fontSize: typography.fontSize.sm,
     color: colors.error,
@@ -1368,5 +1602,111 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: spacing.xl,
+  },
+  // Detail Card Styles
+  detailCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  detailCardLast: {
+    marginBottom: 0,
+  },
+  detailCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  detailCardTime: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    fontWeight: typography.fontWeight.medium,
+  },
+  detailCardActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  deleteButton: {
+    marginLeft: spacing.xs,
+  },
+  detailCardContent: {
+    gap: spacing.xs,
+  },
+  detailCardTitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  detailCardNotes: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    fontStyle: 'italic',
+    marginTop: spacing.xs,
+  },
+  // Delete Confirmation Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: spacing.xl,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  modalHeader: {
+    marginBottom: spacing.md,
+  },
+  modalTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: typography.fontSize.base,
+    color: colors.text.secondary,
+    marginBottom: spacing.xl,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: colors.gray[100],
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  modalButtonConfirm: {
+    backgroundColor: colors.error,
+  },
+  modalButtonTextCancel: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  modalButtonTextConfirm: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.white,
   },
 })

@@ -86,6 +86,15 @@ export class HealthLogService {
     if (error) throw error
   }
 
+  static async deleteMedicationLog(logId: string) {
+    const { error } = await (client as any)
+      .from('medication_administrations')
+      .delete()
+      .eq('id', logId)
+
+    if (error) throw error
+  }
+
   static async logSleepSession(userId: string, input: CreateSleepSessionInput) {
     const payload: Record<string, any> = {
       user_id: userId,
@@ -116,6 +125,15 @@ export class HealthLogService {
     if (error) throw error
   }
 
+  static async deleteSleepSession(sessionId: string) {
+    const { error } = await (client as any)
+      .from('sleep_sessions')
+      .delete()
+      .eq('id', sessionId)
+
+    if (error) throw error
+  }
+
   static async logActivitySession(userId: string, input: CreateActivitySessionInput) {
     const payload: Record<string, any> = {
       user_id: userId,
@@ -137,6 +155,15 @@ export class HealthLogService {
     if (input.notes) payload.notes = input.notes
 
     const { error } = await (client as any).from('activity_sessions').insert(payload)
+    if (error) throw error
+  }
+
+  static async deleteActivitySession(sessionId: string) {
+    const { error } = await (client as any)
+      .from('activity_sessions')
+      .delete()
+      .eq('id', sessionId)
+
     if (error) throw error
   }
 
