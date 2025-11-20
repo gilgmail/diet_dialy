@@ -61,9 +61,14 @@ const SymptomAnalysisEngine: React.FC<SymptomAnalysisEngineProps> = ({
   const filteredRecords = useMemo(() => {
     if (timeRange === 'all') return records;
 
-    const now = new Date();
+    const timestamps = records
+      .map(record => new Date(record.timestamp).getTime())
+      .filter((value) => Number.isFinite(value));
+
+    const referenceTimestamp = timestamps.length > 0 ? Math.max(...timestamps) : Date.now();
+    const referenceDate = new Date(referenceTimestamp);
     const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 180;
-    const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    const cutoff = new Date(referenceDate.getTime() - days * 24 * 60 * 60 * 1000);
 
     return records.filter(record => new Date(record.timestamp) >= cutoff);
   }, [records, timeRange]);
@@ -349,51 +354,53 @@ const SymptomAnalysisEngine: React.FC<SymptomAnalysisEngineProps> = ({
     </div>
   );
 
-  const renderPatternsTab = () => (
-    <div className="space-y-6">
-      {/* 症狀雷達圖 */}
-      <div className="bg-white p-6 rounded-lg border">
-        <h3 className="text-lg font-semibold mb-4">症狀影響雷達圖</h3>
-        <div style={{ width: '100%', height: '400px' }}>
-          <ResponsiveContainer>
-            <RadarChart data={radarData.length > 0 ? radarData[0] ?
-              Object.keys(radarData[0]).filter(key => key !== 'symptom').map(category => ({
-                category,
-                ...radarData.reduce((acc, symptom) => ({
-                  ...acc,
-                  [symptom.symptom]: symptom[category as keyof typeof symptom] || 0
-                }), {})
-              })) : [] : []}>
-              <PolarGrid />
-              <PolarAngleAxis dataKey="category" />
-              <PolarRadiusAxis angle={0} domain={[0, 100]} />
-              {radarData.slice(0, 3).map((symptom, index) => (
-                <Radar
-                  key={symptom.symptom}
-                  name={symptom.symptom}
-                  dataKey={symptom.symptom}
-                  stroke={['#3b82f6', '#ef4444', '#10b981'][index]}
-                  fill={['#3b82f6', '#ef4444', '#10b981'][index]}
-                  fillOpacity={0.1}
-                  strokeWidth={2}
-                />
-              ))}
-              <Tooltip />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+  const renderPatternsTab = () => {
+    const topPattern = symptomPatterns[0];
 
-      {/* 時間模式分析 */}
-      <div className="bg-white p-6 rounded-lg border">
-        <h3 className="text-lg font-semibold mb-4">症狀發生時間模式</h3>
-        <div className="space-y-4">
-          {symptomPatterns.slice(0, 3).map(pattern => (
-            <div key={pattern.symptom} className="border-l-4 border-blue-500 pl-4">
-              <h4 className="font-medium">{pattern.symptom}</h4>
-              <div style={{ width: '100%', height: '150px' }} className="mt-2">
+    return (
+      <div className="space-y-6">
+        {/* 症狀雷達圖 */}
+        <div className="bg-white p-6 rounded-lg border">
+          <h3 className="text-lg font-semibold mb-4">症狀影響雷達圖</h3>
+          <div style={{ width: '100%', height: '400px' }}>
+            <ResponsiveContainer>
+              <RadarChart data={radarData.length > 0 ? radarData[0] ?
+                Object.keys(radarData[0]).filter(key => key !== 'symptom').map(category => ({
+                  category,
+                  ...radarData.reduce((acc, symptom) => ({
+                    ...acc,
+                    [symptom.symptom]: symptom[category as keyof typeof symptom] || 0
+                  }), {})
+                })) : [] : []}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="category" />
+                <PolarRadiusAxis angle={0} domain={[0, 100]} />
+                {radarData.slice(0, 3).map((symptom, index) => (
+                  <Radar
+                    key={symptom.symptom}
+                    name={symptom.symptom}
+                    dataKey={symptom.symptom}
+                    stroke={['#3b82f6', '#ef4444', '#10b981'][index]}
+                    fill={['#3b82f6', '#ef4444', '#10b981'][index]}
+                    fillOpacity={0.1}
+                    strokeWidth={2}
+                  />
+                ))}
+                <Tooltip />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* 時間模式分析 */}
+        <div className="bg-white p-6 rounded-lg border">
+          <h3 className="text-lg font-semibold mb-4">症狀發生時間模式</h3>
+          {topPattern ? (
+            <div className="border-l-4 border-blue-500 pl-4">
+              <h4 className="font-medium">{topPattern.symptom}</h4>
+              <div style={{ width: '100%', height: '200px' }} className="mt-2">
                 <ResponsiveContainer>
-                  <AreaChart data={pattern.timePatterns}>
+                  <AreaChart data={topPattern.timePatterns}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="hour" domain={[0, 23]} />
                     <YAxis />
@@ -409,9 +416,10 @@ const SymptomAnalysisEngine: React.FC<SymptomAnalysisEngineProps> = ({
                 </ResponsiveContainer>
               </div>
             </div>
-          ))}
+          ) : (
+            <p className="text-sm text-gray-500">目前資料量不足，無法分析時間模式。</p>
+          )}
         </div>
-      </div>
 
       {/* 常見觸發因子 */}
       <div className="bg-white p-6 rounded-lg border">
@@ -587,6 +595,9 @@ const SymptomAnalysisEngine: React.FC<SymptomAnalysisEngineProps> = ({
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg border">
         <h3 className="text-lg font-semibold mb-4">症狀預測分析</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          基於過去 {filteredRecords.length} 條記錄的風險預測摘要
+        </p>
 
         {/* 風險預測 */}
         <div className="space-y-4">
@@ -601,7 +612,7 @@ const SymptomAnalysisEngine: React.FC<SymptomAnalysisEngineProps> = ({
                   <div className="flex-1">
                     <div className="font-medium">{pattern.symptom}</div>
                     <div className="text-sm text-gray-600 mt-1">
-                      基於過去 {pattern.frequency} 次記錄的分析
+                      歷史紀錄：{pattern.frequency} 次
                     </div>
                   </div>
                   <div className={`text-sm font-medium ${riskColor}`}>
@@ -686,13 +697,17 @@ const SymptomAnalysisEngine: React.FC<SymptomAnalysisEngineProps> = ({
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800">症狀智能分析系統</h2>
         <p className="text-gray-600 mt-2">
-          基於 {filteredRecords.length} 條記錄的深度分析報告 ({timeRange === 'all' ? '全部' : timeRange})
+          基於 {filteredRecords.length} 條記錄的深度分析報告 ({timeRange})
         </p>
       </div>
 
       {/* 標籤導航 */}
       <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
+        <nav
+          className="-mb-px flex space-x-8"
+          role="tablist"
+          aria-label="症狀分析選單"
+        >
           {[
             { key: 'overview', label: '總覽分析' },
             { key: 'patterns', label: '模式識別' },
@@ -703,6 +718,11 @@ const SymptomAnalysisEngine: React.FC<SymptomAnalysisEngineProps> = ({
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.key}
+              aria-controls={`symptom-tabpanel-${tab.key}`}
+              id={`symptom-tab-${tab.key}`}
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === tab.key
                   ? 'border-blue-500 text-blue-600'
@@ -716,13 +736,48 @@ const SymptomAnalysisEngine: React.FC<SymptomAnalysisEngineProps> = ({
       </div>
 
       {/* 內容區域 */}
-      {activeTab === 'overview' && renderOverviewTab()}
-      {activeTab === 'patterns' && renderPatternsTab()}
-      {activeTab === 'correlations' && renderCorrelationsTab()}
-      {activeTab === 'trends' && renderTrendsTab()}
-      {activeTab === 'predictions' && renderPredictionsTab()}
+      <div
+        role="tabpanel"
+        id={`symptom-tabpanel-overview`}
+        aria-labelledby="symptom-tab-overview"
+        hidden={activeTab !== 'overview'}
+      >
+        {activeTab === 'overview' && renderOverviewTab()}
+      </div>
+      <div
+        role="tabpanel"
+        id={`symptom-tabpanel-patterns`}
+        aria-labelledby="symptom-tab-patterns"
+        hidden={activeTab !== 'patterns'}
+      >
+        {activeTab === 'patterns' && renderPatternsTab()}
+      </div>
+      <div
+        role="tabpanel"
+        id={`symptom-tabpanel-correlations`}
+        aria-labelledby="symptom-tab-correlations"
+        hidden={activeTab !== 'correlations'}
+      >
+        {activeTab === 'correlations' && renderCorrelationsTab()}
+      </div>
+      <div
+        role="tabpanel"
+        id={`symptom-tabpanel-trends`}
+        aria-labelledby="symptom-tab-trends"
+        hidden={activeTab !== 'trends'}
+      >
+        {activeTab === 'trends' && renderTrendsTab()}
+      </div>
+      <div
+        role="tabpanel"
+        id={`symptom-tabpanel-predictions`}
+        aria-labelledby="symptom-tab-predictions"
+        hidden={activeTab !== 'predictions'}
+      >
+        {activeTab === 'predictions' && renderPredictionsTab()}
+      </div>
     </div>
   );
-};
+};}
 
 export default SymptomAnalysisEngine;

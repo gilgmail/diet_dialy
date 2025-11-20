@@ -209,6 +209,7 @@ const nextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   output: 'standalone',
+  outputFileTracingRoot: require('path').join(__dirname),
   serverExternalPackages: [],
   eslint: {
     // Allow production builds to complete with ESLint warnings

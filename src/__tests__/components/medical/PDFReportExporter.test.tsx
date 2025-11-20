@@ -565,7 +565,11 @@ describe('PDFReportExporter', () => {
       fireEvent.click(generateButton);
 
       await waitFor(() => {
-        const pdfInstance = jsPDF.mock.results[jsPDF.mock.results.length - 1].value;
+        expect(jsPDF.mock.results.length).toBeGreaterThan(0);
+        const lastResult = jsPDF.mock.results[jsPDF.mock.results.length - 1];
+        expect(lastResult).toBeDefined();
+        expect(lastResult.value).toBeDefined();
+        const pdfInstance = lastResult.value;
         expect(pdfInstance.save).toHaveBeenCalledWith(
           expect.stringMatching(/Diet_Daily_健康報告_7天_\d{4}-\d{2}-\d{2}\.pdf/)
         );
@@ -590,7 +594,11 @@ describe('PDFReportExporter', () => {
       fireEvent.click(generateButton);
 
       await waitFor(() => {
-        const pdfInstance = jsPDF.mock.results[0].value;
+        expect(jsPDF.mock.results.length).toBeGreaterThan(0);
+        const lastResult = jsPDF.mock.results[jsPDF.mock.results.length - 1];
+        expect(lastResult).toBeDefined();
+        expect(lastResult.value).toBeDefined();
+        const pdfInstance = lastResult.value;
         expect(pdfInstance.text).toHaveBeenCalledWith(
           expect.stringContaining('Test Patient'),
           expect.any(Number),
@@ -637,7 +645,11 @@ describe('PDFReportExporter', () => {
       fireEvent.click(generateButton);
 
       await waitFor(() => {
-        const pdfInstance = jsPDF.mock.results[0].value;
+        expect(jsPDF.mock.results.length).toBeGreaterThan(0);
+        const lastResult = jsPDF.mock.results[jsPDF.mock.results.length - 1];
+        expect(lastResult).toBeDefined();
+        expect(lastResult.value).toBeDefined();
+        const pdfInstance = lastResult.value;
         expect(pdfInstance.splitTextToSize).toHaveBeenCalledWith(
           expect.stringContaining('免責聲明'),
           expect.any(Number)
