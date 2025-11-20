@@ -7,12 +7,13 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  Modal,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Button, SegmentedButtons, TextInput } from 'react-native-paper'
+import { Button, TextInput } from 'react-native-paper'
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
 import { format } from 'date-fns'
-import { zhTW } from 'date-fns/locale'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { colors, spacing, typography } from '@/theme'
@@ -23,34 +24,18 @@ import type { RecentActivityTemplate } from '../types'
 
 type ActivityLogScreenProps = NativeStackScreenProps<MainStackParamList, 'ActivityLog'>
 
-const ACTIVITY_PRESETS = [
-  { value: 'walk', label: '散步' },
-  { value: 'run', label: '跑步' },
-  { value: 'yoga', label: '瑜珈' },
-  { value: 'cycling', label: '騎車' },
-  { value: 'strength', label: '重訓' },
-  { value: 'custom', label: '自訂' },
-] as const
-
-const INTENSITY_OPTIONS = [
-  { value: 'low', label: '輕度' },
-  { value: 'moderate', label: '中度' },
-  { value: 'high', label: '重度' },
-] as const
-
 export function ActivityLogScreen({ navigation }: ActivityLogScreenProps) {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
-  const [activityType, setActivityType] = useState<typeof ACTIVITY_PRESETS[number]['value']>('walk')
-  const [customActivity, setCustomActivity] = useState('')
-  const [intensity, setIntensity] = useState<typeof INTENSITY_OPTIONS[number]['value']>('moderate')
-  const [durationMinutes, setDurationMinutes] = useState('')
+  const [activityTitle, setActivityTitle] = useState('')
+  const [durationMinutes, setDurationMinutes] = useState('30') // 預設 30 分鐘
   const [calories, setCalories] = useState('')
   const [steps, setSteps] = useState('')
   const [notes, setNotes] = useState('')
   const [startTime, setStartTime] = useState<Date | null>(null)
-  const [endTime, setEndTime] = useState<Date | null>(null)
-  const [showPicker, setShowPicker] = useState<'start' | 'end' | null>(null)
+  const [showTimePicker, setShowTimePicker] = useState(false)
+  const [tempTime, setTempTime] = useState(new Date())
+  const [showOtherData, setShowOtherData] = useState(false)
 
   const recentActivitiesQuery = useQuery({
     queryKey: ['recentActivities', user?.id],
@@ -65,20 +50,17 @@ export function ActivityLogScreen({ navigation }: ActivityLogScreenProps) {
     mutationFn: async () => {
       if (!user?.id) throw new Error('尚未登入')
 
-      const titleValue = customActivity.trim() || undefined
-
-      if (activityType === 'custom' && !titleValue) {
-        throw new Error('請輸入自訂活動名稱')
+      const titleValue = activityTitle.trim()
+      if (!titleValue) {
+        throw new Error('請輸入活動名稱')
       }
 
-      const typeValue = activityType === 'custom' ? 'custom' : activityType
-
       const payload = HealthLogService.buildActivityInput({
-        activityType: typeValue,
+        activityType: titleValue, // 使用活動名稱作為 type
         title: titleValue,
-        intensity,
+        intensity: null, // 不記錄強度
         startTime,
-        endTime,
+        endTime: null, // 不使用結束時間
         durationMinutes: durationMinutes ? Number(durationMinutes) : null,
         calories: calories ? Number(calories) : null,
         steps: steps ? Number(steps) : null,
@@ -97,32 +79,19 @@ export function ActivityLogScreen({ navigation }: ActivityLogScreenProps) {
     },
   })
 
-  const actualDuration = useMemo(() => {
-    if (!startTime || !endTime) return null
-    const diff = (endTime.getTime() - startTime.getTime()) / 60000
-    if (diff <= 0) return null
-    return `${diff} 分鐘`
-  }, [startTime, endTime])
-
   const handlePickerChange = (event: DateTimePickerEvent, date?: Date) => {
-    if (event.type === 'dismissed') {
-      setShowPicker(null)
-      return
+    if (date) {
+      setTempTime(date)
     }
-    if (!date) {
-      setShowPicker(null)
-      return
-    }
+  }
 
-    if (showPicker === 'start') {
-      setStartTime(date)
-    } else if (showPicker === 'end') {
-      setEndTime(date)
-    }
+  const handleConfirmTime = () => {
+    setStartTime(tempTime)
+    setShowTimePicker(false)
+  }
 
-    if (Platform.OS === 'android') {
-      setShowPicker(null)
-    }
+  const handleCancelTime = () => {
+    setShowTimePicker(false)
   }
 
   return (
@@ -130,49 +99,27 @@ export function ActivityLogScreen({ navigation }: ActivityLogScreenProps) {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.screenTitle}>運動紀錄</Text>
 
+        {/* 活動名稱 */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>活動類型</Text>
-          <SegmentedButtons
-            value={activityType}
-            onValueChange={(value) =>
-              setActivityType(value as typeof ACTIVITY_PRESETS[number]['value'])
-            }
-            buttons={ACTIVITY_PRESETS.map(option => ({
-              value: option.value,
-              label: option.label,
-            }))}
-          />
+          <Text style={styles.sectionTitle}>活動名稱</Text>
           <TextInput
             mode="outlined"
-            label={activityType === 'custom' ? '自訂活動名稱' : '活動標題（選填）'}
-            placeholder="例如：夜間散步、核心訓練"
-            value={customActivity}
-            onChangeText={setCustomActivity}
+            label="輸入活動名稱"
+            placeholder="例如：晨跑、瑜珈、重訓"
+            value={activityTitle}
+            onChangeText={setActivityTitle}
             style={styles.input}
           />
           {recentActivitiesQuery.data && recentActivitiesQuery.data.length > 0 && (
             <View>
-              <Text style={styles.helperText}>常用活動</Text>
+              <Text style={styles.helperText}>最近的記錄（點擊快速填入）</Text>
               <View style={styles.suggestionRow}>
-                {recentActivitiesQuery.data.map((activity: RecentActivityTemplate) => (
+                {recentActivitiesQuery.data.slice(0, 5).map((activity: RecentActivityTemplate) => (
                   <TouchableOpacity
                     key={activity.id}
                     style={styles.suggestionChip}
                     onPress={() => {
-                      if (ACTIVITY_PRESETS.some((preset) => preset.value === activity.activity_type)) {
-                        setActivityType(activity.activity_type as typeof ACTIVITY_PRESETS[number]['value'])
-                        setCustomActivity(activity.activity_title ?? '')
-                      } else {
-                        setActivityType('custom')
-                        setCustomActivity(activity.activity_title || activity.activity_type)
-                      }
-                      if (activity.intensity) {
-                        setIntensity(
-                          (INTENSITY_OPTIONS.find((o) => o.value === activity.intensity)?.value as
-                            | typeof INTENSITY_OPTIONS[number]['value']
-                            | undefined) ?? 'moderate'
-                        )
-                      }
+                      setActivityTitle(activity.activity_title || activity.activity_type)
                       if (activity.duration_minutes) {
                         setDurationMinutes(String(activity.duration_minutes))
                       }
@@ -188,19 +135,12 @@ export function ActivityLogScreen({ navigation }: ActivityLogScreenProps) {
           )}
         </View>
 
+        {/* 活動時長 */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>強度與時長</Text>
-          <SegmentedButtons
-            value={intensity}
-            onValueChange={(value) =>
-              setIntensity(value as typeof INTENSITY_OPTIONS[number]['value'])
-            }
-            buttons={INTENSITY_OPTIONS}
-          />
-
+          <Text style={styles.sectionTitle}>活動時長</Text>
           <TextInput
             mode="outlined"
-            label="活動時長 (分鐘)"
+            label="分鐘"
             keyboardType="numeric"
             value={durationMinutes}
             onChangeText={setDurationMinutes}
@@ -208,64 +148,68 @@ export function ActivityLogScreen({ navigation }: ActivityLogScreenProps) {
           />
         </View>
 
+        {/* 開始時間 */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>時間（選填）</Text>
-          <View style={styles.row}>
-            <TouchableOpacity
-              style={[styles.dateButton, styles.half]}
-              onPress={() => setShowPicker('start')}
-            >
-              <Text style={styles.dateText}>
-                {startTime
-                  ? format(startTime, 'MM/dd HH:mm', { locale: zhTW })
-                  : '未設定'}
-              </Text>
-              <Text style={styles.dateHint}>開始時間</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.dateButton, styles.half]}
-              onPress={() => setShowPicker('end')}
-            >
-              <Text style={styles.dateText}>
-                {endTime
-                  ? format(endTime, 'MM/dd HH:mm', { locale: zhTW })
-                  : '未設定'}
-              </Text>
-              <Text style={styles.dateHint}>結束時間</Text>
-            </TouchableOpacity>
-          </View>
-          {actualDuration && (
-            <Text style={styles.helperText}>實際 {actualDuration}</Text>
-          )}
+          <Text style={styles.sectionTitle}>開始時間（選填）</Text>
+          <TouchableOpacity
+            style={styles.timeButton}
+            onPress={() => {
+              if (startTime) {
+                setTempTime(startTime)
+              }
+              setShowTimePicker(true)
+            }}
+          >
+            <Icon name="clock-outline" size={24} color={colors.text.secondary} />
+            <Text style={styles.timeText}>
+              {startTime ? format(startTime, 'HH:mm') : '未設定'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
+        {/* 其他數據（折疊） */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>其他數據（選填）</Text>
-          <View style={styles.row}>
-            <TextInput
-              mode="outlined"
-              label="卡路里"
-              keyboardType="numeric"
-              value={calories}
-              onChangeText={setCalories}
-              style={[styles.input, styles.half]}
+          <TouchableOpacity
+            style={styles.collapseHeader}
+            onPress={() => setShowOtherData(!showOtherData)}
+          >
+            <Text style={styles.sectionTitle}>其他數據（選填）</Text>
+            <Icon
+              name={showOtherData ? 'chevron-up' : 'chevron-down'}
+              size={24}
+              color={colors.text.secondary}
             />
-            <TextInput
-              mode="outlined"
-              label="步數"
-              keyboardType="numeric"
-              value={steps}
-              onChangeText={setSteps}
-              style={[styles.input, styles.half]}
-            />
-          </View>
-          <TextInput
-            mode="outlined"
-            label="備註"
-            multiline
-            value={notes}
-            onChangeText={setNotes}
-          />
+          </TouchableOpacity>
+          {showOtherData && (
+            <>
+              <View style={styles.row}>
+                <TextInput
+                  mode="outlined"
+                  label="卡路里"
+                  keyboardType="numeric"
+                  value={calories}
+                  onChangeText={setCalories}
+                  style={[styles.input, styles.half]}
+                />
+                <TextInput
+                  mode="outlined"
+                  label="步數"
+                  keyboardType="numeric"
+                  value={steps}
+                  onChangeText={setSteps}
+                  style={[styles.input, styles.half]}
+                />
+              </View>
+              <TextInput
+                mode="outlined"
+                label="備註"
+                multiline
+                value={notes}
+                onChangeText={setNotes}
+                style={styles.input}
+              />
+            </>
+          )}
         </View>
 
         <Button
@@ -278,18 +222,34 @@ export function ActivityLogScreen({ navigation }: ActivityLogScreenProps) {
         </Button>
       </ScrollView>
 
-      {showPicker && (
-        <DateTimePicker
-          value={
-            showPicker === 'start'
-              ? startTime ?? new Date()
-              : endTime ?? new Date()
-          }
-          mode="datetime"
-          display="spinner"
-          onChange={handlePickerChange}
-        />
-      )}
+      {/* 時間選擇器 Modal */}
+      <Modal
+        visible={showTimePicker}
+        transparent
+        animationType="slide"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.pickerContainer}>
+            <View style={styles.pickerHeader}>
+              <TouchableOpacity onPress={handleCancelTime}>
+                <Text style={styles.pickerCancelText}>取消</Text>
+              </TouchableOpacity>
+              <Text style={styles.pickerTitle}>選擇時間</Text>
+              <TouchableOpacity onPress={handleConfirmTime}>
+                <Text style={styles.pickerConfirmText}>確認</Text>
+              </TouchableOpacity>
+            </View>
+            <DateTimePicker
+              value={tempTime}
+              mode="time"
+              display="spinner"
+              onChange={handlePickerChange}
+              locale="zh-TW"
+              is24Hour={true}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -367,6 +327,59 @@ const styles = StyleSheet.create({
   },
   suggestionChipText: {
     color: colors.primary[600],
+    fontWeight: typography.fontWeight.semibold,
+  },
+  timeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: spacing.md,
+  },
+  timeText: {
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+    flex: 1,
+  },
+  collapseHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  pickerContainer: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: spacing.xl,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  pickerTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  pickerCancelText: {
+    fontSize: typography.fontSize.base,
+    color: colors.text.secondary,
+  },
+  pickerConfirmText: {
+    fontSize: typography.fontSize.base,
+    color: colors.primary[500],
     fontWeight: typography.fontWeight.semibold,
   },
 })
