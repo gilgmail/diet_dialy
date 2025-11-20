@@ -997,16 +997,16 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
             sSessions.map((session: SleepSessionEntry) => (
               <View key={session.id} style={styles.detailCard}>
                 <View style={styles.detailCardHeader}>
-                  <Text style={styles.detailCardTime}>
-                    {session.start_time && session.end_time
-                      ? `${format(new Date(session.start_time), 'HH:mm')} - ${format(
-                          new Date(session.end_time),
-                          'HH:mm'
-                        )}`
-                      : session.planned_start_time
-                      ? `預計 ${session.planned_start_time}`
-                      : '未填時間'}
-                  </Text>
+                  <View style={styles.healthRecordTitleRow}>
+                    <Icon
+                      name={session.is_main_sleep ? 'moon-waning-crescent' : 'power-sleep'}
+                      size={20}
+                      color={colors.secondary[500]}
+                    />
+                    <Text style={styles.detailCardTitle}>
+                      {session.is_main_sleep ? '主要睡眠' : '小睡'}
+                    </Text>
+                  </View>
                   <View style={styles.detailCardActions}>
                     <TouchableOpacity
                       onPress={() => navigation.navigate('SleepLog')}
@@ -1030,17 +1030,40 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
                   </View>
                 </View>
                 <View style={styles.detailCardContent}>
-                  <Text style={styles.detailCardTitle}>
-                    {session.is_main_sleep ? '主要睡眠' : '小睡'}
-                  </Text>
-                  <Text style={styles.listCardMeta}>
-                    {session.duration_minutes
-                      ? `${(session.duration_minutes / 60).toFixed(1)} 小時`
-                      : session.planned_duration_minutes
-                      ? `${(session.planned_duration_minutes / 60).toFixed(1)} 小時 (預計)`
-                      : '未填時長'}
-                    {session.quality_score ? ` · 品質 ${session.quality_score}/5` : ''}
-                  </Text>
+                  {/* 時間資訊 */}
+                  <View style={styles.healthRecordInfoRow}>
+                    <Icon name="clock-outline" size={16} color={colors.text.secondary} />
+                    <Text style={styles.healthRecordInfo}>
+                      {session.start_time && session.end_time
+                        ? `${format(new Date(session.start_time), 'HH:mm')} - ${format(
+                            new Date(session.end_time),
+                            'HH:mm'
+                          )}`
+                        : session.planned_start_time
+                        ? `預計 ${session.planned_start_time}`
+                        : '未填時間'}
+                    </Text>
+                  </View>
+                  {/* 時長資訊 */}
+                  <View style={styles.healthRecordInfoRow}>
+                    <Icon name="timer-outline" size={16} color={colors.text.secondary} />
+                    <Text style={styles.healthRecordInfo}>
+                      {session.duration_minutes
+                        ? `${(session.duration_minutes / 60).toFixed(1)} 小時`
+                        : session.planned_duration_minutes
+                        ? `${(session.planned_duration_minutes / 60).toFixed(1)} 小時 (預計)`
+                        : '未填時長'}
+                    </Text>
+                  </View>
+                  {/* 品質評分 */}
+                  {session.quality_score && (
+                    <View style={styles.healthRecordInfoRow}>
+                      <Icon name="star" size={16} color={colors.warning} />
+                      <Text style={styles.healthRecordInfo}>
+                        品質評分：{session.quality_score}/5
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
             ))
@@ -1063,52 +1086,91 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
               <Text style={styles.emptyStateHint}>快走 30 分鐘也能算喔！</Text>
             </View>
           ) : (
-            aSessions.map((activity: ActivitySessionEntry) => (
-              <View key={activity.id} style={styles.detailCard}>
-                <View style={styles.detailCardHeader}>
-                  <Text style={styles.detailCardTime}>
-                    {activity.duration_minutes
-                      ? `${activity.duration_minutes} 分`
-                      : activity.start_time && activity.end_time
-                      ? `${format(new Date(activity.start_time), 'HH:mm')} - ${format(
-                          new Date(activity.end_time),
-                          'HH:mm'
-                        )}`
-                      : ''}
-                  </Text>
-                  <View style={styles.detailCardActions}>
-                    <TouchableOpacity
-                      onPress={() => navigation.navigate('ActivityLog')}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                      <Icon name="pencil" size={20} color={colors.text.secondary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() =>
-                        showDeleteDialog(
-                          'activity',
-                          activity.id,
-                          activity.activity_title || activity.activity_type
-                        )
-                      }
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      style={styles.deleteButton}
-                    >
-                      <Icon name="delete" size={20} color={colors.error} />
-                    </TouchableOpacity>
+            aSessions.map((activity: ActivitySessionEntry) => {
+              // 根據運動類型選擇圖標
+              const getActivityIcon = (type: string) => {
+                const lowerType = type.toLowerCase()
+                if (lowerType.includes('run') || lowerType.includes('跑')) return 'run'
+                if (lowerType.includes('walk') || lowerType.includes('走')) return 'walk'
+                if (lowerType.includes('bike') || lowerType.includes('騎')) return 'bike'
+                if (lowerType.includes('swim') || lowerType.includes('游')) return 'swim'
+                if (lowerType.includes('yoga') || lowerType.includes('瑜')) return 'yoga'
+                if (lowerType.includes('weight') || lowerType.includes('重訓')) return 'dumbbell'
+                return 'run-fast'
+              }
+
+              return (
+                <View key={activity.id} style={styles.detailCard}>
+                  <View style={styles.detailCardHeader}>
+                    <View style={styles.healthRecordTitleRow}>
+                      <Icon
+                        name={getActivityIcon(activity.activity_type)}
+                        size={20}
+                        color={colors.info}
+                      />
+                      <Text style={styles.detailCardTitle}>
+                        {activity.activity_title || activity.activity_type}
+                      </Text>
+                    </View>
+                    <View style={styles.detailCardActions}>
+                      <TouchableOpacity
+                        onPress={() => navigation.navigate('ActivityLog')}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <Icon name="pencil" size={20} color={colors.text.secondary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() =>
+                          showDeleteDialog(
+                            'activity',
+                            activity.id,
+                            activity.activity_title || activity.activity_type
+                          )
+                        }
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        style={styles.deleteButton}
+                      >
+                        <Icon name="delete" size={20} color={colors.error} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  <View style={styles.detailCardContent}>
+                    {/* 時長資訊 */}
+                    {activity.duration_minutes && (
+                      <View style={styles.healthRecordInfoRow}>
+                        <Icon name="timer-outline" size={16} color={colors.text.secondary} />
+                        <Text style={styles.healthRecordInfo}>
+                          {activity.duration_minutes} 分鐘
+                        </Text>
+                      </View>
+                    )}
+                    {/* 時間範圍 */}
+                    {activity.start_time && activity.end_time && (
+                      <View style={styles.healthRecordInfoRow}>
+                        <Icon name="clock-outline" size={16} color={colors.text.secondary} />
+                        <Text style={styles.healthRecordInfo}>
+                          {format(new Date(activity.start_time), 'HH:mm')} - {format(new Date(activity.end_time), 'HH:mm')}
+                        </Text>
+                      </View>
+                    )}
+                    {/* 強度 */}
+                    <View style={styles.healthRecordInfoRow}>
+                      <Icon name="speedometer" size={16} color={colors.text.secondary} />
+                      <Text style={styles.healthRecordInfo}>
+                        {activity.intensity ? `${activity.intensity} 強度` : '一般強度'}
+                      </Text>
+                    </View>
+                    {/* 備註 */}
+                    {activity.notes && (
+                      <View style={styles.healthRecordInfoRow}>
+                        <Icon name="note-text-outline" size={16} color={colors.text.secondary} />
+                        <Text style={styles.healthRecordInfo}>{activity.notes}</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
-                <View style={styles.detailCardContent}>
-                  <Text style={styles.detailCardTitle}>
-                    {activity.activity_title || activity.activity_type}
-                  </Text>
-                  <Text style={styles.listCardMeta}>
-                    {activity.intensity ? `${activity.intensity} 強度` : '一般強度'}
-                  </Text>
-                  {activity.notes ? <Text style={styles.listCardNote}>{activity.notes}</Text> : null}
-                </View>
-              </View>
-            ))
+              )
+            })
           )}
         </View>
       )}
@@ -1646,6 +1708,23 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     fontStyle: 'italic',
     marginTop: spacing.xs,
+  },
+  // Health Record Specific Styles
+  healthRecordTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  healthRecordInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  healthRecordInfo: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    flex: 1,
   },
   // Delete Confirmation Modal Styles
   modalOverlay: {
