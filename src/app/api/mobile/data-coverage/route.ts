@@ -8,9 +8,17 @@ export const dynamic = 'force-dynamic'
  * GET /api/mobile/data-coverage?userId=xxx
  */
 export async function GET(request: NextRequest) {
+  console.log('[MobileDataCoverage] GET request received:', {
+    url: request.url,
+    method: request.method,
+    headers: Object.fromEntries(request.headers.entries()),
+  })
+
   try {
     const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get('userId')
+
+    console.log('[MobileDataCoverage] Request params:', { userId })
 
     if (!userId) {
       return NextResponse.json(
@@ -22,29 +30,28 @@ export async function GET(request: NextRequest) {
     // 支援從 Authorization header 讀取 token (React Native)
     const authHeader = request.headers.get('authorization')
     let supabase = await createClient()
+    let user = null
+    let authError = null
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
+      // React Native 使用 Bearer token
       const token = authHeader.replace('Bearer ', '')
-      // 使用 token 建立新的 Supabase client
       const { createClient: createSupabaseClient } = await import('@supabase/supabase-js')
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      })
+      const tempClient = createSupabaseClient(supabaseUrl, supabaseAnonKey)
+      const { data: { user: tokenUser }, error: tokenError } = await tempClient.auth.getUser(token)
+      user = tokenUser
+      authError = tokenError
+    } else {
+      // Web 使用 cookies
+      const result = await supabase.auth.getUser()
+      user = result.data.user
+      authError = result.error
     }
 
-    // 檢查使用者權限
-    const {
-      data: { user },
-      error: authError
-    } = await supabase.auth.getUser()
-
     if (authError || !user) {
+      console.error('[MobileDataCoverage] Auth error:', authError)
       return NextResponse.json(
         { success: false, error: '需要登入' },
         { status: 401 }

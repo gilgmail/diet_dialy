@@ -982,8 +982,11 @@ export class DashboardService {
       }
 
       const normalizedBase = apiBase.replace(/\/+$/, '')
+      // 確保路徑正確：如果 base 已經包含 /api，就不再加
       const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
       const endpoint = `${baseApiUrl}/mobile/data-coverage?userId=${userId}`
+
+      console.log('[DashboardService] Fetching data coverage from:', endpoint)
 
       const response = await fetch(endpoint, {
         method: 'GET',
@@ -993,10 +996,21 @@ export class DashboardService {
         },
       })
 
+      console.log('[DashboardService] Data coverage response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+      })
+
       if (!response.ok) {
         const errorText = await response.text()
-        console.warn('[DashboardService] Failed to fetch data coverage', response.status, errorText)
-        return { data: null, error: { message: `HTTP ${response.status}` } }
+        console.warn('[DashboardService] Failed to fetch data coverage', {
+          status: response.status,
+          statusText: response.statusText,
+          endpoint,
+          error: errorText,
+        })
+        return { data: null, error: { message: `HTTP ${response.status}: ${errorText || response.statusText}` } }
       }
 
       const result = await response.json()
@@ -1040,8 +1054,11 @@ export class DashboardService {
       }
 
       const normalizedBase = apiBase.replace(/\/+$/, '')
+      // 確保路徑正確：如果 base 已經包含 /api，就不再加
       const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
       const endpoint = `${baseApiUrl}/mobile/data-coverage/alerts?userId=${userId}&daysThreshold=${daysThreshold}`
+
+      console.log('[DashboardService] Fetching missing data alerts from:', endpoint)
 
       const response = await fetch(endpoint, {
         method: 'GET',
@@ -1051,10 +1068,21 @@ export class DashboardService {
         },
       })
 
+      console.log('[DashboardService] Missing alerts response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+      })
+
       if (!response.ok) {
         const errorText = await response.text()
-        console.warn('[DashboardService] Failed to fetch missing data alerts', response.status, errorText)
-        return { data: null, error: { message: `HTTP ${response.status}` } }
+        console.warn('[DashboardService] Failed to fetch missing data alerts', {
+          status: response.status,
+          statusText: response.statusText,
+          endpoint,
+          error: errorText,
+        })
+        return { data: null, error: { message: `HTTP ${response.status}: ${errorText || response.statusText}` } }
       }
 
       const result = await response.json()
