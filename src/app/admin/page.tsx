@@ -259,6 +259,20 @@ export default function AdminDashboard() {
             </div>
           </Link>
 
+          {/* Data Coverage Dashboard */}
+          <Link href="/admin/data-coverage">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="flex items-center mb-4">
+                <BarChart3 className="w-8 h-8 text-purple-500 mr-3" />
+                <h3 className="text-lg font-semibold text-gray-900">資料充足度儀表</h3>
+              </div>
+              <p className="text-gray-600 mb-4">檢視使用者資料覆蓋率、缺漏項目，提供補資料提醒（Phase A）</p>
+              <div className="flex items-center text-sm text-purple-600">
+                <span>進入儀表 →</span>
+              </div>
+            </div>
+          </Link>
+
           {/* Duplicate Foods Management */}
           <Link href="/admin/duplicate-foods">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer">
@@ -288,7 +302,7 @@ export default function AdminDashboard() {
           {/* Analytics */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 opacity-50">
             <div className="flex items-center mb-4">
-              <BarChart3 className="w-8 h-8 text-purple-500 mr-3" />
+              <BarChart3 className="w-8 h-8 text-indigo-500 mr-3" />
               <h3 className="text-lg font-semibold text-gray-900">數據分析</h3>
             </div>
             <p className="text-gray-600 mb-4">查看使用統計、食物評分趨勢和健康報告</p>
@@ -320,6 +334,20 @@ export default function AdminDashboard() {
               <span>即將推出</span>
             </div>
           </div>
+
+          {/* AI Food Knowledge */}
+          <Link href="/admin/food-knowledge">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="flex items-center mb-4">
+                <Database className="w-8 h-8 text-indigo-500 mr-3" />
+                <h3 className="text-lg font-semibold text-gray-900">AI 食物知識庫</h3>
+              </div>
+              <p className="text-gray-600 mb-4">檢視 AI 食物分析快取狀態、刷新佇列，手動觸發分析</p>
+              <div className="flex items-center text-sm text-indigo-600">
+                <span>進入管理 →</span>
+              </div>
+            </div>
+          </Link>
 
           {/* Database Tools */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 opacity-50">
