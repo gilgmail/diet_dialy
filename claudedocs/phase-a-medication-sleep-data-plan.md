@@ -904,8 +904,8 @@ async function getDailyWellness(userId: string, date: string) {
 - ⏳ **待實作**: health-data-import-worker Edge Function
 - ⏳ **待實作**: daily-wellness-refresh Cron Job
 
-### API Route Handlers (0% 實作)
-- ⏳ **待實作**: `/api/medications/regimens` (POST, GET, PATCH, DELETE)
+### API Route Handlers (部分完成)
+- ✅ `/api/medications/regimens` (POST, GET, PATCH, DELETE)
 - ⏳ **待實作**: `/api/medications/administrations` (POST, GET, PATCH)
 - ⏳ **待實作**: `/api/sleep-sessions` (POST, GET, PATCH)
 - ⏳ **待實作**: `/api/activity-sessions` (POST, GET, PATCH)
@@ -928,7 +928,7 @@ async function getDailyWellness(userId: string, date: string) {
 - **A1 Schema / 種子資料**: 100% 完成 ✅
 - **A2 Edge Functions**: 20% 完成（1/4 完成）
 - **A3 Database Functions**: 100% 完成 ✅
-- **A4 API Gateway**: 0% 完成
+- **A4 API Gateway**: 25% 完成（regimens endpoint 已上線）
 - **A5 Mobile / Web UI**: 0% 完成
 - **A6 QA & 測試**: 0% 完成
 
@@ -941,7 +941,7 @@ async function getDailyWellness(userId: string, date: string) {
 | **A1 Schema / 種子資料** | 011–013 migration、medication seed SQL、同步 triggers | ✅ Migration 撰寫<br>✅ RLS policies<br>✅ 索引設計<br>⏳ 同步 Triggers (4.1, 4.2, 4.3)<br>⏳ IBD 藥品 seed<br>⏳ 測試資料 seed | 無 | 3 日<br>(+1 日 triggers) | 75% 完成 |
 | **A2 Edge Functions** | medication-regimen-sync<br>medication-reminder-handler<br>health-log-auto-dismiss<br>health-data-import-worker | 建立療程時生成 cycles 與 reminders<br>提醒邏輯計算（見 4.2）<br>auto-dismiss 流程<br>健康資料匯入與去重（見 4.3） | A1 完成 | 4 日<br>(+1 日複雜度) | 0% 完成 |
 | **A3 Database Functions** | upsert_sleep_session()<br>upsert_activity_session()<br>refresh_daily_wellness_for_user() | 去重邏輯實作（見 4.3）<br>Materialized view refresh（見 4.6）<br>時區轉換 helpers（見 4.4） | A1 完成 | 2 日 | 0% 完成 |
-| **A4 API Gateway** | `/api/medications/*`<br>`/api/sleep-sessions`<br>`/api/activity-sessions`<br>`/api/daily-wellness-log` | Next.js Route Handler<br>呼叫 Edge Functions<br>錯誤處理與驗證<br>批次 upsert 端點 | A2, A3 完成 | 3 日 | 0% 完成 |
+| **A4 API Gateway** | `/api/medications/*`<br>`/api/sleep-sessions`<br>`/api/activity-sessions`<br>`/api/daily-wellness-log` | Next.js Route Handler<br>呼叫 Edge Functions<br>錯誤處理與驗證<br>批次 upsert 端點 | A2, A3 完成 | 3 日 | 25% 完成（regimens endpoint 已交付） |
 | **A5 Mobile / Web UI** | iOS 紀錄頁（4個）<br>Web admin 控制台<br>提醒設定頁 | FoodLogScreen<br>MedicationLogScreen<br>SleepLogScreen<br>ActivityLogScreen<br>ReminderSettingsScreen<br>共用 hooks 與 types | A4 API 完成 | 5 日<br>(+1 日 4 頁面) | 0% 完成 |
 | **A6 QA & 測試** | 單元測試<br>E2E 測試<br>資料驗證腳本 | Edge Functions 測試（Deno）<br>API 測試（Jest）<br>Playwright 提醒流程<br>時區邊界測試<br>去重邏輯測試<br>資料同步驗證 | 全部模組完成 | 3 日<br>(+1 日測試案例) | 0% 完成 |
 
