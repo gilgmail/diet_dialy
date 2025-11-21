@@ -1,0 +1,7 @@
+auto_commands:
+  - "Run tests"
+  - "Build project"
+  - "Run linter"
+  - "Check docker compose"
+  - "Sync Pi5"
+
