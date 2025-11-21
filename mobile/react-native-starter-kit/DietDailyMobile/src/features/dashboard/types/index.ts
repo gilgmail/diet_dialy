@@ -176,3 +176,29 @@ export interface PieChartData {
     label: string
   }[]
 }
+
+// Phase A: Data Coverage Types
+export interface DataCoverageInfo {
+  user_id: string
+  email: string
+  name: string | null
+  period_start: string
+  period_end: string
+  symptom_entry_days: number
+  total_days: number
+  symptom_coverage_percent: number
+  food_coverage_percent: number
+  medication_coverage_percent: number
+  sleep_coverage_percent: number
+  exercise_coverage_percent: number
+  overall_data_status: 'sufficient' | 'partial' | 'insufficient'
+  missing_categories: string[]
+  last_data_update: string | null
+}
+
+export interface MissingDataAlert {
+  category: string
+  missing_days: number
+  last_entry_date: string | null
+  recommendation: string
+}

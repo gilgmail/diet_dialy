@@ -957,4 +957,125 @@ export class DashboardService {
 
     return insights
   }
+
+  /**
+   * Get data coverage information for the user
+   * Phase A: Data Coverage Dashboard
+   */
+  static async getDataCoverage(userId: string): Promise<{
+    data: DataCoverageInfo | null
+    error: { message: string } | null
+  }> {
+    const apiBase = process.env.EXPO_PUBLIC_API_URL
+    if (!apiBase) {
+      console.warn('[DashboardService] EXPO_PUBLIC_API_URL not configured')
+      return { data: null, error: { message: 'API URL not configured' } }
+    }
+
+    try {
+      const normalizedBase = apiBase.replace(/\/+$/, '')
+      const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
+      const endpoint = `${baseApiUrl}/mobile/data-coverage?userId=${userId}`
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        console.warn('[DashboardService] Failed to fetch data coverage', response.status)
+        return { data: null, error: { message: `HTTP ${response.status}` } }
+      }
+
+      const result = await response.json()
+      if (!result.success || !result.coverage) {
+        return { data: null, error: { message: result.error || '無法取得資料覆蓋率' } }
+      }
+
+      return { data: result.coverage, error: null }
+    } catch (error) {
+      console.error('[DashboardService] Error fetching data coverage:', error)
+      return {
+        data: null,
+        error: { message: error instanceof Error ? error.message : '未知錯誤' },
+      }
+    }
+  }
+
+  /**
+   * Get missing data alerts for the user
+   * Phase A: Missing Data Alerts
+   */
+  static async getMissingDataAlerts(
+    userId: string,
+    daysThreshold: number = 2
+  ): Promise<{
+    data: MissingDataAlert[] | null
+    error: { message: string } | null
+  }> {
+    const apiBase = process.env.EXPO_PUBLIC_API_URL
+    if (!apiBase) {
+      console.warn('[DashboardService] EXPO_PUBLIC_API_URL not configured')
+      return { data: null, error: { message: 'API URL not configured' } }
+    }
+
+    try {
+      const normalizedBase = apiBase.replace(/\/+$/, '')
+      const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
+      const endpoint = `${baseApiUrl}/mobile/data-coverage/alerts?userId=${userId}&daysThreshold=${daysThreshold}`
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        console.warn('[DashboardService] Failed to fetch missing data alerts', response.status)
+        return { data: null, error: { message: `HTTP ${response.status}` } }
+      }
+
+      const result = await response.json()
+      if (!result.success) {
+        return { data: null, error: { message: result.error || '無法取得缺漏提醒' } }
+      }
+
+      return { data: result.alerts || [], error: null }
+    } catch (error) {
+      console.error('[DashboardService] Error fetching missing data alerts:', error)
+      return {
+        data: null,
+        error: { message: error instanceof Error ? error.message : '未知錯誤' },
+      }
+    }
+  }
+}
+
+// Phase A: Data Coverage Types
+export interface DataCoverageInfo {
+  user_id: string
+  email: string
+  name: string | null
+  period_start: string
+  period_end: string
+  symptom_entry_days: number
+  total_days: number
+  symptom_coverage_percent: number
+  food_coverage_percent: number
+  medication_coverage_percent: number
+  sleep_coverage_percent: number
+  exercise_coverage_percent: number
+  overall_data_status: 'sufficient' | 'partial' | 'insufficient'
+  missing_categories: string[]
+  last_data_update: string | null
+}
+
+export interface MissingDataAlert {
+  category: string
+  missing_days: number
+  last_entry_date: string | null
+  recommendation: string
 }

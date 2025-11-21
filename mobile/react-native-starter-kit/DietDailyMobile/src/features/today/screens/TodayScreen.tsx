@@ -20,7 +20,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { format, startOfDay } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
 import { useAuthStore } from '@/shared/stores/authStore'
@@ -41,6 +41,9 @@ import type {
   MedicationRegimenSummary,
   SleepSessionEntry,
 } from '@/features/health-logs/types'
+import { DataCoverageCard } from '@/features/dashboard/components/DataCoverageCard'
+import { MissingDataAlertCard } from '@/features/dashboard/components/MissingDataAlertCard'
+import { useDataCoverage, useMissingDataAlerts } from '@/features/dashboard/hooks/useDataCoverage'
 
 ;(globalThis as any).mLogs = (globalThis as any).mLogs ?? []
 ;(globalThis as any).sSessions = (globalThis as any).sSessions ?? []
@@ -97,6 +100,7 @@ export function TodayScreen() {
   const { user } = useAuthStore()
   const { settings, initializeSettings } = useSettingsStore()
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
+  const queryClient = useQueryClient()
   const today = useMemo(() => startOfDay(new Date()), [])
   const todayKey = useMemo(() => format(today, 'yyyy-MM-dd'), [today])
 
@@ -204,6 +208,10 @@ const activityQuery = useQuery({
 const aSessions = (activityQuery.data ?? []) as ActivitySessionEntry[]
 ;(globalThis as any).aSessions = aSessions
 
+  // Phase A: Data Coverage and Missing Alerts
+  const { coverage: dataCoverage, isLoading: isLoadingCoverage } = useDataCoverage()
+  const { alerts: missingAlerts, isLoading: isLoadingAlerts } = useMissingDataAlerts(2)
+
 const regimenQuery = useQuery({
   queryKey: ['todayActiveRegimens', user?.id],
   queryFn: async () => {
@@ -251,6 +259,9 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
     sleepQuery.refetch()
     activityQuery.refetch()
     regimenQuery.refetch()
+    // Phase A: Refresh data coverage and alerts
+    queryClient.invalidateQueries({ queryKey: ['dataCoverage', user?.id] })
+    queryClient.invalidateQueries({ queryKey: ['missingDataAlerts', user?.id] })
   }
 
   const handleLogMedication = useCallback(
@@ -754,6 +765,20 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
               <Text style={styles.quickActionLabel}>{action.label}</Text>
             </TouchableOpacity>
           ))}
+        </View>
+      )}
+
+      {/* Phase A: Missing Data Alerts */}
+      {activeTab === 'summary' && missingAlerts && missingAlerts.length > 0 && (
+        <View style={{ marginHorizontal: spacing.lg }}>
+          <MissingDataAlertCard alerts={missingAlerts} navigation={navigation} />
+        </View>
+      )}
+
+      {/* Phase A: Data Coverage Card */}
+      {activeTab === 'summary' && dataCoverage && (
+        <View style={{ marginHorizontal: spacing.lg }}>
+          <DataCoverageCard coverage={dataCoverage} />
         </View>
       )}
 
