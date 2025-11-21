@@ -42,6 +42,16 @@ export function DataCoverageCard({ coverage, onPress }: DataCoverageCardProps) {
     return colors.error
   }
 
+  const getLevelInfo = (percent: number) => {
+    if (percent >= 80) return { name: '💎 完美', color: colors.success }
+    if (percent >= 60) return { name: '⭐ 優秀', color: colors.primary }
+    if (percent >= 40) return { name: '🌳 穩定', color: colors.warning }
+    if (percent >= 20) return { name: '🌿 成長中', color: colors.info }
+    return { name: '🌱 新手', color: colors.text.secondary }
+  }
+
+  const overallLevel = getLevelInfo(coverage.overall_data_status === 'sufficient' ? 60 : coverage.symptom_coverage_percent)
+
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, string> = {
       symptoms: '症狀',
@@ -64,15 +74,43 @@ export function DataCoverageCard({ coverage, onPress }: DataCoverageCardProps) {
     >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Icon name="chart-line" size={20} color={colors.primary} />
-          <Text style={styles.title}>資料充足度</Text>
+          <View style={styles.iconContainer}>
+            <Icon name="chart-line" size={24} color={colors.primary} />
+          </View>
+          <View>
+            <Text style={styles.title}>資料充足度</Text>
+            <Text style={styles.subtitle}>本週資料完整度</Text>
+          </View>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
-          <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
+        <View style={[styles.statusBadge, { backgroundColor: `${overallLevel.color}20` }]}>
+          <Text style={[styles.statusText, { color: overallLevel.color }]}>
+            {overallLevel.name}
+          </Text>
         </View>
       </View>
 
       <View style={styles.content}>
+        {/* 總體進度條 */}
+        <View style={styles.overallProgressSection}>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressLabel}>總體進度</Text>
+            <Text style={[styles.progressPercent, { color: overallLevel.color }]}>
+              {coverage.symptom_coverage_percent.toFixed(0)}%
+            </Text>
+          </View>
+          <View style={styles.progressBarContainer}>
+            <View
+              style={[
+                styles.progressBar,
+                {
+                  width: `${coverage.symptom_coverage_percent}%`,
+                  backgroundColor: overallLevel.color,
+                },
+              ]}
+            />
+          </View>
+        </View>
+
         {/* 覆蓋率統計 */}
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
@@ -124,12 +162,20 @@ export function DataCoverageCard({ coverage, onPress }: DataCoverageCardProps) {
           </View>
         )}
 
-        {/* 提示文字 */}
+        {/* 提示文字 - 遊戲化設計 */}
         {coverage.overall_data_status !== 'sufficient' && (
           <View style={styles.hintSection}>
-            <Icon name="information-outline" size={16} color={colors.warning} />
+            <Icon name="star-outline" size={18} color={colors.warning} />
             <Text style={styles.hintText}>
-              建議提高記錄頻率，達到 60% 以上可啟用完整 AI 分析
+              達到 60% 以上可解鎖完整 AI 分析功能 🎯
+            </Text>
+          </View>
+        )}
+        {coverage.overall_data_status === 'sufficient' && (
+          <View style={[styles.hintSection, { backgroundColor: `${colors.success}10` }]}>
+            <Icon name="check-circle" size={18} color={colors.success} />
+            <Text style={[styles.hintText, { color: colors.success }]}>
+              太棒了！資料充足，AI 分析已啟用 ✨
             </Text>
           </View>
         )}
@@ -141,11 +187,16 @@ export function DataCoverageCard({ coverage, onPress }: DataCoverageCardProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: spacing.md,
+    borderRadius: 16,
+    padding: spacing.lg,
     marginVertical: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   cardPressable: {
     // Add shadow or elevation for pressable cards
@@ -159,11 +210,26 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: `${colors.primary}15`,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     ...typography.h3,
     color: colors.text.primary,
+    fontWeight: '600',
+  },
+  subtitle: {
+    ...typography.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xs / 2,
+    fontSize: 12,
   },
   statusBadge: {
     paddingHorizontal: spacing.sm,
@@ -176,6 +242,34 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.md,
+  },
+  overallProgressSection: {
+    gap: spacing.xs,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  progressLabel: {
+    ...typography.body,
+    color: colors.text.secondary,
+    fontSize: 13,
+  },
+  progressPercent: {
+    ...typography.h3,
+    fontWeight: '700',
+    fontSize: 18,
+  },
+  progressBarContainer: {
+    height: 12,
+    backgroundColor: colors.background,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 6,
   },
   statsGrid: {
     flexDirection: 'row',

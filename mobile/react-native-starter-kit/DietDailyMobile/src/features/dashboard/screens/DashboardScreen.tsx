@@ -43,6 +43,9 @@ import type {
 
 interface DashboardScreenProps {
   hideHeader?: boolean
+  hideTabNavigation?: boolean
+  externalActiveTab?: 'stats' | 'trends' | 'insights' | 'reports'
+  onTabChange?: (tab: 'stats' | 'trends' | 'insights' | 'reports') => void
 }
 
 type FileSystemDirectoryContext = {
@@ -188,7 +191,12 @@ function getDefaultReportRange() {
   return { start, end }
 }
 
-export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {}) {
+export function DashboardScreen({ 
+  hideHeader = false, 
+  hideTabNavigation = false,
+  externalActiveTab,
+  onTabChange
+}: DashboardScreenProps = {}) {
   const screenMountTime = React.useRef(Date.now())
   const { user, signOut } = useAuth()
   const { enableAIUI } = appConfig
@@ -229,7 +237,22 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
   const [history, setHistory] = useState(analysisHistory)
   const [hasAllHistory, setHasAllHistory] = useState(false)
   const [isHistoryLoading, setIsHistoryLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'stats' | 'trends' | 'insights' | 'reports'>('stats')
+  const [internalActiveTab, setInternalActiveTab] = useState<'stats' | 'trends' | 'insights' | 'reports'>('stats')
+  
+  const handleTabChange = (tab: 'stats' | 'trends' | 'insights' | 'reports') => {
+    // 如果外部限制了可用的 tab，只允許切換到允許的 tab
+    if (onTabChange) {
+      onTabChange(tab)
+    } else {
+      setInternalActiveTab(tab)
+    }
+  }
+  
+  // 如果外部傳入的 tab，優先使用外部 tab；否則使用內部 tab
+  // 如果外部 tab 是 'insights' 或 'reports'，直接使用；否則回退到內部 tab
+  const activeTab = externalActiveTab 
+    ? (['insights', 'reports'].includes(externalActiveTab) ? externalActiveTab : internalActiveTab)
+    : internalActiveTab
   const defaultReportRange = React.useMemo(() => getDefaultReportRange(), [])
   const [reportRangeStart, setReportRangeStart] = useState<Date>(defaultReportRange.start)
   const [reportRangeEnd, setReportRangeEnd] = useState<Date>(defaultReportRange.end)
@@ -271,9 +294,13 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
 
   useEffect(() => {
     if (!enableAIUI && activeTab === 'insights') {
-      setActiveTab('stats')
+      // 如果 AI UI 被禁用且當前在 insights tab，切換到 stats
+      // 但只有在沒有外部控制時才切換
+      if (!externalActiveTab) {
+        setInternalActiveTab('stats')
+      }
     }
-  }, [enableAIUI, activeTab])
+  }, [enableAIUI, activeTab, externalActiveTab])
 
   const formatTimestamp = (value?: string) => {
     if (!value) {
@@ -1626,42 +1653,44 @@ export function DashboardScreen({ hideHeader = false }: DashboardScreenProps = {
       {renderFoodKnowledgeBanner()}
 
       {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'stats' && styles.tabActive]}
-          onPress={() => setActiveTab('stats')}
-        >
-          <Text style={[styles.tabText, activeTab === 'stats' && styles.tabTextActive]}>
-            📊 記錄
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'trends' && styles.tabActive]}
-          onPress={() => setActiveTab('trends')}
-        >
-          <Text style={[styles.tabText, activeTab === 'trends' && styles.tabTextActive]}>
-            📈 趨勢
-          </Text>
-        </TouchableOpacity>
-        {enableAIUI && (
+      {!hideTabNavigation && (
+        <View style={styles.tabContainer}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'insights' && styles.tabActive]}
-            onPress={() => setActiveTab('insights')}
+            style={[styles.tab, activeTab === 'stats' && styles.tabActive]}
+            onPress={() => handleTabChange('stats')}
           >
-            <Text style={[styles.tabText, activeTab === 'insights' && styles.tabTextActive]}>
-              💡 洞察
+            <Text style={[styles.tabText, activeTab === 'stats' && styles.tabTextActive]}>
+              📊 記錄
             </Text>
           </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'reports' && styles.tabActive]}
-          onPress={() => setActiveTab('reports')}
-        >
-          <Text style={[styles.tabText, activeTab === 'reports' && styles.tabTextActive]}>
-            📝 報告
-          </Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'trends' && styles.tabActive]}
+            onPress={() => handleTabChange('trends')}
+          >
+            <Text style={[styles.tabText, activeTab === 'trends' && styles.tabTextActive]}>
+              📈 趨勢
+            </Text>
+          </TouchableOpacity>
+          {enableAIUI && (
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'insights' && styles.tabActive]}
+              onPress={() => handleTabChange('insights')}
+            >
+              <Text style={[styles.tabText, activeTab === 'insights' && styles.tabTextActive]}>
+                💡 洞察
+              </Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'reports' && styles.tabActive]}
+            onPress={() => handleTabChange('reports')}
+          >
+            <Text style={[styles.tabText, activeTab === 'reports' && styles.tabTextActive]}>
+              📝 報告
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Quick Stats - Compact Combined Layout */}
       {activeTab === 'stats' && (

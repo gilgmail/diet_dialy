@@ -41,9 +41,6 @@ import type {
   MedicationRegimenSummary,
   SleepSessionEntry,
 } from '@/features/health-logs/types'
-import { DataCoverageCard } from '@/features/dashboard/components/DataCoverageCard'
-import { MissingDataAlertCard } from '@/features/dashboard/components/MissingDataAlertCard'
-import { useDataCoverage, useMissingDataAlerts } from '@/features/dashboard/hooks/useDataCoverage'
 
 ;(globalThis as any).mLogs = (globalThis as any).mLogs ?? []
 ;(globalThis as any).sSessions = (globalThis as any).sSessions ?? []
@@ -208,29 +205,6 @@ const activityQuery = useQuery({
 const aSessions = (activityQuery.data ?? []) as ActivitySessionEntry[]
 ;(globalThis as any).aSessions = aSessions
 
-  // Phase A: Data Coverage and Missing Alerts
-  const { coverage: dataCoverage, isLoading: isLoadingCoverage, error: coverageError } = useDataCoverage()
-  const { alerts: missingAlerts, isLoading: isLoadingAlerts, error: alertsError } = useMissingDataAlerts(2)
-
-  // Debug: Log coverage data
-  React.useEffect(() => {
-    if (dataCoverage) {
-      console.log('[TodayScreen] Data Coverage loaded:', {
-        symptom: dataCoverage.symptom_coverage_percent,
-        food: dataCoverage.food_coverage_percent,
-        status: dataCoverage.overall_data_status,
-      })
-    }
-    if (coverageError) {
-      console.error('[TodayScreen] Data Coverage error:', coverageError)
-    }
-    if (missingAlerts && missingAlerts.length > 0) {
-      console.log('[TodayScreen] Missing Alerts:', missingAlerts.length)
-    }
-    if (alertsError) {
-      console.error('[TodayScreen] Missing Alerts error:', alertsError)
-    }
-  }, [dataCoverage, coverageError, missingAlerts, alertsError])
 
 const regimenQuery = useQuery({
   queryKey: ['todayActiveRegimens', user?.id],
@@ -279,9 +253,6 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
     sleepQuery.refetch()
     activityQuery.refetch()
     regimenQuery.refetch()
-    // Phase A: Refresh data coverage and alerts
-    queryClient.invalidateQueries({ queryKey: ['dataCoverage', user?.id] })
-    queryClient.invalidateQueries({ queryKey: ['missingDataAlerts', user?.id] })
   }
 
   const handleLogMedication = useCallback(
@@ -788,43 +759,6 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
         </View>
       )}
 
-      {/* Phase A: Data Coverage Card - Always show if data exists or loading */}
-      {activeTab === 'summary' && (
-        <View style={{ marginHorizontal: spacing.lg }}>
-          {isLoadingCoverage ? (
-            <View style={[styles.card, { padding: spacing.md, alignItems: 'center' }]}>
-              <Text style={styles.loadingText}>載入資料充足度中...</Text>
-            </View>
-          ) : coverageError ? (
-            <View style={[styles.card, { padding: spacing.md, backgroundColor: `${colors.error}10` }]}>
-              <Text style={[styles.errorText, { color: colors.error }]}>
-                無法載入資料充足度：{coverageError.message}
-              </Text>
-            </View>
-          ) : dataCoverage ? (
-            <DataCoverageCard coverage={dataCoverage} />
-          ) : null}
-        </View>
-      )}
-
-      {/* Phase A: Missing Data Alerts */}
-      {activeTab === 'summary' && (
-        <View style={{ marginHorizontal: spacing.lg }}>
-          {isLoadingAlerts ? (
-            <View style={[styles.card, { padding: spacing.md, alignItems: 'center' }]}>
-              <Text style={styles.loadingText}>載入缺漏提醒中...</Text>
-            </View>
-          ) : alertsError ? (
-            <View style={[styles.card, { padding: spacing.md, backgroundColor: `${colors.warning}10` }]}>
-              <Text style={[styles.errorText, { color: colors.warning }]}>
-                無法載入缺漏提醒：{alertsError.message}
-              </Text>
-            </View>
-          ) : missingAlerts && missingAlerts.length > 0 ? (
-            <MissingDataAlertCard alerts={missingAlerts} navigation={navigation} />
-          ) : null}
-        </View>
-      )}
 
       {/* Summary Tab */}
       {activeTab === 'summary' && (

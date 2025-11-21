@@ -54,19 +54,19 @@ export function MissingDataAlertCard({ alerts, navigation }: MissingDataAlertCar
 
     switch (category) {
       case 'symptoms':
-        navigation.navigate('SymptomDiary' as any)
+        navigation.navigate('AddSymptomEntry', { date: undefined })
         break
       case 'food':
-        navigation.navigate('FoodDiary' as any)
+        navigation.navigate('AddFoodEntry', { date: undefined })
         break
       case 'medications':
-        navigation.navigate('MedicationLog' as any)
+        navigation.navigate('MedicationLog', undefined)
         break
       case 'sleep':
-        navigation.navigate('SleepLog' as any)
+        navigation.navigate('SleepLog', undefined)
         break
       case 'exercise':
-        navigation.navigate('ActivityLog' as any)
+        navigation.navigate('ActivityLog', undefined)
         break
     }
   }
@@ -74,8 +74,15 @@ export function MissingDataAlertCard({ alerts, navigation }: MissingDataAlertCar
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Icon name="alert-circle" size={20} color={colors.warning} />
-        <Text style={styles.title}>缺漏資料提醒</Text>
+        <View style={styles.headerLeft}>
+          <View style={styles.iconContainer}>
+            <Icon name="lightbulb-on" size={20} color={colors.primary} />
+          </View>
+          <View>
+            <Text style={styles.title}>本週小提醒</Text>
+            <Text style={styles.subtitle}>補齊這些資料，讓分析更完整</Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.alertsList}>
@@ -93,11 +100,21 @@ export function MissingDataAlertCard({ alerts, navigation }: MissingDataAlertCar
             >
               <View style={styles.alertContent}>
                 <View style={styles.alertHeader}>
-                  <Icon name={categoryIcon} size={18} color={categoryColor} />
-                  <Text style={styles.alertCategory}>{categoryLabel}</Text>
-                  <Text style={styles.alertDays}>缺漏 {alert.missing_days} 天</Text>
+                  <View style={[styles.categoryIconContainer, { backgroundColor: `${categoryColor}20` }]}>
+                    <Icon name={categoryIcon} size={20} color={categoryColor} />
+                  </View>
+                  <View style={styles.alertTextContainer}>
+                    <View style={styles.alertHeaderRow}>
+                      <Text style={styles.alertCategory}>{categoryLabel}</Text>
+                      <View style={[styles.badge, { backgroundColor: `${categoryColor}15` }]}>
+                        <Text style={[styles.badgeText, { color: categoryColor }]}>
+                          {alert.missing_days} 天
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.alertRecommendation}>{alert.recommendation}</Text>
+                  </View>
                 </View>
-                <Text style={styles.alertRecommendation}>{alert.recommendation}</Text>
                 {alert.last_entry_date && (
                   <Text style={styles.alertDate}>
                     最後記錄：{new Date(alert.last_entry_date).toLocaleDateString('zh-TW')}
@@ -116,21 +133,43 @@ export function MissingDataAlertCard({ alerts, navigation }: MissingDataAlertCar
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: spacing.md,
+    borderRadius: 16,
+    padding: spacing.lg,
     marginVertical: spacing.sm,
     borderWidth: 1,
-    borderColor: `${colors.warning}40`,
+    borderColor: `${colors.primary}20`,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   header: {
+    marginBottom: spacing.md,
+  },
+  headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: `${colors.primary}15`,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     ...typography.h3,
     color: colors.text.primary,
+    fontWeight: '600',
+  },
+  subtitle: {
+    ...typography.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+    fontSize: 12,
   },
   alertsList: {
     gap: spacing.sm,
@@ -138,35 +177,57 @@ const styles = StyleSheet.create({
   alertItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.sm,
+    padding: spacing.md,
     backgroundColor: colors.background,
-    borderRadius: 8,
-    borderLeftWidth: 3,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    marginBottom: spacing.sm,
   },
   alertContent: {
     flex: 1,
-    gap: spacing.xs,
   },
   alertHeader: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+  categoryIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  alertTextContainer: {
+    flex: 1,
     gap: spacing.xs,
+  },
+  alertHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   alertCategory: {
     ...typography.body,
     fontWeight: '600',
     color: colors.text.primary,
+    fontSize: 15,
   },
-  alertDays: {
+  badge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 2,
+    borderRadius: 12,
+  },
+  badgeText: {
     ...typography.caption,
-    color: colors.error,
     fontWeight: '600',
-    marginLeft: 'auto',
+    fontSize: 11,
   },
   alertRecommendation: {
     ...typography.body,
     color: colors.text.secondary,
     fontSize: 13,
+    lineHeight: 18,
   },
   alertDate: {
     ...typography.caption,

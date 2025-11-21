@@ -74,11 +74,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 呼叫 SQL 函數取得缺漏提醒
+    // 呼叫 SQL 函數取得缺漏提醒（使用本週或註冊後的邏輯，減少壓力）
+    const useWeekOnly = searchParams.get('useWeekOnly') !== 'false' // 預設為 true
     const { data: alertsData, error: alertsError } = await supabase
       .rpc('get_user_missing_data_alerts', {
         p_user_id: userId,
-        p_days_threshold: daysThreshold
+        p_days_threshold: daysThreshold,
+        p_use_week_only: useWeekOnly
       })
 
     if (alertsError) {
