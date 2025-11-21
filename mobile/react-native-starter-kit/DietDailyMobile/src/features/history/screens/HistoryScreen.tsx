@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native'
-import { Menu } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { format, addMonths, subMonths, isSameMonth } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
@@ -21,13 +20,6 @@ export function HistoryScreen() {
   const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [viewMenuVisible, setViewMenuVisible] = useState(false)
-
-  const viewModeLabels = {
-    month: '月曆',
-    week: '週曆',
-    list: '列表',
-  }
 
   const handlePrevMonth = () => {
     setCurrentMonth(subMonths(currentMonth, 1))
@@ -53,10 +45,61 @@ export function HistoryScreen() {
         <Text style={styles.headerSubtitle}>查看過去的飲食和症狀記錄</Text>
       </View>
 
-      {/* Navigation Bar */}
-      <View style={styles.navBar}>
-        {/* Left: Month Navigation */}
-        <View style={styles.monthNavContainer}>
+      {/* Tab Bar for View Mode Selection */}
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[styles.tab, viewMode === 'month' && styles.activeTab]}
+          onPress={() => setViewMode('month')}
+          activeOpacity={0.7}
+        >
+          <Icon
+            name="calendar-month"
+            size={20}
+            color={viewMode === 'month' ? colors.primary[500] : colors.text.secondary}
+          />
+          <Text
+            style={[styles.tabText, viewMode === 'month' && styles.activeTabText]}
+          >
+            月曆
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, viewMode === 'week' && styles.activeTab]}
+          onPress={() => setViewMode('week')}
+          activeOpacity={0.7}
+        >
+          <Icon
+            name="calendar-week"
+            size={20}
+            color={viewMode === 'week' ? colors.primary[500] : colors.text.secondary}
+          />
+          <Text
+            style={[styles.tabText, viewMode === 'week' && styles.activeTabText]}
+          >
+            週曆
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, viewMode === 'list' && styles.activeTab]}
+          onPress={() => setViewMode('list')}
+          activeOpacity={0.7}
+        >
+          <Icon
+            name="format-list-bulleted"
+            size={20}
+            color={viewMode === 'list' ? colors.primary[500] : colors.text.secondary}
+          />
+          <Text
+            style={[styles.tabText, viewMode === 'list' && styles.activeTabText]}
+          >
+            列表
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Month Navigation (only shown for month view) */}
+      {viewMode === 'month' && (
+        <View style={styles.monthNavBar}>
           <TouchableOpacity
             style={styles.navArrow}
             onPress={handlePrevMonth}
@@ -86,48 +129,7 @@ export function HistoryScreen() {
             <Icon name="chevron-right" size={24} color={colors.text.primary} />
           </TouchableOpacity>
         </View>
-
-        {/* Right: View Mode Selector */}
-        <Menu
-          visible={viewMenuVisible}
-          onDismiss={() => setViewMenuVisible(false)}
-          anchor={
-            <TouchableOpacity
-              style={styles.viewModeButton}
-              onPress={() => setViewMenuVisible(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.viewModeText}>{viewModeLabels[viewMode]}</Text>
-              <Icon name="menu-down" size={20} color={colors.text.secondary} />
-            </TouchableOpacity>
-          }
-        >
-          <Menu.Item
-            onPress={() => {
-              setViewMode('month')
-              setViewMenuVisible(false)
-            }}
-            title="月曆"
-            leadingIcon="calendar-month"
-          />
-          <Menu.Item
-            onPress={() => {
-              setViewMode('week')
-              setViewMenuVisible(false)
-            }}
-            title="週曆"
-            leadingIcon="calendar-week"
-          />
-          <Menu.Item
-            onPress={() => {
-              setViewMode('list')
-              setViewMenuVisible(false)
-            }}
-            title="列表"
-            leadingIcon="format-list-bulleted"
-          />
-        </Menu>
-      </View>
+      )}
 
       {/* Calendar/List Views */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -178,19 +180,44 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
   },
-  navBar: {
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingHorizontal: spacing.sm,
+  },
+  tab: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    gap: spacing.xs,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: colors.primary[500],
+  },
+  tabText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.secondary,
+  },
+  activeTabText: {
+    color: colors.primary[600],
+    fontWeight: typography.fontWeight.semibold,
+  },
+  monthNavBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-  },
-  monthNavContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing.xs,
   },
   navArrow: {
@@ -208,22 +235,6 @@ const styles = StyleSheet.create({
   monthTextClickable: {
     color: colors.primary[600],
     textDecorationLine: 'underline',
-  },
-  viewModeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 6,
-    backgroundColor: colors.background,
-    gap: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  viewModeText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text.primary,
   },
   content: {
     flex: 1,

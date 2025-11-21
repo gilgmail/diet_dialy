@@ -13,9 +13,15 @@ import { zhTW } from 'date-fns/locale'
 import { useAuthStore } from '@/shared/stores/authStore'
 import { FoodDiaryService } from '@/features/food-diary/services/FoodDiaryService'
 import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
+import { HealthLogService } from '@/features/health-logs/services/HealthLogService'
 import { MEAL_TYPES } from '@/features/food-diary/types'
 import type { FoodEntry } from '@/features/food-diary/types'
 import type { SymptomEntry } from '@/features/symptom-diary/types'
+import type {
+  MedicationLogEntry,
+  SleepSessionEntry,
+  ActivitySessionEntry,
+} from '@/features/health-logs/types'
 import { colors, typography, spacing } from '@/theme'
 
 interface ListHistoryViewProps {
@@ -30,6 +36,9 @@ interface DayData {
   symptomCount: number
   foodEntries: FoodEntry[]
   symptomEntries: SymptomEntry[]
+  medicationCount: number
+  sleepCount: number
+  activityCount: number
 }
 
 export function ListHistoryView({ selectedDate, onSelectDate }: ListHistoryViewProps) {
@@ -78,6 +87,45 @@ export function ListHistoryView({ selectedDate, onSelectDate }: ListHistoryViewP
     enabled: !!user?.id,
   })
 
+  // Fetch medication logs for last 30 days
+  const { data: medicationLogs = [] } = useQuery({
+    queryKey: ['medicationLogs', user?.id, 'last30days'],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const allLogs = await Promise.all(
+        dates.map(date => HealthLogService.getMedicationLogsByDate(user.id, date))
+      )
+      return allLogs.flat()
+    },
+    enabled: !!user?.id,
+  })
+
+  // Fetch sleep sessions for last 30 days
+  const { data: sleepSessions = [] } = useQuery({
+    queryKey: ['sleepSessions', user?.id, 'last30days'],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const allSessions = await Promise.all(
+        dates.map(date => HealthLogService.getSleepSessionsByDate(user.id, date))
+      )
+      return allSessions.flat()
+    },
+    enabled: !!user?.id,
+  })
+
+  // Fetch activity sessions for last 30 days
+  const { data: activitySessions = [] } = useQuery({
+    queryKey: ['activitySessions', user?.id, 'last30days'],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const allSessions = await Promise.all(
+        dates.map(date => HealthLogService.getActivitySessionsByDate(user.id, date))
+      )
+      return allSessions.flat()
+    },
+    enabled: !!user?.id,
+  })
+
   // Group entries by date
   const dayDataList = useMemo<DayData[]>(() => {
     const foodByDate = new Map<string, FoodEntry[]>()
@@ -95,10 +143,46 @@ export function ListHistoryView({ selectedDate, onSelectDate }: ListHistoryViewP
       symptomByDate.get(key)!.push(entry)
     })
 
+    const medicationByDate = new Map<string, MedicationLogEntry[]>()
+    medicationLogs.forEach((entry: MedicationLogEntry) => {
+      const key = format(new Date(entry.taken_at), 'yyyy-MM-dd')
+      if (!medicationByDate.has(key)) medicationByDate.set(key, [])
+      medicationByDate.get(key)!.push(entry)
+    })
+
+    const sleepByDate = new Map<string, SleepSessionEntry[]>()
+    sleepSessions.forEach((entry: SleepSessionEntry) => {
+      const key = entry.start_time
+        ? format(new Date(entry.start_time), 'yyyy-MM-dd')
+        : entry.end_time
+        ? format(new Date(entry.end_time), 'yyyy-MM-dd')
+        : null
+      if (key) {
+        if (!sleepByDate.has(key)) sleepByDate.set(key, [])
+        sleepByDate.get(key)!.push(entry)
+      }
+    })
+
+    const activityByDate = new Map<string, ActivitySessionEntry[]>()
+    activitySessions.forEach((entry: ActivitySessionEntry) => {
+      const key = entry.start_time
+        ? format(new Date(entry.start_time), 'yyyy-MM-dd')
+        : entry.end_time
+        ? format(new Date(entry.end_time), 'yyyy-MM-dd')
+        : null
+      if (key) {
+        if (!activityByDate.has(key)) activityByDate.set(key, [])
+        activityByDate.get(key)!.push(entry)
+      }
+    })
+
     return dates.map((date) => {
       const key = format(date, 'yyyy-MM-dd')
       const foodList = foodByDate.get(key) || []
       const symptomList = symptomByDate.get(key) || []
+      const medicationList = medicationByDate.get(key) || []
+      const sleepList = sleepByDate.get(key) || []
+      const activityList = activityByDate.get(key) || []
 
       return {
         date,
@@ -107,9 +191,12 @@ export function ListHistoryView({ selectedDate, onSelectDate }: ListHistoryViewP
         symptomCount: symptomList.length,
         foodEntries: foodList,
         symptomEntries: symptomList,
+        medicationCount: medicationList.length,
+        sleepCount: sleepList.length,
+        activityCount: activityList.length,
       }
     })
-  }, [dates, foodEntries, symptomEntries])
+  }, [dates, foodEntries, symptomEntries, medicationLogs, sleepSessions, activitySessions])
 
   const renderDayItem = ({ item }: { item: DayData }) => {
     const isToday = format(item.date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
@@ -165,7 +252,25 @@ export function ListHistoryView({ selectedDate, onSelectDate }: ListHistoryViewP
                 <Text style={styles.statBadgeText}>{item.symptomCount}</Text>
               </View>
             )}
-            {item.foodCount === 0 && item.symptomCount === 0 && (
+            {item.medicationCount > 0 && (
+              <View style={[styles.statBadge, styles.medicationStatBadge]}>
+                <Icon name="pill" size={14} color={colors.primary[600]} />
+                <Text style={styles.statBadgeText}>{item.medicationCount}</Text>
+              </View>
+            )}
+            {item.sleepCount > 0 && (
+              <View style={[styles.statBadge, styles.sleepStatBadge]}>
+                <Icon name="sleep" size={14} color={colors.info} />
+                <Text style={styles.statBadgeText}>{item.sleepCount}</Text>
+              </View>
+            )}
+            {item.activityCount > 0 && (
+              <View style={[styles.statBadge, styles.activityStatBadge]}>
+                <Icon name="run" size={14} color={colors.success} />
+                <Text style={styles.statBadgeText}>{item.activityCount}</Text>
+              </View>
+            )}
+            {item.foodCount === 0 && item.symptomCount === 0 && item.medicationCount === 0 && item.sleepCount === 0 && item.activityCount === 0 && (
               <Text style={styles.noDataText}>無記錄</Text>
             )}
           </View>
@@ -295,6 +400,15 @@ const styles = StyleSheet.create({
   },
   symptomStatBadge: {
     backgroundColor: colors.error + '15',
+  },
+  medicationStatBadge: {
+    backgroundColor: colors.primary[600] + '15',
+  },
+  sleepStatBadge: {
+    backgroundColor: colors.info + '15',
+  },
+  activityStatBadge: {
+    backgroundColor: colors.success + '15',
   },
   statBadgeText: {
     fontSize: typography.fontSize.xs,

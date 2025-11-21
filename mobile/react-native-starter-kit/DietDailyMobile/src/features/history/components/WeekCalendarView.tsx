@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useRef, useEffect } from 'react'
 import {
   View,
   Text,
@@ -21,9 +21,15 @@ import { zhTW } from 'date-fns/locale'
 import { useAuthStore } from '@/shared/stores/authStore'
 import { FoodDiaryService } from '@/features/food-diary/services/FoodDiaryService'
 import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
+import { HealthLogService } from '@/features/health-logs/services/HealthLogService'
 import { MEAL_TYPES } from '@/features/food-diary/types'
 import type { FoodEntry } from '@/features/food-diary/types'
 import type { SymptomEntry } from '@/features/symptom-diary/types'
+import type {
+  MedicationLogEntry,
+  SleepSessionEntry,
+  ActivitySessionEntry,
+} from '@/features/health-logs/types'
 import { SEVERITY_LEVELS } from '@/features/symptom-diary/types'
 import { colors, typography, spacing } from '@/theme'
 
@@ -45,11 +51,16 @@ interface DayData {
   symptomCount: number
   foodEntries: FoodEntry[]
   symptomEntries: SymptomEntry[]
+  medicationLogs: MedicationLogEntry[]
+  sleepSessions: SleepSessionEntry[]
+  activitySessions: ActivitySessionEntry[]
 }
 
 export function WeekCalendarView({ selectedDate, onSelectDate }: WeekCalendarViewProps) {
   const { user } = useAuthStore()
   const [currentWeek, setCurrentWeek] = useState(new Date())
+  const scrollViewRef = useRef<ScrollView>(null)
+  const cardYPositions = useRef<Map<string, number>>(new Map())
 
   const weekStart = useMemo(
     () => startOfWeek(currentWeek, { weekStartsOn: 0 }),
@@ -60,13 +71,14 @@ export function WeekCalendarView({ selectedDate, onSelectDate }: WeekCalendarVie
     [currentWeek]
   )
 
-  // Get all days in the week
+  // Get all days in the week (newest first)
   const weekDays = useMemo(() => {
     const days: Date[] = []
     for (let i = 0; i < 7; i++) {
       days.push(addDays(weekStart, i))
     }
-    return days
+    // Sort in descending order (newest first)
+    return days.sort((a, b) => b.getTime() - a.getTime())
   }, [weekStart])
 
   // Fetch food entries for current week
@@ -99,6 +111,57 @@ export function WeekCalendarView({ selectedDate, onSelectDate }: WeekCalendarVie
     enabled: !!user?.id,
   })
 
+  // Fetch medication logs for current week
+  const { data: medicationLogs = [] } = useQuery({
+    queryKey: ['medicationLogs', user?.id, format(weekStart, 'yyyy-ww')],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const days: Date[] = []
+      for (let i = 0; i < 7; i++) {
+        days.push(addDays(weekStart, i))
+      }
+      const allLogs = await Promise.all(
+        days.map(date => HealthLogService.getMedicationLogsByDate(user.id, date))
+      )
+      return allLogs.flat()
+    },
+    enabled: !!user?.id,
+  })
+
+  // Fetch sleep sessions for current week
+  const { data: sleepSessions = [] } = useQuery({
+    queryKey: ['sleepSessions', user?.id, format(weekStart, 'yyyy-ww')],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const days: Date[] = []
+      for (let i = 0; i < 7; i++) {
+        days.push(addDays(weekStart, i))
+      }
+      const allSessions = await Promise.all(
+        days.map(date => HealthLogService.getSleepSessionsByDate(user.id, date))
+      )
+      return allSessions.flat()
+    },
+    enabled: !!user?.id,
+  })
+
+  // Fetch activity sessions for current week
+  const { data: activitySessions = [] } = useQuery({
+    queryKey: ['activitySessions', user?.id, format(weekStart, 'yyyy-ww')],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const days: Date[] = []
+      for (let i = 0; i < 7; i++) {
+        days.push(addDays(weekStart, i))
+      }
+      const allSessions = await Promise.all(
+        days.map(date => HealthLogService.getActivitySessionsByDate(user.id, date))
+      )
+      return allSessions.flat()
+    },
+    enabled: !!user?.id,
+  })
+
   // Process data for each day
   const dayDataList = useMemo<DayData[]>(() => {
     const today = new Date()
@@ -113,6 +176,28 @@ export function WeekCalendarView({ selectedDate, onSelectDate }: WeekCalendarVie
 
       const daySymptomEntries = symptomEntries.filter((entry: SymptomEntry) => {
         return format(new Date(entry.recorded_at), 'yyyy-MM-dd') === key
+      })
+
+      const dayMedicationLogs = medicationLogs.filter((entry: MedicationLogEntry) => {
+        return format(new Date(entry.taken_at), 'yyyy-MM-dd') === key
+      })
+
+      const daySleepSessions = sleepSessions.filter((entry: SleepSessionEntry) => {
+        const entryDate = entry.start_time
+          ? format(new Date(entry.start_time), 'yyyy-MM-dd')
+          : entry.end_time
+          ? format(new Date(entry.end_time), 'yyyy-MM-dd')
+          : null
+        return entryDate === key
+      })
+
+      const dayActivitySessions = activitySessions.filter((entry: ActivitySessionEntry) => {
+        const entryDate = entry.start_time
+          ? format(new Date(entry.start_time), 'yyyy-MM-dd')
+          : entry.end_time
+          ? format(new Date(entry.end_time), 'yyyy-MM-dd')
+          : null
+        return entryDate === key
       })
 
       // Count meals
@@ -131,9 +216,31 @@ export function WeekCalendarView({ selectedDate, onSelectDate }: WeekCalendarVie
         symptomCount: daySymptomEntries.length,
         foodEntries: dayFoodEntries,
         symptomEntries: daySymptomEntries,
+        medicationLogs: dayMedicationLogs,
+        sleepSessions: daySleepSessions,
+        activitySessions: dayActivitySessions,
       }
     })
-  }, [weekDays, foodEntries, symptomEntries])
+  }, [weekDays, foodEntries, symptomEntries, medicationLogs, sleepSessions, activitySessions])
+
+  // Auto-scroll to today's card when data is loaded
+  useEffect(() => {
+    if (dayDataList.length > 0 && scrollViewRef.current) {
+      const today = new Date()
+      const todayKey = format(today, 'yyyy-MM-dd')
+      
+      // Wait for layout to complete, then scroll to today's card
+      setTimeout(() => {
+        const todayY = cardYPositions.current.get(todayKey)
+        if (todayY !== undefined && scrollViewRef.current) {
+          scrollViewRef.current.scrollTo({
+            y: Math.max(0, todayY - spacing.lg),
+            animated: true,
+          })
+        }
+      }, 300)
+    }
+  }, [dayDataList])
 
   const handlePrevWeek = () => {
     setCurrentWeek(subWeeks(currentWeek, 1))
@@ -145,6 +252,18 @@ export function WeekCalendarView({ selectedDate, onSelectDate }: WeekCalendarVie
 
   const handleToday = () => {
     setCurrentWeek(new Date())
+    // Scroll to today after week changes
+    setTimeout(() => {
+      const today = new Date()
+      const todayKey = format(today, 'yyyy-MM-dd')
+      const todayY = cardYPositions.current.get(todayKey)
+      if (todayY !== undefined && scrollViewRef.current) {
+        scrollViewRef.current.scrollTo({
+          y: Math.max(0, todayY - spacing.lg),
+          animated: true,
+        })
+      }
+    }, 300)
   }
 
   const renderDayCard = (dayData: DayData) => {
@@ -153,15 +272,22 @@ export function WeekCalendarView({ selectedDate, onSelectDate }: WeekCalendarVie
       dayData.foodEntries.length === 0 && dayData.symptomEntries.length === 0
 
     return (
-      <TouchableOpacity
+      <View
         key={dayData.dateKey}
-        style={[
-          styles.dayCard,
-          isSelected && styles.dayCardSelected,
-        ]}
-        onPress={() => onSelectDate(dayData.date)}
-        activeOpacity={0.7}
+        onLayout={(event) => {
+          const { y } = event.nativeEvent.layout
+          cardYPositions.current.set(dayData.dateKey, y)
+        }}
       >
+        <TouchableOpacity
+          style={[
+            styles.dayCard,
+            dayData.isToday && styles.dayCardToday,
+            isSelected && styles.dayCardSelected,
+          ]}
+          onPress={() => onSelectDate(dayData.date)}
+          activeOpacity={0.7}
+        >
         {/* Day Header */}
         <View style={styles.dayHeader}>
           <View style={styles.dayHeaderLeft}>
@@ -249,9 +375,48 @@ export function WeekCalendarView({ selectedDate, onSelectDate }: WeekCalendarVie
           )
         )}
 
-        {/* Placeholder for future: Bowel Movement */}
-        {/* This section is reserved for future bowel movement tracking */}
-      </TouchableOpacity>
+        {/* Medication Summary */}
+        {dayData.medicationLogs.length > 0 && (
+          <View style={styles.healthSection}>
+            <View style={styles.sectionHeader}>
+              <Icon name="pill" size={16} color={colors.primary[600]} />
+              <Text style={styles.sectionTitle}>藥物</Text>
+            </View>
+            <Text style={styles.healthSummaryText}>
+              {dayData.medicationLogs.length} 次服藥
+            </Text>
+          </View>
+        )}
+
+        {/* Sleep Summary */}
+        {dayData.sleepSessions.length > 0 && (
+          <View style={styles.healthSection}>
+            <View style={styles.sectionHeader}>
+              <Icon name="sleep" size={16} color={colors.info} />
+              <Text style={styles.sectionTitle}>睡眠</Text>
+            </View>
+            {dayData.sleepSessions[0].duration_minutes && (
+              <Text style={styles.healthSummaryText}>
+                {Math.round(dayData.sleepSessions[0].duration_minutes / 60 * 10) / 10} 小時
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* Activity Summary */}
+        {dayData.activitySessions.length > 0 && (
+          <View style={styles.healthSection}>
+            <View style={styles.sectionHeader}>
+              <Icon name="run" size={16} color={colors.success} />
+              <Text style={styles.sectionTitle}>運動</Text>
+            </View>
+            <Text style={styles.healthSummaryText}>
+              {dayData.activitySessions.length} 次活動
+            </Text>
+          </View>
+        )}
+        </TouchableOpacity>
+      </View>
     )
   }
 
@@ -291,6 +456,7 @@ export function WeekCalendarView({ selectedDate, onSelectDate }: WeekCalendarVie
 
       {/* Week Days */}
       <ScrollView
+        ref={scrollViewRef}
         style={styles.weekScroll}
         contentContainerStyle={styles.weekContent}
         showsVerticalScrollIndicator={false}
@@ -343,6 +509,11 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
     gap: spacing.md,
+  },
+  dayCardToday: {
+    backgroundColor: colors.primary[50] || '#EFF6FF',
+    borderColor: colors.primary[300] || '#93C5FD',
+    borderWidth: 2,
   },
   dayCardSelected: {
     borderColor: colors.primary[500],
@@ -472,5 +643,16 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.success,
     fontWeight: typography.fontWeight.medium,
+  },
+  healthSection: {
+    gap: spacing.xs / 2,
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  healthSummaryText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+    marginLeft: spacing.sm + 4,
   },
 })
