@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-
-export const dynamic = 'force-dynamic'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
 import { ibdScoringService } from '@/lib/supabase/ibd-scoring-service'
 import { foodsService } from '@/lib/supabase/foods'

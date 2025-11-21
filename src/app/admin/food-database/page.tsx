@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-
-export const dynamic = 'force-dynamic'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
 import { foodsService } from '@/lib/supabase/foods'
 import { MultiConditionScorer } from '@/lib/ai/multi-condition-scorer'
