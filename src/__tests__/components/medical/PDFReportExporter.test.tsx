@@ -5,7 +5,7 @@ import PDFReportExporter from '@/components/medical/PDFReportExporter';
 
 // Mock jsPDF
 jest.mock('jspdf', () => {
-  return jest.fn().mockImplementation(() => ({
+  const mockPdfInstance = {
     setFont: jest.fn(),
     setFontSize: jest.fn(),
     setTextColor: jest.fn(),
@@ -19,7 +19,14 @@ jest.mock('jspdf', () => {
         getHeight: () => 297
       }
     }
-  }));
+  };
+
+  const jsPDFMock = jest.fn().mockImplementation(() => mockPdfInstance);
+  // Also support calling as function (not just constructor)
+  jsPDFMock.mockReturnValue(mockPdfInstance);
+  // Ensure mock.results is properly set up
+  jsPDFMock.mock.results = [];
+  return jsPDFMock;
 });
 
 interface HealthDataPoint {
@@ -169,6 +176,33 @@ describe('PDFReportExporter', () => {
     jest.clearAllMocks();
     // Mock alert
     window.alert = jest.fn();
+    // Reset jsPDF mock between tests
+    const jsPDF = require('jspdf');
+    jsPDF.mockClear();
+    // Re-initialize mock.results array
+    if (!jsPDF.mock.results || !Array.isArray(jsPDF.mock.results)) {
+      jsPDF.mock.results = [];
+    } else {
+      jsPDF.mock.results.length = 0;
+    }
+    // Ensure mock instance methods are reset
+    const mockPdfInstance = {
+      setFont: jest.fn(),
+      setFontSize: jest.fn(),
+      setTextColor: jest.fn(),
+      text: jest.fn(),
+      addPage: jest.fn(),
+      save: jest.fn(),
+      splitTextToSize: jest.fn().mockReturnValue(['Mocked text line 1', 'Mocked text line 2']),
+      internal: {
+        pageSize: {
+          getWidth: () => 210,
+          getHeight: () => 297
+        }
+      }
+    };
+    jsPDF.mockReturnValue(mockPdfInstance);
+    jsPDF.mockImplementation(() => mockPdfInstance);
   });
 
   describe('Component Rendering', () => {
