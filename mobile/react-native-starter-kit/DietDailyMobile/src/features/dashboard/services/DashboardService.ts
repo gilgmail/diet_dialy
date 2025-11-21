@@ -1,4 +1,5 @@
 import { supabase } from '@/shared/api/supabase/client'
+import { AuthService } from '@/features/auth/services/AuthService'
 import type { FoodEntry } from '@/features/food-diary/types'
 import type { SymptomEntry } from '@/features/symptom-diary/types'
 import type { DailySymptomEntryRow } from '@/shared/types/supabase'
@@ -973,6 +974,13 @@ export class DashboardService {
     }
 
     try {
+      // 取得認證 token
+      const { session } = await AuthService.getSession()
+      if (!session?.access_token) {
+        console.warn('[DashboardService] No session token available')
+        return { data: null, error: { message: '需要登入' } }
+      }
+
       const normalizedBase = apiBase.replace(/\/+$/, '')
       const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
       const endpoint = `${baseApiUrl}/mobile/data-coverage?userId=${userId}`
@@ -981,11 +989,13 @@ export class DashboardService {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
       })
 
       if (!response.ok) {
-        console.warn('[DashboardService] Failed to fetch data coverage', response.status)
+        const errorText = await response.text()
+        console.warn('[DashboardService] Failed to fetch data coverage', response.status, errorText)
         return { data: null, error: { message: `HTTP ${response.status}` } }
       }
 
@@ -1022,6 +1032,13 @@ export class DashboardService {
     }
 
     try {
+      // 取得認證 token
+      const { session } = await AuthService.getSession()
+      if (!session?.access_token) {
+        console.warn('[DashboardService] No session token available')
+        return { data: null, error: { message: '需要登入' } }
+      }
+
       const normalizedBase = apiBase.replace(/\/+$/, '')
       const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
       const endpoint = `${baseApiUrl}/mobile/data-coverage/alerts?userId=${userId}&daysThreshold=${daysThreshold}`
@@ -1030,11 +1047,13 @@ export class DashboardService {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
       })
 
       if (!response.ok) {
-        console.warn('[DashboardService] Failed to fetch missing data alerts', response.status)
+        const errorText = await response.text()
+        console.warn('[DashboardService] Failed to fetch missing data alerts', response.status, errorText)
         return { data: null, error: { message: `HTTP ${response.status}` } }
       }
 

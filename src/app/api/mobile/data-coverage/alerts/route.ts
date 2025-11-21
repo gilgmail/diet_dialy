@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
     const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get('userId')
     const daysThreshold = parseInt(searchParams.get('daysThreshold') || '2', 10)
@@ -19,6 +18,25 @@ export async function GET(request: NextRequest) {
         { success: false, error: '缺少 userId 參數' },
         { status: 400 }
       )
+    }
+
+    // 支援從 Authorization header 讀取 token (React Native)
+    const authHeader = request.headers.get('authorization')
+    let supabase = await createClient()
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '')
+      // 使用 token 建立新的 Supabase client
+      const { createClient: createSupabaseClient } = await import('@supabase/supabase-js')
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      })
     }
 
     // 檢查使用者權限
