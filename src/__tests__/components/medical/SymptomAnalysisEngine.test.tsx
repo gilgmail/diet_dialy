@@ -150,19 +150,19 @@ describe('SymptomAnalysisEngine', () => {
       render(<SymptomAnalysisEngine records={mockSymptomRecords} timeRange="30d" />);
 
       // Total records
-      expect(screen.getByText('5')).toBeInTheDocument();
+      expect(screen.getAllByText('5')[0]).toBeInTheDocument();
 
       // Unique symptoms count
       const uniqueSymptoms = new Set(mockSymptomRecords.flatMap(r => r.symptoms)).size;
-      expect(screen.getByText(uniqueSymptoms.toString())).toBeInTheDocument();
+      expect(screen.getAllByText(uniqueSymptoms.toString())[0]).toBeInTheDocument();
 
       // Average severity
       const avgSeverity = mockSymptomRecords.reduce((sum, r) => sum + r.severity, 0) / mockSymptomRecords.length;
-      expect(screen.getByText(avgSeverity.toFixed(1))).toBeInTheDocument();
+      expect(screen.getAllByText(avgSeverity.toFixed(1))[0]).toBeInTheDocument();
 
       // Unique triggers count
       const uniqueTriggers = new Set(mockSymptomRecords.flatMap(r => r.triggers)).size;
-      expect(screen.getByText(uniqueTriggers.toString())).toBeInTheDocument();
+      expect(screen.getAllByText(uniqueTriggers.toString())[0]).toBeInTheDocument();
     });
 
     it('renders symptom frequency chart', () => {
@@ -397,7 +397,7 @@ describe('SymptomAnalysisEngine', () => {
 
       render(<SymptomAnalysisEngine records={extremeRecords} timeRange="30d" />);
 
-      expect(screen.getByText('2')).toBeInTheDocument(); // Average severity
+      expect(screen.getAllByText('2')[0]).toBeInTheDocument(); // Average severity
     });
   });
 

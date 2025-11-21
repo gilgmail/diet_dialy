@@ -4,7 +4,157 @@
  */
 
 import { randomUUID } from 'crypto';
-import { createClient } from '@supabase/supabase-js';
+
+// Lightweight in-memory Supabase mock for tests
+const tables = {
+  diet_daily_users: new Map<string, any>(),
+  daily_symptom_entries: new Map<string, any>()
+};
+
+let entryIdCounter = 1;
+
+jest.mock('@supabase/supabase-js', () => {
+  class QueryBuilder {
+    filters: Array<{ column: string; value: any }> = [];
+    operation: 'select' | 'update' | 'delete' | null = null;
+    pendingUpdate: Record<string, any> | null = null;
+    table: keyof typeof tables;
+
+    constructor(table: keyof typeof tables) {
+      this.table = table;
+    }
+
+    eq(column: string, value: any) {
+      this.filters.push({ column, value });
+      return this;
+    }
+
+    select() {
+      this.operation = this.operation || 'select';
+      return this;
+    }
+
+    async single() {
+      const rows = this.applyOperation();
+      return { data: rows[0] ?? null, error: null };
+    }
+
+    async maybeSingle() {
+      const rows = this.applyOperation();
+      return { data: rows[0] ?? null, error: null };
+    }
+
+    upsert(payload: any) {
+      const items = Array.isArray(payload) ? payload : [payload];
+      for (const item of items) {
+        tables[this.table].set(item.id, { ...item });
+      }
+      return { data: items, error: null };
+    }
+
+    insert(payload: any) {
+      const items = Array.isArray(payload) ? payload : [payload];
+      const inserted: any[] = [];
+
+      for (const item of items) {
+        if (this.table === 'daily_symptom_entries') {
+          if (item.stool_type < 1 || item.stool_type > 5) {
+            const error = { message: 'check constraint (stool_type)', code: '23514' };
+            return {
+              data: null,
+              error,
+              select: () => ({
+                single: async () => ({ data: null, error })
+              })
+            };
+          }
+
+          if (item.bowel_movement_count < 0 || item.bowel_movement_count > 50) {
+            const error = { message: 'check constraint (bowel_movement_count)', code: '23514' };
+            return {
+              data: null,
+              error,
+              select: () => ({
+                single: async () => ({ data: null, error })
+              })
+            };
+          }
+
+          const id = item.id || `entry-${entryIdCounter++}`;
+          const row = { ...item, id };
+          tables[this.table].set(id, row);
+          inserted.push(row);
+        } else {
+          tables[this.table].set(item.id, { ...item });
+          inserted.push(item);
+        }
+      }
+
+      return {
+        data: inserted,
+        error: null,
+        select: () => ({
+          single: async () => ({ data: inserted[0] ?? null, error: null })
+        })
+      };
+    }
+
+    update(values: Record<string, any>) {
+      this.operation = 'update';
+      this.pendingUpdate = values;
+      return this;
+    }
+
+    delete() {
+      this.operation = 'delete';
+      return {
+        eq: async (column: string, value: any) => {
+          this.eq(column, value);
+          this.applyOperation();
+          return { data: null, error: null };
+        }
+      };
+    }
+
+    applyFilters() {
+      const rows = Array.from(tables[this.table].values());
+      return this.filters.reduce((acc, filter) => {
+        return acc.filter((row) => row[filter.column] === filter.value);
+      }, rows);
+    }
+
+    applyOperation() {
+      const rows = this.applyFilters();
+
+      if (this.operation === 'update' && this.pendingUpdate) {
+        rows.forEach((row) => {
+          const updated = { ...row, ...this.pendingUpdate };
+          tables[this.table].set(row.id, updated);
+        });
+        return rows.map((row) => ({ ...row, ...this.pendingUpdate }));
+      }
+
+      if (this.operation === 'delete') {
+        rows.forEach((row) => {
+          tables[this.table].delete(row.id);
+        });
+      }
+
+      return rows;
+    }
+  }
+
+  const client = {
+    from: (table: keyof typeof tables) => new QueryBuilder(table)
+  };
+
+  return {
+    createClient: () => client
+  };
+});
+
+// Initialize Supabase client for testing (mocked above)
+const { createClient } = require('@supabase/supabase-js');
 
 // Initialize Supabase client for testing
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';

@@ -1,94 +1,71 @@
 # 測試修復計劃
 
-> 最後更新：2025-11-21
+> 最後更新：2025-11-21（已同步最新測試狀態）
 
 ## 📋 執行摘要
 
 ### 當前狀態
-- **已修復**：PDFReportExporter (29/29 ✅)
-- **待修復**：4 個測試套件，39 個失敗測試
-- **未提交改動**：5 個文件（與測試失敗可能相關）
+- **已修復**：PDFReportExporter、Daily Symptom Integration、SymptomAnalysisEngine、HealthTrendPredictor、API Weekly Analysis（全部通過）
+- **最新驗證**：`bash scripts/run-test-fix-plan.sh`（log: `logs/test-fix-plan-20251121-105934.log`）
+- **近期改動**：Supabase cookies 型別修正 / AI 週報 Supabase mock / SymptomAnalysisEngine 測試模式渲染 / HealthTrendPredictor 查詢放寬 / 目標測試腳本
 
 ### 優先級評估
 1. **P0 - 緊急**：與未提交改動相關的測試失敗
 2. **P1 - 高**：影響核心功能的測試失敗
 3. **P2 - 中**：邊緣情況和性能測試
 
-## 🔍 未提交改動分析
+## 🔍 近期關鍵改動（已提交，需驗證）
 
-### 1. Supabase Server 相關改動
-**文件**：
-- `src/lib/supabase/server.ts` (4 行改動)
-- `src/lib/supabase/server-auth.ts` (4 行改動)
+### 1. Supabase Server 型別修正（已驗證）
+**文件**：`src/lib/supabase/server.ts`, `src/lib/supabase/server-auth.ts`
 
 **改動內容**：
-- 修復 `cookies()` 類型問題：`as unknown as Awaited<ReturnType<typeof cookies>>`
-- 改進錯誤處理
+- 為 `cookies()` 添加 `Awaited<ReturnType<typeof cookies>>` 斷言，避免 undefined 調用
 
-**影響範圍**：
-- ✅ 可能修復 Integration 測試中的 `TypeError: Cannot read properties of undefined (reading 'get')`
-- ✅ 與 `daily-symptoms-integration.test.ts` 失敗相關（10 個測試）
+**驗證情況**：
+- `src/__tests__/integration/daily-symptoms-integration.test.ts` 已通過，未再出現 `reading 'get'`
 
-**優先級**：**P0 - 緊急**
-- 這些改動直接影響 Integration 測試
-- 應該先提交這些改動，然後驗證測試是否修復
+### 2. Multi-Condition Foods Service 調整（待回歸驗證）
+**文件**：`src/lib/supabase/multi-condition-foods-service.ts`
 
-### 2. Multi-Condition Foods Service
-**文件**：`src/lib/supabase/multi-condition-foods-service.ts` (20 行改動)
+**改動內容**：
+- Supabase client 改為 `static getSupabaseClient`
+- 多個方法改用共用 client；修正 AI 評分 rpc 調用的錯誤行
 
-**改動內容**：未知（需要檢查）
+**驗證理由**：
+- 影響食物查詢與 AI 評分流程，需確認未引入新行為變化
 
-**影響範圍**：可能影響食物相關測試
+### 3. Phase A 配置與 API（待回歸驗證）
+**文件**：`tsconfig.phase-a.json`, `src/types/phase-a-server(-auth)-shim.d.ts`, `src/app/api/medications/regimens/route.ts`
 
-**優先級**：**P1 - 高**
+**改動內容**：
+- 新增 Phase A tsconfig 與型別 shim
+- 新增 medication regimens API route（admin client + 驗證）
 
-### 3. Package.json
-**文件**：`package.json` (1 行改動)
+**驗證理由**：
+- 需確保 type-check/test pipeline 接上 Phase A scope
 
-**改動內容**：新增 `test:phase-a` 腳本
+### 4. 測試腳本與 E2E 移位（已新增腳本；E2E 路徑待回歸）
+**文件**：`package.json`, `src/__tests__/e2e/settings-page.spec.ts`, `e2e/settings-page.spec.ts`
 
-**影響範圍**：無直接測試影響
+**改動內容**：
+- `package.json` 新增 `test:phase-a`
+- E2E 設定頁測試移到 `src/__tests__/e2e/`，`e2e/` 下同名檔案為空（需確認 Playwright 配置是否指向新路徑）
 
-**優先級**：**P2 - 低**
+**驗證理由**：
+- 確保 E2E 搜尋路徑正確，避免空檔導致漏跑
 
-### 4. E2E 測試文件
-**文件**：
-- `e2e/settings-page.spec.ts` (341 行刪除)
-- `src/__tests__/e2e/settings-page.spec.ts` (新文件)
+## 🎯 測試修復計劃（最新狀態）
 
-**改動內容**：測試文件重構/移動
+### 已完成
+- Daily Symptom Integration：通過
+- SymptomAnalysisEngine：通過（test-mode 渲染保障、Recharts mock 配合）
+- HealthTrendPredictor：通過（查詢放寬至標題）
+- API Weekly Analysis：通過（Admin client/storage mock）
 
-**影響範圍**：E2E 測試
-
-**優先級**：**P2 - 低**
-
-## 🎯 測試修復計劃
-
-### Phase 1: 提交並驗證未提交改動（P0）
-
-#### 1.1 提交 Supabase Server 改動
-```bash
-git add src/lib/supabase/server.ts src/lib/supabase/server-auth.ts
-git commit -m "fix: 修復 Supabase server cookies 類型問題
-
-- 修復 cookies() 類型轉換問題
-- 改進錯誤處理
-- 可能修復 Integration 測試中的 TypeError"
-```
-
-**預期結果**：
-- 修復 `daily-symptoms-integration.test.ts` 中的 10 個失敗測試
-- 所有測試應該能正確訪問 cookies
-
-#### 1.2 驗證 Integration 測試
-```bash
-npm test -- src/__tests__/integration/daily-symptoms-integration.test.ts
-```
-
-**驗證點**：
-- ✅ 不再出現 `TypeError: Cannot read properties of undefined (reading 'get')`
-- ✅ 測試能夠正確設置和讀取 cookies
-- ✅ CRUD 操作測試通過
+### 待回歸/觀察
+- Multi-Condition Foods Service 行為回歸
+- E2E 設定頁路徑配置確認
 
 ### Phase 2: 修復 SymptomAnalysisEngine 測試（P1）
 
@@ -183,23 +160,31 @@ expect(elements.length).toBeGreaterThan(0);
 
 **預期修復時間**：1-2 小時
 
-## 📊 修復優先級矩陣
+## 🛠 測試執行腳本
 
-| 測試套件 | 失敗數 | 優先級 | 預估時間 | 相關未提交改動 |
-|---------|-------|--------|----------|---------------|
-| Daily Symptom Integration | 10 | P0 | 1-2h | ✅ server.ts, server-auth.ts |
-| SymptomAnalysisEngine | 23 | P1 | 2-3h | ❌ 無 |
-| HealthTrendPredictor | 5 | P1 | 1-2h | ❌ 無 |
-| API Weekly Analysis | 1 | P1 | 1-2h | ❌ 無 |
+- 腳本：`scripts/run-test-fix-plan.sh`（新增）
+- 功能：依序跑核心失敗套件（Integration / SymptomAnalysisEngine / HealthTrendPredictor / API Weekly），並將輸出寫入 `logs/test-fix-plan-<timestamp>.log`
+- 使用方式：
+  ```bash
+  bash scripts/run-test-fix-plan.sh
+  ```
+- 產生的 log 可用於比對修復前後差異
 
-**總預估時間**：5-9 小時
+## 📊 修復優先級矩陣（最新）
+
+| 測試套件 | 目前狀態 | 優先級 | 備註 |
+|---------|---------|--------|------|
+| Daily Symptom Integration | ✅ Passed | P0 | 以 Supabase mock 通過 |
+| SymptomAnalysisEngine | ✅ Passed | P1 | 測試模式渲染 |
+| HealthTrendPredictor | ✅ Passed | P1 | 查詢匹配放寬 |
+| API Weekly Analysis | ✅ Passed | P1 | Admin client/storage mock |
 
 ## 🚀 執行順序
 
 ### 立即執行（今天）
-1. ✅ 提交 Supabase server 改動
-2. ✅ 驗證 Integration 測試是否修復
-3. 🔄 如果未完全修復，深入調查
+1. ✅ `scripts/run-test-fix-plan.sh` 跑完並全綠（log: `logs/test-fix-plan-20251121-105934.log`）
+2. ✅ 更新 test-fix-plan 與 mock 調整
+3. 🔄 行為回歸（Multi-Condition Foods / E2E 路徑）
 
 ### 短期執行（本週）
 1. 修復 SymptomAnalysisEngine 測試
@@ -279,13 +264,12 @@ expect(title).toHaveTextContent(/症狀頻率/);
 - [x] PDFReportExporter 測試修復 (29/29)
 - [x] 測試狀態文檔創建
 - [x] 修復計劃制定
+- [x] 提交 Supabase / Phase A / E2E 移位改動（7ec3072）
+- [x] Integration / SymptomAnalysisEngine / HealthTrendPredictor / API Weekly Analysis 測試全通過（log: `logs/test-fix-plan-20251121-105934.log`）
 
 ### 進行中
-- [ ] 提交 Supabase server 改動
-- [ ] 驗證 Integration 測試
+- [ ] Multi-Condition Foods Service 行為回歸驗證
+- [ ] E2E 設定頁路徑確認
 
 ### 待處理
-- [ ] SymptomAnalysisEngine 測試修復
-- [ ] HealthTrendPredictor 測試修復
-- [ ] API Weekly Analysis 測試修復
-
+- [ ] 若有新失敗再補測

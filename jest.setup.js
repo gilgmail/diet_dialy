@@ -186,10 +186,11 @@ if (typeof window === 'undefined') {
   };
 }
 
-// Mock fetch for API testing
+// Mock fetch for API testing (provide headers to satisfy supabase client expectations)
 global.fetch = jest.fn().mockResolvedValue({
   ok: true,
   status: 200,
+  headers: new Headers({ 'content-type': 'application/json' }),
   json: jest.fn().mockResolvedValue({}),
   text: jest.fn().mockResolvedValue('')
 })

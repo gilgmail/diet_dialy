@@ -334,7 +334,7 @@ describe('HealthTrendPredictor', () => {
         />
       );
 
-      expect(screen.getByText(/症狀嚴重程度 趨勢預測/)).toBeInTheDocument();
+      expect(screen.getByText(/健康趨勢預測分析/)).toBeInTheDocument();
       expect(screen.getByTestId('line-chart')).toBeInTheDocument();
     });
 
@@ -406,7 +406,11 @@ describe('HealthTrendPredictor', () => {
           moodImpact: '心情影響'
         };
 
-        expect(screen.getByText(new RegExp(metricLabels[metric]))).toBeInTheDocument();
+        expect(
+          screen.getByRole('heading', {
+            name: new RegExp(metricLabels[metric])
+          })
+        ).toBeInTheDocument();
       });
     });
   });

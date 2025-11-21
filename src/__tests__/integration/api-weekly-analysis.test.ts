@@ -28,10 +28,34 @@ jest.mock('@anthropic-ai/sdk', () => ({
   AnthropicError: class AnthropicError extends Error {}
 }))
 
-jest.mock('@/lib/supabase/server', () => ({
-  createAdminClient: jest.fn(() => ({})),
-  createClient: jest.fn(() => ({}))
-}))
+jest.mock('@/lib/supabase/server', () => {
+  const mockPreferences = { mobileSettings: { aiModelPreference: 'mock' } }
+
+  const storage = {
+    createBucket: jest.fn().mockResolvedValue({}),
+    from: jest.fn(() => ({
+      list: jest.fn().mockResolvedValue({ data: [], error: null }),
+      download: jest.fn().mockResolvedValue({ data: { text: async () => '{}' }, error: null }),
+      upload: jest.fn().mockResolvedValue({ data: {}, error: null })
+    }))
+  }
+
+  const from = jest.fn((table: string) => ({
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    maybeSingle: jest.fn().mockResolvedValue({
+      data: table === 'diet_daily_users' ? { preferences: mockPreferences } : null,
+      error: null
+    })
+  }))
+
+  const adminClient = { from, storage }
+
+  return {
+    createAdminClient: jest.fn(() => adminClient),
+    createClient: jest.fn(() => adminClient)
+  }
+})
 
 const SYMPTOM_STORE_KEY = '__weeklyAnalysisTestSymptomEntries__'
 ;(globalThis as any)[SYMPTOM_STORE_KEY] = (globalThis as any)[SYMPTOM_STORE_KEY] || []
