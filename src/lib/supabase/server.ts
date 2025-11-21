@@ -5,7 +5,7 @@ import { cookies } from 'next/headers'
 
 // 服務器端 Supabase 客戶端 (使用 user auth context)
 export function createClient() {
-  const cookieStore = cookies()
+  const cookieStore = cookies() as unknown as Awaited<ReturnType<typeof cookies>>
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 

@@ -57,7 +57,7 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<Authen
  */
 export async function getAuthenticatedUserFromCookies(): Promise<AuthenticatedUser | null> {
   try {
-    const cookieStore = cookies()
+    const cookieStore = cookies() as unknown as Awaited<ReturnType<typeof cookies>>
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/types/*": ["./src/types/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/stores/*": ["./src/stores/*"],
+      "@/data/*": ["./src/data/*"],
+      "@/lib/supabase/server": ["./src/types/phase-a-server-shim.d.ts"],
+      "@/lib/supabase/server-auth": ["./src/types/phase-a-server-auth-shim.d.ts"]
+    }
+  },
+  "include": [
+    "src/app/api/medications/regimens/**/*.ts",
+    "src/lib/supabase/server.ts",
+    "src/lib/supabase/server-auth.ts",
+    "src/lib/supabase/multi-condition-foods-service.ts",
+    "src/types/**/*.ts"
+  ]
+}

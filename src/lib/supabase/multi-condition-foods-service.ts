@@ -2,6 +2,7 @@
 import { createClient } from './client'
 
 export interface MultiConditionScores {
+  [key: string]: any
   ibd?: {
     acute_phase: number
     remission_phase: number
@@ -76,6 +77,7 @@ export interface MultiConditionPatientProfile {
 
   // 疾病特定資料
   condition_details: {
+    [key: string]: any
     ibd?: {
       type: 'crohns' | 'ulcerative_colitis' | 'ibd_unspecified'
       current_phase: 'acute' | 'remission' | 'mild_flare' | 'moderate_flare' | 'severe_flare'
@@ -129,7 +131,7 @@ export interface ConditionConfig {
 }
 
 export class MultiConditionFoodsService {
-  private getSupabaseClient() {
+  private static getSupabaseClient() {
     return createClient()
   }
 
@@ -143,6 +145,7 @@ export class MultiConditionFoodsService {
     currentPhase?: string,
     userId?: string
   ): Promise<EnhancedFood[]> {
+    const supabase = this.getSupabaseClient()
     let query = supabase
       .from('diet_daily_foods')
       .select('*')
@@ -196,6 +199,7 @@ export class MultiConditionFoodsService {
   ): Promise<EnhancedFood[]> {
     // 獲取用戶多疾病檔案
     const patientProfile = await this.getPatientProfile(userId)
+    const supabase = this.getSupabaseClient()
 
     let query = supabase
       .from('diet_daily_foods')
@@ -277,6 +281,7 @@ export class MultiConditionFoodsService {
    * 獲取台灣常見食物
    */
   static async getTaiwanCommonFoods(category?: string): Promise<EnhancedFood[]> {
+    const supabase = this.getSupabaseClient()
     let query = supabase
       .from('diet_daily_foods')
       .select('*')
@@ -306,6 +311,8 @@ export class MultiConditionFoodsService {
     foodData: Partial<EnhancedFood> & { created_by: string },
     targetConditions: string[] = ['ibd', 'ibs']
   ): Promise<EnhancedFood | null> {
+    const supabase = this.getSupabaseClient()
+
     // 準備營養資料
     const nutrition = {
       calories: foodData.calories || 0,
@@ -320,8 +327,7 @@ export class MultiConditionFoodsService {
     const properties = foodData.food_properties || {}
 
     // 使用Supabase函數計算多疾病評分
-    const { data: aiScores, error: scoreError } = const supabase = this.getSupabaseClient()
-    const { data, error } = await supabase.rpc('calculate_multi_condition_score', {
+    const { data: aiScores, error: scoreError } = await supabase.rpc('calculate_multi_condition_score', {
       p_nutrition: nutrition,
       p_properties: properties,
       p_conditions: targetConditions
@@ -371,7 +377,7 @@ export class MultiConditionFoodsService {
    * 獲取或創建多疾病患者檔案
    */
   static async getPatientProfile(userId: string): Promise<MultiConditionPatientProfile | null> {
-    const supabase = createClient()
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('patient_profiles')
       .select('*')
@@ -390,7 +396,7 @@ export class MultiConditionFoodsService {
    * 更新或創建多疾病患者檔案
    */
   static async upsertPatientProfile(profileData: MultiConditionPatientProfile): Promise<MultiConditionPatientProfile> {
-    const supabase = createClient()
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('patient_profiles')
       .upsert({
@@ -412,7 +418,7 @@ export class MultiConditionFoodsService {
    * 獲取疾病配置
    */
   static async getConditionConfigs(): Promise<ConditionConfig[]> {
-    const supabase = createClient()
+    const supabase = this.getSupabaseClient()
     const { data, error } = await supabase
       .from('medical_condition_configs')
       .select('*')
@@ -434,6 +440,7 @@ export class MultiConditionFoodsService {
     conditions: string[],
     phase?: string
   ): Promise<string[]> {
+    const supabase = this.getSupabaseClient()
     let query = supabase
       .from('diet_daily_foods')
       .select('category')
@@ -458,6 +465,7 @@ export class MultiConditionFoodsService {
     userId: string,
     conditions: string[]
   ): Promise<{ personalizedScores: MultiConditionScores; recommendations: string[] } | null> {
+    const supabase = this.getSupabaseClient()
     // 獲取食物資料
     const { data: food, error: foodError } = await supabase
       .from('diet_daily_foods')

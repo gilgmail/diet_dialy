@@ -17,6 +17,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
+    "test:phase-a": "bash scripts/phase-a-regimens-check.sh",
     "test:ci": "jest --runTestsByPath src/__tests__/ci/smoke.test.ts --runInBand",
     "lint:ci": "eslint src/app/layout.tsx src/components/common/OfflineIndicator.tsx src/components/google src/lib/google src/components/ui/button.tsx --max-warnings=0",
     "type-check:ci": "tsc --noEmit --project tsconfig.ci.json",
