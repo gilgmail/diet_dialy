@@ -1132,41 +1132,58 @@ export class DashboardService {
       }
 
       const normalizedBase = apiBase.replace(/\/+$/, '')
-      const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
-      const url = `${baseApiUrl}/mobile/gamification/streak?userId=${userId}`
-      
-      console.log('[DashboardService] Fetching streak from:', url)
+      const primaryBase = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
+      // 防止重複 /api 或 /mobile，提供後備嘗試
+      const fallbackBase = normalizedBase.includes('/api/mobile') ? normalizedBase.replace(/\/+$/, '') : normalizedBase
+      const candidates = Array.from(new Set([primaryBase, fallbackBase]))
+      let lastError: { status: number; body: unknown; url: string } | null = null
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      })
+      for (const base of candidates) {
+        const url = `${base}/mobile/gamification/streak?userId=${userId}`
+        console.log('[DashboardService] Fetching streak from:', url)
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: '未知錯誤' }))
-        console.error('[DashboardService] Streak API error:', response.status, errorData)
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        })
+
+        if (!response.ok) {
+          // 盡量解析錯誤回應，若為純文字則保留
+          const body = await response
+            .json()
+            .catch(async () => await response.text().catch(() => '未知錯誤'))
+          console.error('[DashboardService] Streak API error:', response.status, body, 'url:', url)
+          lastError = { status: response.status, body, url }
+          continue
+        }
+
+        const result = await response.json()
+        console.log('[DashboardService] Streak result:', result)
+
+        if (!result.success) {
+          return {
+            data: null,
+            error: { message: result.error || '無法取得連續記錄天數' },
+          }
+        }
+
         return {
-          data: null,
-          error: { message: errorData.error || `HTTP ${response.status}` },
+          data: result.streak,
+          error: null,
         }
       }
 
-      const result = await response.json()
-      console.log('[DashboardService] Streak result:', result)
-
-      if (!result.success) {
-        return {
-          data: null,
-          error: { message: result.error || '無法取得連續記錄天數' },
-        }
-      }
-
+      // 所有候選 URL 皆失敗
       return {
-        data: result.streak,
-        error: null,
+        data: null,
+        error: {
+          message: lastError
+            ? `HTTP ${lastError.status} - ${typeof lastError.body === 'string' ? lastError.body : JSON.stringify(lastError.body)} (url: ${lastError.url})`
+            : '無法取得連續記錄天數',
+        },
       }
     } catch (error) {
       console.error('[DashboardService] getStreak error:', error)

@@ -11,14 +11,21 @@ import { DashboardScreen } from '@/features/dashboard/screens/DashboardScreen'
 import { DataCoverageCard } from '@/features/dashboard/components/DataCoverageCard'
 import { MissingDataAlertCard } from '@/features/dashboard/components/MissingDataAlertCard'
 import { StreakCard } from '@/features/dashboard/components/StreakCard'
+import { HealthStatusCard } from '@/features/dashboard/components/HealthStatusCard'
 import { useDataCoverage, useMissingDataAlerts } from '@/features/dashboard/hooks/useDataCoverage'
 import { useStreak } from '@/features/dashboard/hooks/useStreak'
 import { useAuth } from '@/features/auth/hooks/useAuth'
+import { GamificationBoard } from '@/features/insights/components/GamificationBoard'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import type { MainStackParamList } from '@/app/navigation/types'
 import { colors, typography, spacing } from '@/theme'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
+import { useQuery } from '@tanstack/react-query'
+import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
+import { useBowelDiarySummary } from '@/features/bowel-diary/hooks/useBowelDiarySummary'
+import { useMemo } from 'react'
+import { startOfDay, format } from 'date-fns'
 
 /**
  * InsightsScreen - 洞察頁面
@@ -30,7 +37,7 @@ export function InsightsScreen() {
   const { user } = useAuth()
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
   const [refreshing, setRefreshing] = React.useState(false)
-  const [activeTab, setActiveTab] = React.useState<'progress' | 'reports'>('progress')
+  const [activeTab, setActiveTab] = React.useState<'quests' | 'progress' | 'reports'>('quests')
   
   // Phase A: Data Coverage and Missing Alerts (使用本週或註冊後的邏輯)
   const { coverage: dataCoverage, isLoading: isLoadingCoverage, error: coverageError, refetch: refetchCoverage } = useDataCoverage()
@@ -38,6 +45,90 @@ export function InsightsScreen() {
   
   // Gamification: Streak tracking
   const { streak, isLoading: isLoadingStreak, error: streakError, refetch: refetchStreak } = useStreak()
+
+  // Health Status: 取得今日的症狀和大便資料
+  const today = useMemo(() => startOfDay(new Date()), [])
+  const todayKey = useMemo(() => format(today, 'yyyy-MM-dd'), [today])
+  
+  // 查詢今日的 daily_symptom_entries（包含 bowel_movement_count 和 stool_type）
+  const { data: todayDailyEntry } = useQuery({
+    queryKey: ['dailySymptomEntry', user?.id, todayKey],
+    queryFn: async () => {
+      if (!user?.id) return null
+      const { supabase } = await import('@/shared/api/supabase/client')
+      const { data, error } = await supabase
+        .from('daily_symptom_entries')
+        .select('bowel_movement_count, stool_type, abdominal_pain, diarrhea, bloody_stool, bloating, overall_health')
+        .eq('user_id', user.id)
+        .eq('recorded_date', todayKey)
+        .single()
+      
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('[InsightsScreen] Error fetching daily entry:', error)
+        return null
+      }
+      return data
+    },
+    enabled: !!user?.id,
+  })
+
+  const { summary: bowelSummary } = useBowelDiarySummary(today)
+
+  // 判斷健康狀態：沒症狀 + 大便 1 次
+  const hasNoSymptoms = useMemo(() => {
+    if (!todayDailyEntry) {
+      // 如果沒有記錄，檢查是否有大便記錄（有記錄但沒有症狀也算健康）
+      return bowelSummary.totalCount > 0
+    }
+    // 檢查是否有嚴重症狀（abdominal_pain, diarrhea, bloody_stool, bloating 都為 0 或 null）
+    const noPain = (todayDailyEntry.abdominal_pain === 0 || todayDailyEntry.abdominal_pain === null)
+    const noDiarrhea = (todayDailyEntry.diarrhea === 0 || todayDailyEntry.diarrhea === null)
+    const noBlood = (todayDailyEntry.bloody_stool === 0 || todayDailyEntry.bloody_stool === null)
+    const noBloating = (todayDailyEntry.bloating === 0 || todayDailyEntry.bloating === null)
+    const goodHealth = todayDailyEntry.overall_health >= 3 // 3 以上算健康
+    
+    return noPain && noDiarrhea && noBlood && noBloating && goodHealth
+  }, [todayDailyEntry, bowelSummary])
+
+  // 取得今日大便次數和類型
+  const bowelMovementCount = useMemo(() => {
+    // 優先使用 daily_symptom_entries 的資料
+    if (todayDailyEntry?.bowel_movement_count !== null && todayDailyEntry?.bowel_movement_count !== undefined) {
+      return todayDailyEntry.bowel_movement_count
+    }
+    // 否則使用 bowel_movement_entries 的計數
+    return bowelSummary.totalCount
+  }, [todayDailyEntry, bowelSummary])
+
+  const stoolType = useMemo(() => {
+    // 從 daily_symptom_entries 取得
+    if (todayDailyEntry?.stool_type !== null && todayDailyEntry?.stool_type !== undefined) {
+      return todayDailyEntry.stool_type
+    }
+    return undefined
+  }, [todayDailyEntry])
+
+  const handleNavigateToCategory = React.useCallback((category: string) => {
+    switch (category) {
+      case 'symptoms':
+        navigation.navigate('AddSymptomEntry', { date: undefined })
+        break
+      case 'food':
+        navigation.navigate('AddFoodEntry', { date: undefined })
+        break
+      case 'medications':
+        navigation.navigate('MedicationLog', undefined)
+        break
+      case 'sleep':
+        navigation.navigate('SleepLog', undefined)
+        break
+      case 'exercise':
+        navigation.navigate('ActivityLog', undefined)
+        break
+      default:
+        break
+    }
+  }, [navigation])
 
   const handleRefresh = React.useCallback(async () => {
     setRefreshing(true)
@@ -70,11 +161,19 @@ export function InsightsScreen() {
       {/* Tab Navigation - 簡化為兩個分頁（暫時隱藏 AI 洞察） */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
+          style={[styles.tab, activeTab === 'quests' && styles.tabActive]}
+          onPress={() => setActiveTab('quests')}
+        >
+          <Text style={[styles.tabText, activeTab === 'quests' && styles.tabTextActive]}>
+            🎯 今日任務
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[styles.tab, activeTab === 'progress' && styles.tabActive]}
           onPress={() => setActiveTab('progress')}
         >
           <Text style={[styles.tabText, activeTab === 'progress' && styles.tabTextActive]}>
-            🎯 進度
+            📈 進度
           </Text>
         </TouchableOpacity>
         {/* 暫時隱藏 AI 洞察功能 */}
@@ -97,7 +196,7 @@ export function InsightsScreen() {
       </View>
 
       {/* Tab Content */}
-      {activeTab === 'progress' ? (
+      {activeTab === 'quests' ? (
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.contentContainer}
@@ -105,7 +204,32 @@ export function InsightsScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
         >
-          {/* Progress Tab - 遊戲化 UI */}
+          <View style={styles.section}>
+            <GamificationBoard
+              streak={streak}
+              coverage={dataCoverage}
+              alerts={missingAlerts}
+              onNavigate={handleNavigateToCategory}
+            />
+          </View>
+        </ScrollView>
+      ) : activeTab === 'progress' ? (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.contentContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+        >
+          {/* 進度概覽與充足度 */}
+          {/* Health Status Card - 健康狀態卡片 */}
+          <View style={styles.section}>
+            <HealthStatusCard
+              hasNoSymptoms={hasNoSymptoms}
+              bowelMovementCount={bowelMovementCount}
+              stoolType={stoolType}
+            />
+          </View>
           {/* Streak Card - 連續記錄天數 */}
           <View style={styles.section}>
             {isLoadingStreak ? (
