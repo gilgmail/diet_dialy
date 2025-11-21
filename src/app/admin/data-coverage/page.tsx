@@ -5,8 +5,6 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
 import { Database, AlertTriangle, CheckCircle, Clock, Users, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 
-export const dynamic = 'force-dynamic'
-
 interface DataCoverageUser {
   user_id: string
   email: string
