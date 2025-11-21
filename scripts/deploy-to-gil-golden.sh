@@ -134,7 +134,24 @@ print_status "Clearing Expo / Metro caches..."
 rm -rf .expo
 rm -rf node_modules/.cache/metro
 rm -rf node_modules/.cache/expo
+rm -rf ios/.xcode.env.local
 print_success "Caches cleared"
+
+# Clean Xcode build artifacts (but keep Pods)
+print_status "Cleaning Xcode build artifacts..."
+if [ -d "ios" ]; then
+    rm -rf ios/DerivedData
+    rm -rf ios/build
+    rm -rf ios/.xcode.env.local
+    # Clean Pods cache but keep Pods directory
+    if [ -d "ios/Pods" ]; then
+        cd ios && pod cache clean --all 2>/dev/null || true
+        cd ..
+    fi
+    print_success "Xcode build artifacts cleaned"
+else
+    print_warning "No ios directory found, skipping Xcode clean"
+fi
 
 # Display build info
 echo ""
@@ -149,16 +166,35 @@ fi
 echo -e "${BLUE}═══════════════════════════════════════════════${NC}"
 echo ""
 
+# Check device connection method
+print_status "Checking device connection method..."
+DEVICE_INFO=$(xcrun devicectl list devices | grep "$DEVICE_NAME")
+if echo "$DEVICE_INFO" | grep -q "network\|WiFi\|wireless"; then
+    print_success "Device connected via network/WiFi"
+else
+    print_warning "Device connection method: $(echo "$DEVICE_INFO" | awk '{print $NF}')"
+    print_warning "If build fails, ensure device is on same WiFi network"
+fi
+
 # Build and deploy
-print_status "Starting build process (this may take several minutes)..."
+print_status "Starting clean build process (this may take several minutes)..."
 echo ""
 
-# Run build (macOS uses gtimeout from coreutils, fallback to no timeout)
+# Run build with clean flag
+# Using --no-build-cache to ensure fresh build (clears native derived data)
 if command -v gtimeout &> /dev/null; then
-    APP_VARIANT="$APP_VARIANT_ENV" gtimeout 600 npx expo run:ios --device "$DEVICE_NAME" --configuration "$XCODE_CONFIGURATION" 2>&1
+    APP_VARIANT="$APP_VARIANT_ENV" gtimeout 600 npx expo run:ios \
+        --device "$DEVICE_NAME" \
+        --configuration "$XCODE_CONFIGURATION" \
+        --no-build-cache \
+        2>&1
     BUILD_RESULT=$?
 else
-    APP_VARIANT="$APP_VARIANT_ENV" npx expo run:ios --device "$DEVICE_NAME" --configuration "$XCODE_CONFIGURATION" 2>&1
+    APP_VARIANT="$APP_VARIANT_ENV" npx expo run:ios \
+        --device "$DEVICE_NAME" \
+        --configuration "$XCODE_CONFIGURATION" \
+        --no-build-cache \
+        2>&1
     BUILD_RESULT=$?
 fi
 

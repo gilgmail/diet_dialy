@@ -49,6 +49,50 @@ import type {
 
 type TabType = 'summary' | 'detail'
 
+type QuickActionConfig = {
+  key: string
+  label: string
+  icon: string
+  color: string
+  onPress: () => void
+}
+
+type SummaryCardConfig = {
+  key: string
+  title: string
+  count: number
+  icon: string
+  accent: string
+  hint: string
+  onPress: () => void
+}
+
+type TimelineItem = {
+  id: string
+  type: 'food' | 'symptom' | 'medication' | 'sleep' | 'activity'
+  title: string
+  timestamp: string | null
+  meta?: string
+  icon: string
+  color: string
+}
+
+type SnapshotSection = {
+  key: string
+  title: string
+  icon: string
+  color: string
+  badge: number
+  items: {
+    id: string
+    primary: string
+    secondary?: string
+    meta?: string
+  }[]
+  emptyText: string
+  onAdd: () => void
+}
+
 export function TodayScreen() {
   const { user } = useAuthStore()
   const { settings, initializeSettings } = useSettingsStore()
@@ -58,7 +102,6 @@ export function TodayScreen() {
 
   // Tab state
   const [activeTab, setActiveTab] = useState<TabType>('summary')
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
 
   // Delete confirmation dialog state
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -221,6 +264,14 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
     [navigation]
   )
 
+  const mealLabelMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    MEAL_TYPES.forEach((meal) => {
+      map[meal.value] = meal.label
+    })
+    return map
+  }, [])
+
   // Calculate meal stats
   const mealStats = useMemo(() => {
     const stats = { breakfast: 0, lunch: 0, dinner: 0, snack: 0 }
@@ -248,24 +299,340 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
     return grouped
   }, [foodEntries])
 
+  const totalLogs = useMemo(() => {
+    return (
+      foodEntries.length +
+      symptomEntries.length +
+      mLogs.length +
+      sSessions.length +
+      aSessions.length
+    )
+  }, [foodEntries.length, symptomEntries.length, mLogs.length, sSessions.length, aSessions.length])
+
+  const quickActions = useMemo<QuickActionConfig[]>(() => {
+    return [
+      {
+        key: 'food',
+        label: '飲食',
+        icon: 'silverware-fork-knife',
+        color: colors.success,
+        onPress: () => navigation.navigate('AddFoodEntry', { date: undefined }),
+      },
+      {
+        key: 'symptom',
+        label: '症狀',
+        icon: 'medical-bag',
+        color: colors.error,
+        onPress: () => navigation.navigate('AddSymptomEntry', { date: undefined }),
+      },
+      {
+        key: 'bowel',
+        label: '排便',
+        icon: 'toilet',
+        color: '#D2691E',
+        onPress: () => navigation.navigate('AddBowelMovement', { date: undefined }),
+      },
+      {
+        key: 'medication',
+        label: '用藥',
+        icon: 'pill',
+        color: colors.primary[500],
+        onPress: () => navigation.navigate('MedicationLog'),
+      },
+      {
+        key: 'sleep',
+        label: '睡眠',
+        icon: 'sleep',
+        color: colors.secondary[500],
+        onPress: () => navigation.navigate('SleepLog'),
+      },
+      {
+        key: 'activity',
+        label: '運動',
+        icon: 'run',
+        color: colors.info,
+        onPress: () => navigation.navigate('ActivityLog'),
+      },
+    ]
+  }, [navigation])
+
+  const summaryCards = useMemo<SummaryCardConfig[]>(() => {
+    const cards: SummaryCardConfig[] = [
+      {
+        key: 'food',
+        title: '飲食',
+        count: foodEntries.length,
+        icon: 'food-apple',
+        accent: '#ECFDF5',
+        hint: foodEntries.length > 0 ? '查看今天的餐點' : '點擊快速新增',
+        onPress: () => navigation.navigate('AddFoodEntry', { date: undefined }),
+      },
+      {
+        key: 'symptom',
+        title: '症狀',
+        count: symptomEntries.length,
+        icon: 'medical-bag',
+        accent: '#FEF2F2',
+        hint: symptomEntries.length > 0 ? '追蹤狀況變化' : '建立第一筆症狀',
+        onPress: () => navigation.navigate('AddSymptomEntry', { date: undefined }),
+      },
+      {
+        key: 'bowel',
+        title: '排便',
+        count: 0,
+        icon: 'toilet',
+        accent: '#FFF7ED',
+        hint: '快速記錄 Bristol 指標',
+        onPress: () => navigation.navigate('AddBowelMovement', { date: undefined }),
+      },
+    ]
+
+    if (showMedication) {
+      cards.push({
+        key: 'medication',
+        title: '用藥',
+        count: mLogs.length,
+        icon: 'pill',
+        accent: '#EEF2FF',
+        hint: mLogs.length > 0 ? '查看今日劑量' : '補上今日用藥',
+        onPress: () => navigation.navigate('MedicationLog'),
+      })
+    }
+
+    if (showSleep) {
+      cards.push({
+        key: 'sleep',
+        title: '睡眠',
+        count: sSessions.length,
+        icon: 'sleep',
+        accent: '#F5F3FF',
+        hint: sSessions.length > 0 ? '睡眠品質概覽' : '先設定預計時間',
+        onPress: () => navigation.navigate('SleepLog'),
+      })
+    }
+
+    if (showActivity) {
+      cards.push({
+        key: 'activity',
+        title: '運動',
+        count: aSessions.length,
+        icon: 'run',
+        accent: '#ECFEFF',
+        hint: aSessions.length > 0 ? '保持活動紀錄' : '記錄散步/瑜珈',
+        onPress: () => navigation.navigate('ActivityLog'),
+      })
+    }
+
+    return cards
+  }, [
+    foodEntries.length,
+    symptomEntries.length,
+    mLogs.length,
+    sSessions.length,
+    aSessions.length,
+    navigation,
+    showMedication,
+    showSleep,
+    showActivity,
+  ])
+
+  const timelineItems = useMemo<TimelineItem[]>(() => {
+    const items: TimelineItem[] = []
+
+    foodEntries.forEach((entry) => {
+      items.push({
+        id: entry.id,
+        type: 'food',
+        title: entry.food_name,
+        timestamp: entry.consumed_at,
+        meta: mealLabelMap[entry.meal_type] ?? '',
+        icon: 'food-apple',
+        color: colors.success,
+      })
+    })
+
+    symptomEntries.forEach((entry) => {
+      items.push({
+        id: entry.id,
+        type: 'symptom',
+        title: entry.symptom_name,
+        timestamp: entry.recorded_at,
+        meta: entry.severity ? `程度 ${entry.severity}` : undefined,
+        icon: 'medical-bag',
+        color: colors.error,
+      })
+    })
+
+    mLogs.forEach((log) => {
+      items.push({
+        id: log.id,
+        type: 'medication',
+        title: log.regimen_name,
+        timestamp: log.taken_at,
+        meta: log.dose || undefined,
+        icon: 'pill',
+        color: colors.primary[500],
+      })
+    })
+
+    sSessions.forEach((session) => {
+      items.push({
+        id: session.id,
+        type: 'sleep',
+        title: session.is_main_sleep ? '主要睡眠' : '小睡',
+        timestamp: session.start_time,
+        meta: session.duration_minutes
+          ? `${(session.duration_minutes / 60).toFixed(1)} 小時`
+          : undefined,
+        icon: 'sleep',
+        color: colors.secondary[500],
+      })
+    })
+
+    aSessions.forEach((activity) => {
+      items.push({
+        id: activity.id,
+        type: 'activity',
+        title: activity.activity_title || activity.activity_type,
+        timestamp: activity.start_time,
+        meta: activity.duration_minutes ? `${activity.duration_minutes} 分鐘` : undefined,
+        icon: 'run',
+        color: colors.info,
+      })
+    })
+
+    return items
+      .filter((item) => !!item.timestamp)
+      .sort(
+        (a, b) =>
+          new Date(b.timestamp ?? 0).getTime() - new Date(a.timestamp ?? 0).getTime()
+      )
+      .slice(0, 5)
+  }, [foodEntries, symptomEntries, mLogs, sSessions, aSessions, mealLabelMap])
+
+  const snapshotSections = useMemo<SnapshotSection[]>(() => {
+    const sections: SnapshotSection[] = []
+
+    if (foodEntries.length > 0) {
+      sections.push({
+        key: 'food',
+        title: '最新飲食',
+        icon: 'food-apple',
+        color: colors.success,
+        badge: foodEntries.length,
+        emptyText: '尚無飲食紀錄',
+        onAdd: () => navigation.navigate('AddFoodEntry', { date: undefined }),
+        items: foodEntries.slice(0, 2).map((entry) => ({
+          id: entry.id,
+          primary: entry.food_name,
+          secondary: format(new Date(entry.consumed_at), 'HH:mm'),
+          meta: mealLabelMap[entry.meal_type] ?? '',
+        })),
+      })
+    }
+
+    if (symptomEntries.length > 0) {
+      sections.push({
+        key: 'symptom',
+        title: '症狀速覽',
+        icon: 'medical-bag',
+        color: colors.error,
+        badge: symptomEntries.length,
+        emptyText: '尚無症狀紀錄',
+        onAdd: () => navigation.navigate('AddSymptomEntry', { date: undefined }),
+        items: symptomEntries.slice(0, 2).map((entry) => ({
+          id: entry.id,
+          primary: entry.symptom_name,
+          secondary: format(new Date(entry.recorded_at), 'HH:mm'),
+          meta: entry.severity ? `程度 ${entry.severity}` : undefined,
+        })),
+      })
+    }
+
+    if (showMedication && mLogs.length > 0) {
+      sections.push({
+        key: 'medication',
+        title: '用藥快照',
+        icon: 'pill',
+        color: colors.primary[500],
+        badge: mLogs.length,
+        emptyText: '尚無用藥紀錄',
+        onAdd: () => navigation.navigate('MedicationLog'),
+        items: mLogs.slice(0, 2).map((log) => ({
+          id: log.id,
+          primary: log.regimen_name,
+          secondary: format(new Date(log.taken_at), 'HH:mm'),
+          meta: log.dose || '未填劑量',
+        })),
+      })
+    }
+
+    if (showSleep && sSessions.length > 0) {
+      sections.push({
+        key: 'sleep',
+        title: '睡眠速覽',
+        icon: 'sleep',
+        color: colors.secondary[500],
+        badge: sSessions.length,
+        emptyText: '尚無睡眠紀錄',
+        onAdd: () => navigation.navigate('SleepLog'),
+        items: sSessions.slice(0, 2).map((session) => ({
+          id: session.id,
+          primary: session.is_main_sleep ? '主要睡眠' : '小睡',
+          secondary:
+            session.start_time && session.end_time
+              ? `${format(new Date(session.start_time), 'HH:mm')} - ${format(
+                  new Date(session.end_time),
+                  'HH:mm'
+                )}`
+              : session.planned_start_time
+              ? `預計 ${session.planned_start_time}`
+              : '時間未填',
+          meta: session.duration_minutes
+            ? `${(session.duration_minutes / 60).toFixed(1)} 小時`
+            : undefined,
+        })),
+      })
+    }
+
+    if (showActivity && aSessions.length > 0) {
+      sections.push({
+        key: 'activity',
+        title: '運動速覽',
+        icon: 'run',
+        color: colors.info,
+        badge: aSessions.length,
+        emptyText: '尚無運動紀錄',
+        onAdd: () => navigation.navigate('ActivityLog'),
+        items: aSessions.slice(0, 2).map((activity) => ({
+          id: activity.id,
+          primary: activity.activity_title || activity.activity_type,
+          secondary: activity.start_time
+            ? format(new Date(activity.start_time), 'HH:mm')
+            : undefined,
+          meta: activity.duration_minutes ? `${activity.duration_minutes} 分鐘` : undefined,
+        })),
+      })
+    }
+
+    return sections
+  }, [
+    foodEntries,
+    symptomEntries,
+    mLogs,
+    sSessions,
+    aSessions,
+    showMedication,
+    showSleep,
+    showActivity,
+    navigation,
+    mealLabelMap,
+  ])
+
   // Tab switching handler
   const handleTabChange = (tab: TabType) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     setActiveTab(tab)
-  }
-
-  // Toggle section expansion
-  const toggleSection = (sectionId: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    setExpandedSections((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId)
-      } else {
-        newSet.add(sectionId)
-      }
-      return newSet
-    })
   }
 
   // Show delete confirmation dialog
@@ -332,355 +699,146 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
 
   return (
     <>
-      <ScrollView
-        style={styles.container}
-        refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
-        }
-      >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>今日記錄</Text>
-        <Text style={styles.headerSubtitle}>
-          {format(today, 'yyyy年MM月dd日 (EEEE)', { locale: zhTW })}
-        </Text>
-      </View>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>今日記錄</Text>
+          <Text style={styles.headerSubtitle}>快速檢視今天的摘要與詳細記錄</Text>
+        </View>
 
-      {/* Tab Bar */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'summary' && styles.activeTab]}
-          onPress={() => handleTabChange('summary')}
-          activeOpacity={0.7}
-        >
-          <Text
-            style={[styles.tabText, activeTab === 'summary' && styles.activeTabText]}
+        {/* Tab Bar - Moved to top, outside ScrollView */}
+        <View style={styles.tabBar}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'summary' && styles.activeTab]}
+            onPress={() => handleTabChange('summary')}
+            activeOpacity={0.7}
           >
-            摘要
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'detail' && styles.activeTab]}
-          onPress={() => handleTabChange('detail')}
-          activeOpacity={0.7}
-        >
-          <Text
-            style={[styles.tabText, activeTab === 'detail' && styles.activeTabText]}
+            <Text
+              style={[styles.tabText, activeTab === 'summary' && styles.activeTabText]}
+            >
+              摘要
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'detail' && styles.activeTab]}
+            onPress={() => handleTabChange('detail')}
+            activeOpacity={0.7}
           >
-            詳細
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <Text
+              style={[styles.tabText, activeTab === 'detail' && styles.activeTabText]}
+            >
+              詳細
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Summary Tab - Collapsible Cards */}
+        <ScrollView
+          style={styles.scrollView}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+          }
+        >
+
+      {/* Quick Actions */}
+      {activeTab === 'summary' && (
+        <View style={styles.quickActionsCard}>
+          {quickActions.map((action) => (
+            <TouchableOpacity
+              key={action.key}
+              style={styles.quickActionButton}
+              onPress={action.onPress}
+              activeOpacity={0.85}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: action.color + '20' }]}>
+                <Icon name={action.icon} size={18} color={action.color} />
+              </View>
+              <Text style={styles.quickActionLabel}>{action.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {/* Summary Tab */}
       {activeTab === 'summary' && (
         <View style={styles.summaryContainer}>
-          {/* Food Card */}
-          <View style={styles.collapsibleCard}>
-            <TouchableOpacity
-              style={styles.cardHeader}
-              onPress={() => toggleSection('food')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.cardHeaderLeft}>
-                <Icon name="food-apple" size={24} color={colors.success} />
-                <Text style={styles.cardTitle}>飲食</Text>
-                <View style={[styles.badge, { backgroundColor: '#10B98120' }]}>
-                  <Text style={[styles.badgeText, { color: colors.success }]}>
-                    {foodEntries.length}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.cardHeaderRight}>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('AddFoodEntry', { date: undefined })}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Icon name="plus-circle" size={24} color={colors.success} />
-                </TouchableOpacity>
-                <Icon
-                  name={expandedSections.has('food') ? 'chevron-up' : 'chevron-down'}
-                  size={24}
-                  color={colors.text.secondary}
-                />
-              </View>
-            </TouchableOpacity>
-
-            {expandedSections.has('food') && foodEntries.length > 0 && (
-              <View style={styles.cardContent}>
-                {MEAL_TYPES.map((meal) => {
-                  const entries = foodByMeal[meal.value] || []
-                  if (entries.length === 0) return null
-                  return (
-                    <View key={meal.value} style={styles.summaryItem}>
-                      <Text style={styles.summaryIcon}>{meal.icon}</Text>
-                      <Text style={styles.summaryLabel}>
-                        {meal.label} ({entries.length})
-                      </Text>
-                    </View>
-                  )
-                })}
-              </View>
-            )}
-
-            {expandedSections.has('food') && foodEntries.length === 0 && (
-              <View style={styles.cardEmptyContent}>
-                <Text style={styles.emptyText}>尚無記錄</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Symptom Card */}
-          <View style={styles.collapsibleCard}>
-            <TouchableOpacity
-              style={styles.cardHeader}
-              onPress={() => toggleSection('symptom')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.cardHeaderLeft}>
-                <Icon name="medical-bag" size={24} color={colors.error} />
-                <Text style={styles.cardTitle}>症狀</Text>
-                <View style={[styles.badge, { backgroundColor: '#EF444420' }]}>
-                  <Text style={[styles.badgeText, { color: colors.error }]}>
-                    {symptomEntries.length}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.cardHeaderRight}>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('AddSymptomEntry', { date: undefined })}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Icon name="plus-circle" size={24} color={colors.error} />
-                </TouchableOpacity>
-                <Icon
-                  name={expandedSections.has('symptom') ? 'chevron-up' : 'chevron-down'}
-                  size={24}
-                  color={colors.text.secondary}
-                />
-              </View>
-            </TouchableOpacity>
-
-            {expandedSections.has('symptom') && symptomEntries.length > 0 && (
-              <View style={styles.cardContent}>
-                {symptomEntries.slice(0, 3).map((entry: SymptomEntry) => (
-                  <View key={entry.id} style={styles.summaryItem}>
-                    <Text style={styles.summaryTime}>
-                      {format(new Date(entry.recorded_at), 'HH:mm')}
-                    </Text>
-                    <Text style={styles.summaryLabel}>{entry.symptom_name}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {expandedSections.has('symptom') && symptomEntries.length === 0 && (
-              <View style={styles.cardEmptyContent}>
-                <Text style={styles.emptyText}>尚無記錄</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Bowel Movement Card */}
-          <View style={styles.collapsibleCard}>
-            <TouchableOpacity
-              style={styles.cardHeader}
-              onPress={() => toggleSection('bowel')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.cardHeaderLeft}>
-                <Icon name="toilet" size={24} color="#D2691E" />
-                <Text style={styles.cardTitle}>大便</Text>
-                <View style={[styles.badge, { backgroundColor: '#D2691E20' }]}>
-                  <Text style={[styles.badgeText, { color: '#D2691E' }]}>0</Text>
-                </View>
-              </View>
-              <View style={styles.cardHeaderRight}>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('AddBowelMovement', { date: undefined })}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Icon name="plus-circle" size={24} color="#D2691E" />
-                </TouchableOpacity>
-                <Icon
-                  name={expandedSections.has('bowel') ? 'chevron-up' : 'chevron-down'}
-                  size={24}
-                  color={colors.text.secondary}
-                />
-              </View>
-            </TouchableOpacity>
-
-            {expandedSections.has('bowel') && (
-              <View style={styles.cardEmptyContent}>
-                <Text style={styles.emptyText}>尚無記錄</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Medication Card - conditionally shown */}
-          {showMedication && (
-            <View style={styles.collapsibleCard}>
+          {/* Compact Stats Grid */}
+          <View style={styles.summaryGrid}>
+            {summaryCards.map((card) => (
               <TouchableOpacity
-                style={styles.cardHeader}
-                onPress={() => toggleSection('medication')}
-                activeOpacity={0.7}
+                key={card.key}
+                style={[styles.summaryCard, { backgroundColor: card.accent }]}
+                onPress={card.onPress}
+                activeOpacity={0.85}
               >
-                <View style={styles.cardHeaderLeft}>
-                  <Icon name="pill" size={24} color={colors.primary[500]} />
-                  <Text style={styles.cardTitle}>用藥</Text>
-                  <View style={[styles.badge, styles.medicationBadge]}>
-                    <Text style={[styles.badgeText, { color: colors.primary[700] }]}>
-                      {mLogs.length}
+                <View style={styles.summaryCardHeader}>
+                  <Icon name={card.icon} size={20} color={card.key === 'food' ? colors.success : card.key === 'symptom' ? colors.error : colors.primary[500]} />
+                  <Text style={styles.summaryCardTitle}>{card.title}</Text>
+                </View>
+                <Text style={styles.summaryCardCount}>{card.count}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Timeline - Simplified */}
+          {timelineItems.length > 0 && (
+            <View style={styles.timelineCard}>
+              <Text style={styles.timelineTitle}>最新活動</Text>
+              {timelineItems.map((item) => (
+                <View key={`${item.type}-${item.id}`} style={styles.timelineItemRow}>
+                  <View style={[styles.timelineDot, { backgroundColor: item.color }]} />
+                  <View style={styles.timelineItemContent}>
+                    <Text style={styles.timelineItemTitle}>{item.title}</Text>
+                    <Text style={styles.timelineItemMeta}>
+                      {item.timestamp ? format(new Date(item.timestamp), 'HH:mm') : '--:--'}
+                      {item.meta ? ` · ${item.meta}` : ''}
                     </Text>
                   </View>
                 </View>
-                <View style={styles.cardHeaderRight}>
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('MedicationLog')}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Icon name="plus-circle" size={24} color={colors.primary[500]} />
-                  </TouchableOpacity>
-                  <Icon
-                    name={expandedSections.has('medication') ? 'chevron-up' : 'chevron-down'}
-                    size={24}
-                    color={colors.text.secondary}
-                  />
-                </View>
-              </TouchableOpacity>
-
-              {expandedSections.has('medication') && mLogs.length > 0 && (
-                <View style={styles.cardContent}>
-                  {mLogs.slice(0, 3).map((log: MedicationLogEntry) => (
-                    <View key={log.id} style={styles.summaryItem}>
-                      <Text style={styles.summaryTime}>
-                        {format(new Date(log.taken_at), 'HH:mm')}
-                      </Text>
-                      <Text style={styles.summaryLabel}>{log.regimen_name}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              {expandedSections.has('medication') && mLogs.length === 0 && (
-                <View style={styles.cardEmptyContent}>
-                  <Text style={styles.emptyText}>尚無記錄</Text>
-                </View>
-              )}
+              ))}
             </View>
           )}
 
-          {/* Sleep Card - conditionally shown */}
-          {showSleep && (
-            <View style={styles.collapsibleCard}>
-              <TouchableOpacity
-                style={styles.cardHeader}
-                onPress={() => toggleSection('sleep')}
-                activeOpacity={0.7}
-              >
-                <View style={styles.cardHeaderLeft}>
-                  <Icon name="sleep" size={24} color={colors.secondary[500]} />
-                  <Text style={styles.cardTitle}>睡眠</Text>
-                  <View style={[styles.badge, styles.sleepBadge]}>
-                    <Text style={[styles.badgeText, { color: colors.secondary[700] }]}>
-                      {sSessions.length}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.cardHeaderRight}>
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('SleepLog')}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Icon name="plus-circle" size={24} color={colors.secondary[500]} />
-                  </TouchableOpacity>
-                  <Icon
-                    name={expandedSections.has('sleep') ? 'chevron-up' : 'chevron-down'}
-                    size={24}
-                    color={colors.text.secondary}
-                  />
-                </View>
-              </TouchableOpacity>
-
-              {expandedSections.has('sleep') && sSessions.length > 0 && (
-                <View style={styles.cardContent}>
-                  {sSessions.slice(0, 3).map((session: SleepSessionEntry) => (
-                    <View key={session.id} style={styles.summaryItem}>
-                      <Text style={styles.summaryTime}>
-                        {session.start_time && session.end_time
-                          ? `${format(new Date(session.start_time), 'HH:mm')} - ${format(new Date(session.end_time), 'HH:mm')}`
-                          : '時間未設定'}
-                      </Text>
-                      <Text style={styles.summaryLabel}>
-                        {session.duration_minutes
-                          ? `${(session.duration_minutes / 60).toFixed(1)}小時`
-                          : ''}
-                      </Text>
+          {/* Snapshot Sections - Simplified */}
+          {snapshotSections.length > 0 && (
+            <View style={styles.snapshotList}>
+              {snapshotSections.map((section) => (
+                <View key={section.key} style={styles.snapshotCard}>
+                  <View style={styles.snapshotHeader}>
+                    <View style={styles.snapshotHeaderLeft}>
+                      <Icon name={section.icon} size={18} color={section.color} />
+                      <Text style={styles.snapshotTitle}>{section.title}</Text>
+                      <Text style={styles.snapshotBadge}>{section.badge}</Text>
                     </View>
-                  ))}
+                    <TouchableOpacity
+                      onPress={section.onAdd}
+                      style={styles.snapshotAction}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Icon name="plus-circle" size={18} color={section.color} />
+                    </TouchableOpacity>
+                  </View>
+                  {section.items.length === 0 ? (
+                    <Text style={styles.emptyText}>{section.emptyText}</Text>
+                  ) : (
+                    section.items.map((item) => (
+                      <View key={item.id} style={styles.snapshotItem}>
+                        <Text style={styles.snapshotItemPrimary}>{item.primary}</Text>
+                        <Text style={styles.snapshotItemMeta}>
+                          {item.secondary || ''}
+                          {item.meta ? ` · ${item.meta}` : ''}
+                        </Text>
+                      </View>
+                    ))
+                  )}
                 </View>
-              )}
-
-              {expandedSections.has('sleep') && sSessions.length === 0 && (
-                <View style={styles.cardEmptyContent}>
-                  <Text style={styles.emptyText}>尚無記錄</Text>
-                </View>
-              )}
+              ))}
             </View>
           )}
 
-          {/* Activity Card - conditionally shown */}
-          {showActivity && (
-            <View style={styles.collapsibleCard}>
-              <TouchableOpacity
-                style={styles.cardHeader}
-                onPress={() => toggleSection('activity')}
-                activeOpacity={0.7}
-              >
-                <View style={styles.cardHeaderLeft}>
-                  <Icon name="run" size={24} color={colors.info} />
-                  <Text style={styles.cardTitle}>運動</Text>
-                  <View style={[styles.badge, styles.activityBadge]}>
-                    <Text style={[styles.badgeText, { color: colors.info }]}>
-                      {aSessions.length}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.cardHeaderRight}>
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('ActivityLog')}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Icon name="plus-circle" size={24} color={colors.info} />
-                  </TouchableOpacity>
-                  <Icon
-                    name={expandedSections.has('activity') ? 'chevron-up' : 'chevron-down'}
-                    size={24}
-                    color={colors.text.secondary}
-                  />
-                </View>
-              </TouchableOpacity>
-
-              {expandedSections.has('activity') && aSessions.length > 0 && (
-                <View style={styles.cardContent}>
-                  {aSessions.slice(0, 3).map((session: ActivitySessionEntry) => (
-                    <View key={session.id} style={styles.summaryItem}>
-                      <Text style={styles.summaryTime}>
-                        {session.start_time
-                          ? format(new Date(session.start_time), 'HH:mm')
-                          : ''}
-                      </Text>
-                      <Text style={styles.summaryLabel}>{session.activity_type}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              {expandedSections.has('activity') && aSessions.length === 0 && (
-                <View style={styles.cardEmptyContent}>
-                  <Text style={styles.emptyText}>尚無記錄</Text>
-                </View>
-              )}
+          {timelineItems.length === 0 && snapshotSections.length === 0 && (
+            <View style={styles.emptyState}>
+              <Icon name="clipboard-text-outline" size={48} color={colors.text.tertiary} />
+              <Text style={styles.emptyStateText}>今天還沒有任何紀錄</Text>
+              <Text style={styles.emptyStateHint}>使用上方快速動作開始記錄</Text>
             </View>
           )}
         </View>
@@ -1178,9 +1336,10 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
         </>
       )}
 
-      {/* Bottom Spacer */}
-      <View style={styles.bottomSpacer} />
-      </ScrollView>
+          {/* Bottom Spacer */}
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+      </View>
 
       {/* Delete Confirmation Modal */}
       <Modal
@@ -1227,31 +1386,70 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  scrollView: {
+    flex: 1,
+  },
   header: {
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   headerTitle: {
-    fontSize: typography.fontSize['3xl'],
+    fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.xs / 2,
   },
   headerSubtitle: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
+  },
+  quickActionsCard: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  quickActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 999,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.sm,
+  },
+  quickActionIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickActionLabel: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.primary,
+    fontWeight: typography.fontWeight.medium,
   },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
-    borderBottomWidth: 2,
+    borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
   tab: {
     flex: 1,
@@ -1264,80 +1462,137 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.primary[500],
   },
   tabText: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
     color: colors.text.secondary,
   },
   activeTabText: {
-    color: colors.primary[500],
-    fontWeight: typography.fontWeight.bold,
+    color: colors.primary[600],
+    fontWeight: typography.fontWeight.semibold,
   },
   summaryContainer: {
     paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
+    gap: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
   },
-  collapsibleCard: {
+  summaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  summaryCard: {
+    flexBasis: '48%',
+    borderRadius: 12,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.xs,
+  },
+  summaryCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  summaryCardTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.secondary,
+  },
+  summaryCardCount: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginTop: spacing.xs / 2,
+  },
+  timelineCard: {
     backgroundColor: colors.surface,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: spacing.sm,
-    overflow: 'hidden',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     padding: spacing.md,
-    backgroundColor: colors.surface,
-  },
-  cardHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing.sm,
-    flex: 1,
   },
-  cardHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  cardTitle: {
+  timelineTitle: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
-  cardContent: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.divider,
-  },
-  cardEmptyContent: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.divider,
-    alignItems: 'center',
-  },
-  summaryItem: {
+  timelineItemRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
+    alignItems: 'flex-start',
     gap: spacing.sm,
+    paddingVertical: spacing.xs,
   },
-  summaryIcon: {
-    fontSize: 20,
+  timelineItemContent: {
+    flex: 1,
   },
-  summaryTime: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-    minWidth: 80,
-  },
-  summaryLabel: {
+  timelineItemTitle: {
     fontSize: typography.fontSize.sm,
     color: colors.text.primary,
-    flex: 1,
+    fontWeight: typography.fontWeight.medium,
+    marginBottom: 2,
+  },
+  timelineItemMeta: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+  },
+  snapshotList: {
+    gap: spacing.sm,
+  },
+  snapshotCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: spacing.xs,
+  },
+  snapshotHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  snapshotHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  snapshotTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  snapshotBadge: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  snapshotAction: {
+    padding: spacing.xs,
+  },
+  snapshotItem: {
+    paddingVertical: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+    marginTop: spacing.xs,
+  },
+  snapshotItemPrimary: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.primary,
+    fontWeight: typography.fontWeight.medium,
+    marginBottom: 2,
+  },
+  snapshotItemMeta: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
   },
   emptyText: {
     fontSize: typography.fontSize.sm,
@@ -1591,11 +1846,11 @@ const styles = StyleSheet.create({
     borderLeftColor: 'transparent',
   },
   timelineDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: colors.success,
-    marginLeft: -spacing.md - 5,
+    marginTop: 4,
     marginTop: 6,
   },
   timelineContent: {
