@@ -10,7 +10,9 @@ import {
 import { DashboardScreen } from '@/features/dashboard/screens/DashboardScreen'
 import { DataCoverageCard } from '@/features/dashboard/components/DataCoverageCard'
 import { MissingDataAlertCard } from '@/features/dashboard/components/MissingDataAlertCard'
+import { StreakCard } from '@/features/dashboard/components/StreakCard'
 import { useDataCoverage, useMissingDataAlerts } from '@/features/dashboard/hooks/useDataCoverage'
+import { useStreak } from '@/features/dashboard/hooks/useStreak'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -33,6 +35,9 @@ export function InsightsScreen() {
   // Phase A: Data Coverage and Missing Alerts (使用本週或註冊後的邏輯)
   const { coverage: dataCoverage, isLoading: isLoadingCoverage, error: coverageError, refetch: refetchCoverage } = useDataCoverage()
   const { alerts: missingAlerts, isLoading: isLoadingAlerts, error: alertsError, refetch: refetchAlerts } = useMissingDataAlerts(1) // 降低閾值為1天
+  
+  // Gamification: Streak tracking
+  const { streak, isLoading: isLoadingStreak, error: streakError, refetch: refetchStreak } = useStreak()
 
   const handleRefresh = React.useCallback(async () => {
     setRefreshing(true)
@@ -40,11 +45,12 @@ export function InsightsScreen() {
       await Promise.all([
         refetchCoverage(),
         refetchAlerts(),
+        refetchStreak(),
       ])
     } finally {
       setRefreshing(false)
     }
-  }, [refetchCoverage, refetchAlerts])
+  }, [refetchCoverage, refetchAlerts, refetchStreak])
 
   return (
     <View style={styles.container}>
@@ -100,6 +106,29 @@ export function InsightsScreen() {
           }
         >
           {/* Progress Tab - 遊戲化 UI */}
+          {/* Streak Card - 連續記錄天數 */}
+          <View style={styles.section}>
+            {isLoadingStreak ? (
+              <View style={[styles.card, styles.loadingCard]}>
+                <Text style={styles.loadingText}>載入連續記錄中...</Text>
+              </View>
+            ) : streakError ? (
+              <View style={[styles.card, styles.errorCard]}>
+                <Icon name="alert-circle" size={20} color={colors.warning} />
+                <Text style={styles.errorText}>
+                  無法載入連續記錄：{streakError.message}
+                </Text>
+              </View>
+            ) : streak ? (
+              <StreakCard 
+                currentStreak={streak.currentStreak}
+                longestStreak={streak.longestStreak}
+                milestones={streak.milestones}
+              />
+            ) : null}
+          </View>
+
+          {/* Data Coverage Card - 資料充足度 */}
           <View style={styles.section}>
             {isLoadingCoverage ? (
               <View style={[styles.card, styles.loadingCard]}>
@@ -117,6 +146,7 @@ export function InsightsScreen() {
             ) : null}
           </View>
 
+          {/* Missing Data Alerts - 缺漏提醒 */}
           <View style={styles.section}>
             {isLoadingAlerts ? (
               <View style={[styles.card, styles.loadingCard]}>
@@ -141,15 +171,15 @@ export function InsightsScreen() {
           </View>
         </ScrollView>
       ) : (
-        /* Insights and Reports Tabs - Dashboard Content (DashboardScreen has its own ScrollView) */
+        /* Reports Tab - Dashboard Content (DashboardScreen has its own ScrollView) */
         <View style={styles.dashboardContainer}>
           <DashboardScreen 
             hideHeader={true} 
             hideTabNavigation={true}
-            externalActiveTab={activeTab === 'insights' ? 'insights' : 'reports'}
+            externalActiveTab="reports"
             onTabChange={(tab) => {
-              // 只允許在 insights 和 reports 之間切換
-              if (tab === 'insights' || tab === 'reports') {
+              // 只允許切換到 reports
+              if (tab === 'reports') {
                 setActiveTab(tab)
               }
             }}

@@ -573,10 +573,12 @@ export class DashboardService {
         : Math.max(normalizedHistoryPreview.length, historyPreview.length)
 
       // Simplified response logging
-      console.log(`[DashboardService] 📥 Response: ${payload.analysis?.method} | ${payload.analysis?.totals?.food_entries}F ${payload.analysis?.totals?.symptom_entries}S | ${payload.history?.length}H`)
+      console.log(`[DashboardService] 📥 Response: ${payload.analysis?.method || 'N/A'} | ${payload.analysis?.totals?.food_entries || 0}F ${payload.analysis?.totals?.symptom_entries || 0}S | ${payload.history?.length || 0}H`)
 
       if (!payload.success || !payload.analysis) {
-        console.warn('[DashboardService] ⚠️ AI insight response missing analysis', payload.error)
+        // AI 功能暫時停用時，這是預期的情況，使用 info 而非 warn
+        const errorMsg = payload.error || 'AI 分析功能暫時停用'
+        console.log(`[DashboardService] ℹ️ AI insight response: ${errorMsg}`)
         return {
           insights: [],
           history: normalizedHistoryPreview.length ? normalizedHistoryPreview : historyPreview,
@@ -1096,6 +1098,81 @@ export class DashboardService {
       return {
         data: null,
         error: { message: error instanceof Error ? error.message : '未知錯誤' },
+      }
+    }
+  }
+
+  /**
+   * Get user streak data
+   * Phase A: Gamification - Streak tracking
+   */
+  static async getStreak(userId: string): Promise<{
+    data: {
+      currentStreak: number
+      longestStreak: number
+      milestones: number[]
+    } | null
+    error: { message: string } | null
+  }> {
+    try {
+      // 取得認證 token（與其他方法保持一致）
+      const { session } = await AuthService.getSession()
+      if (!session?.access_token) {
+        console.warn('[DashboardService] No session token available for streak')
+        return {
+          data: null,
+          error: { message: '需要登入' },
+        }
+      }
+
+      // 使用與其他方法相同的 API URL 邏輯
+      const apiBase = process.env.EXPO_PUBLIC_API_URL
+      if (!apiBase) {
+        return { data: null, error: { message: 'API URL not configured' } }
+      }
+
+      const normalizedBase = apiBase.replace(/\/+$/, '')
+      const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
+      const url = `${baseApiUrl}/mobile/gamification/streak?userId=${userId}`
+      
+      console.log('[DashboardService] Fetching streak from:', url)
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: '未知錯誤' }))
+        console.error('[DashboardService] Streak API error:', response.status, errorData)
+        return {
+          data: null,
+          error: { message: errorData.error || `HTTP ${response.status}` },
+        }
+      }
+
+      const result = await response.json()
+      console.log('[DashboardService] Streak result:', result)
+
+      if (!result.success) {
+        return {
+          data: null,
+          error: { message: result.error || '無法取得連續記錄天數' },
+        }
+      }
+
+      return {
+        data: result.streak,
+        error: null,
+      }
+    } catch (error) {
+      console.error('[DashboardService] getStreak error:', error)
+      return {
+        data: null,
+        error: { message: error instanceof Error ? error.message : '網路錯誤' },
       }
     }
   }
