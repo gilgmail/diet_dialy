@@ -140,6 +140,7 @@ public/robots.txt
 compliance-logs/
 audit-logs/
 security-reports/
+logs/
 
 diet_daily_docker
 
