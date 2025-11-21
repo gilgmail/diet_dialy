@@ -5,36 +5,43 @@ iOS app 呼叫 `/api/mobile/gamification/streak` 時返回 404 錯誤，因為�
 
 ## 部署步驟
 
-### 1. 在 pi5 服務器上拉取最新代碼
+### 使用自動化部署腳本（推薦）
+
+使用現有的 `deploy-to-pi.sh` 腳本進行部署：
 
 ```bash
+# 在專案根目錄執行
+./pi_docker/deploy-to-pi.sh
+```
+
+這個腳本會自動：
+1. 檢查 SSH 連接
+2. 使用 rsync 同步代碼到 pi5
+3. 複製環境變數檔案
+4. 建置並啟動 Docker 容器
+5. 驗證部署狀態
+
+### 手動部署（如果需要）
+
+如果自動化腳本無法使用，可以手動執行：
+
+```bash
+# 1. SSH 到 pi5
 ssh gilko@10.1.1.85
-cd /path/to/diet_dialy  # 替換為實際的專案路徑
+
+# 2. 進入專案目錄
+cd /home/gilko/diet-daily  # 根據實際路徑調整
+
+# 3. 拉取最新代碼（如果使用 git）
 git pull origin main
-```
 
-### 2. 重新建置 Docker 容器
+# 4. 重新建置並重啟容器
+cd pi_docker
+docker compose build
+docker compose up -d
 
-```bash
-# 在 pi5 上執行
-cd /path/to/diet_dialy
-docker-compose build
-```
-
-### 3. 重啟 Docker 容器
-
-```bash
-docker-compose restart diet-daily-web
-# 或
-docker-compose up -d --force-recreate diet-daily-web
-```
-
-### 4. 驗證部署
-
-```bash
-# 測試 API 端點（需要有效的 token）
-curl -H "Authorization: Bearer <token>" \
-  "https://gilko.redirectme.net/api/mobile/gamification/streak?userId=<userId>"
+# 5. 檢查日誌
+docker compose logs --tail 50 | grep -E 'gamification|streak|error'
 ```
 
 ## 新增的 API 端點
