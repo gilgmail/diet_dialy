@@ -1132,15 +1132,11 @@ export class DashboardService {
       }
 
       const normalizedBase = apiBase.replace(/\/+$/, '')
-      const primaryBase = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
-      // 防止重複 /api 或 /mobile，提供後備嘗試
-      const fallbackBase = normalizedBase.includes('/api/mobile') ? normalizedBase.replace(/\/+$/, '') : normalizedBase
-      const candidates = Array.from(new Set([primaryBase, fallbackBase]))
-      let lastError: { status: number; body: unknown; url: string } | null = null
+      // 確保路徑正確：如果 base 已經包含 /api，就不再加
+      const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
+      const endpoint = `${baseApiUrl}/mobile/gamification/streak?userId=${userId}`
 
-      for (const base of candidates) {
-        const url = `${base}/mobile/gamification/streak?userId=${userId}`
-        console.log('[DashboardService] Fetching streak from:', url)
+      console.log('[DashboardService] Fetching streak from:', endpoint)
 
       const response = await fetch(endpoint, {
         method: 'GET',
