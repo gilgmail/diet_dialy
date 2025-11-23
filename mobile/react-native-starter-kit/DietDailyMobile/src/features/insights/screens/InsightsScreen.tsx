@@ -74,7 +74,7 @@ export function InsightsScreen() {
 
   const { summary: bowelSummary } = useBowelDiarySummary(today)
 
-  // 判斷健康狀態：沒症狀 + 大便 1 次
+  // 判斷健康狀態：沒症狀 + 大便 0-2 次
   const hasNoSymptoms = useMemo(() => {
     if (!todayDailyEntry) {
       // 如果沒有記錄，檢查是否有大便記錄（有記錄但沒有症狀也算健康）

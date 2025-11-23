@@ -11,15 +11,15 @@ interface HealthStatusCardProps {
 
 /**
  * 健康狀態卡片
- * 當沒有症狀且大便次數為 1 次時，顯示正面鼓勵訊息
+ * 當沒有症狀且大便次數為 0-2 次時，顯示正面鼓勵訊息
  */
 export function HealthStatusCard({ 
   hasNoSymptoms, 
   bowelMovementCount,
   stoolType 
 }: HealthStatusCardProps) {
-  // 判斷是否為健康狀態：沒症狀 + 大便 1 次 + 大便類型正常（3）
-  const isHealthy = hasNoSymptoms && bowelMovementCount === 1 && (stoolType === 3 || stoolType === undefined)
+  // 判斷是否為健康狀態：沒症狀 + 大便 0-2 次 + 大便類型正常（3）
+  const isHealthy = hasNoSymptoms && bowelMovementCount >= 0 && bowelMovementCount <= 2 && (stoolType === 3 || stoolType === undefined)
 
   if (!isHealthy) {
     return null // 只在健康狀態時顯示
@@ -34,7 +34,7 @@ export function HealthStatusCard({
         <View style={styles.textContainer}>
           <Text style={styles.title}>健康狀態良好 ✨</Text>
           <Text style={styles.message}>
-            沒有症狀，大便次數正常（1 次），繼續維持這個好狀態！
+            沒有症狀，大便次數正常（{bowelMovementCount === 0 ? '0 次' : bowelMovementCount === 1 ? '1 次' : '2 次'}），繼續維持這個好狀態！
           </Text>
           <View style={styles.tipsContainer}>
             <View style={styles.tipItem}>
