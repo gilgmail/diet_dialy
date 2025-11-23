@@ -12,8 +12,10 @@ import { DataCoverageCard } from '@/features/dashboard/components/DataCoverageCa
 import { MissingDataAlertCard } from '@/features/dashboard/components/MissingDataAlertCard'
 import { StreakCard } from '@/features/dashboard/components/StreakCard'
 import { HealthStatusCard } from '@/features/dashboard/components/HealthStatusCard'
+import { ProgressCard } from '@/features/dashboard/components/ProgressCard'
 import { useDataCoverage, useMissingDataAlerts } from '@/features/dashboard/hooks/useDataCoverage'
 import { useStreak } from '@/features/dashboard/hooks/useStreak'
+import { useProgress } from '@/features/dashboard/hooks/useProgress'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { GamificationBoard } from '@/features/insights/components/GamificationBoard'
 import { useNavigation } from '@react-navigation/native'
@@ -45,6 +47,9 @@ export function InsightsScreen() {
   
   // Gamification: Streak tracking
   const { streak, isLoading: isLoadingStreak, error: streakError, refetch: refetchStreak } = useStreak()
+  
+  // Progress tracking: This week vs last week
+  const { progress, isLoading: isLoadingProgress, error: progressError, refetch: refetchProgress } = useProgress()
 
   // Health Status: 取得今日的症狀和大便資料
   const today = useMemo(() => startOfDay(new Date()), [])
@@ -137,6 +142,7 @@ export function InsightsScreen() {
         refetchCoverage(),
         refetchAlerts(),
         refetchStreak(),
+        refetchProgress(),
       ])
     } finally {
       setRefreshing(false)
