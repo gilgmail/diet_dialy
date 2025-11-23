@@ -1142,48 +1142,44 @@ export class DashboardService {
         const url = `${base}/mobile/gamification/streak?userId=${userId}`
         console.log('[DashboardService] Fetching streak from:', url)
 
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
+      console.log('[DashboardService] Streak response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.warn('[DashboardService] Failed to fetch streak', {
+          status: response.status,
+          statusText: response.statusText,
+          endpoint,
+          error: errorText,
         })
+        return { data: null, error: { message: `HTTP ${response.status}: ${errorText || response.statusText}` } }
+      }
 
-        if (!response.ok) {
-          // 盡量解析錯誤回應，若為純文字則保留
-          const body = await response
-            .json()
-            .catch(async () => await response.text().catch(() => '未知錯誤'))
-          console.error('[DashboardService] Streak API error:', response.status, body, 'url:', url)
-          lastError = { status: response.status, body, url }
-          continue
-        }
+      const result = await response.json()
+      console.log('[DashboardService] Streak result:', result)
 
-        const result = await response.json()
-        console.log('[DashboardService] Streak result:', result)
-
-        if (!result.success) {
-          return {
-            data: null,
-            error: { message: result.error || '無法取得連續記錄天數' },
-          }
-        }
-
+      if (!result.success) {
         return {
-          data: result.streak,
-          error: null,
+          data: null,
+          error: { message: result.error || '無法取得連續記錄天數' },
         }
       }
 
-      // 所有候選 URL 皆失敗
       return {
-        data: null,
-        error: {
-          message: lastError
-            ? `HTTP ${lastError.status} - ${typeof lastError.body === 'string' ? lastError.body : JSON.stringify(lastError.body)} (url: ${lastError.url})`
-            : '無法取得連續記錄天數',
-        },
+        data: result.streak,
+        error: null,
       }
     } catch (error) {
       console.error('[DashboardService] getStreak error:', error)
