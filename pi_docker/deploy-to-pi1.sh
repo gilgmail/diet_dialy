@@ -15,9 +15,9 @@ fi
 
 # Configuration for VPN connection
 # Override these in .env file or export before running:
-# export PI_HOST_VPN="10.1.1.85"  # VPN IP address
+# export PI_HOST_VPN="10.42.0.1"  # VPN IP address (default from SSH config pi1)
 # export PI_USER_VPN="gilko"       # SSH username
-PI_HOST="${PI_HOST_VPN:-10.1.1.85}"
+PI_HOST="${PI_HOST_VPN:-10.42.0.1}"
 PI_USER="${PI_USER_VPN:-gilko}"
 PROJECT_NAME="diet-daily"
 DEPLOY_DIR="/home/${PI_USER}/${PROJECT_NAME}"
