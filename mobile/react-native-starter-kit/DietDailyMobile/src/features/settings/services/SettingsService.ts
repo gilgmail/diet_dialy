@@ -133,31 +133,32 @@ function extractMobileSettings(preferences: unknown): MobileSettingsPreferences 
 
 function mergeMobileSettings(
   existingPreferences: unknown,
-  updates: MobileSettingsPreferences
+  updates?: MobileSettingsPreferences
 ): Record<string, any> {
   const base = extractPreferences(existingPreferences)
+  const safeUpdates = updates ?? {}
   const existingMobile =
     base.mobileSettings && typeof base.mobileSettings === 'object'
       ? { ...(base.mobileSettings as Record<string, any>) }
       : {}
 
-  if (updates.notificationsEnabled !== undefined) {
-    existingMobile.notificationsEnabled = updates.notificationsEnabled
+  if (safeUpdates.notificationsEnabled !== undefined) {
+    existingMobile.notificationsEnabled = safeUpdates.notificationsEnabled
   }
-  if (updates.timezoneOffset !== undefined) {
-    existingMobile.timezoneOffset = updates.timezoneOffset
+  if (safeUpdates.timezoneOffset !== undefined) {
+    existingMobile.timezoneOffset = safeUpdates.timezoneOffset
   }
-  if (updates.mealReminders) {
-    existingMobile.mealReminders = updates.mealReminders
+  if (safeUpdates.mealReminders) {
+    existingMobile.mealReminders = safeUpdates.mealReminders
   }
-  if (updates.modules) {
+  if (safeUpdates.modules) {
     existingMobile.modules = {
       ...(existingMobile.modules || {}),
-      ...updates.modules,
+      ...safeUpdates.modules,
     }
   }
-  if (typeof updates.gamificationHeroEnabled === 'boolean') {
-    existingMobile.gamificationHeroEnabled = updates.gamificationHeroEnabled
+  if (typeof safeUpdates.gamificationHeroEnabled === 'boolean') {
+    existingMobile.gamificationHeroEnabled = safeUpdates.gamificationHeroEnabled
   }
 
   if (Object.keys(existingMobile).length > 0) {
@@ -249,10 +250,8 @@ export class SettingsService {
         }
       }
       if (settings.modules) {
-        mobilePreferenceUpdates.modules = {
-          ...DEFAULT_SETTINGS.modules,
-          ...settings.modules,
-        }
+        // 只傳遞要更新的模組，mergeMobileSettings 會正確合併現有設定
+        mobilePreferenceUpdates.modules = settings.modules
       }
       if (settings.gamificationHeroEnabled !== undefined) {
         mobilePreferenceUpdates.gamificationHeroEnabled = settings.gamificationHeroEnabled
@@ -279,8 +278,8 @@ export class SettingsService {
       }
 
       // 如果更新了 modules.hero，同時更新 gamificationHeroEnabled 以保持向後兼容
-      if (updates.modules?.hero !== undefined) {
-        mobilePreferenceUpdates.gamificationHeroEnabled = updates.modules.hero
+      if (settings.modules?.hero !== undefined) {
+        mobilePreferenceUpdates.gamificationHeroEnabled = settings.modules.hero
       }
 
       const hasPreferenceUpdates =
@@ -291,10 +290,14 @@ export class SettingsService {
         mobilePreferenceUpdates.gamificationHeroEnabled !== undefined
 
       if (hasPreferenceUpdates) {
-        updatePayload.preferences = mergeMobileSettings(
-          existing.preferences,
-          mobilePreferenceUpdates
-        )
+        try {
+          updatePayload.preferences = mergeMobileSettings(
+            existing.preferences,
+            mobilePreferenceUpdates
+          )
+        } catch (mergeError) {
+          console.error('[SettingsService] mergeMobileSettings failed:', mergeError)
+        }
       }
 
       let updatedRow: DbUserRow = existing as DbUserRow

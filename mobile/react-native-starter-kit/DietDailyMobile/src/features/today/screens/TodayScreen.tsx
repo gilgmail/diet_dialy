@@ -17,8 +17,9 @@ import {
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true)
 }
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, type CompositeNavigationProp, TabActions } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { format, startOfDay } from 'date-fns'
@@ -32,7 +33,7 @@ import { MEAL_TYPES } from '@/features/food-diary/types'
 import type { FoodEntry } from '@/features/food-diary/types'
 import type { SymptomEntry } from '@/features/symptom-diary/types'
 import { SEVERITY_LEVELS } from '@/features/symptom-diary/types'
-import type { MainStackParamList } from '@/app/navigation/types'
+import type { MainStackParamList, MainTabParamList } from '@/app/navigation/types'
 import { colors, typography, spacing } from '@/theme'
 import { HealthLogService } from '@/features/health-logs/services/HealthLogService'
 import type {
@@ -96,10 +97,28 @@ type SnapshotSection = {
   onAdd: () => void
 }
 
+type TodayNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<MainTabParamList, 'Today'>,
+  NativeStackNavigationProp<MainStackParamList>
+>
+
+const findTabNavigator = (nav: any) => {
+  let current = nav
+  while (current) {
+    const state = current.getState?.()
+    if (state?.type === 'tab') {
+      return current
+    }
+    current = current.getParent?.()
+  }
+  return null
+}
+
 export function TodayScreen() {
   const { user } = useAuthStore()
   const { settings, initializeSettings } = useSettingsStore()
-  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
+  // 使用 root stack navigation，便於跳轉 MainTabs / Add* 畫面
+  const navigation = useNavigation<TodayNavigationProp>()
   const queryClient = useQueryClient()
   const today = useMemo(() => startOfDay(new Date()), [])
   const todayKey = useMemo(() => format(today, 'yyyy-MM-dd'), [today])
@@ -133,12 +152,20 @@ export function TodayScreen() {
   )
 
   const handleOpenQuests = useCallback(() => {
-    const parentNav = navigation.getParent()
-    if (parentNav) {
-      parentNav.navigate('Insights' as never, { tab: 'quests' } as never)
+    const tabNav = findTabNavigator(navigation)
+    if (tabNav) {
+      tabNav.dispatch(TabActions.jumpTo('Insights', { tab: 'quests' }))
       return
     }
-    ;(navigation as any).navigate('Insights', { tab: 'quests' })
+
+    const parentStack = navigation.getParent<NativeStackNavigationProp<MainStackParamList>>()
+    if (parentStack) {
+      parentStack.navigate('MainTabs', {
+        screen: 'Insights',
+        params: { tab: 'quests' },
+      })
+      return
+    }
   }, [navigation])
 
   // Initialize settings when user is available
