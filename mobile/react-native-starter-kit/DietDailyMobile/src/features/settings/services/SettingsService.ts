@@ -23,6 +23,7 @@ type MobileSettingsPreferences = {
   notificationsEnabled?: boolean
   mealReminders?: MealReminderConfig
   modules?: ModuleToggleSettings
+  gamificationHeroEnabled?: boolean
 }
 
 const CHRONIC_DISEASE_VALUES = CHRONIC_DISEASES.map((item) => item.value)
@@ -91,6 +92,14 @@ function extractMobileSettings(preferences: unknown): MobileSettingsPreferences 
 
   if (mobileSettings.modules && typeof mobileSettings.modules === 'object') {
     const modules = mobileSettings.modules as Record<string, any>
+    // 向後兼容：如果沒有 modules.hero 但有 gamificationHeroEnabled，則遷移它
+    const heroValue =
+      typeof modules.hero === 'boolean'
+        ? modules.hero
+        : typeof mobileSettings.gamificationHeroEnabled === 'boolean'
+          ? mobileSettings.gamificationHeroEnabled
+          : DEFAULT_SETTINGS.modules?.hero ?? true
+
     const merged: ModuleToggleSettings = {
       medication:
         typeof modules.medication === 'boolean'
@@ -104,8 +113,19 @@ function extractMobileSettings(preferences: unknown): MobileSettingsPreferences 
         typeof modules.activity === 'boolean'
           ? modules.activity
           : DEFAULT_SETTINGS.modules?.activity ?? true,
+      hero: heroValue,
     }
     result.modules = merged
+  } else if (typeof mobileSettings.gamificationHeroEnabled === 'boolean') {
+    // 如果沒有 modules 但有 gamificationHeroEnabled，建立 modules 並遷移
+    result.modules = {
+      ...DEFAULT_SETTINGS.modules!,
+      hero: mobileSettings.gamificationHeroEnabled,
+    }
+  }
+
+  if (typeof mobileSettings.gamificationHeroEnabled === 'boolean') {
+    result.gamificationHeroEnabled = mobileSettings.gamificationHeroEnabled
   }
 
   return result
@@ -135,6 +155,9 @@ function mergeMobileSettings(
       ...(existingMobile.modules || {}),
       ...updates.modules,
     }
+  }
+  if (typeof updates.gamificationHeroEnabled === 'boolean') {
+    existingMobile.gamificationHeroEnabled = updates.gamificationHeroEnabled
   }
 
   if (Object.keys(existingMobile).length > 0) {
@@ -220,17 +243,20 @@ export class SettingsService {
         mobilePreferenceUpdates.notificationsEnabled = settings.notificationsEnabled
       }
       if (settings.mealReminders) {
-      mobilePreferenceUpdates.mealReminders = {
-        ...DEFAULT_SETTINGS.mealReminders,
-        ...settings.mealReminders,
+        mobilePreferenceUpdates.mealReminders = {
+          ...DEFAULT_SETTINGS.mealReminders,
+          ...settings.mealReminders,
+        }
       }
-    }
-    if (settings.modules) {
-      mobilePreferenceUpdates.modules = {
-        ...DEFAULT_SETTINGS.modules,
-        ...settings.modules,
+      if (settings.modules) {
+        mobilePreferenceUpdates.modules = {
+          ...DEFAULT_SETTINGS.modules,
+          ...settings.modules,
+        }
       }
-    }
+      if (settings.gamificationHeroEnabled !== undefined) {
+        mobilePreferenceUpdates.gamificationHeroEnabled = settings.gamificationHeroEnabled
+      }
 
       if (settings.chronicDisease !== undefined) {
         const existingConditions = extractArray(existing.medical_conditions)
@@ -252,11 +278,17 @@ export class SettingsService {
         updatePayload.allergies = settings.knownAllergies
       }
 
+      // 如果更新了 modules.hero，同時更新 gamificationHeroEnabled 以保持向後兼容
+      if (updates.modules?.hero !== undefined) {
+        mobilePreferenceUpdates.gamificationHeroEnabled = updates.modules.hero
+      }
+
       const hasPreferenceUpdates =
         mobilePreferenceUpdates.notificationsEnabled !== undefined ||
         mobilePreferenceUpdates.mealReminders !== undefined ||
         mobilePreferenceUpdates.timezoneOffset !== undefined ||
-        mobilePreferenceUpdates.modules !== undefined
+        mobilePreferenceUpdates.modules !== undefined ||
+        mobilePreferenceUpdates.gamificationHeroEnabled !== undefined
 
       if (hasPreferenceUpdates) {
         updatePayload.preferences = mergeMobileSettings(
@@ -346,7 +378,19 @@ export class SettingsService {
       notificationsEnabled:
         mobileSettings.notificationsEnabled ?? DEFAULT_SETTINGS.notificationsEnabled,
       mealReminders: mobileSettings.mealReminders ?? { ...DEFAULT_SETTINGS.mealReminders },
-      modules: mobileSettings.modules ?? DEFAULT_SETTINGS.modules,
+      modules: mobileSettings.modules ?? {
+        ...DEFAULT_SETTINGS.modules!,
+        // 向後兼容：如果沒有 modules.hero 但有 gamificationHeroEnabled，使用它
+        hero:
+          mobileSettings.modules?.hero ??
+          mobileSettings.gamificationHeroEnabled ??
+          DEFAULT_SETTINGS.modules?.hero ??
+          true,
+      },
+      gamificationHeroEnabled:
+        mobileSettings.modules?.hero ??
+        mobileSettings.gamificationHeroEnabled ??
+        DEFAULT_SETTINGS.gamificationHeroEnabled,
     }
   }
 }

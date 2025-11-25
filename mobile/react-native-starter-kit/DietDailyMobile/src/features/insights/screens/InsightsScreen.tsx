@@ -17,10 +17,11 @@ import { useDataCoverage, useMissingDataAlerts } from '@/features/dashboard/hook
 import { useStreak } from '@/features/dashboard/hooks/useStreak'
 import { useProgress } from '@/features/dashboard/hooks/useProgress'
 import { useAuth } from '@/features/auth/hooks/useAuth'
-import { GamificationBoard } from '@/features/insights/components/GamificationBoard'
-import { useNavigation } from '@react-navigation/native'
+import { GamificationBoard, GamificationHeroCard, buildGamificationSnapshot } from '@/features/insights/components/GamificationBoard'
+import { useNavigation, useRoute } from '@react-navigation/native'
+import type { RouteProp } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import type { MainStackParamList } from '@/app/navigation/types'
+import type { MainStackParamList, MainTabParamList } from '@/app/navigation/types'
 import { colors, typography, spacing } from '@/theme'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useQuery } from '@tanstack/react-query'
@@ -28,6 +29,7 @@ import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDi
 import { useBowelDiarySummary } from '@/features/bowel-diary/hooks/useBowelDiarySummary'
 import { useMemo } from 'react'
 import { startOfDay, format } from 'date-fns'
+import { useSettingsStore } from '@/features/settings/stores/settingsStore'
 
 /**
  * InsightsScreen - 洞察頁面
@@ -38,8 +40,13 @@ import { startOfDay, format } from 'date-fns'
 export function InsightsScreen() {
   const { user } = useAuth()
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
+  const route = useRoute<RouteProp<MainTabParamList, 'Insights'>>()
+  const { settings } = useSettingsStore()
+  // 優先使用模組系統的 hero 開關，向後兼容 gamificationHeroEnabled
+  const heroEnabled = settings.modules?.hero ?? settings.gamificationHeroEnabled ?? true
+  const initialTab = route.params?.tab && (heroEnabled || route.params.tab !== 'hero') ? route.params.tab : 'quests'
   const [refreshing, setRefreshing] = React.useState(false)
-  const [activeTab, setActiveTab] = React.useState<'quests' | 'progress' | 'reports'>('quests')
+  const [activeTab, setActiveTab] = React.useState<'hero' | 'quests' | 'progress' | 'reports'>(initialTab as any)
   
   // Phase A: Data Coverage and Missing Alerts (使用本週或註冊後的邏輯)
   const { coverage: dataCoverage, isLoading: isLoadingCoverage, error: coverageError, refetch: refetchCoverage } = useDataCoverage()
@@ -47,7 +54,23 @@ export function InsightsScreen() {
   
   // Gamification: Streak tracking
   const { streak, isLoading: isLoadingStreak, error: streakError, refetch: refetchStreak } = useStreak()
-  
+
+  React.useEffect(() => {
+    if (route.params?.tab && route.params.tab !== activeTab) {
+      if (route.params.tab === 'hero' && !heroEnabled) {
+        setActiveTab('quests')
+      } else {
+        setActiveTab(route.params.tab as any)
+      }
+    }
+  }, [route.params?.tab, heroEnabled, activeTab])
+
+  React.useEffect(() => {
+    if (!heroEnabled && activeTab === 'hero') {
+      setActiveTab('quests')
+    }
+  }, [heroEnabled, activeTab])
+
   // Progress tracking: This week vs last week
   const { progress, isLoading: isLoadingProgress, error: progressError, refetch: refetchProgress } = useProgress()
 
@@ -166,6 +189,16 @@ export function InsightsScreen() {
 
       {/* Tab Navigation - 簡化為兩個分頁（暫時隱藏 AI 洞察） */}
       <View style={styles.tabContainer}>
+        {heroEnabled && (
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'hero' && styles.tabActive]}
+            onPress={() => setActiveTab('hero')}
+          >
+            <Text style={[styles.tabText, activeTab === 'hero' && styles.tabTextActive]}>
+              ⭐ 摘要
+            </Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={[styles.tab, activeTab === 'quests' && styles.tabActive]}
           onPress={() => setActiveTab('quests')}
@@ -202,7 +235,24 @@ export function InsightsScreen() {
       </View>
 
       {/* Tab Content */}
-      {activeTab === 'quests' ? (
+      {activeTab === 'hero' && heroEnabled ? (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.contentContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+        >
+          <View style={styles.section}>
+            <GamificationHeroCard
+              snapshot={buildGamificationSnapshot(streak, dataCoverage)}
+              alerts={missingAlerts}
+              primaryLabel="前往今日任務"
+              onPressPrimary={() => setActiveTab('quests')}
+            />
+          </View>
+        </ScrollView>
+      ) : activeTab === 'quests' ? (
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.contentContainer}

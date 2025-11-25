@@ -12,6 +12,14 @@ interface GamificationBoardProps {
   onNavigate?: (category: string) => void
 }
 
+interface GamificationHeroCardProps {
+  snapshot: GamificationSnapshot
+  alerts?: MissingDataAlert[]
+  onPressPrimary?: () => void
+  primaryLabel?: string
+  compact?: boolean
+}
+
 const streakMilestones = [7, 14, 30, 60, 100]
 
 const primary = colors.primary[600] || '#2563EB'
@@ -129,18 +137,29 @@ const buildAchievements = (streakDays: number, coveragePercent: number) => {
   ]
 }
 
-export function GamificationBoard({ streak, coverage, alerts, onNavigate }: GamificationBoardProps) {
+type GamificationSnapshot = {
+  streakDays: number
+  longestStreak: number
+  coveragePercent: number
+  habitScore: number
+  readinessScore: number
+  nextStreakMilestone: number | undefined
+  coverageGoal: number
+  coverageGap: number
+  level: ReturnType<typeof getLevelInfo>
+  nextUnlockLabel: string
+}
+
+export function buildGamificationSnapshot(streak?: StreakData | null, coverage?: DataCoverageInfo | null): GamificationSnapshot {
   const streakDays = streak?.currentStreak ?? 0
   const longestStreak = streak?.longestStreak ?? 0
   const coveragePercent = coverage?.symptom_coverage_percent ?? 0
-  const habitScore = Math.min(streakDays, 30) / 30 * 100
+  const habitScore = (Math.min(streakDays, 30) / 30) * 100
   const readinessScore = Math.round(habitScore * 0.4 + coveragePercent * 0.6)
   const nextStreakMilestone = getNextStreakMilestone(streakDays)
   const level = getLevelInfo(coveragePercent)
   const coverageGoal = coveragePercent < 60 ? 60 : coveragePercent < 80 ? 80 : 100
   const coverageGap = Math.max(0, Math.round(coverageGoal - coveragePercent))
-  const quests = buildQuests(alerts, onNavigate)
-  const achievements = buildAchievements(streakDays, coveragePercent)
 
   const nextUnlockLabel =
     coveragePercent >= 60
@@ -149,95 +168,145 @@ export function GamificationBoard({ streak, coverage, alerts, onNavigate }: Gami
         : 'AI 分析已開啟，挑戰 80% 提升精確度'
       : `再提升 ${coverageGap}% 覆蓋率即可解鎖 AI 分析`
 
+  return {
+    streakDays,
+    longestStreak,
+    coveragePercent,
+    habitScore,
+    readinessScore,
+    nextStreakMilestone: nextStreakMilestone ?? undefined,
+    coverageGoal,
+    coverageGap,
+    level,
+    nextUnlockLabel,
+  }
+}
+
+export function GamificationHeroCard({
+  snapshot,
+  alerts,
+  onPressPrimary,
+  primaryLabel = '查看任務',
+  compact = false,
+}: GamificationHeroCardProps) {
+  const { streakDays, longestStreak, coveragePercent, habitScore, readinessScore, nextStreakMilestone, coverageGoal, coverageGap, level, nextUnlockLabel } = snapshot
+
+  const hintText =
+    nextStreakMilestone
+      ? `距離 ${nextStreakMilestone} 天還差 ${nextStreakMilestone - streakDays}`
+      : '保持火焰，進入專家模式'
+
+  const progressHint =
+    coverageGap > 0 ? `距離目標 ${coverageGoal}%` : '已達成目標'
+
+  const questHint =
+    alerts && alerts.length > 0
+      ? `${alerts.length} 項待補任務`
+      : '保持填寫，每天都有進度'
+
   return (
-    <View style={styles.card}>
-      <View style={styles.hero}>
-        <View style={styles.heroDecorationOne} />
-        <View style={styles.heroDecorationTwo} />
+    <View style={[styles.hero, compact && styles.heroCompact]}>
+      <View style={styles.heroDecorationOne} />
+      <View style={styles.heroDecorationTwo} />
 
-        <View style={styles.heroHeader}>
-          <View style={styles.levelBadge}>
-            <Text style={[styles.levelText, { color: level.color }]}>{level.label}</Text>
-          </View>
-          <View style={styles.scorePill}>
-            <Icon name="lightning-bolt" size={14} color={colors.white} />
-            <Text style={styles.scoreValue}>{readinessScore}%</Text>
-            <Text style={styles.scoreLabel}>準備度</Text>
-          </View>
+      <View style={styles.heroHeader}>
+        <View style={styles.levelBadge}>
+          <Text style={[styles.levelText, { color: level.color }]}>{level.label}</Text>
         </View>
-
-        <Text style={styles.heroTitle}>健康冒險進行中</Text>
-        <Text style={styles.heroSubtitle}>{nextUnlockLabel}</Text>
-
-        <View style={styles.heroStats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>連續</Text>
-            <Text style={styles.statValue}>
-              {streakDays} <Text style={styles.statUnit}>天</Text>
-            </Text>
-            <Text style={styles.statHint}>
-              {nextStreakMilestone
-                ? `距離 ${nextStreakMilestone} 天還差 ${nextStreakMilestone - streakDays}`
-                : '保持火焰，進入專家模式'}
-            </Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>覆蓋率</Text>
-            <Text style={[styles.statValue, { color: level.color }]}>
-              {coveragePercent.toFixed(0)}%
-            </Text>
-            <Text style={styles.statHint}>
-              {coverageGap > 0 ? `距離目標 ${coverageGoal}%` : '已達成目標'}
-            </Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>最長</Text>
-            <Text style={styles.statValue}>
-              {longestStreak} <Text style={styles.statUnit}>天</Text>
-            </Text>
-            <Text style={styles.statHint}>刷新個人紀錄吧</Text>
-          </View>
-        </View>
-
-        <View style={styles.progressGroup}>
-          <View style={styles.progressHeader}>
-            <View style={styles.progressLabelRow}>
-              <Icon name="fire" size={16} color={colors.error} />
-              <Text style={styles.progressLabel}>習慣火焰</Text>
-            </View>
-            <Text style={styles.progressValue}>{habitScore.toFixed(0)}%</Text>
-          </View>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${Math.min(habitScore, 100)}%`, backgroundColor: colors.error }]} />
-          </View>
-          <Text style={styles.progressHint}>
-            {nextStreakMilestone
-              ? `再記錄 ${nextStreakMilestone - streakDays} 天即可解鎖 ${nextStreakMilestone} 天徽章`
-              : '保持當前節奏，火焰不熄'}
-          </Text>
-        </View>
-
-        <View style={styles.progressGroup}>
-          <View style={styles.progressHeader}>
-            <View style={styles.progressLabelRow}>
-              <Icon name="checkbox-marked-circle-outline" size={16} color={level.color} />
-              <Text style={styles.progressLabel}>資料充足度</Text>
-            </View>
-            <Text style={[styles.progressValue, { color: level.color }]}>{coveragePercent.toFixed(0)}%</Text>
-          </View>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${Math.min(coveragePercent, 100)}%`, backgroundColor: level.color }]} />
-          </View>
-          <Text style={styles.progressHint}>{nextUnlockLabel}</Text>
+        <View style={styles.scorePill}>
+          <Icon name="lightning-bolt" size={14} color={primary} />
+          <Text style={styles.scoreValue}>{readinessScore}%</Text>
+          <Text style={styles.scoreLabel}>準備度</Text>
         </View>
       </View>
 
+      <Text style={styles.heroTitle}>健康冒險進行中</Text>
+      <Text style={styles.heroSubtitle}>{nextUnlockLabel}</Text>
+
+      <View style={styles.heroStats}>
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>連續</Text>
+          <Text style={styles.statValue}>
+            {streakDays} <Text style={styles.statUnit}>天</Text>
+          </Text>
+          <Text style={styles.statHint}>{hintText}</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>覆蓋率</Text>
+          <Text style={[styles.statValue, { color: level.color }]}>
+            {coveragePercent.toFixed(0)}%
+          </Text>
+          <Text style={styles.statHint}>{progressHint}</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>最長</Text>
+          <Text style={styles.statValue}>
+            {longestStreak} <Text style={styles.statUnit}>天</Text>
+          </Text>
+          <Text style={styles.statHint}>刷新個人紀錄吧</Text>
+        </View>
+      </View>
+
+      <View style={styles.progressGroup}>
+        <View style={styles.progressHeader}>
+          <View style={styles.progressLabelRow}>
+            <Icon name="fire" size={16} color={colors.error} />
+            <Text style={styles.progressLabel}>習慣火焰</Text>
+          </View>
+          <Text style={styles.progressValue}>{habitScore.toFixed(0)}%</Text>
+        </View>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${Math.min(habitScore, 100)}%`, backgroundColor: colors.error }]} />
+        </View>
+        <Text style={styles.progressHint}>
+          {nextStreakMilestone
+            ? `再記錄 ${nextStreakMilestone - streakDays} 天即可解鎖 ${nextStreakMilestone} 天徽章`
+            : '保持當前節奏，火焰不熄'}
+        </Text>
+      </View>
+
+      <View style={styles.progressGroup}>
+        <View style={styles.progressHeader}>
+          <View style={styles.progressLabelRow}>
+            <Icon name="checkbox-marked-circle-outline" size={16} color={level.color} />
+            <Text style={styles.progressLabel}>資料充足度</Text>
+          </View>
+          <Text style={[styles.progressValue, { color: level.color }]}>{coveragePercent.toFixed(0)}%</Text>
+        </View>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${Math.min(coveragePercent, 100)}%`, backgroundColor: level.color }]} />
+        </View>
+        <Text style={styles.progressHint}>{nextUnlockLabel}</Text>
+      </View>
+
+      {onPressPrimary && (
+        <TouchableOpacity style={styles.heroCta} onPress={onPressPrimary} activeOpacity={0.85}>
+          <View style={styles.heroCtaLeft}>
+            <Icon name="target" size={18} color={primary} />
+            <Text style={styles.heroCtaText}>{primaryLabel}</Text>
+          </View>
+          <Text style={styles.heroCtaHint}>{questHint}</Text>
+          <Icon name="chevron-right" size={18} color={primary} />
+        </TouchableOpacity>
+      )}
+    </View>
+  )
+}
+
+export function GamificationBoard({ streak, coverage, alerts, onNavigate }: GamificationBoardProps) {
+  const snapshot = buildGamificationSnapshot(streak, coverage)
+  const quests = buildQuests(alerts, onNavigate)
+  const achievements = buildAchievements(snapshot.streakDays, snapshot.coveragePercent)
+
+  return (
+    <View style={styles.card}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>今日任務</Text>
         <Text style={styles.sectionSubtitle}>完成任務推進進度條</Text>
       </View>
+
       <View style={styles.questList}>
         {quests.map((quest) => (
           <TouchableOpacity
@@ -308,17 +377,28 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   hero: {
-    backgroundColor: colors.primary[900] || '#0F172A',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: spacing.lg,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: `${primary}20`,
+    // 使用漸層背景效果，但保持淺色基調
+    shadowColor: primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  heroCompact: {
+    padding: spacing.md,
   },
   heroDecorationOne: {
     position: 'absolute',
     width: 160,
     height: 160,
     borderRadius: 80,
-    backgroundColor: `${secondary}25`,
+    backgroundColor: `${primary}08`,
     top: -60,
     right: -40,
     transform: [{ rotate: '12deg' }],
@@ -328,7 +408,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: `${colors.success}25`,
+    backgroundColor: `${secondary}08`,
     bottom: -40,
     left: -20,
     transform: [{ rotate: '-8deg' }],
@@ -341,13 +421,13 @@ const styles = StyleSheet.create({
   levelBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    backgroundColor: `${colors.white}10`,
+    backgroundColor: `${primary}15`,
     borderRadius: 12,
     alignSelf: 'flex-start',
   },
   levelText: {
     ...typography.body,
-    color: colors.white,
+    color: colors.text.primary,
     fontWeight: '700',
   },
   scorePill: {
@@ -357,27 +437,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: 20,
-    backgroundColor: `${colors.white}10`,
+    backgroundColor: `${primary}15`,
   },
   scoreValue: {
     ...typography.h3,
-    color: colors.white,
+    color: primary,
     fontWeight: '700',
   },
   scoreLabel: {
     ...typography.caption,
-    color: `${colors.white}80`,
+    color: colors.text.secondary,
     fontSize: 11,
   },
   heroTitle: {
     ...typography.h3,
-    color: colors.white,
+    color: colors.text.primary,
     fontWeight: '700',
     marginTop: spacing.sm,
   },
   heroSubtitle: {
     ...typography.body,
-    color: `${colors.white}85`,
+    color: colors.text.secondary,
     marginTop: spacing.xs,
     lineHeight: 18,
     fontSize: 13,
@@ -385,7 +465,7 @@ const styles = StyleSheet.create({
   heroStats: {
     flexDirection: 'row',
     marginTop: spacing.md,
-    backgroundColor: `${colors.white}06`,
+    backgroundColor: `${primary}08`,
     borderRadius: 12,
     paddingVertical: spacing.sm,
   },
@@ -397,28 +477,28 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     ...typography.caption,
-    color: `${colors.white}80`,
+    color: colors.text.secondary,
     fontSize: 12,
   },
   statValue: {
     ...typography.h3,
-    color: colors.white,
+    color: colors.text.primary,
     fontWeight: '700',
     fontSize: 22,
   },
   statUnit: {
     ...typography.caption,
-    color: `${colors.white}70`,
+    color: colors.text.secondary,
   },
   statHint: {
     ...typography.caption,
-    color: `${colors.white}70`,
+    color: colors.text.secondary,
     fontSize: 11,
     textAlign: 'center',
   },
   statDivider: {
     width: 1,
-    backgroundColor: `${colors.white}10`,
+    backgroundColor: colors.border,
   },
   progressGroup: {
     marginTop: spacing.md,
@@ -436,18 +516,18 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     ...typography.body,
-    color: colors.white,
+    color: colors.text.primary,
     fontWeight: '600',
   },
   progressValue: {
     ...typography.body,
-    color: colors.white,
+    color: colors.text.primary,
     fontWeight: '700',
   },
   progressTrack: {
     height: 10,
     borderRadius: 999,
-    backgroundColor: `${colors.white}15`,
+    backgroundColor: `${primary}15`,
     overflow: 'hidden',
   },
   progressFill: {
@@ -456,7 +536,36 @@ const styles = StyleSheet.create({
   },
   progressHint: {
     ...typography.caption,
-    color: `${colors.white}75`,
+    color: colors.text.secondary,
+    fontSize: 12,
+  },
+  heroCta: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: 12,
+    backgroundColor: `${primary}15`,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: `${primary}30`,
+  },
+  heroCtaLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  heroCtaText: {
+    ...typography.body,
+    color: primary,
+    fontWeight: '700',
+  },
+  heroCtaHint: {
+    ...typography.caption,
+    color: colors.text.secondary,
+    flex: 1,
+    textAlign: 'right',
     fontSize: 12,
   },
   sectionHeader: {

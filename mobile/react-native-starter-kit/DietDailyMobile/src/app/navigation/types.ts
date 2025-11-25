@@ -8,7 +8,9 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Today: undefined
   History: undefined
-  Insights: undefined
+  Insights: {
+    tab?: 'hero' | 'quests' | 'progress' | 'reports'
+  } | undefined
   Settings: undefined
 }
 

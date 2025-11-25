@@ -16,12 +16,14 @@ export interface UserSettings {
   debugMode?: boolean // Debug 模式開關
   customPrompt?: string // 自訂 AI 提示詞
   modules?: ModuleToggleSettings
+  gamificationHeroEnabled?: boolean
 }
 
 export interface ModuleToggleSettings {
   medication: boolean
   sleep: boolean
   activity: boolean
+  hero: boolean // 健康冒險摘要模式（Gamification Hero）
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -41,7 +43,9 @@ export const DEFAULT_SETTINGS: UserSettings = {
     medication: true,
     sleep: true,
     activity: true,
+    hero: true, // 健康冒險摘要模式（Gamification Hero）
   },
+  gamificationHeroEnabled: true, // 保留以維持向後兼容性，但建議使用 modules.hero
 }
 
 export const CHRONIC_DISEASES = [

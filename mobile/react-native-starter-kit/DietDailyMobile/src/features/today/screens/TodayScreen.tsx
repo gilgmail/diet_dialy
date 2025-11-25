@@ -41,6 +41,9 @@ import type {
   MedicationRegimenSummary,
   SleepSessionEntry,
 } from '@/features/health-logs/types'
+import { useStreak } from '@/features/dashboard/hooks/useStreak'
+import { useDataCoverage, useMissingDataAlerts } from '@/features/dashboard/hooks/useDataCoverage'
+import { GamificationHeroCard, buildGamificationSnapshot } from '@/features/insights/components/GamificationBoard'
 
 ;(globalThis as any).mLogs = (globalThis as any).mLogs ?? []
 ;(globalThis as any).sSessions = (globalThis as any).sSessions ?? []
@@ -116,6 +119,27 @@ export function TodayScreen() {
     id: null,
     name: '',
   })
+
+  const { streak } = useStreak()
+  const { coverage: dataCoverage } = useDataCoverage()
+  const { alerts: missingAlerts } = useMissingDataAlerts(1)
+  // 優先使用模組系統的 hero 開關，向後兼容 gamificationHeroEnabled
+  const gamificationHeroEnabled =
+    settings.modules?.hero ?? settings.gamificationHeroEnabled ?? DEFAULT_SETTINGS.modules?.hero ?? true
+
+  const gamificationSnapshot = useMemo(
+    () => buildGamificationSnapshot(streak, dataCoverage),
+    [streak, dataCoverage]
+  )
+
+  const handleOpenQuests = useCallback(() => {
+    const parentNav = navigation.getParent()
+    if (parentNav) {
+      parentNav.navigate('Insights' as never, { tab: 'quests' } as never)
+      return
+    }
+    ;(navigation as any).navigate('Insights', { tab: 'quests' })
+  }, [navigation])
 
   // Initialize settings when user is available
   React.useEffect(() => {
@@ -739,25 +763,36 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
             <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
           }
         >
+          {activeTab === 'summary' && gamificationHeroEnabled && (
+            <View style={styles.gamificationSection}>
+              <GamificationHeroCard
+                snapshot={gamificationSnapshot}
+                alerts={missingAlerts}
+                compact
+                primaryLabel="前往今日任務"
+                onPressPrimary={handleOpenQuests}
+              />
+            </View>
+          )}
 
-      {/* Quick Actions */}
-      {activeTab === 'summary' && (
-        <View style={styles.quickActionsCard}>
-          {quickActions.map((action) => (
-            <TouchableOpacity
-              key={action.key}
-              style={styles.quickActionButton}
-              onPress={action.onPress}
-              activeOpacity={0.85}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: action.color + '20' }]}>
-                <Icon name={action.icon} size={18} color={action.color} />
-              </View>
-              <Text style={styles.quickActionLabel}>{action.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
+          {/* Quick Actions */}
+          {activeTab === 'summary' && (
+            <View style={styles.quickActionsCard}>
+              {quickActions.map((action) => (
+                <TouchableOpacity
+                  key={action.key}
+                  style={styles.quickActionButton}
+                  onPress={action.onPress}
+                  activeOpacity={0.85}
+                >
+                  <View style={[styles.quickActionIcon, { backgroundColor: action.color + '20' }]}>
+                    <Icon name={action.icon} size={18} color={action.color} />
+                  </View>
+                  <Text style={styles.quickActionLabel}>{action.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
 
 
       {/* Summary Tab */}
@@ -1409,6 +1444,10 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
+  },
+  gamificationSection: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
   },
   quickActionsCard: {
     marginHorizontal: spacing.lg,

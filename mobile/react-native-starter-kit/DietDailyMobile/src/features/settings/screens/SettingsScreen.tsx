@@ -93,6 +93,9 @@ export function SettingsScreen() {
       sleep: true,
       activity: true,
     }
+  // Hero 模組現在使用模組系統，優先使用 modules.hero，向後兼容 gamificationHeroEnabled
+  const gamificationHeroEnabled =
+    settings.modules?.hero ?? settings.gamificationHeroEnabled ?? DEFAULT_SETTINGS.modules?.hero ?? true
 
   useEffect(() => {
     if (!availableTabs.includes(activeTab)) {
@@ -154,6 +157,17 @@ export function SettingsScreen() {
       await NotificationService.cancelAllMealReminders()
       Alert.alert('成功', '用餐提醒已關閉')
     }
+  }
+
+  // Hero 模組現在已整合到模組系統中，使用 handleToggleModule('hero', value) 代替
+  // 保留此函數僅作為向後兼容，實際更新 modules.hero
+  const handleToggleGamificationHero = async (value: boolean) => {
+    if (!user?.id) return
+    const nextModules = {
+      ...moduleSettings,
+      hero: value,
+    }
+    await updateSettings(user.id, { modules: nextModules })
   }
 
   const handleChangeTimezone = () => {
@@ -297,6 +311,12 @@ export function SettingsScreen() {
       icon: 'run',
       label: '運動紀錄',
       description: '開關運動表單與統計模組',
+    },
+    {
+      key: 'hero' as const,
+      icon: 'fire',
+      label: '健康冒險摘要',
+      description: '開關健康冒險摘要模式（Hero Card）',
     },
   ]
 
@@ -512,6 +532,8 @@ Device: ${Platform.OS} ${Platform.Version}
           </>
         )}
       </View>
+
+      {/* Hero 模組已整合到「健康模組」區塊中，請前往「模組」分頁進行設定 */}
 
       {/* Regional Settings */}
       <View style={styles.section}>
