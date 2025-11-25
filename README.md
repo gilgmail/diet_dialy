@@ -24,6 +24,12 @@ A comprehensive full-stack application for patients managing IBD, IBS, food alle
 - **Medical Dashboard** - Weekly trends, insights, and AI analysis
 - **Admin Panel** - Food database management and duplicate detection
 
+### 🎮 Gamification & Engagement
+- **Gamification Hero Card** - Visual summary of health adventure progress with streak tracking
+- **Progress Tracking** - Data coverage metrics and habit scoring
+- **Achievement System** - Milestone badges and level progression (Novice/Advanced/Expert)
+- **Quest System** - Task-based engagement with missing data alerts
+
 ### 🔐 Backend Infrastructure
 - **Supabase** - PostgreSQL database with real-time subscriptions
 - **Authentication** - Google OAuth and email/password
@@ -233,6 +239,8 @@ npm run test:e2e           # Playwright E2E tests
 - Admin panel for food management
 - Mobile app foundation (iOS working)
 - CI/CD pipeline setup
+- Gamification Hero Card component with progress tracking
+- Module toggle system for customizable features
 
 ### 🚧 In Progress
 - Mobile app feature parity
@@ -289,3 +297,13 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
 
 **Current Version**: 0.1.0 (Development Phase)  
 **Last Updated**: 2025-01-12
+
+## 📝 Recent Changes
+
+### 2025-01-12 - Gamification Hero Card
+- ✨ Added `GamificationHeroCard` component for visual health adventure summary
+- 📱 Integrated hero card into InsightsScreen (new 'hero' tab) and TodayScreen
+- ⚙️ Updated settings page to support hero module toggle
+- 🔄 Improved module system with backward compatibility
+
+See [CHANGELOG_2025-01-12.md](./CHANGELOG_2025-01-12.md) for detailed changes.
