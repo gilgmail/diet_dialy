@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/shared/stores/authStore'
+import { supabase } from '@/shared/api/supabase/client'
 import { BowelDiaryService } from '../services/BowelDiaryService'
 import type { CreateBowelMovementInput, UpdateBowelMovementInput } from '../types'
 
@@ -33,6 +35,42 @@ export function useBowelDiary(date?: Date) {
     },
     enabled: !!user?.id,
   })
+
+  // Realtime subscription for bowel movement entries changes
+  useEffect(() => {
+    if (!user?.id) return
+
+    console.log('[useBowelDiary] Setting up realtime subscription for user:', user.id)
+
+    const channel = supabase
+      .channel('bowel_movement_entries_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events: INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'bowel_movement_entries',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('[useBowelDiary] Realtime event received:', payload.eventType, payload)
+
+          // Invalidate queries to trigger refetch
+          queryClient.invalidateQueries({
+            queryKey: ['bowelMovements', user.id],
+          })
+        }
+      )
+      .subscribe((status) => {
+        console.log('[useBowelDiary] Subscription status:', status)
+      })
+
+    // Cleanup subscription on unmount
+    return () => {
+      console.log('[useBowelDiary] Cleaning up realtime subscription')
+      channel.unsubscribe()
+    }
+  }, [user?.id, queryClient])
 
   // Create bowel movement
   const { mutateAsync: createEntry, isPending: isCreating } = useMutation({

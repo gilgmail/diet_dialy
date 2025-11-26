@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/shared/stores/authStore'
+import { supabase } from '@/shared/api/supabase/client'
 import { FoodDiaryService } from '../services/FoodDiaryService'
 import type { CreateFoodEntryInput, UpdateFoodEntryInput } from '../types'
 
@@ -32,6 +34,42 @@ export function useFoodDiary() {
     },
     enabled: !!user?.id,
   })
+
+  // Realtime subscription for food entries changes
+  useEffect(() => {
+    if (!user?.id) return
+
+    console.log('[useFoodDiary] Setting up realtime subscription for user:', user.id)
+
+    const channel = supabase
+      .channel('food_entries_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events: INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'food_entries',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('[useFoodDiary] Realtime event received:', payload.eventType, payload)
+
+          // Invalidate queries to trigger refetch
+          queryClient.invalidateQueries({
+            queryKey: QUERY_KEYS.foodEntries(user.id),
+          })
+        }
+      )
+      .subscribe((status) => {
+        console.log('[useFoodDiary] Subscription status:', status)
+      })
+
+    // Cleanup subscription on unmount
+    return () => {
+      console.log('[useFoodDiary] Cleaning up realtime subscription')
+      channel.unsubscribe()
+    }
+  }, [user?.id, queryClient])
 
   // Get food entries by date
   const getFoodEntriesByDate = (date: Date) => {
