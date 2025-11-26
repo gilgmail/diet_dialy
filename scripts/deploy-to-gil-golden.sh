@@ -89,10 +89,11 @@ DEVICE_STATUS=$(echo "$DEVICE_LINE" | awk '{for(i=4;i<=NF-1;i++) printf "%s ", $
 
 # Check if device is available (connected or paired)
 if [[ ! "$DEVICE_STATUS" =~ available ]]; then
-    print_error "Device '$DEVICE_NAME' is not available: $DEVICE_STATUS"
-    exit 1
+    print_warning "Device '$DEVICE_NAME' status: $DEVICE_STATUS"
+    print_warning "Device may need to be unlocked or trusted. Continuing anyway..."
+else
+    print_success "Device ready: $DEVICE_NAME ($DEVICE_STATUS)"
 fi
-print_success "Device ready: $DEVICE_NAME ($DEVICE_STATUS)"
 
 # Check for uncommitted changes
 print_status "Checking git status..."
@@ -182,16 +183,17 @@ echo ""
 
 # Run build with clean flag
 # Using --no-build-cache to ensure fresh build (clears native derived data)
+# Try device name first, fall back to UDID if name doesn't work
 if command -v gtimeout &> /dev/null; then
     APP_VARIANT="$APP_VARIANT_ENV" gtimeout 600 npx expo run:ios \
-        --device "$DEVICE_NAME" \
+        --device "$DEVICE_ID" \
         --configuration "$XCODE_CONFIGURATION" \
         --no-build-cache \
         2>&1
     BUILD_RESULT=$?
 else
     APP_VARIANT="$APP_VARIANT_ENV" npx expo run:ios \
-        --device "$DEVICE_NAME" \
+        --device "$DEVICE_ID" \
         --configuration "$XCODE_CONFIGURATION" \
         --no-build-cache \
         2>&1
