@@ -40,7 +40,7 @@ export function useBowelDiary(date?: Date) {
   useEffect(() => {
     if (!user?.id) return
 
-    console.log('[useBowelDiary] Setting up realtime subscription for user:', user.id)
+    // console.log('[useBowelDiary] Setting up realtime subscription for user:', user.id)
 
     const channel = supabase
       .channel('bowel_movement_entries_changes')
@@ -53,7 +53,7 @@ export function useBowelDiary(date?: Date) {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('[useBowelDiary] Realtime event received:', payload.eventType, payload)
+          // console.log('[useBowelDiary] Realtime event received:', payload.eventType, payload)
 
           // Invalidate queries to trigger refetch
           queryClient.invalidateQueries({
@@ -62,12 +62,12 @@ export function useBowelDiary(date?: Date) {
         }
       )
       .subscribe((status) => {
-        console.log('[useBowelDiary] Subscription status:', status)
+        // console.log('[useBowelDiary] Subscription status:', status)
       })
 
     // Cleanup subscription on unmount
     return () => {
-      console.log('[useBowelDiary] Cleaning up realtime subscription')
+      // console.log('[useBowelDiary] Cleaning up realtime subscription')
       channel.unsubscribe()
     }
   }, [user?.id, queryClient])

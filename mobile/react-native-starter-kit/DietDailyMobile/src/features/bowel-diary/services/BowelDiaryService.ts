@@ -65,10 +65,10 @@ export class BowelDiaryService {
    */
   static async getBowelMovementsByDateString(userId: string, dateStr: string) {
     try {
-      console.log('[BowelDiaryService] getBowelMovementsByDateString:', {
-        userId,
-        dateStr,
-      })
+      // console.log('[BowelDiaryService] getBowelMovementsByDateString:', {
+      //   userId,
+      //   dateStr,
+      // })
 
       const { data, error } = await (supabase as any)
         .from('bowel_movement_entries')
@@ -77,11 +77,11 @@ export class BowelDiaryService {
         .eq('recorded_date', dateStr)
         .order('occurred_at', { ascending: true })
 
-      console.log('[BowelDiaryService] Query result:', {
-        dataCount: data?.length || 0,
-        data,
-        error,
-      })
+      // console.log('[BowelDiaryService] Query result:', {
+      //   dataCount: data?.length || 0,
+      //   data,
+      //   error,
+      // })
 
       if (error) throw error
 
