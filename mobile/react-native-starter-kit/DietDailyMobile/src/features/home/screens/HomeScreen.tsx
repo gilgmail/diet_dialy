@@ -449,6 +449,7 @@ export function HomeScreen() {
                 style={styles.input}
                 outlineColor={colors.border}
                 activeOutlineColor={colors.primary[500]}
+                textColor={colors.text.primary}
               />
               <Text style={styles.symptomHint}>可使用逗號或頓號分隔多個症狀</Text>
             </View>
@@ -495,6 +496,7 @@ export function HomeScreen() {
                     severity === level.value
                       ? { backgroundColor: level.color + '20' }
                       : undefined,
+                  labelStyle: { color: colors.text.primary },
                 }))}
                 style={styles.segmentedButtons}
               />
@@ -530,6 +532,7 @@ export function HomeScreen() {
                   style={styles.input}
                   outlineColor={colors.border}
                   activeOutlineColor={colors.primary[500]}
+                  textColor={colors.text.primary}
                 />
               </View>
             )}
@@ -548,6 +551,7 @@ export function HomeScreen() {
                   style={[styles.input, styles.textArea]}
                   outlineColor={colors.border}
                   activeOutlineColor={colors.primary[500]}
+                  textColor={colors.text.primary}
                 />
               </View>
             )}

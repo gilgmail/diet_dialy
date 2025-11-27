@@ -273,6 +273,7 @@ export function AddSymptomEntryScreen() {
             style={styles.input}
             outlineColor={colors.border}
             activeOutlineColor={colors.primary[500]}
+            textColor={colors.text.primary}
           />
           <Text style={styles.hint}>可使用逗號或頓號分隔多個症狀</Text>
         </View>
@@ -316,6 +317,7 @@ export function AddSymptomEntryScreen() {
               value: level.value,
               label: `${level.icon} ${level.label}`,
               style: severity === level.value ? { backgroundColor: level.color + '20' } : undefined,
+              labelStyle: { color: colors.text.primary },
             }))}
             style={styles.segmentedButtons}
           />
@@ -351,6 +353,7 @@ export function AddSymptomEntryScreen() {
               style={styles.input}
               outlineColor={colors.border}
               activeOutlineColor={colors.primary[500]}
+              textColor={colors.text.primary}
             />
             <Text style={styles.hint}>選填 - 症狀持續的分鐘數</Text>
           </View>
@@ -370,6 +373,7 @@ export function AddSymptomEntryScreen() {
               style={[styles.input, styles.textArea]}
               outlineColor={colors.border}
               activeOutlineColor={colors.primary[500]}
+              textColor={colors.text.primary}
             />
             <Text style={styles.hint}>選填 - 其他相關資訊</Text>
           </View>

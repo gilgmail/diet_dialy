@@ -105,6 +105,7 @@ export function FoodSearchInput({
         style={styles.input}
         outlineColor={colors.border}
         activeOutlineColor={colors.primary[500]}
+        textColor={colors.text.primary}
         right={
           isSearching ? (
             <TextInput.Icon icon={() => <ActivityIndicator size={20} />} />

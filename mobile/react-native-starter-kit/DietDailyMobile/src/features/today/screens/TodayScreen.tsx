@@ -29,9 +29,11 @@ import { useSettingsStore } from '@/features/settings/stores/settingsStore'
 import { DEFAULT_SETTINGS } from '@/features/settings/types'
 import { FoodDiaryService } from '@/features/food-diary/services/FoodDiaryService'
 import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
+import { BowelDiaryService } from '@/features/bowel-diary/services/BowelDiaryService'
 import { MEAL_TYPES, type MealType } from '@/features/food-diary/types'
 import type { FoodEntry } from '@/features/food-diary/types'
 import type { SymptomEntry } from '@/features/symptom-diary/types'
+import type { BowelMovementEntry } from '@/features/bowel-diary/types'
 import { SEVERITY_LEVELS } from '@/features/symptom-diary/types'
 import type { MainStackParamList, MainTabParamList } from '@/app/navigation/types'
 import { colors, typography, spacing } from '@/theme'
@@ -223,6 +225,21 @@ export function TodayScreen() {
     enabled: !!user?.id,
   })
 
+  // Fetch today's bowel entries
+  const {
+    data: bowelEntries = [],
+    isLoading: isLoadingBowel,
+    refetch: refetchBowel,
+  } = useQuery({
+    queryKey: ['bowelEntries', user?.id, todayKey],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const result = await BowelDiaryService.getBowelMovementsByDateString(user.id, todayKey)
+      return result.data || []
+    },
+    enabled: !!user?.id,
+  })
+
 const medicationQuery = useQuery({
   queryKey: ['todayMedicationLogs', user?.id, todayKey],
     queryFn: async () => {
@@ -300,6 +317,7 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
   const handleRefresh = () => {
     refetchFood()
     refetchSymptoms()
+    refetchBowel()
     medicationQuery.refetch()
     sleepQuery.refetch()
     activityQuery.refetch()
@@ -453,10 +471,10 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
       {
         key: 'bowel',
         title: '排便',
-        count: 0,
+        count: bowelEntries.length,
         icon: 'toilet',
         accent: '#FFF7ED',
-        hint: '快速記錄 Bristol 指標',
+        hint: bowelEntries.length > 0 ? '追蹤排便狀況' : '快速記錄 Bristol 指標',
         onPress: () => navigation.navigate('AddBowelMovement', { date: undefined }),
       },
     ]

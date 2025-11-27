@@ -328,6 +328,7 @@ export function AddBowelMovementScreen({ navigation, route }: AddBowelMovementSc
                   style={styles.notesInput}
                   outlineColor={colors.border}
                   activeOutlineColor={colors.primary[500]}
+                  textColor={colors.text.primary}
                 />
               </View>
             </>

@@ -222,6 +222,7 @@ export function MedicationLogScreen({ navigation, route }: MedicationLogScreenPr
             value={dose}
             onChangeText={setDose}
             style={styles.input}
+            textColor={colors.text.primary}
           />
 
           <Text style={styles.fieldLabel}>服藥狀態</Text>
@@ -233,6 +234,7 @@ export function MedicationLogScreen({ navigation, route }: MedicationLogScreenPr
             buttons={STATUS_OPTIONS.map(status => ({
               value: status.value,
               label: status.label,
+              labelStyle: { color: colors.text.primary },
             }))}
             style={styles.segmented}
           />
@@ -258,6 +260,7 @@ export function MedicationLogScreen({ navigation, route }: MedicationLogScreenPr
               value={symptomNotes}
               onChangeText={setSymptomNotes}
               style={styles.input}
+              textColor={colors.text.primary}
             />
           )}
 
@@ -268,6 +271,7 @@ export function MedicationLogScreen({ navigation, route }: MedicationLogScreenPr
             value={notes}
             onChangeText={setNotes}
             style={styles.input}
+            textColor={colors.text.primary}
           />
         </View>
 
