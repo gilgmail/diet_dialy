@@ -408,6 +408,81 @@ useEffect(() => {
 
 ---
 
+## 🤖 自動化驗證腳本
+
+### 使用驗證腳本
+
+我們提供了一個自動化驗證腳本來測試 realtime sync 功能：
+
+**腳本位置**: `scripts/test-realtime-sync.js`
+
+**功能**:
+- ✅ 自動測試 `food_entries` 表的 INSERT, UPDATE, DELETE 事件
+- ✅ 自動測試 `daily_symptom_entries` 表的 INSERT, UPDATE, DELETE 事件
+- ✅ 測量同步延遲時間
+- ✅ 生成詳細的測試報告
+- ✅ 驗證事件是否正確觸發
+
+**使用方法**:
+
+```bash
+# 使用環境變數中的用戶 ID（會自動獲取第一個用戶）
+node scripts/test-realtime-sync.js
+
+# 或指定用戶 ID
+node scripts/test-realtime-sync.js <user_id>
+```
+
+**前置條件**:
+1. 確保 `.env.local` 檔案包含 Supabase 配置：
+   - `NEXT_PUBLIC_SUPABASE_URL` 或 `EXPO_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` 或 `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+2. 確保資料庫中有至少一個用戶（如果未提供用戶 ID）
+
+**測試流程**:
+1. 腳本會連接到 Supabase
+2. 設置 realtime subscriptions 監聽兩個表
+3. 執行 CRUD 操作（創建、更新、刪除）
+4. 驗證事件是否在 3 秒內接收
+5. 計算統計數據（平均延遲、最小/最大延遲）
+6. 生成測試報告
+
+**預期輸出**:
+```
+🚀 開始 Realtime Sync 驗證測試
+============================================================
+👤 使用測試用戶 ID: <user-id>
+
+📋 測試 Food Entries Realtime Subscription
+==================================================
+🔌 Subscription 狀態: SUBSCRIBED
+🧪 Test 1.1: INSERT 事件測試
+✅ INSERT 成功: <entry-id>
+📨 收到事件: insert
+✅ 事件接收成功，延遲: 234ms
+...
+📊 測試報告
+============================================================
+🍽️  Food Entries 測試結果:
+  INSERT:
+    通過: 1 / 1 (100.0%)
+    平均延遲: 234ms
+...
+✅ 所有測試通過！Realtime Sync 功能正常運作
+```
+
+**測試標準**:
+- ✅ 同步成功率 ≥ 98%
+- ✅ 同步延遲 < 3 秒
+- ✅ 所有事件類型（INSERT, UPDATE, DELETE）都正常運作
+
+**注意事項**:
+- 腳本會創建測試資料，測試完成後會自動清理
+- 如果測試失敗，檢查 Supabase Dashboard 中的 Realtime 配置
+- 確保資料表的 RLS (Row Level Security) 政策允許當前用戶操作
+
+---
+
 ## 🔧 Debug 技巧
 
 ### 查看 Subscription 狀態
