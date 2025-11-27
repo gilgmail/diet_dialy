@@ -155,42 +155,16 @@ export class SymptomDiaryService {
       // Use local date string to avoid off-by-one due to timezone
       const recordedDate = format(occurredAt, 'yyyy-MM-dd')
 
-      // Check if an entry already exists for this user/date (table has a unique constraint)
-      const { data: existingForDate, error: fetchError } = await supabase
-        .from('daily_symptom_entries')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('recorded_date', recordedDate)
-        .maybeSingle()
-
-      if (fetchError) {
-        console.warn('[SymptomDiaryService] Failed to check existing symptom entry for date:', fetchError)
-      }
-
-      // Transform simple input to database structure, preserving existing fields if present
-      const dbEntry = this.transformToDatabase(
-        userId,
-        recordedDate,
-        occurredAt,
-        input,
-        existingForDate as DailySymptomEntryRow | undefined
-      )
+      // Always insert a new row so multiple symptoms can be logged on the same day
+      const dbEntry = this.transformToDatabase(userId, recordedDate, occurredAt, input)
 
       console.log('[SymptomDiaryService] Transformed database entry:', dbEntry)
 
-      const { data, error } = existingForDate
-        ? await supabase
-            .from('daily_symptom_entries')
-            .update(dbEntry)
-            .eq('id', existingForDate.id)
-            .eq('user_id', userId)
-            .select()
-            .single()
-        : await supabase
-            .from('daily_symptom_entries')
-            .insert([dbEntry])
-            .select()
-            .single()
+      const { data, error } = await supabase
+        .from('daily_symptom_entries')
+        .insert([dbEntry])
+        .select()
+        .single()
 
       if (error) {
         console.error('[SymptomDiaryService] Supabase error:', error)
