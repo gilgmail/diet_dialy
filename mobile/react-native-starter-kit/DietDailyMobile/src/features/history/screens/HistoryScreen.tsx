@@ -132,27 +132,31 @@ export function HistoryScreen() {
       )}
 
       {/* Calendar/List Views */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {viewMode === 'month' && (
-          <MonthCalendarView
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-            currentMonth={currentMonth}
-          />
-        )}
-        {viewMode === 'week' && (
-          <WeekCalendarView
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-          />
-        )}
-        {viewMode === 'list' && (
+      {viewMode === 'list' ? (
+        // FlatList-based view should not be wrapped in ScrollView to avoid VirtualizedList warnings
+        <View style={styles.content}>
           <ListHistoryView
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}
           />
-        )}
-      </ScrollView>
+        </View>
+      ) : (
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {viewMode === 'month' && (
+            <MonthCalendarView
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+              currentMonth={currentMonth}
+            />
+          )}
+          {viewMode === 'week' && (
+            <WeekCalendarView
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+            />
+          )}
+        </ScrollView>
+      )}
     </View>
   )
 }
