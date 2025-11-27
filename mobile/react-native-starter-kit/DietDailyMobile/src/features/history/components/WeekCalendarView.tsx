@@ -21,16 +21,19 @@ import { zhTW } from 'date-fns/locale'
 import { useAuthStore } from '@/shared/stores/authStore'
 import { FoodDiaryService } from '@/features/food-diary/services/FoodDiaryService'
 import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
+import { BowelDiaryService } from '@/features/bowel-diary/services/BowelDiaryService'
 import { HealthLogService } from '@/features/health-logs/services/HealthLogService'
 import { MEAL_TYPES } from '@/features/food-diary/types'
 import type { FoodEntry } from '@/features/food-diary/types'
 import type { SymptomEntry } from '@/features/symptom-diary/types'
+import type { BowelMovementEntry } from '@/features/bowel-diary/types'
 import type {
   MedicationLogEntry,
   SleepSessionEntry,
   ActivitySessionEntry,
 } from '@/features/health-logs/types'
 import { SEVERITY_LEVELS } from '@/features/symptom-diary/types'
+import { STOOL_TYPES } from '@/features/bowel-diary/types'
 import { colors, typography, spacing } from '@/theme'
 
 interface WeekCalendarViewProps {
@@ -49,8 +52,10 @@ interface DayData {
     snack: number
   }
   symptomCount: number
+  bowelCount: number
   foodEntries: FoodEntry[]
   symptomEntries: SymptomEntry[]
+  bowelEntries: BowelMovementEntry[]
   medicationLogs: MedicationLogEntry[]
   sleepSessions: SleepSessionEntry[]
   activitySessions: ActivitySessionEntry[]
@@ -107,6 +112,23 @@ export function WeekCalendarView({ selectedDate, onSelectDate }: WeekCalendarVie
         weekEnd
       )
       return result.data || []
+    },
+    enabled: !!user?.id,
+  })
+
+  // Fetch bowel entries for current week
+  const { data: bowelEntries = [] } = useQuery({
+    queryKey: ['bowelEntries', user?.id, format(weekStart, 'yyyy-ww')],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const days: Date[] = []
+      for (let i = 0; i < 7; i++) {
+        days.push(addDays(weekStart, i))
+      }
+      const allEntries = await Promise.all(
+        days.map(date => BowelDiaryService.getBowelMovementsByDateString(user.id, format(date, 'yyyy-MM-dd')))
+      )
+      return allEntries.flatMap(result => result.data || [])
     },
     enabled: !!user?.id,
   })
@@ -200,6 +222,10 @@ export function WeekCalendarView({ selectedDate, onSelectDate }: WeekCalendarVie
         return entryDate === key
       })
 
+      const dayBowelEntries = bowelEntries.filter((entry: BowelMovementEntry) => {
+        return format(new Date(entry.occurred_at), 'yyyy-MM-dd') === key
+      })
+
       // Count meals
       const mealCounts = {
         breakfast: dayFoodEntries.filter((e: FoodEntry) => e.meal_type === 'breakfast').length,
@@ -214,14 +240,16 @@ export function WeekCalendarView({ selectedDate, onSelectDate }: WeekCalendarVie
         isToday: isSameDay(date, today),
         mealCounts,
         symptomCount: daySymptomEntries.length,
+        bowelCount: dayBowelEntries.length,
         foodEntries: dayFoodEntries,
         symptomEntries: daySymptomEntries,
+        bowelEntries: dayBowelEntries,
         medicationLogs: dayMedicationLogs,
         sleepSessions: daySleepSessions,
         activitySessions: dayActivitySessions,
       }
     })
-  }, [weekDays, foodEntries, symptomEntries, medicationLogs, sleepSessions, activitySessions])
+  }, [weekDays, foodEntries, symptomEntries, bowelEntries, medicationLogs, sleepSessions, activitySessions])
 
   // Auto-scroll to today's card when data is loaded
   useEffect(() => {
@@ -412,6 +440,19 @@ export function WeekCalendarView({ selectedDate, onSelectDate }: WeekCalendarVie
             </View>
             <Text style={styles.healthSummaryText}>
               {dayData.activitySessions.length} 次活動
+            </Text>
+          </View>
+        )}
+
+        {/* Bowel Summary */}
+        {dayData.bowelCount > 0 && (
+          <View style={styles.healthSection}>
+            <View style={styles.sectionHeader}>
+              <Icon name="toilet" size={16} color="#D2691E" />
+              <Text style={styles.sectionTitle}>排便</Text>
+            </View>
+            <Text style={styles.healthSummaryText}>
+              {dayData.bowelCount} 次記錄
             </Text>
           </View>
         )}
