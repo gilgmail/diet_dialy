@@ -53,7 +53,7 @@ const TAB_CONFIG: Record<TabType, { icon: string; label: string }> = {
 
 export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
-  const { user } = useAuth()
+  const { user, isAuthenticated, signOut, signInWithGoogle, isLoading: authLoading } = useAuth()
   const { settings, isLoading, initializeSettings, updateSettings, subscribeToChanges } = useSettingsStore()
   const { enableAIUI } = appConfig
   const availableTabs = useMemo<TabType[]>(() => {
@@ -439,6 +439,47 @@ Device: ${Platform.OS} ${Platform.Version}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>設定</Text>
         <Text style={styles.headerSubtitle}>個人偏好與應用程式設定</Text>
+      </View>
+
+      {/* Account Info */}
+      <View style={styles.accountCard}>
+        <View style={styles.accountLeft}>
+          <View style={styles.accountAvatar}>
+            <Text style={styles.accountAvatarText}>👤</Text>
+          </View>
+          <View>
+            <Text style={styles.accountLabel}>目前帳號</Text>
+            <Text style={styles.accountEmail}>{user?.email || '未登入'}</Text>
+            {user?.name ? <Text style={styles.accountName}>{user.name}</Text> : null}
+          </View>
+        </View>
+        <View style={styles.accountActions}>
+          {isAuthenticated ? (
+            <TouchableOpacity
+              style={styles.signOutButton}
+              onPress={() => signOut()}
+              disabled={authLoading}
+            >
+              {authLoading ? (
+                <ActivityIndicator size="small" color={colors.text.inverse} />
+              ) : (
+                <Text style={styles.signOutText}>登出</Text>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.signInButton}
+              onPress={() => signInWithGoogle()}
+              disabled={authLoading}
+            >
+              {authLoading ? (
+                <ActivityIndicator size="small" color={colors.text.primary} />
+              ) : (
+                <Text style={styles.signInText}>登入</Text>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Tab Navigation */}
@@ -924,6 +965,75 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  accountCard: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  accountLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    flex: 1,
+  },
+  accountAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: colors.primary[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  accountAvatarText: {
+    fontSize: typography.fontSize['2xl'],
+  },
+  accountLabel: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+  },
+  accountEmail: {
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+    fontWeight: typography.fontWeight.medium,
+  },
+  accountName: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+  },
+  accountActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  signOutButton: {
+    backgroundColor: colors.error,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 8,
+  },
+  signOutText: {
+    color: colors.text.inverse,
+    fontWeight: typography.fontWeight.medium,
+  },
+  signInButton: {
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  signInText: {
+    color: colors.text.primary,
+    fontWeight: typography.fontWeight.medium,
   },
   sectionDescription: {
     fontSize: typography.fontSize.sm,
