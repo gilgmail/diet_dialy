@@ -13,10 +13,12 @@ import { zhTW } from 'date-fns/locale'
 import { useAuthStore } from '@/shared/stores/authStore'
 import { FoodDiaryService } from '@/features/food-diary/services/FoodDiaryService'
 import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
+import { BowelDiaryService } from '@/features/bowel-diary/services/BowelDiaryService'
 import { HealthLogService } from '@/features/health-logs/services/HealthLogService'
 import { MEAL_TYPES } from '@/features/food-diary/types'
 import type { FoodEntry } from '@/features/food-diary/types'
 import type { SymptomEntry } from '@/features/symptom-diary/types'
+import type { BowelMovementEntry } from '@/features/bowel-diary/types'
 import type {
   MedicationLogEntry,
   SleepSessionEntry,
@@ -34,8 +36,10 @@ interface DayData {
   dateKey: string
   foodCount: number
   symptomCount: number
+  bowelCount: number
   foodEntries: FoodEntry[]
   symptomEntries: SymptomEntry[]
+  bowelEntries: BowelMovementEntry[]
   medicationCount: number
   sleepCount: number
   activityCount: number
@@ -87,6 +91,19 @@ export function ListHistoryView({ selectedDate, onSelectDate }: ListHistoryViewP
     enabled: !!user?.id,
   })
 
+  // Fetch bowel entries for last 30 days
+  const { data: bowelEntries = [] } = useQuery({
+    queryKey: ['bowelEntries', user?.id, 'last30days'],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const allEntries = await Promise.all(
+        dates.map(date => BowelDiaryService.getBowelMovementsByDateString(user.id, format(date, 'yyyy-MM-dd')))
+      )
+      return allEntries.flatMap(result => result.data || [])
+    },
+    enabled: !!user?.id,
+  })
+
   // Fetch medication logs for last 30 days
   const { data: medicationLogs = [] } = useQuery({
     queryKey: ['medicationLogs', user?.id, 'last30days'],
@@ -130,6 +147,7 @@ export function ListHistoryView({ selectedDate, onSelectDate }: ListHistoryViewP
   const dayDataList = useMemo<DayData[]>(() => {
     const foodByDate = new Map<string, FoodEntry[]>()
     const symptomByDate = new Map<string, SymptomEntry[]>()
+    const bowelByDate = new Map<string, BowelMovementEntry[]>()
 
     foodEntries.forEach((entry: FoodEntry) => {
       const key = format(new Date(entry.consumed_at), 'yyyy-MM-dd')
@@ -141,6 +159,12 @@ export function ListHistoryView({ selectedDate, onSelectDate }: ListHistoryViewP
       const key = format(new Date(entry.recorded_at), 'yyyy-MM-dd')
       if (!symptomByDate.has(key)) symptomByDate.set(key, [])
       symptomByDate.get(key)!.push(entry)
+    })
+
+    bowelEntries.forEach((entry: BowelMovementEntry) => {
+      const key = format(new Date(entry.occurred_at), 'yyyy-MM-dd')
+      if (!bowelByDate.has(key)) bowelByDate.set(key, [])
+      bowelByDate.get(key)!.push(entry)
     })
 
     const medicationByDate = new Map<string, MedicationLogEntry[]>()
@@ -180,6 +204,7 @@ export function ListHistoryView({ selectedDate, onSelectDate }: ListHistoryViewP
       const key = format(date, 'yyyy-MM-dd')
       const foodList = foodByDate.get(key) || []
       const symptomList = symptomByDate.get(key) || []
+      const bowelList = bowelByDate.get(key) || []
       const medicationList = medicationByDate.get(key) || []
       const sleepList = sleepByDate.get(key) || []
       const activityList = activityByDate.get(key) || []
@@ -189,14 +214,16 @@ export function ListHistoryView({ selectedDate, onSelectDate }: ListHistoryViewP
         dateKey: key,
         foodCount: foodList.length,
         symptomCount: symptomList.length,
+        bowelCount: bowelList.length,
         foodEntries: foodList,
         symptomEntries: symptomList,
+        bowelEntries: bowelList,
         medicationCount: medicationList.length,
         sleepCount: sleepList.length,
         activityCount: activityList.length,
       }
     })
-  }, [dates, foodEntries, symptomEntries, medicationLogs, sleepSessions, activitySessions])
+  }, [dates, foodEntries, symptomEntries, bowelEntries, medicationLogs, sleepSessions, activitySessions])
 
   const renderDayItem = ({ item }: { item: DayData }) => {
     const isToday = format(item.date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
@@ -252,6 +279,12 @@ export function ListHistoryView({ selectedDate, onSelectDate }: ListHistoryViewP
                 <Text style={styles.statBadgeText}>{item.symptomCount}</Text>
               </View>
             )}
+            {item.bowelCount > 0 && (
+              <View style={[styles.statBadge, styles.bowelStatBadge]}>
+                <Icon name="toilet" size={14} color="#D2691E" />
+                <Text style={styles.statBadgeText}>{item.bowelCount}</Text>
+              </View>
+            )}
             {item.medicationCount > 0 && (
               <View style={[styles.statBadge, styles.medicationStatBadge]}>
                 <Icon name="pill" size={14} color={colors.primary[600]} />
@@ -270,7 +303,7 @@ export function ListHistoryView({ selectedDate, onSelectDate }: ListHistoryViewP
                 <Text style={styles.statBadgeText}>{item.activityCount}</Text>
               </View>
             )}
-            {item.foodCount === 0 && item.symptomCount === 0 && item.medicationCount === 0 && item.sleepCount === 0 && item.activityCount === 0 && (
+            {item.foodCount === 0 && item.symptomCount === 0 && item.bowelCount === 0 && item.medicationCount === 0 && item.sleepCount === 0 && item.activityCount === 0 && (
               <Text style={styles.noDataText}>無記錄</Text>
             )}
           </View>
@@ -400,6 +433,9 @@ const styles = StyleSheet.create({
   },
   symptomStatBadge: {
     backgroundColor: colors.error + '15',
+  },
+  bowelStatBadge: {
+    backgroundColor: '#D2691E' + '15',
   },
   medicationStatBadge: {
     backgroundColor: colors.primary[600] + '15',
