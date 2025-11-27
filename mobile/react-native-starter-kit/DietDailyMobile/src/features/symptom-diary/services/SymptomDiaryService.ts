@@ -10,6 +10,7 @@ import type {
   UpdateSymptomEntryInput,
   SeverityLevel,
 } from '../types'
+import { format } from 'date-fns'
 
 const toStringArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) {
@@ -59,7 +60,7 @@ export class SymptomDiaryService {
    * Get symptom entries for a specific date (accepts Date object)
    */
   static async getSymptomEntriesByDate(userId: string, date: Date) {
-    const dateStr = date.toISOString().split('T')[0]
+    const dateStr = format(date, 'yyyy-MM-dd')
     return this.getSymptomEntriesByDateString(userId, dateStr)
   }
 
@@ -109,8 +110,8 @@ export class SymptomDiaryService {
    */
   static async getSymptomEntriesByDateRange(userId: string, startDate: Date, endDate: Date) {
     try {
-      const startStr = startDate.toISOString().split('T')[0]
-      const endStr = endDate.toISOString().split('T')[0]
+      const startStr = format(startDate, 'yyyy-MM-dd')
+      const endStr = format(endDate, 'yyyy-MM-dd')
 
       const { data, error } = await supabase
         .from('daily_symptom_entries')
@@ -151,18 +152,45 @@ export class SymptomDiaryService {
 
       // Use current time with milliseconds to ensure uniqueness for multiple entries per day
       const occurredAt = input.occurred_at ? new Date(input.occurred_at) : new Date()
-      const recordedDate = occurredAt.toISOString().split('T')[0]
+      // Use local date string to avoid off-by-one due to timezone
+      const recordedDate = format(occurredAt, 'yyyy-MM-dd')
 
-      // Transform simple input to database structure
-      const dbEntry = this.transformToDatabase(userId, recordedDate, occurredAt, input)
+      // Check if an entry already exists for this user/date (table has a unique constraint)
+      const { data: existingForDate, error: fetchError } = await supabase
+        .from('daily_symptom_entries')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('recorded_date', recordedDate)
+        .maybeSingle()
+
+      if (fetchError) {
+        console.warn('[SymptomDiaryService] Failed to check existing symptom entry for date:', fetchError)
+      }
+
+      // Transform simple input to database structure, preserving existing fields if present
+      const dbEntry = this.transformToDatabase(
+        userId,
+        recordedDate,
+        occurredAt,
+        input,
+        existingForDate as DailySymptomEntryRow | undefined
+      )
 
       console.log('[SymptomDiaryService] Transformed database entry:', dbEntry)
 
-      const { data, error } = await supabase
-        .from('daily_symptom_entries')
-        .insert([dbEntry])
-        .select()
-        .single()
+      const { data, error } = existingForDate
+        ? await supabase
+            .from('daily_symptom_entries')
+            .update(dbEntry)
+            .eq('id', existingForDate.id)
+            .eq('user_id', userId)
+            .select()
+            .single()
+        : await supabase
+            .from('daily_symptom_entries')
+            .insert([dbEntry])
+            .select()
+            .single()
 
       if (error) {
         console.error('[SymptomDiaryService] Supabase error:', error)
@@ -271,7 +299,7 @@ export class SymptomDiaryService {
       if (fetchError) throw fetchError
 
       const occurredAt = input.occurred_at ? new Date(input.occurred_at) : new Date(existing.recorded_at)
-      const recordedDate = occurredAt.toISOString().split('T')[0]
+      const recordedDate = format(occurredAt, 'yyyy-MM-dd')
 
       // Transform update to database structure while preserving existing values
       const existingRow = existing as DailySymptomEntryRow
@@ -388,10 +416,12 @@ export class SymptomDiaryService {
     existing?: DailySymptomEntryRow
   ): DailySymptomEntryInsert {
     // Map severity to overall_health score (inverse: low health = high severity)
-    const severityScore = this.severityToScore(input.severity as SeverityLevel)
+    const severityScore = input.severity
+      ? this.severityToScore(input.severity as SeverityLevel)
+      : existing?.overall_health ?? this.severityToScore('moderate')
     const existingSymptoms = existing ? toStringArray(existing.additional_symptoms) : []
     const additionalSymptoms = input.symptom_name
-      ? [input.symptom_name]
+      ? Array.from(new Set([input.symptom_name, ...existingSymptoms]))
       : existingSymptoms
 
     return {

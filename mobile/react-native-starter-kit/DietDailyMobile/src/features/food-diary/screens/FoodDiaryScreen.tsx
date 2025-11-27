@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Card, ActivityIndicator } from 'react-native-paper'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { format, startOfDay, parseISO } from 'date-fns'
+import { format, startOfDay } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
 import { colors, typography, spacing } from '@/theme'
 import { useFoodDiary } from '../hooks/useFoodDiary'
@@ -39,7 +39,7 @@ export function FoodDiaryScreen({ navigation }: FoodDiaryScreenProps) {
     const groups = new Map<string, FoodEntry[]>()
 
     entries.forEach((entry) => {
-      const dateKey = format(parseISO(entry.consumed_at), 'yyyy-MM-dd')
+      const dateKey = format(new Date(entry.consumed_at), 'yyyy-MM-dd')
       if (!groups.has(dateKey)) {
         groups.set(dateKey, [])
       }
@@ -58,7 +58,7 @@ export function FoodDiaryScreen({ navigation }: FoodDiaryScreenProps) {
         }
 
         // Format date display
-        const dateObj = parseISO(`${date}T00:00:00`)
+        const dateObj = new Date(`${date}T00:00:00`)
         const today = startOfDay(new Date())
         const entryDate = startOfDay(dateObj)
         const diffDays = Math.floor((today.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24))

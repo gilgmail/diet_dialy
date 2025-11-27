@@ -73,7 +73,7 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
     const mealOrder = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 }
     return entries
       .filter((entry) => {
-        const entryDate = format(parseISO(entry.consumed_at), 'yyyy-MM-dd')
+        const entryDate = format(new Date(entry.consumed_at), 'yyyy-MM-dd')
         return entryDate === date
       })
       .sort((a, b) => {

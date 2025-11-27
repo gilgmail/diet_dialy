@@ -38,6 +38,37 @@ function getMealTypeByTime(): MealType {
   return 'snack' // 其他時間: 點心
 }
 
+function parseDateInput(dateInput?: string | Date | null): Date {
+  // Normalize to date-only (no time) to avoid timezone drift and invalid strings
+  if (!dateInput) {
+    return new Date()
+  }
+
+  if (dateInput instanceof Date) {
+    const normalized = new Date(dateInput)
+    normalized.setHours(12, 0, 0, 0)
+    return normalized
+  }
+
+  // Extract YYYY-MM-DD even if the string has a space or other time portion
+  const datePart = dateInput.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] ?? dateInput.split('T')[0]
+
+  // Try YYYY-MM-DDT12:00:00
+  const parsed = new Date(`${datePart}T12:00:00`)
+  if (!Number.isNaN(parsed.getTime())) return parsed
+
+  // Try raw string
+  const direct = new Date(dateInput)
+  if (!Number.isNaN(direct.getTime())) {
+    direct.setHours(12, 0, 0, 0)
+    return direct
+  }
+
+  const fallback = new Date()
+  fallback.setHours(12, 0, 0, 0)
+  return fallback
+}
+
 export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProps) {
   const { user } = useAuthStore()
   const { settings } = useSettingsStore()
@@ -51,12 +82,9 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
 
   // Support date parameter from navigation (for historical entries)
   // Use T12:00:00 to avoid timezone conversion issues
-  const initialDate = route.params?.date
-    ? new Date(`${route.params.date}T12:00:00`)
-    : existingEntry?.consumed_at
-    ? new Date(`${existingEntry.consumed_at.split('T')[0]}T12:00:00`)
-    : new Date()
-  const [selectedDate, setSelectedDate] = useState(initialDate)
+  const [selectedDate, setSelectedDate] = useState(() =>
+    parseDateInput(route.params?.date || existingEntry?.consumed_at || null)
+  )
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [recentEntries, setRecentEntries] = useState<FoodEntry[]>([])
 
@@ -109,7 +137,7 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
 
       // Update selected date to match entry date (with safety check)
       if (existingEntry.consumed_at) {
-        const entryDate = new Date(`${existingEntry.consumed_at.split('T')[0]}T12:00:00`)
+        const entryDate = parseDateInput(existingEntry.consumed_at)
         console.log('[AddFoodEntry] Setting date from entry:', {
           consumed_at: existingEntry.consumed_at,
           extracted: existingEntry.consumed_at.split('T')[0],
@@ -120,6 +148,13 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
       }
     }
   }, [existingEntry?.id])
+
+  // Handle date param updates (e.g., navigating with a timestamp)
+  useEffect(() => {
+    if (route.params?.date) {
+      setSelectedDate(parseDateInput(route.params.date))
+    }
+  }, [route.params?.date])
 
   const handleFoodInputChange = (text: string) => {
     setFoodName(text)

@@ -974,7 +974,7 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
                           <TouchableOpacity
                             onPress={() =>
                               navigation.navigate('AddFoodEntry', {
-                                date: entry.consumed_at,
+                                date: entry.consumed_at.split('T')[0],
                                 entryId: entry.id,
                               })
                             }
