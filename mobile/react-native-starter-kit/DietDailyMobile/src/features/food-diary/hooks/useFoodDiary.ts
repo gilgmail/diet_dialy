@@ -60,8 +60,11 @@ export function useFoodDiary() {
           })
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('[useFoodDiary] Subscription status:', status)
+        if (err) {
+          console.warn('[useFoodDiary] Subscription error:', err)
+        }
       })
 
     // Cleanup subscription on unmount

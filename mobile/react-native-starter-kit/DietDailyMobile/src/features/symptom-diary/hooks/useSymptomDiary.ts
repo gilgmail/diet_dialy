@@ -65,8 +65,11 @@ export function useSymptomDiary() {
           })
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('[useSymptomDiary] Subscription status:', status)
+        if (err) {
+          console.warn('[useSymptomDiary] Subscription error:', err)
+        }
       })
 
     // Cleanup subscription on unmount

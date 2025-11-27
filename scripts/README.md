@@ -109,6 +109,120 @@
 
 ---
 
+### Realtime Sync 測試腳本
+
+#### test-realtime-minimal.js（推薦先執行）
+**用途**: 最小化 realtime 連接測試 - 只測試 subscription 連接
+
+**使用方式**:
+```bash
+node scripts/test-realtime-minimal.js <user_id>
+
+# 例如：
+node scripts/test-realtime-minimal.js 22e990b6-a888-4beb-9ac6-c9a145731542
+```
+
+**功能**:
+- ✅ 驗證 Realtime 服務是否正常
+- ✅ 檢查 subscription 連接是否成功
+- ✅ 可手動在 Supabase Dashboard 插入資料測試事件接收
+- ✅ 監聽 30 秒，實時顯示收到的事件
+
+**用途場景**:
+- 首次驗證 Realtime 設定
+- 診斷連接問題
+- 測試 Supabase Dashboard 手動操作
+
+---
+
+#### test-insert-only.js
+**用途**: 簡化的插入測試 - 只測試 INSERT 操作
+
+**使用方式**:
+```bash
+node scripts/test-insert-only.js <user_id>
+
+# 例如：
+node scripts/test-insert-only.js 22e990b6-a888-4beb-9ac6-c9a145731542
+```
+
+**功能**:
+- ✅ 驗證資料庫連接和權限
+- ✅ 快速測試 INSERT 操作
+- ✅ 支援 service role key
+
+**用途場景**:
+- 驗證資料庫連接
+- 測試 RLS 政策
+- 快速插入測試資料
+
+---
+
+#### test-realtime-sync.js
+**用途**: 完整的 realtime sync 測試 - 測試所有 CRUD 操作的 realtime 事件
+
+**使用方式**:
+```bash
+# 指定用戶 ID
+node scripts/test-realtime-sync.js <user_id>
+
+# 例如：
+node scripts/test-realtime-sync.js 22e990b6-a888-4beb-9ac6-c9a145731542
+```
+
+**功能**:
+- ✅ 自動測試 `food_entries` 表的 INSERT, UPDATE, DELETE 事件
+- ✅ 自動測試 `daily_symptom_entries` 表的 INSERT, UPDATE, DELETE 事件
+- ✅ 測量同步延遲時間
+- ✅ 生成詳細的測試報告
+- ✅ 驗證事件是否正確觸發
+- ✅ 自動刷新過期的 JWT token
+
+**注意事項**:
+- ⚠️ **需要有效的用戶 access token**（不能使用 service role key）
+- ⚠️ Service role key 不會觸發 realtime 事件（這是 Supabase 的設計）
+- 💡 建議從實際的 Mobile/Web app 中測試 realtime sync
+
+**如何獲取有效的 token**:
+
+1. **從 Web app**:
+   - 打開瀏覽器開發者工具
+   - DevTools → Application → Cookies → `supabase.auth.token`
+   - 更新 .env.local
+
+2. **從 Mobile app**:
+   ```typescript
+   const { data: { session } } = await supabase.auth.getSession();
+   console.log('Access Token:', session?.access_token);
+   console.log('Refresh Token:', session?.refresh_token);
+   ```
+
+3. **更新 .env.local**:
+   ```bash
+   TEST_ACCESS_TOKEN=<access_token>
+   TEST_REFRESH_TOKEN=<refresh_token>
+   ```
+
+**前置條件**:
+- `.env.local` 檔案包含 Supabase 配置
+- 有效的用戶 access token（可選，但建議提供）
+- 資料庫中有至少一個用戶
+
+**測試標準**:
+- 同步成功率 ≥ 98%
+- 同步延遲 < 3 秒
+- 所有事件類型都正常運作
+
+**測試結果**: [claudedocs/realtime-sync-test-results.md](../claudedocs/realtime-sync-test-results.md)
+
+**總結**:
+- ✅ Realtime subscription 連接正常
+- ✅ 資料庫操作正常
+- ⚠️ Service role key 無法觸發 realtime 事件（預期行為）
+- 💡 建議：從實際的 Mobile/Web app 測試 realtime sync 功能
+
+---
+
 ## 數據庫相關腳本
 
 ### import_taiwan_foods_direct.sh

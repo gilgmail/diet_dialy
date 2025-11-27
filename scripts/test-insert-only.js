@@ -20,20 +20,13 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// 如果使用 anon key，嘗試設置認證
-if (!usingServiceRole && testAccessToken) {
-  supabase.auth.getUser(testAccessToken).then(({ data, error }) => {
-    if (error) {
-      console.log('⚠️  Token 驗證失敗:', error.message);
-      console.log('   提示: Token 可能已過期，請重新獲取');
-    } else if (data?.user) {
-      console.log('✅ Token 驗證成功');
-      console.log('   用戶 ID:', data.user.id);
-    }
-  }).catch(() => {});
-}
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  global: {
+    headers: (!usingServiceRole && testAccessToken) ? {
+      Authorization: `Bearer ${testAccessToken}`
+    } : {}
+  }
+});
 
 const colors = {
   reset: '\x1b[0m',
@@ -56,6 +49,23 @@ async function testInsert() {
   log(`用戶 ID: ${userId}`, 'blue');
   log(`Supabase URL: ${supabaseUrl}`, 'blue');
   log('');
+
+  // 如果使用 anon key，先設置認證
+  if (!usingServiceRole && testAccessToken) {
+    log('🔐 設置認證...', 'cyan');
+    try {
+      const { data, error } = await supabase.auth.getUser(testAccessToken);
+      if (error) {
+        log('⚠️  Token 驗證失敗: ' + error.message, 'yellow');
+      } else if (data?.user) {
+        log('✅ Token 驗證成功', 'green');
+        log(`   用戶 ID: ${data.user.id}`, 'blue');
+      }
+    } catch (err) {
+      log('⚠️  Token 驗證錯誤: ' + err.message, 'yellow');
+    }
+    log('');
+  }
 
   // 測試 food_entries INSERT
   log('📋 測試 food_entries INSERT...', 'cyan');
