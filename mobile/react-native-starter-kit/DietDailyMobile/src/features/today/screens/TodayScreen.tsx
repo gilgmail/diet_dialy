@@ -29,7 +29,7 @@ import { useSettingsStore } from '@/features/settings/stores/settingsStore'
 import { DEFAULT_SETTINGS } from '@/features/settings/types'
 import { FoodDiaryService } from '@/features/food-diary/services/FoodDiaryService'
 import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
-import { MEAL_TYPES } from '@/features/food-diary/types'
+import { MEAL_TYPES, type MealType } from '@/features/food-diary/types'
 import type { FoodEntry } from '@/features/food-diary/types'
 import type { SymptomEntry } from '@/features/symptom-diary/types'
 import { SEVERITY_LEVELS } from '@/features/symptom-diary/types'
@@ -324,6 +324,27 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
     })
     return map
   }, [])
+  const mealIconMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    MEAL_TYPES.forEach((meal) => {
+      map[meal.value] = meal.icon
+    })
+    return map
+  }, [])
+  const mealDisplayOrder = useMemo<MealType[]>(() => ['snack', 'dinner', 'lunch', 'breakfast'], [])
+  const mealPriority = useMemo<Record<MealType, number>>(
+    () => ({ snack: 0, dinner: 1, lunch: 2, breakfast: 3 }),
+    []
+  )
+
+  const orderedFoodEntries = useMemo(() => {
+    return [...foodEntries].sort((a, b) => {
+      const orderA = mealPriority[a.meal_type]
+      const orderB = mealPriority[b.meal_type]
+      if (orderA !== orderB) return orderA - orderB
+      return new Date(b.consumed_at).getTime() - new Date(a.consumed_at).getTime()
+    })
+  }, [foodEntries, mealPriority])
 
   // Calculate meal stats
   const mealStats = useMemo(() => {
@@ -492,7 +513,7 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
   const timelineItems = useMemo<TimelineItem[]>(() => {
     const items: TimelineItem[] = []
 
-    foodEntries.forEach((entry) => {
+    orderedFoodEntries.forEach((entry) => {
       items.push({
         id: entry.id,
         type: 'food',
@@ -561,21 +582,21 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
           new Date(b.timestamp ?? 0).getTime() - new Date(a.timestamp ?? 0).getTime()
       )
       .slice(0, 5)
-  }, [foodEntries, symptomEntries, mLogs, sSessions, aSessions, mealLabelMap])
+  }, [orderedFoodEntries, symptomEntries, mLogs, sSessions, aSessions, mealLabelMap])
 
   const snapshotSections = useMemo<SnapshotSection[]>(() => {
     const sections: SnapshotSection[] = []
 
-    if (foodEntries.length > 0) {
+    if (orderedFoodEntries.length > 0) {
       sections.push({
         key: 'food',
         title: '最新飲食',
         icon: 'food-apple',
         color: colors.success,
-        badge: foodEntries.length,
+        badge: orderedFoodEntries.length,
         emptyText: '尚無飲食紀錄',
         onAdd: () => navigation.navigate('AddFoodEntry', { date: undefined }),
-        items: foodEntries.slice(0, 2).map((entry) => ({
+        items: orderedFoodEntries.slice(0, 2).map((entry) => ({
           id: entry.id,
           primary: entry.food_name,
           secondary: format(new Date(entry.consumed_at), 'HH:mm'),
@@ -912,16 +933,41 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
       {/* Detail Tab - Existing Content */}
       {activeTab === 'detail' && (
         <>
+          {/* Add buttons - matching FoodDayDetailScreen */}
+          <View style={styles.detailAddButtonsContainer}>
+            <TouchableOpacity
+              style={styles.detailAddButton}
+              onPress={() => navigation.navigate('AddFoodEntry', { date: undefined })}
+            >
+              <Icon name="food-apple" size={20} color={colors.primary[500]} />
+              <Text style={styles.detailAddButtonText}>新增飲食</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.detailAddButton}
+              onPress={() => navigation.navigate('AddSymptomEntry', { date: undefined })}
+            >
+              <Icon name="medical-bag" size={20} color={colors.primary[500]} />
+              <Text style={styles.detailAddButtonText}>新增症狀</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.detailAddButton}
+              onPress={() => navigation.navigate('AddBowelMovement', { date: undefined })}
+            >
+              <Icon name="toilet" size={20} color="#D2691E" />
+              <Text style={[styles.detailAddButtonText, { color: '#D2691E' }]}>大便記錄</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Meal Stats Overview */}
           <View style={styles.statsCard}>
         <Text style={styles.statsTitle}>今日飲食統計</Text>
         <View style={styles.statsRow}>
-          {MEAL_TYPES.map((meal) => {
-            const count = mealStats[meal.value as keyof typeof mealStats] ?? 0
+          {mealDisplayOrder.map((meal) => {
+            const count = mealStats[meal as keyof typeof mealStats] ?? 0
             return (
-              <View key={meal.value} style={styles.statItem}>
-                <Text style={styles.statIcon}>{meal.icon}</Text>
-                <Text style={styles.statLabel}>{meal.label}</Text>
+              <View key={meal} style={styles.statItem}>
+                <Text style={styles.statIcon}>{mealIconMap[meal]}</Text>
+                <Text style={styles.statLabel}>{mealLabelMap[meal]}</Text>
                 <Text style={styles.statCount}>{count} 筆</Text>
               </View>
             )
@@ -935,11 +981,11 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
           <Icon name="food-apple" size={24} color={colors.success} />
           <Text style={styles.sectionTitle}>飲食記錄</Text>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{foodEntries.length}</Text>
+            <Text style={styles.badgeText}>{orderedFoodEntries.length}</Text>
           </View>
         </View>
 
-        {foodEntries.length === 0 ? (
+        {orderedFoodEntries.length === 0 ? (
           <View style={styles.emptyState}>
             <Icon name="food-off" size={48} color={colors.text.tertiary} />
             <Text style={styles.emptyStateText}>今天還沒有飲食記錄</Text>
@@ -947,15 +993,15 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
           </View>
         ) : (
           <View style={styles.timeline}>
-            {MEAL_TYPES.map((meal) => {
-              const entries = foodByMeal[meal.value] || []
+            {mealDisplayOrder.map((meal) => {
+              const entries = foodByMeal[meal] || []
               if (entries.length === 0) return null
 
               return (
-                <View key={meal.value} style={styles.timelineSection}>
+                <View key={meal} style={styles.timelineSection}>
                   <View style={styles.timelineMealHeader}>
-                    <Text style={styles.timelineMealIcon}>{meal.icon}</Text>
-                    <Text style={styles.timelineMealLabel}>{meal.label}</Text>
+                    <Text style={styles.timelineMealIcon}>{mealIconMap[meal]}</Text>
+                    <Text style={styles.timelineMealLabel}>{mealLabelMap[meal]}</Text>
                     <Text style={styles.timelineMealCount}>{entries.length} 筆</Text>
                   </View>
                   {entries.map((entry: FoodEntry, index: number) => (
@@ -1682,6 +1728,29 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: typography.fontSize.sm,
     color: colors.text.tertiary,
+  },
+  detailAddButtonsContainer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  detailAddButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary[50],
+    borderRadius: 8,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    gap: spacing.xs,
+  },
+  detailAddButtonText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.primary[500],
+    fontWeight: typography.fontWeight.medium,
   },
   statsCard: {
     marginHorizontal: spacing.lg,

@@ -70,7 +70,7 @@ export function FoodDayDetailScreen({ route, navigation }: FoodDayDetailScreenPr
 
   // Filter entries for this specific date, sorted by meal type
   const dayEntries = useMemo(() => {
-    const mealOrder = { breakfast: 0, lunch: 1, dinner: 2, snack: 3 }
+    const mealOrder = { snack: 0, dinner: 1, lunch: 2, breakfast: 3 }
     return entries
       .filter((entry) => {
         const entryDate = format(new Date(entry.consumed_at), 'yyyy-MM-dd')

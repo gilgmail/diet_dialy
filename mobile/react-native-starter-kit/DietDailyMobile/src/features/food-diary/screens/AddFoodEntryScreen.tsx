@@ -87,6 +87,10 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
   )
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [recentEntries, setRecentEntries] = useState<FoodEntry[]>([])
+  const mealPriority: Record<MealType, number> = useMemo(
+    () => ({ snack: 0, dinner: 1, lunch: 2, breakfast: 3 }),
+    []
+  )
 
   // Fetch selected date's entries
   const selectedDateKey = useMemo(() => format(selectedDate, 'yyyy-MM-dd'), [selectedDate])
@@ -100,6 +104,17 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
     },
     enabled: !!user?.id,
   })
+
+  // Show today's entries in the "recent entries" section with desired meal ordering
+  useEffect(() => {
+    const sorted = [...todayEntries].sort((a, b) => {
+      const orderA = mealPriority[a.meal_type]
+      const orderB = mealPriority[b.meal_type]
+      if (orderA !== orderB) return orderA - orderB
+      return new Date(b.consumed_at).getTime() - new Date(a.consumed_at).getTime()
+    })
+    setRecentEntries(sorted)
+  }, [todayEntries, mealPriority])
 
   // Calculate today's statistics
   const todayStats = useMemo(() => {
@@ -266,7 +281,16 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
 
         // Add to recent entries list
         if (newEntry) {
-          setRecentEntries(prev => [newEntry, ...prev].slice(0, 5))
+          setRecentEntries(prev => {
+            const next = [newEntry, ...prev]
+            next.sort((a, b) => {
+              const orderA = mealPriority[a.meal_type]
+              const orderB = mealPriority[b.meal_type]
+              if (orderA !== orderB) return orderA - orderB
+              return new Date(b.consumed_at).getTime() - new Date(a.consumed_at).getTime()
+            })
+            return next.slice(0, 5)
+          })
         }
 
         // Clear input for next entry
