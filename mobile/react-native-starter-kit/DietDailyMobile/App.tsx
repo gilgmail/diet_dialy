@@ -11,8 +11,8 @@ import { RootNavigator } from './src/app/navigation/RootNavigator'
 
 WebBrowser.maybeCompleteAuthSession()
 
-// Create QueryClient instance
-const queryClient = new QueryClient({
+// Create QueryClient instance and export for use in services
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,

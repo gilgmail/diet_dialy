@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/shared/stores/authStore'
 import { AuthService } from '@/features/auth/services/AuthService'
 import { DashboardService } from '@/features/dashboard/services/DashboardService'
+import { realtimeService } from '@/shared/services/realtimeService'
 import { AuthNavigator } from './AuthNavigator'
 import { MainNavigator } from './MainNavigator'
 import { colors } from '@/theme'
@@ -17,6 +18,35 @@ export function RootNavigator() {
   useEffect(() => {
     AuthService.initAuthListener()
   }, [])
+
+  // Initialize global realtime subscriptions after login
+  useEffect(() => {
+    if (!user?.id) {
+      // Cleanup subscriptions when user logs out
+      realtimeService.cleanup()
+      return
+    }
+
+    console.log('[RootNavigator] Initializing realtime service for user:', user.id)
+    
+    // Initialize realtime subscriptions for all tables
+    realtimeService.initialize(user.id, {
+      onFoodEntryChange: () => {
+        console.log('[RootNavigator] Food entry changed, cache invalidated')
+      },
+      onSymptomEntryChange: () => {
+        console.log('[RootNavigator] Symptom entry changed, cache invalidated')
+      },
+      onBowelEntryChange: () => {
+        console.log('[RootNavigator] Bowel entry changed, cache invalidated')
+      },
+    })
+
+    return () => {
+      // Cleanup on unmount or user change
+      realtimeService.cleanup()
+    }
+  }, [user?.id])
 
   // Warm up Dashboard query cache after login
   useEffect(() => {

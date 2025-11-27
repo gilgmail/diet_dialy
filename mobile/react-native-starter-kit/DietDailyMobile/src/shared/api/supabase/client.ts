@@ -17,4 +17,14 @@ export const supabase = createClient<Database, 'public'>(supabaseUrl, supabaseAn
     persistSession: true,
     detectSessionInUrl: false,
   },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
+  global: {
+    headers: {
+      'x-client-info': 'diet-daily-mobile',
+    },
+  },
 })
