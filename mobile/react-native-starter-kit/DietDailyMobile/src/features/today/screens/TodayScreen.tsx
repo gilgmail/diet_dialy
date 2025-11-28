@@ -55,14 +55,6 @@ import { GamificationHeroCard, buildGamificationSnapshot } from '@/features/insi
 
 type TabType = 'summary' | 'detail'
 
-type QuickActionConfig = {
-  key: string
-  label: string
-  icon: string
-  color: string
-  onPress: () => void
-}
-
 type SummaryCardConfig = {
   key: string
   title: string
@@ -401,52 +393,6 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
     )
   }, [foodEntries.length, symptomEntries.length, mLogs.length, sSessions.length, aSessions.length])
 
-  const quickActions = useMemo<QuickActionConfig[]>(() => {
-    return [
-      {
-        key: 'food',
-        label: '飲食',
-        icon: 'silverware-fork-knife',
-        color: colors.success,
-        onPress: () => navigation.navigate('AddFoodEntry', { date: undefined }),
-      },
-      {
-        key: 'symptom',
-        label: '症狀',
-        icon: 'medical-bag',
-        color: colors.error,
-        onPress: () => navigation.navigate('AddSymptomEntry', { date: undefined }),
-      },
-      {
-        key: 'bowel',
-        label: '排便',
-        icon: 'toilet',
-        color: '#D2691E',
-        onPress: () => navigation.navigate('AddBowelMovement', { date: undefined }),
-      },
-      {
-        key: 'medication',
-        label: '用藥',
-        icon: 'pill',
-        color: colors.primary[500],
-        onPress: () => navigation.navigate('MedicationLog'),
-      },
-      {
-        key: 'sleep',
-        label: '睡眠',
-        icon: 'sleep',
-        color: colors.secondary[500],
-        onPress: () => navigation.navigate('SleepLog'),
-      },
-      {
-        key: 'activity',
-        label: '運動',
-        icon: 'run',
-        color: colors.info,
-        onPress: () => navigation.navigate('ActivityLog'),
-      },
-    ]
-  }, [navigation])
 
   const summaryCards = useMemo<SummaryCardConfig[]>(() => {
     const cards: SummaryCardConfig[] = [
@@ -841,24 +787,6 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
             </View>
           )}
 
-          {/* Quick Actions */}
-          {activeTab === 'summary' && (
-            <View style={styles.quickActionsCard}>
-              {quickActions.map((action) => (
-                <TouchableOpacity
-                  key={action.key}
-                  style={styles.quickActionButton}
-                  onPress={action.onPress}
-                  activeOpacity={0.85}
-                >
-                  <View style={[styles.quickActionIcon, { backgroundColor: action.color + '20' }]}>
-                    <Icon name={action.icon} size={18} color={action.color} />
-                  </View>
-                  <Text style={styles.quickActionLabel}>{action.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
 
 
       {/* Summary Tab */}
@@ -1540,20 +1468,6 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     marginTop: spacing.md,
   },
-  quickActionsCard: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 12,
@@ -1569,29 +1483,6 @@ const styles = StyleSheet.create({
   errorText: {
     ...typography.body,
     fontSize: 13,
-  },
-  quickActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 999,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: spacing.sm,
-  },
-  quickActionIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quickActionLabel: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.primary,
-    fontWeight: typography.fontWeight.medium,
   },
   tabBar: {
     flexDirection: 'row',

@@ -42,11 +42,10 @@ const MEAL_NAMES: Record<'breakfast' | 'lunch' | 'dinner', string> = {
   dinner: '晚餐',
 }
 
-type TabType = 'general' | 'modules' | 'knowledge' | 'ai'
+type TabType = 'general' | 'knowledge' | 'ai'
 
 const TAB_CONFIG: Record<TabType, { icon: string; label: string }> = {
   general: { icon: 'cog', label: '一般設定' },
-  modules: { icon: 'view-grid-plus', label: '模組設定' },
   knowledge: { icon: 'brain', label: 'AI 知識庫' },
   ai: { icon: 'robot', label: 'AI 設定' },
 }
@@ -57,7 +56,7 @@ export function SettingsScreen() {
   const { settings, isLoading, initializeSettings, updateSettings, subscribeToChanges } = useSettingsStore()
   const { enableAIUI } = appConfig
   const availableTabs = useMemo<TabType[]>(() => {
-    const base: TabType[] = ['general', 'modules']
+    const base: TabType[] = ['general']
     if (enableAIUI) {
       base.push('knowledge', 'ai')
     }
@@ -441,47 +440,6 @@ Device: ${Platform.OS} ${Platform.Version}
         <Text style={styles.headerSubtitle}>個人偏好與應用程式設定</Text>
       </View>
 
-      {/* Account Info */}
-      <View style={styles.accountCard}>
-        <View style={styles.accountLeft}>
-          <View style={styles.accountAvatar}>
-            <Text style={styles.accountAvatarText}>👤</Text>
-          </View>
-          <View>
-            <Text style={styles.accountLabel}>目前帳號</Text>
-            <Text style={styles.accountEmail}>{user?.email || '未登入'}</Text>
-            {user?.name ? <Text style={styles.accountName}>{user.name}</Text> : null}
-          </View>
-        </View>
-        <View style={styles.accountActions}>
-          {isAuthenticated ? (
-            <TouchableOpacity
-              style={styles.signOutButton}
-              onPress={() => signOut()}
-              disabled={authLoading}
-            >
-              {authLoading ? (
-                <ActivityIndicator size="small" color={colors.text.inverse} />
-              ) : (
-                <Text style={styles.signOutText}>登出</Text>
-              )}
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={styles.signInButton}
-              onPress={() => signInWithGoogle()}
-              disabled={authLoading}
-            >
-              {authLoading ? (
-                <ActivityIndicator size="small" color={colors.text.primary} />
-              ) : (
-                <Text style={styles.signInText}>登入</Text>
-              )}
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
         {availableTabs.map((tab) => (
@@ -657,6 +615,52 @@ Device: ${Platform.OS} ${Platform.Version}
         </TouchableOpacity>
       </View>
 
+      {/* Account Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>帳號</Text>
+        <TouchableOpacity
+          style={styles.settingRow}
+          onPress={() => {
+            if (isAuthenticated) {
+              Alert.alert(
+                '帳號設定',
+                `${user?.email || ''}${user?.name ? `\n${user.name}` : ''}`,
+                [
+                  { text: '取消', style: 'cancel' },
+                  {
+                    text: '登出',
+                    style: 'destructive',
+                    onPress: () => signOut(),
+                  },
+                ]
+              )
+            } else {
+              signInWithGoogle()
+            }
+          }}
+          disabled={authLoading}
+        >
+          <View style={styles.settingInfo}>
+            <Icon
+              name={isAuthenticated ? 'account-circle' : 'login'}
+              size={24}
+              color={colors.primary[500]}
+            />
+            <View style={styles.settingTextContainer}>
+              <Text style={styles.settingLabel}>
+                {isAuthenticated ? '目前帳號' : '登入'}
+              </Text>
+              <Text style={styles.settingDescription}>
+                {isAuthenticated
+                  ? (user?.email || '未登入')
+                  : '使用 Google 帳號登入'}
+              </Text>
+            </View>
+          </View>
+          <Icon name="chevron-right" size={24} color={colors.text.secondary} />
+        </TouchableOpacity>
+      </View>
+
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
@@ -721,41 +725,6 @@ Device: ${Platform.OS} ${Platform.Version}
         </ScrollView>
       )}
 
-      {activeTab === 'modules' && (
-        <ScrollView style={styles.tabContent}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>健康模組</Text>
-            <Text style={styles.sectionDescription}>
-              可依照使用情境開關用藥、睡眠、運動紀錄模組
-            </Text>
-            {moduleToggleItems.map((item) => (
-              <View key={item.key} style={styles.settingRow}>
-                <View style={styles.settingInfo}>
-                  <Icon name={item.icon} size={24} color={colors.primary[500]} />
-                  <View style={styles.settingTextContainer}>
-                    <Text style={styles.settingLabel}>{item.label}</Text>
-                    <Text style={styles.settingDescription}>{item.description}</Text>
-                  </View>
-                </View>
-                <Switch
-                  value={moduleSettings[item.key]}
-                  onValueChange={(value) => handleToggleModule(item.key, value)}
-                  trackColor={{ false: colors.border, true: colors.primary[300] }}
-                  thumbColor={
-                    moduleSettings[item.key] ? colors.primary[500] : colors.text.disabled
-                  }
-                />
-              </View>
-            ))}
-          </View>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>提示</Text>
-            <Text style={styles.helperText}>
-              關閉模組後，對應的快速新增與今日摘要會隱藏，但既有資料仍保留於帳號中。
-            </Text>
-          </View>
-        </ScrollView>
-      )}
 
       {enableAIUI && activeTab === 'knowledge' && <FoodKnowledgeScreen />}
 
@@ -965,75 +934,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-  },
-  accountCard: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
-    marginBottom: spacing.lg,
-    padding: spacing.lg,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  accountLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    flex: 1,
-  },
-  accountAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: colors.primary[50],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  accountAvatarText: {
-    fontSize: typography.fontSize['2xl'],
-  },
-  accountLabel: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-  },
-  accountEmail: {
-    fontSize: typography.fontSize.base,
-    color: colors.text.primary,
-    fontWeight: typography.fontWeight.medium,
-  },
-  accountName: {
-    fontSize: typography.fontSize.sm,
-    color: colors.text.secondary,
-  },
-  accountActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  signOutButton: {
-    backgroundColor: colors.error,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 8,
-  },
-  signOutText: {
-    color: colors.text.inverse,
-    fontWeight: typography.fontWeight.medium,
-  },
-  signInButton: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  signInText: {
-    color: colors.text.primary,
-    fontWeight: typography.fontWeight.medium,
   },
   sectionDescription: {
     fontSize: typography.fontSize.sm,
