@@ -6,8 +6,9 @@
 set -e  # Exit on error
 
 DEVICE_NAME="Gil-Golden"
-DEVICE_ID="A23495EF-156D-5726-8391-01E2B18B8B90"
+DEVICE_ID="00008140-00146D6A2610801C"
 APP_DIR="mobile/react-native-starter-kit/DietDailyMobile"
+APP_NAME="DietDailyMobile"
 
 # Colors for output
 RED='\033[0;31m'
@@ -15,11 +16,6 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
-
-echo -e "${BLUE}╔════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║  DietDaily Mobile - Deploy to Gil-Golden      ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════╝${NC}"
-echo ""
 
 # Function to print status
 print_status() {
@@ -41,12 +37,14 @@ print_warning() {
 VARIANT="${1:-debug}"
 case "$VARIANT" in
     debug)
+        APP_NAME="DietDailyDev"
         BUNDLE_ID="com.gilko.DietDailyMobile.dev"
         APP_VARIANT_ENV="debug"
         VARIANT_LABEL="Debug"
         XCODE_CONFIGURATION="Debug"
         ;;
     release)
+        APP_NAME="DietDailyMobile"
         BUNDLE_ID="com.gilko.DietDailyMobile"
         APP_VARIANT_ENV="release"
         VARIANT_LABEL="Release"
@@ -63,6 +61,13 @@ case "$VARIANT" in
         exit 1
         ;;
 esac
+
+export APP_VARIANT="$APP_VARIANT_ENV"
+
+echo -e "${BLUE}╔════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║  ${APP_NAME} - Deploy to Gil-Golden              ║${NC}"
+echo -e "${BLUE}╚════════════════════════════════════════════════╝${NC}"
+echo ""
 
 print_status "Selected app variant: ${VARIANT_LABEL}"
 
@@ -158,6 +163,7 @@ fi
 echo ""
 echo -e "${BLUE}═══════════════════════════════════════════════${NC}"
 echo -e "${BLUE}Build Configuration:${NC}"
+echo -e "  App: ${GREEN}${APP_NAME}${NC}"
 echo -e "  Device: ${GREEN}$DEVICE_NAME${NC}"
 echo -e "  Variant: ${GREEN}${VARIANT_LABEL}${NC}"
 echo -e "  Bundle ID: ${GREEN}$BUNDLE_ID${NC}"
