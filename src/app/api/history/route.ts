@@ -1,8 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 import { foodEntryService } from '@/lib/supabase/food-entry-service';
-import { CreateHistoryEntryRequest, FoodHistoryQuery } from '@/types/history';
-import { ExtendedMedicalProfile, MedicalCondition } from '@/types/medical';
+import { FoodHistoryQuery } from '@/types/history';
 import { getAuthenticatedUser, createUnauthorizedResponse } from '@/lib/supabase/server-auth';
+import type { Database } from '@/types/supabase';
+
+function createRequestSupabaseClient(request: NextRequest) {
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set() {
+          // No-op in API routes; we only need read access for session.
+        },
+        remove() {
+          // No-op in API routes; we only need read access for session.
+        }
+      }
+    }
+  );
+}
 
 // GET /api/history - Query food history entries
 export async function GET(request: NextRequest) {
@@ -82,10 +103,16 @@ export async function POST(request: NextRequest) {
     console.log('🔐 Creating history entry for authenticated user:', authenticatedUser.id);
 
     // Use Supabase food entry service
-    const entry = await foodEntryService.createEntry(authenticatedUser.id, {
-      ...body,
-      userId: authenticatedUser.id
-    });
+    const supabase = createRequestSupabaseClient(request);
+
+    const entry = await foodEntryService.createEntry(
+      authenticatedUser.id,
+      {
+        ...body,
+        userId: authenticatedUser.id
+      },
+      { supabase }
+    );
 
     return NextResponse.json({
       success: true,

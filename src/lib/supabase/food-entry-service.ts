@@ -5,8 +5,14 @@
 
 import { createAdminClient } from './server';
 import type { FoodHistoryEntry } from '@/types/history';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/supabase';
 
 export class FoodEntryService {
+  private static getClient(override?: SupabaseClient<Database>) {
+    return override ?? createAdminClient();
+  }
+
   /**
    * Get food entries by date range for a user
    */
@@ -128,10 +134,11 @@ export class FoodEntryService {
    */
   static async createEntry(
     userId: string,
-    entryData: Partial<FoodHistoryEntry>
+    entryData: Partial<FoodHistoryEntry>,
+    options?: { supabase?: SupabaseClient<Database> }
   ): Promise<FoodHistoryEntry> {
     try {
-      const supabase = createAdminClient();
+      const supabase = this.getClient(options?.supabase);
 
       const dbData = {
         user_id: userId,
@@ -179,10 +186,11 @@ export class FoodEntryService {
   static async updateEntry(
     entryId: string,
     userId: string,
-    updates: Partial<FoodHistoryEntry>
+    updates: Partial<FoodHistoryEntry>,
+    options?: { supabase?: SupabaseClient<Database> }
   ): Promise<FoodHistoryEntry | null> {
     try {
-      const supabase = createAdminClient();
+      const supabase = this.getClient(options?.supabase);
 
       const dbUpdates: any = {};
       if (updates.foodName) dbUpdates.food_name = updates.foodName;
@@ -223,9 +231,13 @@ export class FoodEntryService {
   /**
    * Delete food entry
    */
-  static async deleteEntry(entryId: string, userId: string): Promise<boolean> {
+  static async deleteEntry(
+    entryId: string,
+    userId: string,
+    options?: { supabase?: SupabaseClient<Database> }
+  ): Promise<boolean> {
     try {
-      const supabase = createAdminClient();
+      const supabase = this.getClient(options?.supabase);
 
       const { error } = await supabase
         .from('food_entries')
