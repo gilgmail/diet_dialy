@@ -266,9 +266,7 @@ export function InsightsScreen() {
 
         {/* 報表匯出卡片 */}
         <View style={styles.section}>
-          <View style={styles.reportCard}>
-            <ReportGenerator includeDays={7} />
-          </View>
+          <ReportGenerator includeDays={7} />
         </View>
 
         {/* Bottom Spacer */}
@@ -571,22 +569,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 
-  // 報表匯出卡片
-  reportCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 3,
-  },
 
   bottomSpacer: {
     height: spacing.xl,

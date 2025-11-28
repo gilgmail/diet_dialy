@@ -3,6 +3,7 @@
 
 import * as Print from 'expo-print'
 import * as Sharing from 'expo-sharing'
+import * as FileSystem from 'expo-file-system'
 import { format } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
 import type {
@@ -34,7 +35,30 @@ export class PDFGeneratorService {
 
       console.log('[PDFGeneratorService] PDF generated:', uri)
 
-      // 3. 檢查是否可分享
+      // 3. 生成檔案名稱：DietDaily_YYYYMMDD_YYYYMMDD.pdf
+      const startDateStr = format(new Date(report.startDate), 'yyyyMMdd')
+      const endDateStr = format(new Date(report.endDate), 'yyyyMMdd')
+      const filename = `DietDaily_${startDateStr}_${endDateStr}.pdf`
+      
+      // 4. 重新命名檔案
+      const directory = uri.substring(0, uri.lastIndexOf('/'))
+      const newUri = `${directory}/${filename}`
+      
+      // 如果目標檔案已存在，先刪除
+      const fileInfo = await FileSystem.getInfoAsync(newUri)
+      if (fileInfo.exists) {
+        await FileSystem.deleteAsync(newUri, { idempotent: true })
+      }
+      
+      // 移動/重新命名檔案
+      await FileSystem.moveAsync({
+        from: uri,
+        to: newUri
+      })
+
+      console.log('[PDFGeneratorService] PDF renamed to:', newUri)
+
+      // 5. 檢查是否可分享
       const canShare = await Sharing.isAvailableAsync()
       if (!canShare) {
         return {
@@ -43,15 +67,15 @@ export class PDFGeneratorService {
         }
       }
 
-      // 4. 分享 PDF
-      await Sharing.shareAsync(uri, {
+      // 6. 分享 PDF
+      await Sharing.shareAsync(newUri, {
         mimeType: 'application/pdf',
         dialogTitle: '分享健康報告',
         UTI: 'com.adobe.pdf'
       })
 
       console.log('[PDFGeneratorService] PDF shared successfully')
-      return { success: true, uri }
+      return { success: true, uri: newUri }
 
     } catch (error) {
       console.error('[PDFGeneratorService] Error:', error)
