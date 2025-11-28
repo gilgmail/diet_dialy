@@ -98,10 +98,11 @@ const tabBarStyles = StyleSheet.create({
   quickAddItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
+    padding: spacing.lg,
     borderRadius: 12,
-    gap: spacing.md,
+    gap: spacing.lg,
     borderWidth: 1.5,
+    minHeight: 64,
   },
   quickAddFood: {
     backgroundColor: '#10B98118',
@@ -128,7 +129,7 @@ const tabBarStyles = StyleSheet.create({
     borderColor: '#3B82F660',
   },
   quickAddText: {
-    fontSize: typography.fontSize.base,
+    fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
   },
@@ -294,7 +295,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               onPress={handleAddFood}
               activeOpacity={0.7}
             >
-              <Icon name="food-apple" size={24} color={colors.success} />
+              <Icon name="food-apple" size={28} color={colors.success} />
               <Text style={tabBarStyles.quickAddText}>新增飲食</Text>
             </TouchableOpacity>
 
@@ -303,7 +304,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               onPress={handleAddSymptom}
               activeOpacity={0.7}
             >
-              <Icon name="medical-bag" size={24} color={colors.error} />
+              <Icon name="medical-bag" size={28} color={colors.error} />
               <Text style={tabBarStyles.quickAddText}>新增症狀</Text>
             </TouchableOpacity>
 
@@ -312,42 +313,9 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               onPress={handleAddBowelMovement}
               activeOpacity={0.7}
             >
-              <Icon name="toilet" size={24} color="#D2691E" />
+              <Icon name="toilet" size={28} color="#D2691E" />
               <Text style={tabBarStyles.quickAddText}>大便記錄</Text>
             </TouchableOpacity>
-
-            {moduleVisibility.medication && (
-              <TouchableOpacity
-                style={[tabBarStyles.quickAddItem, tabBarStyles.quickAddMedication]}
-                onPress={handleAddMedication}
-                activeOpacity={0.7}
-              >
-                <Icon name="pill" size={24} color={colors.primary[500]} />
-                <Text style={tabBarStyles.quickAddText}>用藥紀錄</Text>
-              </TouchableOpacity>
-            )}
-
-            {moduleVisibility.sleep && (
-              <TouchableOpacity
-                style={[tabBarStyles.quickAddItem, tabBarStyles.quickAddSleep]}
-                onPress={handleAddSleep}
-                activeOpacity={0.7}
-              >
-                <Icon name="sleep" size={24} color={colors.secondary[500]} />
-                <Text style={tabBarStyles.quickAddText}>睡眠紀錄</Text>
-              </TouchableOpacity>
-            )}
-
-            {moduleVisibility.activity && (
-              <TouchableOpacity
-                style={[tabBarStyles.quickAddItem, tabBarStyles.quickAddActivity]}
-                onPress={handleAddActivity}
-                activeOpacity={0.7}
-              >
-                <Icon name="run" size={24} color={colors.info} />
-                <Text style={tabBarStyles.quickAddText}>運動紀錄</Text>
-              </TouchableOpacity>
-            )}
           </View>
         </Pressable>
       </Modal>

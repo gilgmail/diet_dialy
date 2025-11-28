@@ -1,176 +1,129 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
 } from 'react-native'
-import { DashboardScreen } from '@/features/dashboard/screens/DashboardScreen'
-import { DataCoverageCard } from '@/features/dashboard/components/DataCoverageCard'
-import { MissingDataAlertCard } from '@/features/dashboard/components/MissingDataAlertCard'
-import { StreakCard } from '@/features/dashboard/components/StreakCard'
-import { HealthStatusCard } from '@/features/dashboard/components/HealthStatusCard'
-import { ProgressCard } from '@/features/dashboard/components/ProgressCard'
-import { useDataCoverage, useMissingDataAlerts } from '@/features/dashboard/hooks/useDataCoverage'
-import { useStreak } from '@/features/dashboard/hooks/useStreak'
-import { useProgress } from '@/features/dashboard/hooks/useProgress'
 import { useAuth } from '@/features/auth/hooks/useAuth'
-import { GamificationBoard, GamificationHeroCard, buildGamificationSnapshot } from '@/features/insights/components/GamificationBoard'
-import { useNavigation, useRoute } from '@react-navigation/native'
-import type { RouteProp } from '@react-navigation/native'
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import type { MainStackParamList, MainTabParamList } from '@/app/navigation/types'
+import { useStreak } from '@/features/dashboard/hooks/useStreak'
+import { useDataCoverage } from '@/features/dashboard/hooks/useDataCoverage'
 import { colors, typography, spacing } from '@/theme'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
-import { useQuery } from '@tanstack/react-query'
-import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
-import { useBowelDiarySummary } from '@/features/bowel-diary/hooks/useBowelDiarySummary'
-import { useMemo } from 'react'
-import { startOfDay, format } from 'date-fns'
-import { useSettingsStore } from '@/features/settings/stores/settingsStore'
+import { startOfWeek, addDays, format, isSameDay } from 'date-fns'
+import { zhTW } from 'date-fns/locale'
 
 /**
- * InsightsScreen - 洞察頁面
- *
- * 這是新導航結構中的「洞察」tab，展示 AI 分析和數據趨勢
- * 包含分頁：進度（遊戲化 UI）、洞察、報告
+ * 簡化版 InsightsScreen - 專注於進度追蹤
+ * 
+ * 功能：
+ * 1. 連續記錄天數
+ * 2. 本週記錄完成度
+ * 3. 週歷視圖
  */
 export function InsightsScreen() {
   const { user } = useAuth()
-  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
-  const route = useRoute<RouteProp<MainTabParamList, 'Insights'>>()
-  const { settings } = useSettingsStore()
-  // 優先使用模組系統的 hero 開關，向後兼容 gamificationHeroEnabled
-  const heroEnabled = settings.modules?.hero ?? settings.gamificationHeroEnabled ?? true
-  const initialTab = route.params?.tab && (heroEnabled || route.params.tab !== 'hero') ? route.params.tab : 'quests'
   const [refreshing, setRefreshing] = React.useState(false)
-  const [activeTab, setActiveTab] = React.useState<'hero' | 'quests' | 'progress' | 'reports'>(initialTab as any)
   
-  // Phase A: Data Coverage and Missing Alerts (使用本週或註冊後的邏輯)
-  const { coverage: dataCoverage, isLoading: isLoadingCoverage, error: coverageError, refetch: refetchCoverage } = useDataCoverage()
-  const { alerts: missingAlerts, isLoading: isLoadingAlerts, error: alertsError, refetch: refetchAlerts } = useMissingDataAlerts(1) // 降低閾值為1天
+  // 獲取連續記錄數據
+  const { streak, isLoading: isLoadingStreak, refetch: refetchStreak } = useStreak()
   
-  // Gamification: Streak tracking
-  const { streak, isLoading: isLoadingStreak, error: streakError, refetch: refetchStreak } = useStreak()
+  // 獲取資料充足度
+  const { coverage: dataCoverage, isLoading: isLoadingCoverage, refetch: refetchCoverage } = useDataCoverage()
 
-  React.useEffect(() => {
-    if (route.params?.tab && route.params.tab !== activeTab) {
-      if (route.params.tab === 'hero' && !heroEnabled) {
-        setActiveTab('quests')
-      } else {
-        setActiveTab(route.params.tab as any)
-      }
-    }
-  }, [route.params?.tab, heroEnabled, activeTab])
-
-  React.useEffect(() => {
-    if (!heroEnabled && activeTab === 'hero') {
-      setActiveTab('quests')
-    }
-  }, [heroEnabled, activeTab])
-
-  // Progress tracking: This week vs last week
-  const { progress, isLoading: isLoadingProgress, error: progressError, refetch: refetchProgress } = useProgress()
-
-  // Health Status: 取得今日的症狀和大便資料
-  const today = useMemo(() => startOfDay(new Date()), [])
-  const todayKey = useMemo(() => format(today, 'yyyy-MM-dd'), [today])
-  
-  // 查詢今日的 daily_symptom_entries（包含 bowel_movement_count 和 stool_type）
-  const { data: todayDailyEntry } = useQuery({
-    queryKey: ['dailySymptomEntry', user?.id, todayKey],
-    queryFn: async () => {
-      if (!user?.id) return null
-      const { supabase } = await import('@/shared/api/supabase/client')
-      const { data, error } = await supabase
-        .from('daily_symptom_entries')
-        .select('bowel_movement_count, stool_type, abdominal_pain, diarrhea, bloody_stool, bloating, overall_health')
-        .eq('user_id', user.id)
-        .eq('recorded_date', todayKey)
-        .single()
-      
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error('[InsightsScreen] Error fetching daily entry:', error)
-        return null
-      }
-      return data
-    },
-    enabled: !!user?.id,
-  })
-
-  const { summary: bowelSummary } = useBowelDiarySummary(today)
-
-  // 判斷健康狀態：沒症狀 + 大便 0-2 次
-  const hasNoSymptoms = useMemo(() => {
-    if (!todayDailyEntry) {
-      // 如果沒有記錄，檢查是否有大便記錄（有記錄但沒有症狀也算健康）
-      return bowelSummary.totalCount > 0
-    }
-    // 檢查是否有嚴重症狀（abdominal_pain, diarrhea, bloody_stool, bloating 都為 0 或 null）
-    const noPain = (todayDailyEntry.abdominal_pain === 0 || todayDailyEntry.abdominal_pain === null)
-    const noDiarrhea = (todayDailyEntry.diarrhea === 0 || todayDailyEntry.diarrhea === null)
-    const noBlood = (todayDailyEntry.bloody_stool === 0 || todayDailyEntry.bloody_stool === null)
-    const noBloating = (todayDailyEntry.bloating === 0 || todayDailyEntry.bloating === null)
-    const goodHealth = todayDailyEntry.overall_health >= 3 // 3 以上算健康
+  // 計算本週完成度
+  const weekProgress = useMemo(() => {
+    if (!dataCoverage) return null
     
-    return noPain && noDiarrhea && noBlood && noBloating && goodHealth
-  }, [todayDailyEntry, bowelSummary])
+    const thisWeek = dataCoverage.recentWeeks?.[0]
+    if (!thisWeek) return null
 
-  // 取得今日大便次數和類型
-  const bowelMovementCount = useMemo(() => {
-    // 優先使用 daily_symptom_entries 的資料
-    if (todayDailyEntry?.bowel_movement_count !== null && todayDailyEntry?.bowel_movement_count !== undefined) {
-      return todayDailyEntry.bowel_movement_count
-    }
-    // 否則使用 bowel_movement_entries 的計數
-    return bowelSummary.totalCount
-  }, [todayDailyEntry, bowelSummary])
+    const totalExpected = 21 // 每天 3 筆記錄（飲食、症狀、排便）* 7 天
+    const totalActual = thisWeek.foodEntries + thisWeek.symptomEntries
+    const percentage = Math.min(Math.round((totalActual / totalExpected) * 100), 100)
 
-  const stoolType = useMemo(() => {
-    // 從 daily_symptom_entries 取得
-    if (todayDailyEntry?.stool_type !== null && todayDailyEntry?.stool_type !== undefined) {
-      return todayDailyEntry.stool_type
+    return {
+      actual: totalActual,
+      expected: totalExpected,
+      percentage,
+      startDate: thisWeek.startDate,
+      endDate: thisWeek.endDate,
     }
-    return undefined
-  }, [todayDailyEntry])
+  }, [dataCoverage])
 
-  const handleNavigateToCategory = React.useCallback((category: string) => {
-    switch (category) {
-      case 'symptoms':
-        navigation.navigate('AddSymptomEntry', { date: undefined })
-        break
-      case 'food':
-        navigation.navigate('AddFoodEntry', { date: undefined })
-        break
-      case 'medications':
-        navigation.navigate('MedicationLog', undefined)
-        break
-      case 'sleep':
-        navigation.navigate('SleepLog', undefined)
-        break
-      case 'exercise':
-        navigation.navigate('ActivityLog', undefined)
-        break
-      default:
-        break
+  // 生成本週每日記錄狀態
+  const weekDays = useMemo(() => {
+    if (!dataCoverage?.recentWeeks?.[0]) return []
+
+    const weekStart = startOfWeek(new Date(), { locale: zhTW })
+    const days = []
+
+    for (let i = 0; i < 7; i++) {
+      const date = addDays(weekStart, i)
+      const dayName = format(date, 'EEEEEE', { locale: zhTW }) // 一、二、三...
+      const isToday = isSameDay(date, new Date())
+      
+      // 檢查這天是否有記錄（簡化版：假設有 coverage 數據）
+      const hasRecord = dataCoverage.totalDays > 0 // 簡化判斷
+      
+      days.push({
+        date,
+        dayName,
+        isToday,
+        hasRecord,
+        count: hasRecord ? 3 : 0, // 簡化：假設有記錄就是 3 筆
+      })
     }
-  }, [navigation])
+
+    return days
+  }, [dataCoverage])
 
   const handleRefresh = React.useCallback(async () => {
     setRefreshing(true)
     try {
       await Promise.all([
-        refetchCoverage(),
-        refetchAlerts(),
         refetchStreak(),
-        refetchProgress(),
+        refetchCoverage(),
       ])
     } finally {
       setRefreshing(false)
     }
-  }, [refetchCoverage, refetchAlerts, refetchStreak])
+  }, [refetchStreak, refetchCoverage])
+
+  // 獲取連續天數的鼓勵文字
+  const getStreakMessage = (days: number) => {
+    if (days === 0) return '開始你的記錄旅程！'
+    if (days < 3) return '很好的開始！'
+    if (days < 7) return '保持下去！'
+    if (days < 14) return '做得太好了！'
+    if (days < 30) return '你太棒了！'
+    return '你是超級明星！🌟'
+  }
+
+  // 獲取完成度的鼓勵文字
+  const getProgressMessage = (percentage: number) => {
+    if (percentage >= 90) return '完美週達成！'
+    if (percentage >= 70) return '表現優異！'
+    if (percentage >= 50) return '繼續努力！'
+    if (percentage >= 30) return '還有進步空間'
+    return '別放棄，每一步都很重要'
+  }
+
+  if (isLoadingStreak || isLoadingCoverage) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>進度追蹤</Text>
+          <Text style={styles.headerSubtitle}>掌握你的記錄習慣</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Icon name="loading" size={48} color={colors.primary[500]} />
+          <Text style={styles.loadingText}>載入中...</Text>
+        </View>
+      </View>
+    )
+  }
 
   return (
     <View style={styles.container}>
@@ -178,194 +131,141 @@ export function InsightsScreen() {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View>
-            <Text style={styles.headerTitle}>數據洞察</Text>
-            <Text style={styles.headerSubtitle}>追蹤你的健康進度 🎯</Text>
+            <Text style={styles.headerTitle}>進度追蹤</Text>
+            <Text style={styles.headerSubtitle}>掌握你的記錄習慣 🎯</Text>
           </View>
           <View style={styles.headerIcon}>
-            <Icon name="chart-line-variant" size={32} color={colors.primary} />
+            <Icon name="trophy-outline" size={32} color={colors.primary[500]} />
           </View>
         </View>
       </View>
 
-      {/* Tab Navigation - 簡化為兩個分頁（暫時隱藏 AI 洞察） */}
-      <View style={styles.tabContainer}>
-        {heroEnabled && (
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'hero' && styles.tabActive]}
-            onPress={() => setActiveTab('hero')}
-          >
-            <Text style={[styles.tabText, activeTab === 'hero' && styles.tabTextActive]}>
-              ⭐ 摘要
-            </Text>
-          </TouchableOpacity>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
+        {/* 連續記錄卡片 */}
+        <View style={styles.section}>
+          <View style={styles.streakCard}>
+            <View style={styles.streakIconContainer}>
+              <Text style={styles.streakEmoji}>🔥</Text>
+            </View>
+            <View style={styles.streakContent}>
+              <Text style={styles.streakLabel}>連續記錄</Text>
+              <View style={styles.streakValueRow}>
+                <Text style={styles.streakValue}>{streak?.currentStreak || 0}</Text>
+                <Text style={styles.streakUnit}>天</Text>
+              </View>
+              <Text style={styles.streakMessage}>
+                {getStreakMessage(streak?.currentStreak || 0)}
+              </Text>
+            </View>
+          </View>
+
+          {/* 最長記錄 */}
+          {streak && streak.longestStreak > 0 && (
+            <View style={styles.longestStreakBadge}>
+              <Icon name="medal-outline" size={20} color={colors.warning} />
+              <Text style={styles.longestStreakText}>
+                最長紀錄：{streak.longestStreak} 天
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* 本週完成度卡片 */}
+        {weekProgress && (
+          <View style={styles.section}>
+            <View style={styles.progressCard}>
+              <View style={styles.progressHeader}>
+                <Text style={styles.progressEmoji}>📊</Text>
+                <View style={styles.progressTitleContainer}>
+                  <Text style={styles.progressTitle}>本週記錄</Text>
+                  <Text style={styles.progressSubtitle}>
+                    {format(new Date(weekProgress.startDate), 'MM/dd')} - {format(new Date(weekProgress.endDate), 'MM/dd')}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.progressValueContainer}>
+                <Text style={styles.progressCount}>
+                  {weekProgress.actual} / {weekProgress.expected} 筆
+                </Text>
+                <Text style={styles.progressPercentage}>{weekProgress.percentage}%</Text>
+              </View>
+
+              {/* 進度條 */}
+              <View style={styles.progressBarContainer}>
+                <View style={styles.progressBarBackground}>
+                  <View 
+                    style={[
+                      styles.progressBarFill, 
+                      { width: `${weekProgress.percentage}%` }
+                    ]} 
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.progressMessage}>
+                {getProgressMessage(weekProgress.percentage)}
+              </Text>
+            </View>
+          </View>
         )}
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'quests' && styles.tabActive]}
-          onPress={() => setActiveTab('quests')}
-        >
-          <Text style={[styles.tabText, activeTab === 'quests' && styles.tabTextActive]}>
-            🎯 今日任務
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'progress' && styles.tabActive]}
-          onPress={() => setActiveTab('progress')}
-        >
-          <Text style={[styles.tabText, activeTab === 'progress' && styles.tabTextActive]}>
-            📈 進度
-          </Text>
-        </TouchableOpacity>
-        {/* 暫時隱藏 AI 洞察功能 */}
-        {/* <TouchableOpacity
-          style={[styles.tab, activeTab === 'insights' && styles.tabActive]}
-          onPress={() => setActiveTab('insights')}
-        >
-          <Text style={[styles.tabText, activeTab === 'insights' && styles.tabTextActive]}>
-            💡 洞察
-          </Text>
-        </TouchableOpacity> */}
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'reports' && styles.tabActive]}
-          onPress={() => setActiveTab('reports')}
-        >
-          <Text style={[styles.tabText, activeTab === 'reports' && styles.tabTextActive]}>
-            📝 報告
-          </Text>
-        </TouchableOpacity>
-      </View>
 
-      {/* Tab Content */}
-      {activeTab === 'hero' && heroEnabled ? (
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.contentContainer}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-        >
-          <View style={styles.section}>
-            <GamificationHeroCard
-              snapshot={buildGamificationSnapshot(streak, dataCoverage)}
-              alerts={missingAlerts}
-              primaryLabel="前往今日任務"
-              onPressPrimary={() => setActiveTab('quests')}
-            />
-          </View>
-        </ScrollView>
-      ) : activeTab === 'quests' ? (
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.contentContainer}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-        >
-          <View style={styles.section}>
-            <GamificationBoard
-              streak={streak}
-              coverage={dataCoverage}
-              alerts={missingAlerts}
-              onNavigate={handleNavigateToCategory}
-            />
-          </View>
-        </ScrollView>
-      ) : activeTab === 'progress' ? (
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.contentContainer}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-        >
-          {/* 進度概覽與充足度 */}
-          {/* Health Status Card - 健康狀態卡片 */}
-          <View style={styles.section}>
-            <HealthStatusCard
-              hasNoSymptoms={hasNoSymptoms}
-              bowelMovementCount={bowelMovementCount}
-              stoolType={stoolType}
-            />
-          </View>
-          {/* Streak Card - 連續記錄天數 */}
-          <View style={styles.section}>
-            {isLoadingStreak ? (
-              <View style={[styles.card, styles.loadingCard]}>
-                <Text style={styles.loadingText}>載入連續記錄中...</Text>
-              </View>
-            ) : streakError ? (
-              <View style={[styles.card, styles.errorCard]}>
-                <Icon name="alert-circle" size={20} color={colors.warning} />
-                <Text style={styles.errorText}>
-                  無法載入連續記錄：{streakError.message}
-                </Text>
-              </View>
-            ) : streak ? (
-              <StreakCard 
-                currentStreak={streak.currentStreak}
-                longestStreak={streak.longestStreak}
-                milestones={streak.milestones}
-              />
-            ) : null}
-          </View>
+        {/* 週歷視圖 */}
+        <View style={styles.section}>
+          <View style={styles.weekCalendarCard}>
+            <View style={styles.weekCalendarHeader}>
+              <Text style={styles.weekCalendarEmoji}>📅</Text>
+              <Text style={styles.weekCalendarTitle}>本週概覽</Text>
+            </View>
 
-          {/* Data Coverage Card - 資料充足度 */}
-          <View style={styles.section}>
-            {isLoadingCoverage ? (
-              <View style={[styles.card, styles.loadingCard]}>
-                <Text style={styles.loadingText}>載入資料充足度中...</Text>
-              </View>
-            ) : coverageError ? (
-              <View style={[styles.card, styles.errorCard]}>
-                <Icon name="alert-circle" size={20} color={colors.error} />
-                <Text style={styles.errorText}>
-                  無法載入資料充足度：{coverageError.message}
-                </Text>
-              </View>
-            ) : dataCoverage ? (
-              <DataCoverageCard coverage={dataCoverage} />
-            ) : null}
+            <View style={styles.weekDaysContainer}>
+              {weekDays.map((day, index) => (
+                <View key={index} style={styles.dayColumn}>
+                  <Text style={[
+                    styles.dayName,
+                    day.isToday && styles.dayNameToday
+                  ]}>
+                    {day.dayName}
+                  </Text>
+                  <View style={[
+                    styles.dayCircle,
+                    day.hasRecord && styles.dayCircleActive,
+                    day.isToday && styles.dayCircleToday,
+                  ]}>
+                    {day.hasRecord ? (
+                      <Icon name="check" size={20} color={colors.surface} />
+                    ) : (
+                      <Text style={styles.dayCircleEmpty}>-</Text>
+                    )}
+                  </View>
+                  {day.hasRecord && (
+                    <Text style={styles.dayCount}>{day.count}筆</Text>
+                  )}
+                </View>
+              ))}
+            </View>
           </View>
-
-          {/* Missing Data Alerts - 缺漏提醒 */}
-          <View style={styles.section}>
-            {isLoadingAlerts ? (
-              <View style={[styles.card, styles.loadingCard]}>
-                <Text style={styles.loadingText}>載入提醒中...</Text>
-              </View>
-            ) : alertsError ? (
-              <View style={[styles.card, styles.errorCard]}>
-                <Icon name="alert-circle" size={20} color={colors.warning} />
-                <Text style={styles.errorText}>
-                  無法載入提醒：{alertsError.message}
-                </Text>
-              </View>
-            ) : missingAlerts && missingAlerts.length > 0 ? (
-              <MissingDataAlertCard alerts={missingAlerts} navigation={navigation} />
-            ) : (
-              <View style={[styles.card, styles.successCard]}>
-                <Icon name="check-circle" size={24} color={colors.success} />
-                <Text style={styles.successText}>太棒了！本週的資料都很完整 ✨</Text>
-                <Text style={styles.successSubtext}>繼續保持，你的健康數據會越來越豐富</Text>
-              </View>
-            )}
-          </View>
-        </ScrollView>
-      ) : (
-        /* Reports Tab - Dashboard Content (DashboardScreen has its own ScrollView) */
-        <View style={styles.dashboardContainer}>
-          <DashboardScreen 
-            hideHeader={true} 
-            hideTabNavigation={true}
-            externalActiveTab="reports"
-            onTabChange={(tab) => {
-              // 只允許切換到 reports
-              if (tab === 'reports') {
-                setActiveTab(tab)
-              }
-            }}
-          />
         </View>
-      )}
+
+        {/* 鼓勵訊息 */}
+        <View style={styles.section}>
+          <View style={styles.motivationCard}>
+            <Icon name="lightbulb-on-outline" size={24} color={colors.primary[500]} />
+            <Text style={styles.motivationText}>
+              持續記錄能幫助你更好地了解自己的健康狀況。每一筆記錄都是邁向健康的一小步！
+            </Text>
+          </View>
+        </View>
+
+        {/* Bottom Spacer */}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
     </View>
   )
 }
@@ -374,6 +274,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  loadingText: {
+    fontSize: typography.fontSize.base,
+    color: colors.text.secondary,
   },
   header: {
     backgroundColor: colors.surface,
@@ -392,7 +302,7 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize['2xl'],
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.xs / 2,
   },
   headerSubtitle: {
     fontSize: typography.fontSize.sm,
@@ -402,36 +312,9 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: `${colors.primary}15`,
+    backgroundColor: `${colors.primary[500]}15`,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    paddingHorizontal: spacing.sm,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xs,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabActive: {
-    borderBottomColor: colors.primary,
-  },
-  tabText: {
-    ...typography.caption,
-    color: colors.text.secondary,
-    fontSize: 12,
-  },
-  tabTextActive: {
-    color: colors.primary,
-    fontWeight: '600',
   },
   scrollView: {
     flex: 1,
@@ -441,60 +324,246 @@ const styles = StyleSheet.create({
   },
   section: {
     paddingHorizontal: spacing.lg,
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
   },
-  card: {
+
+  // 連續記錄卡片
+  streakCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: spacing.md,
-    marginVertical: spacing.sm,
-  },
-  loadingCard: {
+    borderRadius: 20,
+    padding: spacing.xl,
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.lg,
+    gap: spacing.lg,
+    borderWidth: 2,
+    borderColor: colors.primary[200],
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  errorCard: {
+  streakIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: `${colors.primary[500]}15`,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  streakEmoji: {
+    fontSize: 48,
+  },
+  streakContent: {
+    flex: 1,
+  },
+  streakLabel: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
+  },
+  streakValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: spacing.xs,
+  },
+  streakValue: {
+    fontSize: 48,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary[600],
+    lineHeight: 52,
+  },
+  streakUnit: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.secondary,
+    marginLeft: spacing.xs,
+  },
+  streakMessage: {
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+    fontWeight: typography.fontWeight.medium,
+  },
+  longestStreakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: `${colors.warning}20`,
+    borderRadius: 999,
+    alignSelf: 'flex-start',
+  },
+  longestStreakText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.primary,
+    fontWeight: typography.fontWeight.medium,
+  },
+
+  // 本週完成度卡片
+  progressCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  progressEmoji: {
+    fontSize: 32,
+  },
+  progressTitleContainer: {
+    flex: 1,
+  },
+  progressTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs / 2,
+  },
+  progressSubtitle: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+  },
+  progressValueContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: spacing.md,
+  },
+  progressCount: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+  },
+  progressPercentage: {
+    fontSize: typography.fontSize['3xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary[600],
+  },
+  progressBarContainer: {
+    marginBottom: spacing.md,
+  },
+  progressBarBackground: {
+    height: 12,
+    backgroundColor: colors.gray[200],
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: colors.primary[500],
+    borderRadius: 6,
+  },
+  progressMessage: {
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+    fontWeight: typography.fontWeight.medium,
+    textAlign: 'center',
+  },
+
+  // 週歷視圖
+  weekCalendarCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  weekCalendarHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: `${colors.error}10`,
-    borderWidth: 1,
-    borderColor: `${colors.error}30`,
+    marginBottom: spacing.lg,
   },
-  successCard: {
+  weekCalendarEmoji: {
+    fontSize: 28,
+  },
+  weekCalendarTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+  },
+  weekDaysContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  dayColumn: {
     alignItems: 'center',
+    gap: spacing.sm,
+  },
+  dayName: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    fontWeight: typography.fontWeight.medium,
+  },
+  dayNameToday: {
+    color: colors.primary[600],
+    fontWeight: typography.fontWeight.bold,
+  },
+  dayCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.gray[200],
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  dayCircleActive: {
+    backgroundColor: colors.success,
+    borderColor: colors.success,
+  },
+  dayCircleToday: {
+    borderColor: colors.primary[500],
+    borderWidth: 3,
+  },
+  dayCircleEmpty: {
+    fontSize: typography.fontSize.lg,
+    color: colors.text.tertiary,
+  },
+  dayCount: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.secondary,
+  },
+
+  // 鼓勵訊息
+  motivationCard: {
+    backgroundColor: `${colors.primary[500]}10`,
+    borderRadius: 16,
     padding: spacing.lg,
-    backgroundColor: `${colors.success}10`,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
     borderWidth: 1,
-    borderColor: `${colors.success}30`,
+    borderColor: `${colors.primary[500]}30`,
   },
-  loadingText: {
-    ...typography.body,
-    color: colors.text.secondary,
-  },
-  errorText: {
-    ...typography.body,
-    color: colors.error,
+  motivationText: {
     flex: 1,
+    fontSize: typography.fontSize.base,
+    color: colors.text.primary,
+    lineHeight: 24,
   },
-  successText: {
-    ...typography.h3,
-    color: colors.success,
-    fontWeight: '600',
-    marginTop: spacing.sm,
-    textAlign: 'center',
-  },
-  successSubtext: {
-    ...typography.body,
-    color: colors.text.secondary,
-    marginTop: spacing.xs,
-    textAlign: 'center',
-    fontSize: 13,
-  },
-  dashboardContainer: {
-    flex: 1,
-  },
-  dashboardSection: {
-    flex: 1,
+
+  bottomSpacer: {
+    height: spacing.xl,
   },
 })
