@@ -123,7 +123,7 @@ export function TodayScreen() {
   // Delete confirmation dialog state
   const [deleteDialog, setDeleteDialog] = useState<{
     visible: boolean
-    type: 'food' | 'symptom' | 'medication' | 'sleep' | 'activity' | null
+    type: 'food' | 'symptom' | 'bowel' | 'medication' | 'sleep' | 'activity' | null
     id: string | null
     name: string
   }>({
@@ -341,9 +341,31 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
     })
     return map
   }, [])
-  const mealDisplayOrder = useMemo<MealType[]>(() => ['snack', 'dinner', 'lunch', 'breakfast'], [])
+  const mealDisplayOrder = useMemo<MealType[]>(() => ['breakfast', 'lunch', 'dinner', 'snack'], [])
   const mealPriority = useMemo<Record<MealType, number>>(
-    () => ({ snack: 0, dinner: 1, lunch: 2, breakfast: 3 }),
+    () => ({ breakfast: 0, lunch: 1, dinner: 2, snack: 3 }),
+    []
+  )
+
+  // Severity level translation map
+  const SEVERITY_LABELS: Record<string, string> = useMemo(
+    () => ({
+      mild: '輕微',
+      moderate: '中度',
+      severe: '嚴重',
+    }),
+    []
+  )
+
+  // Bristol Stool Scale translation map (simplified 1-5)
+  const BRISTOL_TYPE_LABELS: Record<number, string> = useMemo(
+    () => ({
+      1: '便秘（硬球狀）',
+      2: '偏硬（香腸狀但凹凸）',
+      3: '正常（香腸狀光滑）',
+      4: '偏軟（軟便成形）',
+      5: '腹瀉（糊狀或液狀）',
+    }),
     []
   )
 
@@ -366,6 +388,28 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
     })
     return stats
   }, [foodEntries])
+
+  // Calculate symptom stats by severity
+  const symptomStats = useMemo(() => {
+    const stats = { mild: 0, moderate: 0, severe: 0 }
+    symptomEntries.forEach((entry: SymptomEntry) => {
+      if (entry.severity && entry.severity in stats) {
+        stats[entry.severity as keyof typeof stats]++
+      }
+    })
+    return stats
+  }, [symptomEntries])
+
+  // Calculate bowel movement stats by stool type
+  const bowelStats = useMemo(() => {
+    const stats: Record<number, number> = {}
+    bowelEntries.forEach((entry: BowelMovementEntry) => {
+      if (entry.stool_type) {
+        stats[entry.stool_type] = (stats[entry.stool_type] || 0) + 1
+      }
+    })
+    return stats
+  }, [bowelEntries])
 
   // Group food entries by meal type
   const foodByMeal = useMemo(() => {
@@ -465,6 +509,7 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
   }, [
     foodEntries.length,
     symptomEntries.length,
+    bowelEntries.length,
     mLogs.length,
     sSessions.length,
     aSessions.length,
@@ -495,7 +540,7 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
         type: 'symptom',
         title: entry.symptom_name,
         timestamp: entry.recorded_at,
-        meta: entry.severity ? `程度 ${entry.severity}` : undefined,
+        meta: entry.severity ? `程度 ${SEVERITY_LABELS[entry.severity] || entry.severity}` : undefined,
         icon: 'medical-bag',
         color: colors.error,
       })
@@ -582,7 +627,7 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
           id: entry.id,
           primary: entry.symptom_name,
           secondary: format(new Date(entry.recorded_at), 'HH:mm'),
-          meta: entry.severity ? `程度 ${entry.severity}` : undefined,
+          meta: entry.severity ? `程度 ${SEVERITY_LABELS[entry.severity] || entry.severity}` : undefined,
         })),
       })
     }
@@ -675,7 +720,7 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
 
   // Show delete confirmation dialog
   const showDeleteDialog = (
-    type: 'food' | 'symptom' | 'medication' | 'sleep' | 'activity',
+    type: 'food' | 'symptom' | 'bowel' | 'medication' | 'sleep' | 'activity',
     id: string,
     name: string
   ) => {
@@ -713,6 +758,10 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
         case 'symptom':
           await SymptomDiaryService.deleteSymptomEntry(deleteDialog.id, user.id)
           refetchSymptoms()
+          break
+        case 'bowel':
+          await BowelDiaryService.deleteBowelMovement(deleteDialog.id)
+          refetchBowel()
           break
         case 'medication':
           await HealthLogService.deleteMedicationLog(deleteDialog.id)
@@ -829,44 +878,7 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
             </View>
           )}
 
-          {/* Snapshot Sections - Simplified */}
-          {snapshotSections.length > 0 && (
-            <View style={styles.snapshotList}>
-              {snapshotSections.map((section) => (
-                <View key={section.key} style={styles.snapshotCard}>
-                  <View style={styles.snapshotHeader}>
-                    <View style={styles.snapshotHeaderLeft}>
-                      <Icon name={section.icon} size={18} color={section.color} />
-                      <Text style={styles.snapshotTitle}>{section.title}</Text>
-                      <Text style={styles.snapshotBadge}>{section.badge}</Text>
-                    </View>
-                    <TouchableOpacity
-                      onPress={section.onAdd}
-                      style={styles.snapshotAction}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Icon name="plus-circle" size={18} color={section.color} />
-                    </TouchableOpacity>
-                  </View>
-                  {section.items.length === 0 ? (
-                    <Text style={styles.emptyText}>{section.emptyText}</Text>
-                  ) : (
-                    section.items.map((item) => (
-                      <View key={item.id} style={styles.snapshotItem}>
-                        <Text style={styles.snapshotItemPrimary}>{item.primary}</Text>
-                        <Text style={styles.snapshotItemMeta}>
-                          {item.secondary || ''}
-                          {item.meta ? ` · ${item.meta}` : ''}
-                        </Text>
-                      </View>
-                    ))
-                  )}
-                </View>
-              ))}
-            </View>
-          )}
-
-          {timelineItems.length === 0 && snapshotSections.length === 0 && (
+          {timelineItems.length === 0 && (
             <View style={styles.emptyState}>
               <Icon name="clipboard-text-outline" size={48} color={colors.text.tertiary} />
               <Text style={styles.emptyStateText}>今天還沒有任何紀錄</Text>
@@ -879,47 +891,49 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
       {/* Detail Tab - Existing Content */}
       {activeTab === 'detail' && (
         <>
-          {/* Add buttons - matching FoodDayDetailScreen */}
-          <View style={styles.detailAddButtonsContainer}>
-            <TouchableOpacity
-              style={styles.detailAddButton}
-              onPress={() => navigation.navigate('AddFoodEntry', { date: undefined })}
-            >
-              <Icon name="food-apple" size={20} color={colors.primary[500]} />
-              <Text style={styles.detailAddButtonText}>新增飲食</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.detailAddButton}
-              onPress={() => navigation.navigate('AddSymptomEntry', { date: undefined })}
-            >
-              <Icon name="medical-bag" size={20} color={colors.primary[500]} />
-              <Text style={styles.detailAddButtonText}>新增症狀</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.detailAddButton}
-              onPress={() => navigation.navigate('AddBowelMovement', { date: undefined })}
-            >
-              <Icon name="toilet" size={20} color="#D2691E" />
-              <Text style={[styles.detailAddButtonText, { color: '#D2691E' }]}>大便記錄</Text>
-            </TouchableOpacity>
+          {/* Summary Statistics - 3 columns */}
+          <View style={styles.detailSummaryContainer}>
+            <View style={styles.detailSummaryItem}>
+              <Text style={styles.detailSummaryLabel}>飲食記錄</Text>
+              <Text style={styles.detailSummaryValue}>{foodEntries.length} 筆</Text>
+            </View>
+            <View style={styles.detailSummaryItem}>
+              <Text style={styles.detailSummaryLabel}>症狀記錄</Text>
+              <Text style={styles.detailSummaryValue}>{symptomEntries.length} 筆</Text>
+            </View>
+            <View style={styles.detailSummaryItem}>
+              <Text style={styles.detailSummaryLabel}>大便記錄</Text>
+              <Text style={styles.detailSummaryValue}>{bowelEntries.length} 次</Text>
+            </View>
           </View>
 
-          {/* Meal Stats Overview */}
-          <View style={styles.statsCard}>
-        <Text style={styles.statsTitle}>今日飲食統計</Text>
-        <View style={styles.statsRow}>
-          {mealDisplayOrder.map((meal) => {
-            const count = mealStats[meal as keyof typeof mealStats] ?? 0
-            return (
-              <View key={meal} style={styles.statItem}>
-                <Text style={styles.statIcon}>{mealIconMap[meal]}</Text>
-                <Text style={styles.statLabel}>{mealLabelMap[meal]}</Text>
-                <Text style={styles.statCount}>{count} 筆</Text>
+          {/* Meal Breakdown - only show meals with entries */}
+          <View style={styles.mealBreakdownContainer}>
+            {mealStats.breakfast > 0 && (
+              <View style={styles.mealBreakdownItem}>
+                <Text style={styles.mealBreakdownIcon}>🌅</Text>
+                <Text style={styles.mealBreakdownText}>早餐 {mealStats.breakfast} 筆</Text>
               </View>
-            )
-          })}
-        </View>
-      </View>
+            )}
+            {mealStats.lunch > 0 && (
+              <View style={styles.mealBreakdownItem}>
+                <Text style={styles.mealBreakdownIcon}>☀️</Text>
+                <Text style={styles.mealBreakdownText}>午餐 {mealStats.lunch} 筆</Text>
+              </View>
+            )}
+            {mealStats.dinner > 0 && (
+              <View style={styles.mealBreakdownItem}>
+                <Text style={styles.mealBreakdownIcon}>🌙</Text>
+                <Text style={styles.mealBreakdownText}>晚餐 {mealStats.dinner} 筆</Text>
+              </View>
+            )}
+            {mealStats.snack > 0 && (
+              <View style={styles.mealBreakdownItem}>
+                <Text style={styles.mealBreakdownIcon}>🍪</Text>
+                <Text style={styles.mealBreakdownText}>點心 {mealStats.snack} 筆</Text>
+              </View>
+            )}
+          </View>
 
       {/* Food Timeline */}
       <View style={styles.section}>
@@ -962,26 +976,17 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
                         <Text style={styles.detailCardTime}>
                           {format(new Date(entry.consumed_at), 'HH:mm')}
                         </Text>
-                        <View style={styles.detailCardActions}>
-                          <TouchableOpacity
-                            onPress={() =>
-                              navigation.navigate('AddFoodEntry', {
-                                date: entry.consumed_at.split('T')[0],
-                                entryId: entry.id,
-                              })
-                            }
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                          >
-                            <Icon name="pencil" size={20} color={colors.text.secondary} />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() => showDeleteDialog('food', entry.id, entry.food_name)}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            style={styles.deleteButton}
-                          >
-                            <Icon name="delete" size={20} color={colors.error} />
-                          </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity
+                          onPress={() =>
+                            navigation.navigate('AddFoodEntry', {
+                              date: entry.consumed_at.split('T')[0],
+                              entryId: entry.id,
+                            })
+                          }
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                          <Icon name="pencil" size={20} color={colors.text.secondary} />
+                        </TouchableOpacity>
                       </View>
                       <View style={styles.detailCardContent}>
                         <Text style={styles.detailCardTitle}>{entry.food_name}</Text>
@@ -1025,28 +1030,17 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
                     <Text style={styles.detailCardTime}>
                       {format(new Date(entry.recorded_at), 'HH:mm')}
                     </Text>
-                    <View style={styles.detailCardActions}>
-                      <TouchableOpacity
-                        onPress={() =>
-                          navigation.navigate('AddSymptomEntry', {
-                            date: entry.recorded_at,
-                            entryId: entry.id,
-                          })
-                        }
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      >
-                        <Icon name="pencil" size={20} color={colors.text.secondary} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() =>
-                          showDeleteDialog('symptom', entry.id, entry.symptom_name)
-                        }
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        style={styles.deleteButton}
-                      >
-                        <Icon name="delete" size={20} color={colors.error} />
-                      </TouchableOpacity>
-                    </View>
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate('AddSymptomEntry', {
+                          date: entry.recorded_at,
+                          entryId: entry.id,
+                        })
+                      }
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Icon name="pencil" size={20} color={colors.text.secondary} />
+                    </TouchableOpacity>
                   </View>
                   <View style={styles.detailCardContent}>
                     <View style={styles.symptomHeader}>
@@ -1061,6 +1055,62 @@ const describeRegimenStatus = (regimen: MedicationRegimenSummary) => {
                 </View>
               )
             })}
+          </View>
+        )}
+      </View>
+
+      {/* Bowel Movement List */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Icon name="toilet" size={24} color={colors.warning} />
+          <Text style={styles.sectionTitle}>大便記錄</Text>
+          <View style={[styles.badge, { backgroundColor: colors.warning + '20' }]}>
+            <Text style={styles.badgeText}>{bowelEntries.length}</Text>
+          </View>
+        </View>
+
+        {bowelEntries.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Icon name="emoticon-happy" size={48} color={colors.success} />
+            <Text style={[styles.emptyStateText, { color: colors.text.secondary }]}>
+              今天沒有大便記錄
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.symptomList}>
+            {bowelEntries.map((entry: BowelMovementEntry) => (
+              <View key={entry.id} style={styles.detailCard}>
+                <View style={styles.detailCardHeader}>
+                  <Text style={styles.detailCardTime}>
+                    {entry.occurred_at ? format(new Date(entry.occurred_at), 'HH:mm') : '--:--'}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate('AddBowelMovement', {
+                        date: entry.occurred_at,
+                        entryId: entry.id,
+                      })
+                    }
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Icon name="pencil" size={20} color={colors.text.secondary} />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.detailCardContent}>
+                  <View style={styles.symptomHeader}>
+                    <Text style={styles.symptomIcon}>💩</Text>
+                    <Text style={styles.detailCardTitle}>
+                      {entry.stool_type
+                        ? BRISTOL_TYPE_LABELS[entry.stool_type] || `第${entry.stool_type}型`
+                        : '未分類'}
+                    </Text>
+                  </View>
+                  {entry.notes && (
+                    <Text style={styles.detailCardNotes}>{entry.notes}</Text>
+                  )}
+                </View>
+              </View>
+            ))}
           </View>
         )}
       </View>
@@ -1638,68 +1688,50 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.text.tertiary,
   },
-  detailAddButtonsContainer: {
+  detailSummaryContainer: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.md,
     marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  detailAddButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary[50],
-    borderRadius: 8,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    gap: spacing.xs,
-  },
-  detailAddButtonText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.primary[500],
-    fontWeight: typography.fontWeight.medium,
-  },
-  statsCard: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-    padding: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  statsTitle: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text.primary,
     marginBottom: spacing.md,
   },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-  },
-  statItem: {
+  detailSummaryItem: {
     flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: spacing.md,
     alignItems: 'center',
-    padding: spacing.sm,
-    backgroundColor: colors.background,
-    borderRadius: 8,
   },
-  statIcon: {
-    fontSize: 28,
-    marginBottom: spacing.xs,
-  },
-  statLabel: {
-    fontSize: typography.fontSize.xs,
+  detailSummaryLabel: {
+    fontSize: typography.fontSize.sm,
     color: colors.text.secondary,
     marginBottom: spacing.xs,
   },
-  statCount: {
+  detailSummaryValue: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+  },
+  mealBreakdownContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  mealBreakdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  mealBreakdownIcon: {
+    fontSize: 16,
+    marginRight: spacing.xs,
+  },
+  mealBreakdownText: {
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
   },
   section: {
@@ -1913,7 +1945,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: colors.success,
-    marginTop: 4,
     marginTop: 6,
   },
   timelineContent: {
@@ -1987,8 +2018,9 @@ const styles = StyleSheet.create({
   detailCard: {
     backgroundColor: colors.white,
     borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+    padding: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xs,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -1999,7 +2031,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   detailCardTime: {
     fontSize: typography.fontSize.sm,
@@ -2014,7 +2046,7 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
   detailCardContent: {
-    gap: spacing.xs,
+    gap: 4,
   },
   detailCardTitle: {
     fontSize: typography.fontSize.base,
