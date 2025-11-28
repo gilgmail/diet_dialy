@@ -1,0 +1,193 @@
+// 健康報告產生器 UI 元件
+// 讓使用者產生並分享 7 天健康報告 PDF
+
+import React, { useState } from 'react'
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from 'react-native'
+import { format, subDays } from 'date-fns'
+import { zhTW } from 'date-fns/locale'
+import { useAuth } from '@/features/auth/hooks/useAuth'
+import { ReportService } from '../services/ReportService'
+import { PDFGeneratorService } from '../services/PDFGeneratorService'
+import { colors, typography, spacing } from '@/theme'
+
+interface ReportGeneratorProps {
+  /** 自訂日期範圍（可選） */
+  endDate?: Date
+  /** 包含天數（預設 7 天） */
+  includeDays?: number
+}
+
+export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
+  endDate: customEndDate,
+  includeDays = 7
+}) => {
+  const { user } = useAuth()
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [progress, setProgress] = useState(0)
+
+  /**
+   * 處理報告產生
+   */
+  const handleGenerateReport = async () => {
+    if (!user?.id) {
+      Alert.alert('錯誤', '請先登入')
+      return
+    }
+
+    setIsGenerating(true)
+    setProgress(0)
+
+    try {
+      // 步驟 1: 產生報告資料 (40%)
+      console.log('[ReportGenerator] Step 1: Generating report data...')
+      setProgress(40)
+
+      const { data: report, error } = await ReportService.generateWeeklyReport(
+        user.id,
+        {
+          endDate: customEndDate,
+          includeDays
+        }
+      )
+
+      if (error || !report) {
+        throw new Error(error?.message || '報告產生失敗')
+      }
+
+      console.log('[ReportGenerator] Report data generated successfully')
+
+      // 步驟 2: 生成 PDF (80%)
+      console.log('[ReportGenerator] Step 2: Generating PDF...')
+      setProgress(80)
+
+      const { success, error: pdfError } = await PDFGeneratorService.generateAndShare(report)
+
+      if (!success) {
+        throw new Error(pdfError || 'PDF 生成失敗')
+      }
+
+      console.log('[ReportGenerator] PDF generated and shared successfully')
+
+      // 完成 (100%)
+      setProgress(100)
+
+      // 成功後重置
+      setTimeout(() => {
+        setIsGenerating(false)
+        setProgress(0)
+      }, 500)
+
+    } catch (error) {
+      console.error('[ReportGenerator] Error:', error)
+
+      Alert.alert(
+        '產生失敗',
+        error instanceof Error ? error.message : '未知錯誤',
+        [
+          {
+            text: '確定',
+            onPress: () => {
+              setIsGenerating(false)
+              setProgress(0)
+            }
+          }
+        ]
+      )
+    }
+  }
+
+  // 計算日期範圍
+  const endDate = customEndDate || new Date()
+  const startDate = subDays(endDate, includeDays - 1)
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>📄 產生健康報告</Text>
+
+      <Text style={styles.description}>
+        產生 {format(startDate, 'MM/dd', { locale: zhTW })} - {format(endDate, 'MM/dd', { locale: zhTW })} 的完整健康報告
+      </Text>
+
+      {isGenerating && (
+        <View style={styles.progressContainer}>
+          <ActivityIndicator size="small" color={colors.primary[500]} />
+          <Text style={styles.progressText}>
+            產生中... {progress}%
+          </Text>
+        </View>
+      )}
+
+      <TouchableOpacity
+        onPress={handleGenerateReport}
+        disabled={isGenerating}
+        style={[
+          styles.button,
+          isGenerating && styles.buttonDisabled
+        ]}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.buttonText}>
+          {isGenerating ? '產生中...' : '📥 產生並分享 PDF'}
+        </Text>
+      </TouchableOpacity>
+
+      <Text style={styles.hint}>
+        報告將包含：飲食記錄、症狀追蹤、排便記錄
+      </Text>
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: {
+    padding: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  title: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  description: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.md,
+    lineHeight: 20,
+  },
+  progressContainer: {
+    marginBottom: spacing.md,
+    alignItems: 'center',
+  },
+  progressText: {
+    marginTop: spacing.xs,
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+  },
+  button: {
+    backgroundColor: colors.primary[500],
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonDisabled: {
+    backgroundColor: colors.gray[300],
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  hint: {
+    marginTop: spacing.sm,
+    fontSize: typography.fontSize.xs,
+    color: colors.text.tertiary,
+    textAlign: 'center',
+  },
+})

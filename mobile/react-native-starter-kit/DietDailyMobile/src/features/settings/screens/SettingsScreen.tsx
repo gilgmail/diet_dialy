@@ -35,6 +35,7 @@ import type { MainStackParamList } from '@/app/navigation/types'
 import { AIModelSelector } from '../components/AIModelSelector'
 import { FoodKnowledgeScreen } from './FoodKnowledgeScreen'
 import { appConfig } from '@/shared/config/appConfig'
+import { ReportGenerator } from '@/features/dashboard/components/ReportGenerator'
 
 const MEAL_NAMES: Record<'breakfast' | 'lunch' | 'dinner', string> = {
   breakfast: '早餐',
@@ -577,6 +578,12 @@ Device: ${Platform.OS} ${Platform.Version}
           </View>
           <Icon name="chevron-right" size={24} color={colors.text.secondary} />
         </TouchableOpacity>
+      </View>
+
+      {/* Data Export Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>資料匯出</Text>
+        <ReportGenerator />
       </View>
 
       {/* About Section */}
