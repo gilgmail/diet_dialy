@@ -4,6 +4,7 @@ import { foodEntryService } from '@/lib/supabase/food-entry-service';
 import { FoodHistoryQuery } from '@/types/history';
 import { getAuthenticatedUser, createUnauthorizedResponse } from '@/lib/supabase/server-auth';
 import type { Database } from '@/types/supabase';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 function createRequestSupabaseClient(request: NextRequest) {
   return createServerClient<Database>(
@@ -25,11 +26,38 @@ function createRequestSupabaseClient(request: NextRequest) {
   );
 }
 
+/**
+ * Support both web cookies (App Router) and mobile Bearer token auth.
+ * Mobile apps call this API with Authorization: Bearer <token>, which bypasses the cookie flow.
+ */
+async function getUserFromRequest(request: NextRequest) {
+  const authHeader = request.headers.get('authorization');
+
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.replace('Bearer ', '');
+    const supabase = createSupabaseClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error) {
+      console.error('🔐 Bearer token auth failed:', error);
+    }
+    if (user) {
+      return { id: user.id, email: user.email, user_metadata: user.user_metadata };
+    }
+  }
+
+  // Fallback to cookie-based auth (web)
+  return getAuthenticatedUser(request);
+}
+
 // GET /api/history - Query food history entries
 export async function GET(request: NextRequest) {
   try {
     // ✅ SECURITY: Get authenticated user from session
-    const authenticatedUser = await getAuthenticatedUser(request);
+    const authenticatedUser = await getUserFromRequest(request);
     if (!authenticatedUser) {
       return createUnauthorizedResponse('請先登入以查看歷史記錄');
     }

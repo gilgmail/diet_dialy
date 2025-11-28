@@ -36,6 +36,7 @@ import { AIModelSelector } from '../components/AIModelSelector'
 import { FoodKnowledgeScreen } from './FoodKnowledgeScreen'
 import { appConfig } from '@/shared/config/appConfig'
 import { ReportGenerator } from '@/features/dashboard/components/ReportGenerator'
+import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
 
 const MEAL_NAMES: Record<'breakfast' | 'lunch' | 'dinner', string> = {
   breakfast: '早餐',
@@ -580,50 +581,52 @@ Device: ${Platform.OS} ${Platform.Version}
         </TouchableOpacity>
       </View>
 
-      {/* AI功能與訂閱 Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>⭐ Premium 功能</Text>
+      {/* AI功能與訂閱 Section - 僅在功能啟用時顯示 */}
+      {FEATURE_FLAGS.PREMIUM_SUBSCRIPTION_ENABLED && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>⭐ Premium 功能</Text>
 
-        <View style={styles.premiumCard}>
-          <View style={styles.premiumHeader}>
-            <Icon name="robot" size={32} color={colors.primary[500]} />
-            <View style={styles.premiumInfo}>
-              <Text style={styles.premiumTitle}>AI 飲食分析</Text>
-              <Text style={styles.premiumBadge}>付費功能</Text>
+          <View style={styles.premiumCard}>
+            <View style={styles.premiumHeader}>
+              <Icon name="robot" size={32} color={colors.primary[500]} />
+              <View style={styles.premiumInfo}>
+                <Text style={styles.premiumTitle}>AI 飲食分析</Text>
+                <Text style={styles.premiumBadge}>付費功能</Text>
+              </View>
             </View>
+
+            <View style={styles.premiumFeatures}>
+              <View style={styles.featureItem}>
+                <Icon name="check-circle" size={18} color={colors.success} />
+                <Text style={styles.featureText}>個人化飲食建議</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Icon name="check-circle" size={18} color={colors.success} />
+                <Text style={styles.featureText}>食物症狀關聯分析</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Icon name="check-circle" size={18} color={colors.success} />
+                <Text style={styles.featureText}>IBD 專業建議</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.upgradeButton}
+              onPress={() => {
+                Alert.alert(
+                  '升級至 Premium',
+                  'Premium 版本提供 AI 飲食分析功能，幫助您更好地管理 IBD 症狀。\n\n功能即將推出，敬請期待！',
+                  [{ text: '了解', style: 'default' }]
+                )
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.upgradeButtonText}>升級至 Premium</Text>
+              <Icon name="arrow-right" size={20} color="#fff" />
+            </TouchableOpacity>
           </View>
-
-          <View style={styles.premiumFeatures}>
-            <View style={styles.featureItem}>
-              <Icon name="check-circle" size={18} color={colors.success} />
-              <Text style={styles.featureText}>個人化飲食建議</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Icon name="check-circle" size={18} color={colors.success} />
-              <Text style={styles.featureText}>食物症狀關聯分析</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Icon name="check-circle" size={18} color={colors.success} />
-              <Text style={styles.featureText}>IBD 專業建議</Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={styles.upgradeButton}
-            onPress={() => {
-              Alert.alert(
-                '升級至 Premium',
-                'Premium 版本提供 AI 飲食分析功能，幫助您更好地管理 IBD 症狀。\n\n功能即將推出，敬請期待！',
-                [{ text: '了解', style: 'default' }]
-              )
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.upgradeButtonText}>升級至 Premium</Text>
-            <Icon name="arrow-right" size={20} color="#fff" />
-          </TouchableOpacity>
         </View>
-      </View>
+      )}
 
       {/* Data Export Section */}
       <View style={styles.section}>

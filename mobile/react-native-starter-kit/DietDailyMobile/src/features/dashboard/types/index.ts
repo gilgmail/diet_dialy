@@ -194,6 +194,14 @@ export interface DataCoverageInfo {
   overall_data_status: 'sufficient' | 'partial' | 'insufficient'
   missing_categories: string[]
   last_data_update: string | null
+  // Optional UI helpers
+  totalDays?: number
+  recentWeeks?: Array<{
+    startDate: string
+    endDate: string
+    foodEntries: number
+    symptomEntries: number
+  }>
 }
 
 export interface MissingDataAlert {

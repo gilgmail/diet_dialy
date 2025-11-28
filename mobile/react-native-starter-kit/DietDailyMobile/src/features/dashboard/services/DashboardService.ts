@@ -969,58 +969,18 @@ export class DashboardService {
     data: DataCoverageInfo | null
     error: { message: string } | null
   }> {
-    const apiBase = process.env.EXPO_PUBLIC_API_URL
-    if (!apiBase) {
-      console.warn('[DashboardService] EXPO_PUBLIC_API_URL not configured')
-      return { data: null, error: { message: 'API URL not configured' } }
-    }
-
     try {
-      // 取得認證 token
-      const { session } = await AuthService.getSession()
-      if (!session?.access_token) {
-        console.warn('[DashboardService] No session token available')
-        return { data: null, error: { message: '需要登入' } }
-      }
-
-      const normalizedBase = apiBase.replace(/\/+$/, '')
-      // 確保路徑正確：如果 base 已經包含 /api，就不再加
-      const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
-      const endpoint = `${baseApiUrl}/mobile/data-coverage?userId=${userId}`
-
-      console.log('[DashboardService] Fetching data coverage from:', endpoint)
-
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
+      const apiResult = await this.fetchCoverageFromApi(userId).catch((err) => {
+        console.warn('[DashboardService] Coverage API call failed, will fallback:', err)
+        return { data: null, error: { message: err instanceof Error ? err.message : 'API error' } }
       })
-
-      console.log('[DashboardService] Data coverage response:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.warn('[DashboardService] Failed to fetch data coverage', {
-          status: response.status,
-          statusText: response.statusText,
-          endpoint,
-          error: errorText,
-        })
-        return { data: null, error: { message: `HTTP ${response.status}: ${errorText || response.statusText}` } }
+      if (apiResult.data || !apiResult.error) {
+        return apiResult
       }
 
-      const result = await response.json()
-      if (!result.success || !result.coverage) {
-        return { data: null, error: { message: result.error || '無法取得資料覆蓋率' } }
-      }
-
-      return { data: result.coverage, error: null }
+      // 若 API base 未設定或請求失敗，直接從 Supabase 計算最近 7 天覆蓋率
+      const fallback = await this.computeCoverageFallback(userId)
+      return { data: fallback, error: null }
     } catch (error) {
       console.error('[DashboardService] Error fetching data coverage:', error)
       return {
@@ -1115,68 +1075,17 @@ export class DashboardService {
     error: { message: string } | null
   }> {
     try {
-      // 取得認證 token（與其他方法保持一致）
-      const { session } = await AuthService.getSession()
-      if (!session?.access_token) {
-        console.warn('[DashboardService] No session token available for streak')
-        return {
-          data: null,
-          error: { message: '需要登入' },
-        }
-      }
-
-      // 使用與其他方法相同的 API URL 邏輯
-      const apiBase = process.env.EXPO_PUBLIC_API_URL
-      if (!apiBase) {
-        return { data: null, error: { message: 'API URL not configured' } }
-      }
-
-      const normalizedBase = apiBase.replace(/\/+$/, '')
-      // 確保路徑正確：如果 base 已經包含 /api，就不再加
-      const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
-      const endpoint = `${baseApiUrl}/mobile/gamification/streak?userId=${userId}`
-
-      console.log('[DashboardService] Fetching streak from:', endpoint)
-
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
+      const apiResult = await this.fetchStreakFromApi(userId).catch((err) => {
+        console.warn('[DashboardService] Streak API call failed, will fallback:', err)
+        return { data: null, error: { message: err instanceof Error ? err.message : 'API error' } }
       })
-
-      console.log('[DashboardService] Streak response:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.warn('[DashboardService] Failed to fetch streak', {
-          status: response.status,
-          statusText: response.statusText,
-          endpoint,
-          error: errorText,
-        })
-        return { data: null, error: { message: `HTTP ${response.status}: ${errorText || response.statusText}` } }
+      if (apiResult.data || !apiResult.error) {
+        return apiResult
       }
 
-      const result = await response.json()
-      console.log('[DashboardService] Streak result:', result)
-
-      if (!result.success) {
-        return {
-          data: null,
-          error: { message: result.error || '無法取得連續記錄天數' },
-        }
-      }
-
-      return {
-        data: result.streak,
-        error: null,
-      }
+      // Fallback: compute streak locally from symptom entries when API/URL is unavailable
+      const fallback = await this.computeStreakFallback(userId)
+      return { data: fallback, error: null }
     } catch (error) {
       console.error('[DashboardService] getStreak error:', error)
       return {
@@ -1184,6 +1093,263 @@ export class DashboardService {
         error: { message: error instanceof Error ? error.message : '網路錯誤' },
       }
     }
+  }
+
+  /**
+   * Primary streak fetch through API (supports Bearer token for mobile)
+   */
+  private static async fetchStreakFromApi(userId: string) {
+    // 取得認證 token（與其他方法保持一致）
+    const { session } = await AuthService.getSession()
+    if (!session?.access_token) {
+      console.warn('[DashboardService] No session token available for streak')
+      return {
+        data: null,
+        error: { message: '需要登入' },
+      }
+    }
+
+    // 使用與其他方法相同的 API URL 邏輯
+    const apiBase = process.env.EXPO_PUBLIC_API_URL
+    if (!apiBase) {
+      console.warn('[DashboardService] EXPO_PUBLIC_API_URL not configured')
+      return { data: null, error: { message: 'API URL not configured' } }
+    }
+
+    const normalizedBase = apiBase.replace(/\/+$/, '')
+    // 確保路徑正確：如果 base 已經包含 /api，就不再加
+    const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
+    const endpoint = `${baseApiUrl}/mobile/gamification/streak?userId=${userId}`
+
+    console.log('[DashboardService] Fetching streak from:', endpoint)
+
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    })
+
+    console.log('[DashboardService] Streak response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.warn('[DashboardService] Failed to fetch streak', {
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        error: errorText,
+      })
+      return { data: null, error: { message: `HTTP ${response.status}: ${errorText || response.statusText}` } }
+    }
+
+    const result = await response.json()
+    console.log('[DashboardService] Streak result:', result)
+
+    if (!result.success) {
+      return {
+        data: null,
+        error: { message: result.error || '無法取得連續記錄天數' },
+      }
+    }
+
+    return {
+      data: result.streak,
+      error: null,
+    }
+  }
+
+  /**
+   * Fallback streak calculation using local Supabase data (最近 90 天症狀記錄)
+   */
+  private static async computeStreakFallback(userId: string) {
+    const start = new Date()
+    start.setDate(start.getDate() - 90)
+    start.setHours(0, 0, 0, 0)
+    const startDate = start.toISOString().split('T')[0]
+
+    const { data, error } = await supabase
+      .from('daily_symptom_entries')
+      .select('recorded_date')
+      .eq('user_id', userId)
+      .gte('recorded_date', startDate)
+      .order('recorded_date', { ascending: false })
+
+    if (error) {
+      console.warn('[DashboardService] Fallback streak query error:', error)
+      return { currentStreak: 0, longestStreak: 0, milestones: [] }
+    }
+
+    const uniqueDates = new Set((data || []).map((d) => d.recorded_date).filter(Boolean))
+
+    const today = new Date()
+    const todayStr = today.toISOString().split('T')[0]
+
+    // Calculate current streak (count backward from today)
+    let currentStreak = 0
+    let cursor = new Date(todayStr + 'T00:00:00Z')
+    while (uniqueDates.has(cursor.toISOString().split('T')[0])) {
+      currentStreak += 1
+      cursor.setUTCDate(cursor.getUTCDate() - 1)
+    }
+
+    // Calculate longest streak across the dataset
+    const sortedAsc = Array.from(uniqueDates).sort()
+    let longestStreak = 0
+    let streak = 0
+    let lastDate: Date | null = null
+    sortedAsc.forEach((dateStr) => {
+      const date = new Date(dateStr + 'T00:00:00Z')
+      if (!lastDate) {
+        streak = 1
+      } else {
+        const diffDays = Math.round((date.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
+        streak = diffDays === 1 ? streak + 1 : 1
+      }
+      longestStreak = Math.max(longestStreak, streak)
+      lastDate = date
+    })
+
+    return { currentStreak, longestStreak, milestones: [] }
+  }
+
+  /**
+   * Primary coverage fetch through API
+   */
+  private static async fetchCoverageFromApi(userId: string) {
+    const apiBase = process.env.EXPO_PUBLIC_API_URL
+    if (!apiBase) {
+      console.warn('[DashboardService] EXPO_PUBLIC_API_URL not configured')
+      return { data: null, error: { message: 'API URL not configured' } }
+    }
+
+    // 取得認證 token
+    const { session } = await AuthService.getSession()
+    if (!session?.access_token) {
+      console.warn('[DashboardService] No session token available')
+      return { data: null, error: { message: '需要登入' } }
+    }
+
+    const normalizedBase = apiBase.replace(/\/+$/, '')
+    // 確保路徑正確：如果 base 已經包含 /api，就不再加
+    const baseApiUrl = normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
+    const endpoint = `${baseApiUrl}/mobile/data-coverage?userId=${userId}`
+
+    console.log('[DashboardService] Fetching data coverage from:', endpoint)
+
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    })
+
+    console.log('[DashboardService] Data coverage response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.warn('[DashboardService] Failed to fetch data coverage', {
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        error: errorText,
+      })
+      return { data: null, error: { message: `HTTP ${response.status}: ${errorText || response.statusText}` } }
+    }
+
+    const result = await response.json()
+    if (!result.success || !result.coverage) {
+      return { data: null, error: { message: result.error || '無法取得資料覆蓋率' } }
+    }
+
+    return { data: result.coverage, error: null }
+  }
+
+  /**
+   * Fallback coverage calculation from Supabase (最近 7 天)
+   */
+  private static async computeCoverageFallback(userId: string): Promise<DataCoverageInfo> {
+    const today = new Date()
+    today.setHours(23, 59, 59, 999)
+    const start = new Date()
+    start.setDate(start.getDate() - 6)
+    start.setHours(0, 0, 0, 0)
+
+    const startStr = start.toISOString().split('T')[0]
+    const endStr = today.toISOString().split('T')[0]
+
+    const [foodRes, symptomRes] = await Promise.all([
+      supabase
+        .from('food_entries')
+        .select('id, consumed_at')
+        .eq('user_id', userId)
+        .gte('consumed_at', start.toISOString())
+        .lte('consumed_at', today.toISOString()),
+      supabase
+        .from('daily_symptom_entries')
+        .select('id, recorded_date')
+        .eq('user_id', userId)
+        .gte('recorded_date', startStr)
+        .lte('recorded_date', endStr),
+    ])
+
+    const foodEntries = foodRes.data || []
+    const symptomEntries = symptomRes.data || []
+
+    const foodDays = new Set(
+      foodEntries
+        .map((f) => f.consumed_at)
+        .filter(Boolean)
+        .map((c) => c.split('T')[0])
+    )
+    const symptomDays = new Set(symptomEntries.map((s) => s.recorded_date).filter(Boolean))
+
+    const symptomCoveragePercent = Math.round((symptomDays.size / 7) * 100)
+    const foodCoveragePercent = Math.round((foodDays.size / 7) * 100)
+    const overallStatus =
+      symptomCoveragePercent >= 80 && foodCoveragePercent >= 80
+        ? 'sufficient'
+        : symptomCoveragePercent >= 40 || foodCoveragePercent >= 40
+        ? 'partial'
+        : 'insufficient'
+
+    return {
+      user_id: userId,
+      email: '',
+      name: null,
+      period_start: startStr,
+      period_end: endStr,
+      symptom_entry_days: symptomDays.size,
+      total_days: 7,
+      symptom_coverage_percent: symptomCoveragePercent,
+      food_coverage_percent: foodCoveragePercent,
+      medication_coverage_percent: 0,
+      sleep_coverage_percent: 0,
+      exercise_coverage_percent: 0,
+      overall_data_status: overallStatus,
+      missing_categories: [],
+      last_data_update: today.toISOString(),
+      // Extra fields used by UI (not persisted)
+      totalDays: 7,
+      recentWeeks: [
+        {
+          startDate: startStr,
+          endDate: endStr,
+          foodEntries: foodEntries.length,
+          symptomEntries: symptomEntries.length,
+        },
+      ],
+    } as DataCoverageInfo
   }
 }
 

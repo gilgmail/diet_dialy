@@ -10,6 +10,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth'
 import { ReportService } from '../services/ReportService'
 import { PDFGeneratorService } from '../services/PDFGeneratorService'
 import { colors, typography, spacing } from '@/theme'
+import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
 
 type ReportPeriod = 7 | 14 | 30
 
@@ -170,13 +171,15 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         報告將包含：飲食記錄、症狀追蹤、排便記錄
       </Text>
 
-      {/* AI 分析說明 */}
-      <View style={styles.aiNotice}>
-        <Icon name="information" size={16} color={colors.primary[500]} />
-        <Text style={styles.aiNoticeText}>
-          AI 飲食分析為 Premium 功能，請升級以獲得個人化建議
-        </Text>
-      </View>
+      {/* AI 分析說明 - 僅在功能啟用時顯示 */}
+      {FEATURE_FLAGS.UPGRADE_PROMPTS_ENABLED && (
+        <View style={styles.aiNotice}>
+          <Icon name="information" size={16} color={colors.primary[500]} />
+          <Text style={styles.aiNoticeText}>
+            AI 飲食分析為 Premium 功能，請升級以獲得個人化建議
+          </Text>
+        </View>
+      )}
     </View>
   )
 }
