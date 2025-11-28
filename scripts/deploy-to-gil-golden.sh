@@ -8,7 +8,9 @@ set -e  # Exit on error
 DEVICE_NAME="Gil-Golden"
 DEVICE_ID="00008140-00146D6A2610801C"
 APP_DIR="mobile/react-native-starter-kit/DietDailyMobile"
-APP_NAME="DietDailyMobile"
+DEBUG_APP_NAME="DietDailyDev"
+RELEASE_APP_NAME="DietDailyMobile"
+APP_NAME="$RELEASE_APP_NAME"
 
 # Colors for output
 RED='\033[0;31m'
@@ -37,14 +39,14 @@ print_warning() {
 VARIANT="${1:-debug}"
 case "$VARIANT" in
     debug)
-        APP_NAME="DietDailyDev"
+        APP_NAME="$DEBUG_APP_NAME"
         BUNDLE_ID="com.gilko.DietDailyMobile.dev"
         APP_VARIANT_ENV="debug"
         VARIANT_LABEL="Debug"
         XCODE_CONFIGURATION="Debug"
         ;;
     release)
-        APP_NAME="DietDailyMobile"
+        APP_NAME="$RELEASE_APP_NAME"
         BUNDLE_ID="com.gilko.DietDailyMobile"
         APP_VARIANT_ENV="release"
         VARIANT_LABEL="Release"
