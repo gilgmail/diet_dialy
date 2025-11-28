@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from 'react-native'
 import { format, subDays } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { ReportService } from '../services/ReportService'
 import { PDFGeneratorService } from '../services/PDFGeneratorService'
@@ -168,6 +169,14 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
       <Text style={styles.hint}>
         報告將包含：飲食記錄、症狀追蹤、排便記錄
       </Text>
+
+      {/* AI 分析說明 */}
+      <View style={styles.aiNotice}>
+        <Icon name="information" size={16} color={colors.primary[500]} />
+        <Text style={styles.aiNoticeText}>
+          AI 飲食分析為 Premium 功能，請升級以獲得個人化建議
+        </Text>
+      </View>
     </View>
   )
 }
@@ -251,5 +260,20 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     color: colors.text.tertiary,
     textAlign: 'center',
+  },
+  aiNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary[50],
+    borderRadius: 8,
+    padding: spacing.sm,
+    marginTop: spacing.md,
+    gap: spacing.xs,
+  },
+  aiNoticeText: {
+    flex: 1,
+    fontSize: typography.fontSize.xs,
+    color: colors.primary[700],
+    lineHeight: 16,
   },
 })

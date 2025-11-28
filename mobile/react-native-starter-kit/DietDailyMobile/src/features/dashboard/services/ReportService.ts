@@ -5,6 +5,7 @@ import { startOfDay, endOfDay, subDays, format, addDays } from 'date-fns'
 import { FoodDiaryService } from '@/features/food-diary/services/FoodDiaryService'
 import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
 import { BowelDiaryService } from '@/features/bowel-diary/services/BowelDiaryService'
+import { SubscriptionService } from '@/features/subscription/services/SubscriptionService'
 import type {
   WeeklyHealthReport,
   DailyHealthData,
@@ -83,7 +84,33 @@ export class ReportService {
         dailyData
       )
 
-      // 5. 組裝報告
+      // 5. 檢查 AI 分析權限
+      let aiAnalysis: WeeklyHealthReport['aiAnalysis'] = {
+        status: 'unavailable'
+      }
+
+      if (options?.includeAI) {
+        console.log('[ReportService] Checking AI access...')
+        const aiAccessResult = await SubscriptionService.checkAIAccess(userId)
+
+        if (aiAccessResult.hasAccess) {
+          console.log('[ReportService] AI access granted, analysis pending')
+          aiAnalysis = {
+            status: 'pending',
+            insights: [],
+            recommendations: []
+          }
+          // TODO: 呼叫 Web API 進行 AI 分析
+        } else {
+          console.log('[ReportService] AI access denied:', aiAccessResult.reason)
+          aiAnalysis = {
+            status: 'unavailable',
+            error: aiAccessResult.reason
+          }
+        }
+      }
+
+      // 6. 組裝報告
       const report: WeeklyHealthReport = {
         userId,
         startDate: format(startDate, 'yyyy-MM-dd'),
@@ -92,12 +119,10 @@ export class ReportService {
         summary,
         dailyData,
         statistics,
-        aiAnalysis: {
-          status: 'unavailable'  // 預設無 AI
-        },
+        aiAnalysis,
         metadata: {
           appVersion: '1.0.0',
-          reportVersion: '2025.11.28',
+          reportVersion: '2025.11.29',
           timezone: options?.timezone || 'Asia/Taipei',
           language: 'zh-TW'
         }

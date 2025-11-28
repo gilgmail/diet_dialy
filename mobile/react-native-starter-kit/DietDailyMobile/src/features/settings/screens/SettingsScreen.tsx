@@ -580,6 +580,51 @@ Device: ${Platform.OS} ${Platform.Version}
         </TouchableOpacity>
       </View>
 
+      {/* AI功能與訂閱 Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>⭐ Premium 功能</Text>
+
+        <View style={styles.premiumCard}>
+          <View style={styles.premiumHeader}>
+            <Icon name="robot" size={32} color={colors.primary[500]} />
+            <View style={styles.premiumInfo}>
+              <Text style={styles.premiumTitle}>AI 飲食分析</Text>
+              <Text style={styles.premiumBadge}>付費功能</Text>
+            </View>
+          </View>
+
+          <View style={styles.premiumFeatures}>
+            <View style={styles.featureItem}>
+              <Icon name="check-circle" size={18} color={colors.success} />
+              <Text style={styles.featureText}>個人化飲食建議</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Icon name="check-circle" size={18} color={colors.success} />
+              <Text style={styles.featureText}>食物症狀關聯分析</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Icon name="check-circle" size={18} color={colors.success} />
+              <Text style={styles.featureText}>IBD 專業建議</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.upgradeButton}
+            onPress={() => {
+              Alert.alert(
+                '升級至 Premium',
+                'Premium 版本提供 AI 飲食分析功能，幫助您更好地管理 IBD 症狀。\n\n功能即將推出，敬請期待！',
+                [{ text: '了解', style: 'default' }]
+              )
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.upgradeButtonText}>升級至 Premium</Text>
+            <Icon name="arrow-right" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {/* Data Export Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>資料匯出</Text>
@@ -1061,6 +1106,68 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.secondary,
+  },
+  premiumCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: spacing.lg,
+    borderWidth: 2,
+    borderColor: colors.primary[200],
+    marginBottom: spacing.md,
+  },
+  premiumHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  premiumInfo: {
+    marginLeft: spacing.md,
+    flex: 1,
+  },
+  premiumTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  premiumBadge: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary[500],
+    backgroundColor: colors.primary[50],
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  premiumFeatures: {
+    marginBottom: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  featureText: {
+    fontSize: typography.fontSize.base,
+    color: colors.text.secondary,
+    marginLeft: spacing.sm,
+  },
+  upgradeButton: {
+    backgroundColor: colors.primary[500],
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 8,
+    gap: spacing.sm,
+  },
+  upgradeButtonText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: '#fff',
   },
   promptSaveButton: {
     flex: 1,

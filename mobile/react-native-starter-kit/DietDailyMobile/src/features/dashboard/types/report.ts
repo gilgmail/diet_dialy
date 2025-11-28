@@ -3,7 +3,7 @@
 
 import type { FoodEntry } from '@/features/food-diary/types'
 import type { SymptomEntry } from '@/features/symptom-diary/types'
-import type { BowelEntry } from '@/features/bowel-diary/types'
+import type { BowelMovementEntry } from '@/features/bowel-diary/types'
 
 /**
  * 每週健康報告主要結構
@@ -47,7 +47,7 @@ export interface DailyHealthData {
   date: string                    // yyyy-MM-dd
   foods: FoodEntry[]              // 當日食物記錄
   symptoms: SymptomEntry | null   // 當日症狀記錄（可能無）
-  bowelMovements: BowelEntry[]    // 當日排便記錄
+  bowelMovements: BowelMovementEntry[]    // 當日排便記錄
   completeness: number            // 當日資料完整度 (0.0-1.0)
 }
 
