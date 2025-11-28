@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
 import { foodEntriesService } from '@/lib/supabase/food-entries'
 import { unifiedFoodEntriesService, type UnifiedFoodEntry } from '@/lib/unified-food-entries'
+import { PeriodSummary } from '@/components/history/PeriodSummary'
+import { getBowelMovementColor, getBowelMovementDotColor, getStoolTypeDescription, getStoolTypeIcon } from '@/lib/bowel-movement-stats'
 import type { FoodEntry } from '@/types/supabase'
 import type { DailySymptomEntry } from '@/types/medical'
 
@@ -27,6 +29,7 @@ export default function HistoryPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [dateRange, setDateRange] = useState('month')
   const [recordType, setRecordType] = useState<'all' | 'food' | 'symptom'>('all')
+  const [bowelCountFilter, setBowelCountFilter] = useState<'all' | 'normal' | 'attention' | 'warning'>('all')
 
   useEffect(() => {
     if (user) {
@@ -59,7 +62,7 @@ export default function HistoryPage() {
     setTimelineEntries(timeline)
   }, [entries, symptomEntries])
 
-  // 根據記錄類型和搜尋詞篩選
+  // 根據記錄類型、搜尋詞和大便次數篩選
   useEffect(() => {
     let filtered = timelineEntries
 
@@ -87,8 +90,31 @@ export default function HistoryPage() {
       })
     }
 
+    // 大便次數篩選（只對症狀記錄有效）
+    if (bowelCountFilter !== 'all') {
+      filtered = filtered.filter(entry => {
+        if (entry.type !== 'symptom') return true; // 保留食物記錄
+        
+        const symptomData = entry.data as DailySymptomEntry;
+        const count = symptomData.bowel_movement_count;
+        
+        if (count === null || count === undefined) return bowelCountFilter === 'normal'; // 無記錄視為正常
+        
+        switch (bowelCountFilter) {
+          case 'normal':
+            return count >= 0 && count <= 3;
+          case 'attention':
+            return count >= 4 && count <= 5;
+          case 'warning':
+            return count >= 6;
+          default:
+            return true;
+        }
+      });
+    }
+
     setFilteredTimeline(filtered)
-  }, [timelineEntries, recordType, searchTerm])
+  }, [timelineEntries, recordType, searchTerm, bowelCountFilter])
 
   const loadEntries = async () => {
     if (!user) return
@@ -210,43 +236,16 @@ export default function HistoryPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* 統計卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-l-4 border-l-blue-500">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">食物記錄</h3>
-            <p className="text-3xl font-bold text-blue-600">{entries.length}</p>
-            <p className="text-sm text-gray-500">飲食追蹤</p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-l-4 border-l-rose-500">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">症狀記錄</h3>
-            <p className="text-3xl font-bold text-rose-600">{symptomEntries.length}</p>
-            <p className="text-sm text-gray-500">健康追蹤</p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-l-4 border-l-emerald-500">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">總記錄數</h3>
-            <p className="text-3xl font-bold text-emerald-600">{timelineEntries.length}</p>
-            <p className="text-sm text-gray-500">所有記錄</p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-l-4 border-l-orange-500">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">平均醫療評分</h3>
-            <p className="text-3xl font-bold text-orange-600">
-              {entries.length > 0
-                ? Math.round(entries.reduce((sum, entry) => sum + (entry.medical_score || 0), 0) / entries.length * 10) / 10
-                : 0
-              }
-            </p>
-            <p className="text-sm text-gray-500">健康指標</p>
-          </div>
+        {/* 週/月摘要統計 */}
+        <div className="mb-8">
+          <PeriodSummary foodEntries={entries} symptomEntries={symptomEntries} />
         </div>
 
         {/* 篩選控制 */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">篩選選項</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* 記錄類型 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">記錄類型</label>
@@ -272,6 +271,21 @@ export default function HistoryPage() {
                 <option value="today">今天</option>
                 <option value="week">最近一週</option>
                 <option value="month">最近一個月</option>
+              </select>
+            </div>
+
+            {/* 大便次數篩選 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">💩 大便次數</label>
+              <select
+                value={bowelCountFilter}
+                onChange={(e) => setBowelCountFilter(e.target.value as 'all' | 'normal' | 'attention' | 'warning')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">所有記錄</option>
+                <option value="normal">🟢 正常 (0-3次)</option>
+                <option value="attention">🟡 注意 (4-5次)</option>
+                <option value="warning">🔴 警示 (6次以上)</option>
               </select>
             </div>
 
@@ -387,6 +401,23 @@ export default function HistoryPage() {
                           }`}>
                             健康 {(entry.data as DailySymptomEntry).overall_health}/5
                           </span>
+                          
+                          {/* 大便次數顯示 */}
+                          {(entry.data as DailySymptomEntry).bowel_movement_count !== null &&
+                           (entry.data as DailySymptomEntry).bowel_movement_count !== undefined && (
+                            <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${getBowelMovementColor((entry.data as DailySymptomEntry).bowel_movement_count)}`}>
+                              💩 × {(entry.data as DailySymptomEntry).bowel_movement_count} 次
+                              <div className={`w-2 h-2 rounded-full ${getBowelMovementDotColor((entry.data as DailySymptomEntry).bowel_movement_count)}`} />
+                            </span>
+                          )}
+                          
+                          {/* 大便形態顯示 */}
+                          {(entry.data as DailySymptomEntry).stool_type && (
+                            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full">
+                              {getStoolTypeIcon((entry.data as DailySymptomEntry).stool_type)} {getStoolTypeDescription((entry.data as DailySymptomEntry).stool_type)}
+                            </span>
+                          )}
+
                           {(entry.data as DailySymptomEntry).abdominal_pain > 0 && (
                             <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
                               腹痛 {(entry.data as DailySymptomEntry).abdominal_pain}

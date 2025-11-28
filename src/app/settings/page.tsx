@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
+import { AIUsageCard } from '@/components/dashboard/AIUsageCard'
 import Link from 'next/link'
 
 interface MedicalConditions {
@@ -450,6 +451,13 @@ export default function SettingsPage() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* AI 使用統計 */}
+        {isAuthenticated && (
+          <div className="mb-6">
+            <AIUsageCard enabled={true} />
           </div>
         )}
 
