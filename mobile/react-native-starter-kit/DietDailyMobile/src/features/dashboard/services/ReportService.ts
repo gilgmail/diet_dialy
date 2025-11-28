@@ -13,6 +13,7 @@ import type {
   FoodFrequency,
   SymptomTrendData,
   BowelStats,
+  FoodSymptomPattern,
   ReportGenerationOptions,
   ReportGenerationResult
 } from '../types/report'
@@ -223,10 +224,16 @@ export class ReportService {
     // 分析排便統計
     const bowelMovementStats = this.analyzeBowelStats(dailyData)
 
+    // 分析食物與症狀關聯（僅當有足夠資料時）
+    const foodSymptomPatterns = dailyData.length >= 7
+      ? this.analyzeFoodSymptomPatterns(dailyData)
+      : []
+
     return {
       mostFrequentFoods,
       symptomTrends,
-      bowelMovementStats
+      bowelMovementStats,
+      foodSymptomPatterns: foodSymptomPatterns.length > 0 ? foodSymptomPatterns : undefined
     }
   }
 
@@ -336,5 +343,127 @@ export class ReportService {
       bristolDistribution,
       hasBloodCount
     }
+  }
+
+  /**
+   * 分析食物與症狀關聯模式
+   *
+   * 簡單啟發式分析：
+   * - 計算每種食物出現時，當日或次日有明顯症狀的機率
+   * - 僅列出可能相關的食物（關聯分數 > 0.3 且出現次數 >= 2）
+   */
+  private static analyzeFoodSymptomPatterns(dailyData: DailyHealthData[]): FoodSymptomPattern[] {
+    const foodSymptomMap = new Map<string, {
+      occurrences: number
+      symptomDays: number
+      totalSeverity: number
+    }>()
+
+    // 分析每一天的食物與症狀
+    dailyData.forEach((day, index) => {
+      const hasSymptoms = day.symptoms && this.hasSignificantSymptoms(day.symptoms)
+
+      // 如果當天有明顯症狀，標記當天和前一天的食物
+      if (hasSymptoms) {
+        // 標記當天食物
+        day.foods.forEach(food => {
+          const name = food.food_name
+          const existing = foodSymptomMap.get(name) || {
+            occurrences: 0,
+            symptomDays: 0,
+            totalSeverity: 0
+          }
+
+          existing.symptomDays++
+          existing.totalSeverity += this.calculateSymptomSeverity(day.symptoms!)
+          foodSymptomMap.set(name, existing)
+        })
+
+        // 標記前一天食物（延遲反應）
+        if (index > 0) {
+          const prevDay = dailyData[index - 1]
+          prevDay.foods.forEach(food => {
+            const name = food.food_name
+            const existing = foodSymptomMap.get(name) || {
+              occurrences: 0,
+              symptomDays: 0,
+              totalSeverity: 0
+            }
+
+            existing.symptomDays += 0.5 // 延遲反應給較低權重
+            existing.totalSeverity += this.calculateSymptomSeverity(day.symptoms!) * 0.5
+            foodSymptomMap.set(name, existing)
+          })
+        }
+      }
+
+      // 記錄所有食物的總出現次數
+      day.foods.forEach(food => {
+        const name = food.food_name
+        const existing = foodSymptomMap.get(name) || {
+          occurrences: 0,
+          symptomDays: 0,
+          totalSeverity: 0
+        }
+        existing.occurrences++
+        foodSymptomMap.set(name, existing)
+      })
+    })
+
+    // 計算關聯分數並篩選
+    const patterns: FoodSymptomPattern[] = []
+    foodSymptomMap.forEach((data, foodName) => {
+      // 只考慮出現 >= 2 次的食物
+      if (data.occurrences >= 2) {
+        const correlationScore = data.symptomDays / data.occurrences
+        const avgSymptomSeverity = data.symptomDays > 0
+          ? data.totalSeverity / data.symptomDays
+          : 0
+
+        // 只顯示關聯分數 > 0.3 的食物
+        if (correlationScore > 0.3) {
+          patterns.push({
+            foodName,
+            occurrences: data.occurrences,
+            symptomDaysCount: Math.round(data.symptomDays),
+            correlationScore,
+            avgSymptomSeverity
+          })
+        }
+      }
+    })
+
+    // 按關聯分數排序，取前 10 項
+    return patterns
+      .sort((a, b) => b.correlationScore - a.correlationScore)
+      .slice(0, 10)
+  }
+
+  /**
+   * 判斷是否有明顯症狀
+   */
+  private static hasSignificantSymptoms(symptom: SymptomEntry): boolean {
+    // 任何症狀評分 >= 3 就算明顯症狀
+    return (
+      (symptom.abdominal_pain || 0) >= 3 ||
+      (symptom.diarrhea || 0) >= 3 ||
+      (symptom.bloody_stool || 0) >= 3 ||
+      (symptom.bloating || 0) >= 3 ||
+      (symptom.overall_health || 0) <= 2  // 整體健康越低越不好
+    )
+  }
+
+  /**
+   * 計算症狀嚴重度綜合分數
+   */
+  private static calculateSymptomSeverity(symptom: SymptomEntry): number {
+    // 加權計算：腹痛和腹瀉權重較高
+    const abdominalPain = (symptom.abdominal_pain || 0) * 1.2
+    const diarrhea = (symptom.diarrhea || 0) * 1.2
+    const bloodyStool = (symptom.bloody_stool || 0) * 1.5 // 血便最嚴重
+    const bloating = (symptom.bloating || 0) * 0.8
+    const overallHealth = (5 - (symptom.overall_health || 3)) * 1.0 // 反轉分數
+
+    return (abdominalPain + diarrhea + bloodyStool + bloating + overallHealth) / 5.7
   }
 }

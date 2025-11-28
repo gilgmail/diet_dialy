@@ -58,6 +58,7 @@ export interface ReportStatistics {
   mostFrequentFoods: FoodFrequency[]    // 最常食用的食物
   symptomTrends: SymptomTrendData       // 症狀趨勢
   bowelMovementStats: BowelStats        // 排便統計
+  foodSymptomPatterns?: FoodSymptomPattern[]  // 食物與症狀的潛在關聯（可選）
 }
 
 /**
@@ -90,6 +91,17 @@ export interface BowelStats {
   avgPerDay: number                         // 平均每日排便次數
   bristolDistribution: Record<string, number>  // Bristol Scale 分布
   hasBloodCount?: number                    // 發現血便的次數
+}
+
+/**
+ * 食物與症狀關聯模式
+ */
+export interface FoodSymptomPattern {
+  foodName: string              // 食物名稱
+  occurrences: number          // 出現次數
+  symptomDaysCount: number     // 食用後有症狀的天數
+  correlationScore: number     // 關聯分數 (0-1, 越高越可能相關)
+  avgSymptomSeverity?: number  // 平均症狀嚴重度
 }
 
 /**

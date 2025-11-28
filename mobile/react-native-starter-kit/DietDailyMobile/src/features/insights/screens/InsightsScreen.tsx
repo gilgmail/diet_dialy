@@ -9,6 +9,7 @@ import {
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useStreak } from '@/features/dashboard/hooks/useStreak'
 import { useDataCoverage } from '@/features/dashboard/hooks/useDataCoverage'
+import { ReportGenerator } from '@/features/dashboard/components/ReportGenerator'
 import { colors, typography, spacing } from '@/theme'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { startOfWeek, addDays, format, isSameDay } from 'date-fns'
@@ -140,15 +141,15 @@ export function InsightsScreen() {
         </View>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.contentContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+        >
         {/* 連續記錄卡片 */}
-        <View style={styles.section}>
+          <View style={styles.section}>
           <View style={styles.streakCard}>
             <View style={styles.streakIconContainer}>
               <Text style={styles.streakEmoji}>🔥</Text>
@@ -174,7 +175,7 @@ export function InsightsScreen() {
               </Text>
             </View>
           )}
-        </View>
+          </View>
 
         {/* 本週完成度卡片 */}
         {weekProgress && (
@@ -187,7 +188,7 @@ export function InsightsScreen() {
                   <Text style={styles.progressSubtitle}>
                     {format(new Date(weekProgress.startDate), 'MM/dd')} - {format(new Date(weekProgress.endDate), 'MM/dd')}
                   </Text>
-                </View>
+          </View>
               </View>
 
               <View style={styles.progressValueContainer}>
@@ -206,18 +207,18 @@ export function InsightsScreen() {
                       { width: `${weekProgress.percentage}%` }
                     ]} 
                   />
-                </View>
+          </View>
               </View>
 
               <Text style={styles.progressMessage}>
                 {getProgressMessage(weekProgress.percentage)}
-              </Text>
-            </View>
+                </Text>
+              </View>
           </View>
         )}
 
         {/* 週歷視圖 */}
-        <View style={styles.section}>
+          <View style={styles.section}>
           <View style={styles.weekCalendarCard}>
             <View style={styles.weekCalendarHeader}>
               <Text style={styles.weekCalendarEmoji}>📅</Text>
@@ -251,7 +252,7 @@ export function InsightsScreen() {
               ))}
             </View>
           </View>
-        </View>
+              </View>
 
         {/* 鼓勵訊息 */}
         <View style={styles.section}>
@@ -259,7 +260,14 @@ export function InsightsScreen() {
             <Icon name="lightbulb-on-outline" size={24} color={colors.primary[500]} />
             <Text style={styles.motivationText}>
               持續記錄能幫助你更好地了解自己的健康狀況。每一筆記錄都是邁向健康的一小步！
-            </Text>
+                </Text>
+              </View>
+              </View>
+
+        {/* 報表匯出卡片 */}
+        <View style={styles.section}>
+          <View style={styles.reportCard}>
+            <ReportGenerator includeDays={7} />
           </View>
         </View>
 
@@ -561,6 +569,23 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     color: colors.text.primary,
     lineHeight: 24,
+  },
+
+  // 報表匯出卡片
+  reportCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
   },
 
   bottomSpacer: {

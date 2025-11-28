@@ -556,6 +556,51 @@ export class PDFGeneratorService {
             ` : ''}
           </div>
         ` : ''}
+
+        <!-- 食物症狀關聯分析 -->
+        ${statistics.foodSymptomPatterns && statistics.foodSymptomPatterns.length > 0 ? `
+          <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
+            <strong style="color: #dc2626; font-size: 16px;">⚠️ 可能需要觀察的食物</strong>
+            <p style="margin-top: 8px; font-size: 13px; color: #64748b; line-height: 1.6;">
+              以下食物在食用後較常伴隨症狀出現，建議記錄並與醫師討論：
+            </p>
+            <table style="margin-top: 15px;">
+              <thead>
+                <tr>
+                  <th style="text-align: left;">食物名稱</th>
+                  <th style="text-align: center;">食用次數</th>
+                  <th style="text-align: center;">症狀天數</th>
+                  <th style="text-align: center;">關聯度</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${statistics.foodSymptomPatterns.map((pattern: any) => `
+                  <tr>
+                    <td style="font-weight: 500;">${this.escapeHtml(pattern.foodName)}</td>
+                    <td style="text-align: center;">${pattern.occurrences} 次</td>
+                    <td style="text-align: center;">${pattern.symptomDaysCount} 天</td>
+                    <td style="text-align: center;">
+                      <span style="
+                        display: inline-block;
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                        font-size: 12px;
+                        font-weight: bold;
+                        background: ${pattern.correlationScore > 0.7 ? '#fecaca' : pattern.correlationScore > 0.5 ? '#fed7aa' : '#fef3c7'};
+                        color: ${pattern.correlationScore > 0.7 ? '#991b1b' : pattern.correlationScore > 0.5 ? '#9a3412' : '#92400e'};
+                      ">
+                        ${Math.round(pattern.correlationScore * 100)}%
+                      </span>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <p style="margin-top: 12px; font-size: 12px; color: #64748b; font-style: italic;">
+              * 此分析基於您的記錄進行簡單統計，並非醫學診斷。實際影響因人而異，請與醫師討論。
+            </p>
+          </div>
+        ` : ''}
       </div>
     `
   }
