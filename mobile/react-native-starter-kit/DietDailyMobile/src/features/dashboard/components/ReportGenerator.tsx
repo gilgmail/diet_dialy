@@ -10,20 +10,23 @@ import { ReportService } from '../services/ReportService'
 import { PDFGeneratorService } from '../services/PDFGeneratorService'
 import { colors, typography, spacing } from '@/theme'
 
+type ReportPeriod = 7 | 14 | 30
+
 interface ReportGeneratorProps {
   /** 自訂日期範圍（可選） */
   endDate?: Date
   /** 包含天數（預設 7 天） */
-  includeDays?: number
+  includeDays?: ReportPeriod
 }
 
 export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
   endDate: customEndDate,
-  includeDays = 7
+  includeDays: propIncludeDays = 7
 }) => {
   const { user } = useAuth()
   const [isGenerating, setIsGenerating] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [selectedPeriod, setSelectedPeriod] = useState<ReportPeriod>(propIncludeDays)
 
   /**
    * 處理報告產生
@@ -46,7 +49,7 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
         user.id,
         {
           endDate: customEndDate,
-          includeDays
+          includeDays: selectedPeriod
         }
       )
 
@@ -98,7 +101,14 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
 
   // 計算日期範圍
   const endDate = customEndDate || new Date()
-  const startDate = subDays(endDate, includeDays - 1)
+  const startDate = subDays(endDate, selectedPeriod - 1)
+
+  // 期間選項
+  const periodOptions: { value: ReportPeriod; label: string }[] = [
+    { value: 7, label: '7 天' },
+    { value: 14, label: '14 天' },
+    { value: 30, label: '30 天' },
+  ]
 
   return (
     <View style={styles.container}>
@@ -107,6 +117,30 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
       <Text style={styles.description}>
         產生 {format(startDate, 'MM/dd', { locale: zhTW })} - {format(endDate, 'MM/dd', { locale: zhTW })} 的完整健康報告
       </Text>
+
+      {/* 期間選擇器 */}
+      <View style={styles.periodSelector}>
+        {periodOptions.map((option) => (
+          <TouchableOpacity
+            key={option.value}
+            style={[
+              styles.periodButton,
+              selectedPeriod === option.value && styles.periodButtonActive,
+            ]}
+            onPress={() => setSelectedPeriod(option.value)}
+            disabled={isGenerating}
+          >
+            <Text
+              style={[
+                styles.periodButtonText,
+                selectedPeriod === option.value && styles.periodButtonTextActive,
+              ]}
+            >
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {isGenerating && (
         <View style={styles.progressContainer}>
@@ -157,6 +191,34 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginBottom: spacing.md,
     lineHeight: 20,
+  },
+  periodSelector: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  periodButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+  },
+  periodButtonActive: {
+    borderColor: colors.primary[500],
+    backgroundColor: colors.primary[50],
+  },
+  periodButtonText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.secondary,
+  },
+  periodButtonTextActive: {
+    color: colors.primary[500],
+    fontWeight: typography.fontWeight.semibold,
   },
   progressContainer: {
     marginBottom: spacing.md,
