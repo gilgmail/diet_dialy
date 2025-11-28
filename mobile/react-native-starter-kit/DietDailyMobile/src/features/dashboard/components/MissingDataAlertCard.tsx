@@ -41,7 +41,7 @@ export function MissingDataAlertCard({ alerts, navigation }: MissingDataAlertCar
   const getCategoryColor = (category: string) => {
     const colors_map: Record<string, string> = {
       symptoms: colors.error,
-      food: colors.primary,
+      food: colors.primary[500],
       medications: colors.warning,
       sleep: colors.info,
       exercise: colors.success,
@@ -76,7 +76,7 @@ export function MissingDataAlertCard({ alerts, navigation }: MissingDataAlertCar
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.iconContainer}>
-            <Icon name="lightbulb-on" size={20} color={colors.primary} />
+            <Icon name="lightbulb-on" size={20} color={colors.primary[500]} />
           </View>
           <View>
             <Text style={styles.title}>本週小提醒</Text>
@@ -137,8 +137,8 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginVertical: spacing.sm,
     borderWidth: 1,
-    borderColor: `${colors.primary}20`,
-    shadowColor: colors.primary,
+    borderColor: `${colors.primary[500]}20`,
+    shadowColor: colors.primary[500],
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: `${colors.primary}15`,
+    backgroundColor: `${colors.primary[500]}15`,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -235,4 +235,3 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 })
-

@@ -77,7 +77,7 @@ export function ProgressCard({ progress, isLoading, onPress }: ProgressCardProps
       <View key={label} style={styles.progressItem}>
         <View style={styles.progressHeader}>
           <View style={styles.progressLabelRow}>
-            <Icon name={icon} size={18} color={colors.primary} />
+            <Icon name={icon} size={18} color={colors.primary[500]} />
             <Text style={styles.progressLabel}>{label}</Text>
           </View>
           {change !== 0 && (
@@ -93,7 +93,7 @@ export function ProgressCard({ progress, isLoading, onPress }: ProgressCardProps
         <View style={styles.comparisonRow}>
           <View style={styles.weekItem}>
             <Text style={styles.weekLabel}>本週</Text>
-            <Text style={[styles.weekValue, { color: colors.primary }]}>{thisWeek}</Text>
+            <Text style={[styles.weekValue, { color: colors.primary[500] }]}>{thisWeek}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.weekItem}>
@@ -114,7 +114,7 @@ export function ProgressCard({ progress, isLoading, onPress }: ProgressCardProps
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.iconContainer}>
-            <Icon name="trending-up" size={24} color={hasProgress ? colors.success : colors.primary} />
+            <Icon name="trending-up" size={24} color={hasProgress ? colors.success : colors.primary[500]} />
           </View>
           <View>
             <Text style={styles.title}>本週進步總結</Text>
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     marginVertical: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    shadowColor: colors.primary,
+    shadowColor: colors.primary[500],
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: `${colors.primary}15`,
+    backgroundColor: `${colors.primary[500]}15`,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -308,4 +308,3 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 })
-

@@ -22,7 +22,7 @@ export function StreakCard({ currentStreak, longestStreak, milestones = [] }: St
   const getStreakColor = (days: number) => {
     if (days >= 100) return colors.error // 紅色火焰
     if (days >= 60) return colors.warning // 橙色
-    if (days >= 30) return colors.primary // 藍色
+    if (days >= 30) return colors.primary[500] // 藍色
     if (days >= 14) return colors.success // 綠色
     return colors.text.secondary
   }
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     marginVertical: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    shadowColor: colors.primary,
+    shadowColor: colors.primary[500],
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   },
   encouragement: {
     padding: spacing.sm,
-    backgroundColor: `${colors.primary}10`,
+    backgroundColor: `${colors.primary[500]}10`,
     borderRadius: 8,
   },
   encouragementText: {
@@ -265,4 +265,3 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 })
-

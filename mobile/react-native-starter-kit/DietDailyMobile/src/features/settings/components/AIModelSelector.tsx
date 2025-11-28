@@ -157,7 +157,7 @@ export function AIModelSelector({ onChange }: AIModelSelectorProps) {
       <View style={styles.settingRow}>
         <View style={styles.settingInfo}>
           <Text style={styles.settingLabel}>AI 分析模型</Text>
-          <ActivityIndicator size="small" color={colors.primary} />
+          <ActivityIndicator size="small" color={colors.primary[500]} />
         </View>
       </View>
     )
@@ -170,7 +170,7 @@ export function AIModelSelector({ onChange }: AIModelSelectorProps) {
           <Text style={styles.settingLabel}>AI 分析模型</Text>
           <Text style={styles.settingValue}>{currentOption?.label || '未設定'}</Text>
         </View>
-        <Icon name="chevron-right" size={24} color={colors.textSecondary} />
+        <Icon name="chevron-right" size={24} color={colors.text.secondary} />
       </TouchableOpacity>
 
       <Modal
@@ -184,7 +184,7 @@ export function AIModelSelector({ onChange }: AIModelSelectorProps) {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>選擇 AI 分析模型</Text>
             <TouchableOpacity onPress={() => setShowModal(false)} style={styles.closeButton}>
-              <Icon name="close" size={24} color={colors.text} />
+              <Icon name="close" size={24} color={colors.text.primary} />
             </TouchableOpacity>
           </View>
 
@@ -206,14 +206,14 @@ export function AIModelSelector({ onChange }: AIModelSelectorProps) {
                       <Icon
                         name={option.icon}
                         size={24}
-                        color={isSelected ? colors.primary : colors.textSecondary}
+                        color={isSelected ? colors.primary[500] : colors.text.secondary}
                       />
                       <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
                         {option.label}
                       </Text>
                     </View>
                     {isSelected && (
-                      <Icon name="check-circle" size={24} color={colors.primary} />
+                      <Icon name="check-circle" size={24} color={colors.primary[500]} />
                     )}
                   </View>
 
@@ -238,7 +238,7 @@ export function AIModelSelector({ onChange }: AIModelSelectorProps) {
             })}
 
             <View style={styles.infoBox}>
-              <Icon name="information" size={20} color={colors.primary} />
+              <Icon name="information" size={20} color={colors.primary[500]} />
               <Text style={styles.infoText}>
                 成本估算為每次週報分析的大約費用。實際費用可能因分析內容長度而異。
               </Text>
@@ -247,7 +247,7 @@ export function AIModelSelector({ onChange }: AIModelSelectorProps) {
 
           {isSaving && (
             <View style={styles.savingOverlay}>
-              <ActivityIndicator size="large" color={colors.primary} />
+              <ActivityIndicator size="large" color={colors.primary[500]} />
               <Text style={styles.savingText}>儲存中...</Text>
             </View>
           )}
@@ -273,12 +273,12 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     ...typography.body,
-    color: colors.text,
+    color: colors.text.primary,
     marginBottom: spacing.xs,
   },
   settingValue: {
     ...typography.caption,
-    color: colors.textSecondary,
+    color: colors.text.secondary,
   },
   modalContainer: {
     flex: 1,
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     ...typography.h3,
-    color: colors.text,
+    color: colors.text.primary,
   },
   closeButton: {
     padding: spacing.sm,
@@ -314,8 +314,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   optionCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
+    borderColor: colors.primary[500],
+    backgroundColor: colors.primary[50],
   },
   optionHeader: {
     flexDirection: 'row',
@@ -330,15 +330,15 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     ...typography.subtitle,
-    color: colors.text,
+    color: colors.text.primary,
   },
   optionLabelSelected: {
-    color: colors.primary,
+    color: colors.primary[500],
     fontWeight: '600',
   },
   optionDescription: {
     ...typography.caption,
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     marginBottom: spacing.md,
   },
   optionFooter: {
@@ -359,12 +359,12 @@ const styles = StyleSheet.create({
   },
   costEstimate: {
     ...typography.caption,
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     fontWeight: '500',
   },
   infoBox: {
     flexDirection: 'row',
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.primary[50],
     padding: spacing.md,
     borderRadius: 8,
     marginTop: spacing.md,
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   },
   infoText: {
     ...typography.caption,
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     flex: 1,
   },
   savingOverlay: {

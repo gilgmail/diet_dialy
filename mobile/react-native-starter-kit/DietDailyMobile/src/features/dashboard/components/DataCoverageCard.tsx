@@ -44,7 +44,7 @@ export function DataCoverageCard({ coverage, onPress }: DataCoverageCardProps) {
 
   const getLevelInfo = (percent: number) => {
     if (percent >= 80) return { name: '💎 完美', color: colors.success }
-    if (percent >= 60) return { name: '⭐ 優秀', color: colors.primary }
+    if (percent >= 60) return { name: '⭐ 優秀', color: colors.primary[500] }
     if (percent >= 40) return { name: '🌳 穩定', color: colors.warning }
     if (percent >= 20) return { name: '🌿 成長中', color: colors.info }
     return { name: '🌱 新手', color: colors.text.secondary }
@@ -75,7 +75,7 @@ export function DataCoverageCard({ coverage, onPress }: DataCoverageCardProps) {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.iconContainer}>
-            <Icon name="chart-line" size={24} color={colors.primary} />
+            <Icon name="chart-line" size={24} color={colors.primary[500]} />
           </View>
           <View>
             <Text style={styles.title}>資料充足度</Text>
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     marginVertical: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    shadowColor: colors.primary,
+    shadowColor: colors.primary[500],
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: `${colors.primary}15`,
+    backgroundColor: `${colors.primary[500]}15`,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -339,4 +339,3 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 })
-
