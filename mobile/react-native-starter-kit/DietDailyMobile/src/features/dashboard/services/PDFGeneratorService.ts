@@ -293,10 +293,6 @@ export class PDFGeneratorService {
         <div class="stat-value">${summary.totalFoods} 次</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">總卡路里</div>
-        <div class="stat-value">${Math.round(summary.totalCalories)} kcal</div>
-      </div>
-      <div class="stat-card">
         <div class="stat-label">症狀記錄</div>
         <div class="stat-value">${summary.totalSymptomEntries} 次</div>
       </div>
@@ -304,14 +300,9 @@ export class PDFGeneratorService {
         <div class="stat-label">排便次數</div>
         <div class="stat-value">${summary.totalBowelMovements} 次</div>
       </div>
-    </div>
-    <div style="margin-top: 15px; padding: 10px; background: #f1f5f9; border-radius: 8px;">
-      <strong>資料完整度：</strong>
-      <span style="color: ${summary.dataCompleteness > 0.7 ? '#16a34a' : summary.dataCompleteness > 0.4 ? '#f59e0b' : '#dc2626'}; font-weight: bold;">
-        ${Math.round(summary.dataCompleteness * 100)}%
-      </span>
-      <div class="completeness-bar">
-        <div class="completeness-fill" style="width: ${Math.round(summary.dataCompleteness * 100)}%; background: ${summary.dataCompleteness > 0.7 ? '#16a34a' : summary.dataCompleteness > 0.4 ? '#f59e0b' : '#dc2626'};"></div>
+      <div class="stat-card">
+        <div class="stat-label">資料完整度</div>
+        <div class="stat-value">${Math.round(summary.dataCompleteness * 100)}%</div>
       </div>
     </div>
   </div>
@@ -420,9 +411,9 @@ export class PDFGeneratorService {
                 <div class="meal-item">
                   <div class="meal-item-header">
                     <span>${this.escapeHtml(food.food_name)}</span>
-                    <span style="color: #64748b;">${food.calories || 0} kcal</span>
+                    ${food.meal_type ? `<span style="color: #64748b; font-size: 12px;">${this.getMealTypeLabel(food.meal_type)}</span>` : ''}
                   </div>
-                  ${food.meal_type ? `<div class="meal-item-meta">${this.getMealTypeLabel(food.meal_type)}</div>` : ''}
+                  ${food.notes ? `<div class="meal-item-meta" style="margin-top: 4px; color: #94a3b8; font-size: 12px;">${this.escapeHtml(food.notes)}</div>` : ''}
                 </div>
               `).join('')}
             </div>
@@ -503,12 +494,6 @@ export class PDFGeneratorService {
     return `
       <div class="section">
         <div class="section-title">📈 統計分析</div>
-
-        <!-- 飲食統計 -->
-        <div style="margin-bottom: 20px;">
-          <strong style="color: #475569;">平均每日卡路里：</strong>
-          <span style="font-size: 18px; color: #1e40af; font-weight: bold;">${Math.round(statistics.avgCaloriesPerDay)} kcal</span>
-        </div>
 
         <!-- 常吃食物 -->
         ${statistics.mostFrequentFoods.length > 0 ? `

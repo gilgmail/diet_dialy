@@ -188,14 +188,11 @@ export class ReportService {
     bowels: BowelMovementEntry[],
     dailyData: DailyHealthData[]
   ): ReportSummary {
-    const totalCalories = foods.reduce((sum, food) => sum + (food.calories || 0), 0)
-
     const totalCompleteness = dailyData.reduce((sum, day) => sum + day.completeness, 0)
     const dataCompleteness = dailyData.length > 0 ? totalCompleteness / dailyData.length : 0
 
     return {
       totalFoods: foods.length,
-      totalCalories,
       totalSymptomEntries: symptoms.length,
       totalBowelMovements: bowels.length,
       dataCompleteness
@@ -206,12 +203,6 @@ export class ReportService {
    * 計算統計資料
    */
   private static calculateStatistics(dailyData: DailyHealthData[]): ReportStatistics {
-    // 計算總卡路里和平均值
-    const totalCalories = dailyData.reduce((sum, day) =>
-      sum + day.foods.reduce((s, f) => s + (f.calories || 0), 0), 0
-    )
-    const avgCaloriesPerDay = dailyData.length > 0 ? totalCalories / dailyData.length : 0
-
     // 計算最常食用的食物
     const foodFrequency = new Map<string, number>()
     dailyData.forEach(day => {
@@ -233,7 +224,6 @@ export class ReportService {
     const bowelMovementStats = this.analyzeBowelStats(dailyData)
 
     return {
-      avgCaloriesPerDay,
       mostFrequentFoods,
       symptomTrends,
       bowelMovementStats

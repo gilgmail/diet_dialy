@@ -35,7 +35,6 @@ export interface WeeklyHealthReport {
  */
 export interface ReportSummary {
   totalFoods: number           // 總飲食記錄次數
-  totalCalories: number        // 總卡路里
   totalSymptomEntries: number  // 症狀記錄次數
   totalBowelMovements: number  // 排便次數
   dataCompleteness: number     // 資料完整度 (0.0-1.0)
@@ -56,7 +55,6 @@ export interface DailyHealthData {
  * 報告統計分析
  */
 export interface ReportStatistics {
-  avgCaloriesPerDay: number             // 平均每日卡路里
   mostFrequentFoods: FoodFrequency[]    // 最常食用的食物
   symptomTrends: SymptomTrendData       // 症狀趨勢
   bowelMovementStats: BowelStats        // 排便統計
