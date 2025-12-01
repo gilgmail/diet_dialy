@@ -145,6 +145,15 @@ rm -rf node_modules/.cache/expo
 rm -rf ios/.xcode.env.local
 print_success "Caches cleared"
 
+# Fix app name for Debug builds
+if [[ "$APP_VARIANT_ENV" == "debug" ]]; then
+    print_status "Updating app name to DietDailyDev..."
+    if [ -f "ios/DietDailyMobile/Info.plist" ]; then
+        /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName DietDailyDev" ios/DietDailyMobile/Info.plist 2>/dev/null || true
+        /usr/libexec/PlistBuddy -c "Set :CFBundleName DietDailyDev" ios/DietDailyMobile/Info.plist 2>/dev/null || true
+    fi
+fi
+
 # Clean Xcode build artifacts (but keep Pods)
 print_status "Cleaning Xcode build artifacts..."
 if [ -d "ios" ]; then
