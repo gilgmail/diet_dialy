@@ -56,8 +56,8 @@ print_success "Environment files present"
 print_status "Updating app name to DietDailyDev..."
 "${REPO_ROOT}/scripts/fix-debug-app-name.sh" || true
 
-# Build using expo run:ios but without device (simulator build, then we'll use the .app)
-# Or use xcodebuild directly
+# Build using expo run:ios with --no-install flag (if supported)
+# Or use xcodebuild with proper code signing
 print_status "Building Debug version (this may take several minutes)..."
 echo ""
 
@@ -69,16 +69,15 @@ CONFIGURATION="Debug"
 # Set APP_VARIANT to ensure correct bundle ID
 export APP_VARIANT="debug"
 
-# Build using xcodebuild (compile only, no install)
+# Build using xcodebuild with code signing enabled
+# Use -allowProvisioningUpdates to allow automatic signing
 xcodebuild -workspace "$WORKSPACE" \
     -scheme "$SCHEME" \
     -configuration "$CONFIGURATION" \
     -sdk iphoneos \
     -derivedDataPath "${IOS_DIR}/build" \
-    build \
-    CODE_SIGN_IDENTITY="" \
-    CODE_SIGNING_REQUIRED=NO \
-    CODE_SIGNING_ALLOWED=NO
+    -allowProvisioningUpdates \
+    build
 
 BUILD_RESULT=$?
 
