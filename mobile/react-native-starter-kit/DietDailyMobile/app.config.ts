@@ -55,8 +55,8 @@ const resolvedAndroidVersionCode = Number.isNaN(androidVersionCode)
   ? 1
   : androidVersionCode
 
-const RELEASE_IOS_GOOGLE_SERVICES = './googleOAuth/client_470437922488-j76be7jruh6et0l0ms7h31qa1m5ln9a5.apps.googleusercontent.com.plist'
-const DEBUG_IOS_GOOGLE_SERVICES = './googleOAuth/client_470437922488-4log890j2d0am1s9pg6shiom6ds6e3mq.apps.googleusercontent.com.plist'
+const RELEASE_IOS_GOOGLE_SERVICES = '../googleOAuth/client_470437922488-j76be7jruh6et0l0ms7h31qa1m5ln9a5.apps.googleusercontent.com.plist'
+const DEBUG_IOS_GOOGLE_SERVICES = '../googleOAuth/client_470437922488-4log890j2d0am1s9pg6shiom6ds6e3mq.apps.googleusercontent.com.plist'
 const RELEASE_GOOGLE_CLIENT_ID = '470437922488-j76be7jruh6et0l0ms7h31qa1m5ln9a5.apps.googleusercontent.com'
 const DEBUG_GOOGLE_CLIENT_ID = '470437922488-4log890j2d0am1s9pg6shiom6ds6e3mq.apps.googleusercontent.com'
 
@@ -99,6 +99,11 @@ const baseConfig: ExpoConfig = {
 export default ({ }: ConfigContext): ExpoConfig => {
   const appVariant = process.env.APP_VARIANT === 'debug' ? 'debug' : 'release'
   const isDebug = appVariant === 'debug'
+  
+  // Debug log to verify APP_VARIANT is being read
+  if (process.env.APP_VARIANT) {
+    console.log(`[app.config] APP_VARIANT=${process.env.APP_VARIANT}, isDebug=${isDebug}`)
+  }
 
   return {
     ...baseConfig,

@@ -162,10 +162,121 @@ npm run test:e2e           # Playwright E2E tests
 
 ## Mobile Release
 
+### iOS 編譯與部署流程
+
+#### 前置準備
+
+1. **環境清理**（建議在每次編譯前執行）
+   ```bash
+   ./scripts/clean-ios-build-env.sh
+   ```
+   此腳本會：
+   - 停止相關端口（8080, 8081, 3000）
+   - 清理 Expo/Metro 快取
+   - 清理 Xcode Build Artifacts
+   - 清理 Watchman
+   - 清理 TypeScript build info
+
+2. **確保設備連接**
+   - 使用 USB 連接 iPhone (Gil-Golden)
+   - 在 iPhone 上信任此電腦
+   - 確保 Developer Mode 已啟用（設定 > 隱私與安全性 > Developer Mode）
+
+#### Release 版本 (DietDailyMobile)
+
+1. **更新版本號**
+   ```bash
+   # 編輯版本號配置檔案
+   vim scripts/arch-20251128/release-ios-app.conf
+   # 或直接編輯：
+   # APP_VERSION="1.0.4"
+   # IOS_BUILD_NUMBER="1"
+   ```
+
+2. **編譯 Release 版本**
+   ```bash
+   ./scripts/arch-20251128/release-ios-app.sh
+   ```
+   這會生成 `.ipa` 檔案到 `releaseIosApp/` 目錄，命名格式：`DietDailyMobile-v{版本號}.ipa`
+
+   **注意**：首次編譯前可能需要執行：
+   ```bash
+   cd mobile/react-native-starter-kit/DietDailyMobile
+   npx expo prebuild --platform ios --clean
+   ```
+
+3. **安裝到設備**
+   ```bash
+   ./scripts/arch-20251128/install-ios-app.sh
+   ```
+   腳本會自動偵測最新的 `.ipa` 並安裝到 Gil-Golden 設備。
+
+   或指定特定檔案：
+   ```bash
+   ./scripts/arch-20251128/install-ios-app.sh --ipa releaseIosApp/DietDailyMobile-v1.0.4.ipa
+   ```
+
+#### Debug 版本 (DietDailyDev)
+
+**方法一：編譯並安裝（一鍵完成）**
 ```bash
-./scripts/release-ios-app.sh             # Build iOS archive into releaseIosApp/
-./scripts/install-ios-app.sh             # Install the latest .ipa (use --device-name/--ipa to override)
+./scripts/deploy-to-gil-golden.sh debug
 ```
+
+此腳本會自動：
+- 檢查設備連接狀態
+- 清理快取和 build artifacts
+- 編譯 Debug 版本（Bundle ID: `com.gilko.DietDailyMobile.dev`）
+- 安裝到 Gil-Golden 設備
+
+**方法二：分開編譯和安裝（推薦用於調試）**
+
+1. **只編譯 Debug 版本**：
+   ```bash
+   ./scripts/build-ios-debug.sh
+   ```
+   這會編譯 Debug 版本但不安裝，編譯產物位於：
+   - `mobile/react-native-starter-kit/DietDailyMobile/ios/build/.../Debug-iphoneos/DietDailyMobile.app`
+   - 或 `~/Library/Developer/Xcode/DerivedData/.../Debug-iphoneos/DietDailyMobile.app`
+
+2. **安裝已編譯的 Debug 版本**：
+   ```bash
+   ./scripts/install-ios-debug.sh
+   ```
+   腳本會自動尋找已編譯的 `.app` 並安裝到設備。
+
+#### 版本說明
+
+- **Release 版本**：`DietDailyMobile` (Bundle ID: `com.gilko.DietDailyMobile`)
+- **Debug 版本**：`DietDailyDev` (Bundle ID: `com.gilko.DietDailyMobile.dev`)
+- 兩個版本使用不同的 Bundle ID，可以同時安裝在設備上
+- 設備 UDID: `00008140-00146D6A2610801C`
+
+#### 相關腳本
+
+- `scripts/clean-ios-build-env.sh` - 環境清理腳本
+- `scripts/arch-20251128/release-ios-app.sh` - Release 版本編譯腳本（生成 .ipa）
+- `scripts/arch-20251128/install-ios-app.sh` - Release .ipa 安裝腳本
+- `scripts/build-ios-debug.sh` - Debug 版本編譯腳本（只編譯，不安裝）
+- `scripts/install-ios-debug.sh` - Debug 版本安裝腳本（安裝已編譯的 .app）
+- `scripts/fix-debug-app-name.sh` - 修正 Debug 版本應用程式名稱腳本
+- `scripts/deploy-to-gil-golden.sh` - Debug/Release 版本直接編譯並安裝腳本（一鍵完成）
+- `scripts/arch-20251128/release-ios-app.conf` - 版本號配置檔案
+
+#### 故障排除
+
+1. **簽名錯誤**：需要在 Xcode 中設定開發團隊
+   - 打開 `mobile/react-native-starter-kit/DietDailyMobile/ios/DietDailyMobile.xcworkspace`
+   - 選擇 `DietDailyMobile` target
+   - 在 Signing & Capabilities 中選擇開發團隊
+
+2. **缺少生成文件**：執行 `npx expo prebuild --platform ios --clean`
+
+3. **端口被佔用**：執行 `./scripts/clean-ios-build-env.sh` 清理端口
+
+4. **Debug 版本名稱顯示錯誤**：如果 Debug 版本顯示為 "DietDailyMobile" 而不是 "DietDailyDev"
+   - 執行 `./scripts/fix-debug-app-name.sh` 修正名稱
+   - 或重新編譯 Debug 版本（腳本會自動修正）
 
 ## Symptom Diary Guardrails
 

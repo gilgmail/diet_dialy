@@ -6,7 +6,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 APP_DIR="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyMobile"
 IOS_DIR="${APP_DIR}/ios"
 RELEASE_DIR="${REPO_ROOT}/releaseIosApp"
