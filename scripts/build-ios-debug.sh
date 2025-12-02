@@ -8,6 +8,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 APP_DIR="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyMobile"
+DEVICE_ID="00008140-00146D6A2610801C"
 
 # Colors for output
 RED='\033[0;31m'
@@ -87,20 +88,19 @@ print_status "Updating app name to DietDailyDev..."
 print_status "Cleaning build directory..."
 rm -rf "${IOS_DIR}/build" 2>/dev/null || true
 
-# Build using xcodebuild directly to ensure correct Bundle ID
-print_status "Building Debug version using xcodebuild (this may take several minutes)..."
+# Build using expo run:ios to ensure app.config.ts Bundle ID is respected
+# This is more reliable than xcodebuild for ensuring correct Bundle ID
+print_status "Building Debug version using expo run:ios (this may take several minutes)..."
 echo ""
 
-xcodebuild -workspace "$WORKSPACE" \
-    -scheme "DietDailyMobile" \
-    -configuration "Debug" \
-    -sdk iphoneos \
-    -derivedDataPath "${IOS_DIR}/build" \
-    -allowProvisioningUpdates \
-    CODE_SIGN_IDENTITY="" \
-    CODE_SIGNING_REQUIRED=NO \
-    CODE_SIGNING_ALLOWED=NO \
-    build 2>&1 | grep -E "(error|warning|BUILD|succeeded|failed)" || true
+# Use expo run:ios with --no-install to build without installing
+# This ensures app.config.ts configuration is properly applied
+APP_VARIANT="debug" npx expo run:ios \
+    --configuration Debug \
+    --no-install \
+    --no-build-cache \
+    --device "$DEVICE_ID" \
+    2>&1 | tee /tmp/debug-build.log | grep -E "(error|warning|BUILD|succeeded|failed|bundleIdentifier)" || true
 
 BUILD_RESULT=$?
 
@@ -120,11 +120,13 @@ if [ $BUILD_RESULT -eq 0 ]; then
         if [[ "$ACTUAL_BUNDLE_ID" == "$EXPECTED_BUNDLE_ID" ]]; then
             print_success "Bundle ID verified: $ACTUAL_BUNDLE_ID"
         else
-            print_warning "Bundle ID mismatch! Fixing..."
+            print_error "Bundle ID mismatch!"
             echo "  Expected: $EXPECTED_BUNDLE_ID"
             echo "  Actual:   $ACTUAL_BUNDLE_ID"
-            "${REPO_ROOT}/scripts/fix-debug-bundle-id.sh"
-            print_success "Bundle ID fixed in Info.plist"
+            echo ""
+            echo "⚠️  Warning: Bundle ID is incorrect. The app may not install properly."
+            echo "   Please check that expo prebuild correctly applied the Debug Bundle ID."
+            echo "   You may need to manually verify the Xcode project configuration."
         fi
         
         echo ""

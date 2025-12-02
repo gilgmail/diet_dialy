@@ -35,15 +35,10 @@ ACTUAL_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_
 if [[ "$ACTUAL_BUNDLE_ID" == "com.gilko.DietDailyMobile.dev" ]]; then
     echo "✅ Bundle ID fixed: $ACTUAL_BUNDLE_ID"
     
-    # Re-sign the app after modifying Info.plist
-    echo "🔧 Re-signing app..."
-    codesign --force --sign - --entitlements "${APP_PATH%/*}/DietDailyMobile.app.xcent" "$APP_PATH" 2>/dev/null || {
-        # Try without entitlements file
-        codesign --force --sign - "$APP_PATH" 2>/dev/null || {
-            echo "⚠️  Warning: Could not re-sign app. You may need to rebuild."
-        }
-    }
-    echo "✅ App re-signed"
+    # Note: Re-signing after modifying Info.plist may not work properly
+    # It's better to ensure the Bundle ID is correct during build
+    echo "⚠️  Warning: Bundle ID was modified after build. App may need to be rebuilt with correct Bundle ID."
+    echo "   For proper signing, rebuild with: ./scripts/build-ios-debug.sh"
 else
     echo "❌ Bundle ID is still: $ACTUAL_BUNDLE_ID"
     exit 1
