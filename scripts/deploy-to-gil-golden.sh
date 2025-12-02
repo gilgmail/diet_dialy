@@ -145,12 +145,19 @@ rm -rf node_modules/.cache/expo
 rm -rf ios/.xcode.env.local
 print_success "Caches cleared"
 
-# Fix app name for Debug builds
+# Fix app name and Bundle ID for Debug builds
 if [[ "$APP_VARIANT_ENV" == "debug" ]]; then
     print_status "Updating app name to DietDailyDev..."
     if [ -f "ios/DietDailyMobile/Info.plist" ]; then
         /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName DietDailyDev" ios/DietDailyMobile/Info.plist 2>/dev/null || true
         /usr/libexec/PlistBuddy -c "Set :CFBundleName DietDailyDev" ios/DietDailyMobile/Info.plist 2>/dev/null || true
+    fi
+    
+    # Ensure Debug Bundle ID is correct in Xcode project
+    print_status "Verifying Debug Bundle ID in Xcode project..."
+    PROJECT_FILE="ios/DietDailyMobile.xcodeproj/project.pbxproj"
+    if [ -f "$PROJECT_FILE" ]; then
+        perl -i -pe 's/(name = Debug;[\s\S]*?PRODUCT_BUNDLE_IDENTIFIER = )com\.gilko\.DietDailyMobile(;)/$1com.gilko.DietDailyMobile.dev$2/g' "$PROJECT_FILE" 2>/dev/null || true
     fi
 fi
 
