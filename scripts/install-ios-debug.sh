@@ -86,6 +86,53 @@ if [ $INSTALL_RESULT -eq 0 ]; then
     echo "App: DietDailyDev"
     echo "Bundle ID: $BUNDLE_ID"
     echo "Device: $DEVICE_NAME"
+    echo ""
+    
+    # Debug 版本需要 Metro bundler 運行
+    print_status "Checking Metro bundler status..."
+    
+    # Check if Metro is running on port 8081
+    if lsof -ti tcp:8081 >/dev/null 2>&1; then
+        print_success "Metro bundler is already running on port 8081"
+    else
+        print_warning "Metro bundler is not running"
+        echo ""
+        echo "⚠️  Debug 版本需要 Metro bundler 才能運行"
+        echo ""
+        echo "請在另一個終端執行以下命令啟動 Metro bundler:"
+        echo ""
+        echo "  cd $APP_DIR"
+        echo "  npx expo start"
+        echo ""
+        echo "或者使用以下命令自動啟動（會在背景運行）:"
+        echo ""
+        echo "  ./scripts/start-metro-bundler.sh"
+        echo ""
+        read -p "是否現在啟動 Metro bundler? (y/N): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            print_status "Starting Metro bundler in background..."
+            cd "$APP_DIR"
+            # Start Metro in background, redirect output to log file
+            nohup npx expo start > /tmp/metro-bundler.log 2>&1 &
+            METRO_PID=$!
+            sleep 3
+            
+            # Check if Metro started successfully
+            if kill -0 $METRO_PID 2>/dev/null && lsof -ti tcp:8081 >/dev/null 2>&1; then
+                print_success "Metro bundler started (PID: $METRO_PID)"
+                echo "Logs: /tmp/metro-bundler.log"
+                echo ""
+                echo "要停止 Metro bundler，執行:"
+                echo "  kill $METRO_PID"
+            else
+                print_error "Failed to start Metro bundler"
+                echo "請手動執行: cd $APP_DIR && npx expo start"
+            fi
+        fi
+    fi
+    echo ""
+    echo "📱 現在可以在設備上打開 DietDailyDev 應用程式了"
 else
     print_error "Installation failed with exit code $INSTALL_RESULT"
     exit $INSTALL_RESULT

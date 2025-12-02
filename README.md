@@ -218,16 +218,46 @@ npm run test:e2e           # Playwright E2E tests
 
 #### Debug 版本 (DietDailyDev)
 
+**重要**：Debug 版本需要 Metro bundler 運行才能正常使用。如果看到 "no script URL provided" 錯誤，表示 Metro bundler 沒有運行。
+
 **方法一：編譯並安裝（一鍵完成）**
 ```bash
 ./scripts/deploy-to-gil-golden.sh debug
 ```
+此腳本會自動編譯並安裝 Debug 版本，但**不會自動啟動 Metro bundler**。
 
-此腳本會自動：
-- 檢查設備連接狀態
-- 清理快取和 build artifacts
-- 編譯 Debug 版本（Bundle ID: `com.gilko.DietDailyMobile.dev`）
-- 安裝到 Gil-Golden 設備
+**方法二：分開編譯和安裝**
+```bash
+# 1. 編譯 Debug 版本
+./scripts/build-ios-debug.sh
+
+# 2. 安裝到設備
+./scripts/install-ios-debug.sh
+# 此腳本會檢查 Metro bundler 狀態，並提示是否啟動
+
+# 3. 啟動 Metro bundler（必須）
+./scripts/start-metro-bundler.sh
+# 或背景運行：
+./scripts/start-metro-bundler.sh --background
+```
+
+**啟動 Metro Bundler**
+```bash
+# 前景運行（會顯示 Metro 日誌）
+./scripts/start-metro-bundler.sh
+
+# 背景運行
+./scripts/start-metro-bundler.sh --background
+
+# 停止 Metro bundler
+./scripts/stop-metro-bundler.sh
+```
+
+**手動啟動 Metro**
+```bash
+cd mobile/react-native-starter-kit/DietDailyMobile
+npx expo start
+```
 
 **方法二：分開編譯和安裝（推薦用於調試）**
 
@@ -258,9 +288,11 @@ npm run test:e2e           # Playwright E2E tests
 - `scripts/arch-20251128/release-ios-app.sh` - Release 版本編譯腳本（生成 .ipa）
 - `scripts/arch-20251128/install-ios-app.sh` - Release .ipa 安裝腳本
 - `scripts/build-ios-debug.sh` - Debug 版本編譯腳本（只編譯，不安裝）
-- `scripts/install-ios-debug.sh` - Debug 版本安裝腳本（安裝已編譯的 .app）
+- `scripts/install-ios-debug.sh` - Debug 版本安裝腳本（安裝已編譯的 .app，會檢查 Metro bundler）
 - `scripts/fix-debug-app-name.sh` - 修正 Debug 版本應用程式名稱腳本
 - `scripts/deploy-to-gil-golden.sh` - Debug/Release 版本直接編譯並安裝腳本（一鍵完成）
+- `scripts/start-metro-bundler.sh` - 啟動 Metro bundler（Debug 版本必需）
+- `scripts/stop-metro-bundler.sh` - 停止 Metro bundler
 - `scripts/arch-20251128/release-ios-app.conf` - 版本號配置檔案
 
 #### 故障排除
@@ -277,6 +309,12 @@ npm run test:e2e           # Playwright E2E tests
 4. **Debug 版本名稱顯示錯誤**：如果 Debug 版本顯示為 "DietDailyMobile" 而不是 "DietDailyDev"
    - 執行 `./scripts/fix-debug-app-name.sh` 修正名稱
    - 或重新編譯 Debug 版本（腳本會自動修正）
+
+5. **Debug 版本顯示 "no script URL provided"**：這是因為 Metro bundler 沒有運行
+   - 執行 `./scripts/start-metro-bundler.sh` 啟動 Metro bundler
+   - 確保設備和電腦在同一網路（WiFi 或 USB 連接）
+   - 如果使用 WiFi，確保防火牆允許端口 8081
+   - 檢查 Metro bundler 日誌：`tail -f /tmp/metro-bundler.log`（如果使用背景模式）
 
 ## Symptom Diary Guardrails
 
