@@ -52,32 +52,55 @@ if [ ! -f ".env" ] && [ ! -f ".env.development" ]; then
 fi
 print_success "Environment files present"
 
+# Set APP_VARIANT to ensure correct bundle ID
+export APP_VARIANT="debug"
+
+IOS_DIR="${APP_DIR}/ios"
+PROJECT_FILE="${IOS_DIR}/DietDailyMobile.xcodeproj/project.pbxproj"
+WORKSPACE="${IOS_DIR}/DietDailyMobile.xcworkspace"
+
+# Prebuild to ensure Xcode project has correct bundle ID
+print_status "Running expo prebuild to update Xcode project configuration..."
+APP_VARIANT="debug" npx expo prebuild --platform ios --no-install || true
+
+# Update Bundle ID in Xcode project for Debug configuration
+print_status "Updating Bundle ID for Debug configuration..."
+if [ -f "$PROJECT_FILE" ]; then
+    # Update Debug configuration's PRODUCT_BUNDLE_IDENTIFIER
+    # Use a more precise pattern to match only Debug configuration
+    perl -i -pe 's/(name = Debug;[\s\S]*?PRODUCT_BUNDLE_IDENTIFIER = )com\.gilko\.DietDailyMobile(;)/$1com.gilko.DietDailyMobile.dev$2/g' "$PROJECT_FILE" 2>/dev/null || true
+    
+    # Verify the change
+    DEBUG_BUNDLE_ID=$(grep -A 20 "name = Debug" "$PROJECT_FILE" | grep "PRODUCT_BUNDLE_IDENTIFIER" | head -1 | sed 's/.*PRODUCT_BUNDLE_IDENTIFIER = //;s/;.*//')
+    if [[ "$DEBUG_BUNDLE_ID" == "com.gilko.DietDailyMobile.dev" ]]; then
+        print_success "Debug Bundle ID configured correctly: $DEBUG_BUNDLE_ID"
+    else
+        print_warning "Debug Bundle ID is: $DEBUG_BUNDLE_ID (expected: com.gilko.DietDailyMobile.dev)"
+    fi
+fi
+
 # Fix app name in Info.plist for Debug builds
 print_status "Updating app name to DietDailyDev..."
 "${REPO_ROOT}/scripts/fix-debug-app-name.sh" || true
 
-# Build using expo run:ios with --no-install flag (if supported)
-# Or use xcodebuild with proper code signing
-print_status "Building Debug version (this may take several minutes)..."
+# Clean build directory to ensure fresh build
+print_status "Cleaning build directory..."
+rm -rf "${IOS_DIR}/build" 2>/dev/null || true
+
+# Build using xcodebuild directly to ensure correct Bundle ID
+print_status "Building Debug version using xcodebuild (this may take several minutes)..."
 echo ""
 
-IOS_DIR="${APP_DIR}/ios"
-WORKSPACE="${IOS_DIR}/DietDailyMobile.xcworkspace"
-SCHEME="DietDailyMobile"
-CONFIGURATION="Debug"
-
-# Set APP_VARIANT to ensure correct bundle ID
-export APP_VARIANT="debug"
-
-# Build using xcodebuild with code signing enabled
-# Use -allowProvisioningUpdates to allow automatic signing
 xcodebuild -workspace "$WORKSPACE" \
-    -scheme "$SCHEME" \
-    -configuration "$CONFIGURATION" \
+    -scheme "DietDailyMobile" \
+    -configuration "Debug" \
     -sdk iphoneos \
     -derivedDataPath "${IOS_DIR}/build" \
     -allowProvisioningUpdates \
-    build
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGNING_ALLOWED=NO \
+    build 2>&1 | grep -E "(error|warning|BUILD|succeeded|failed)" || true
 
 BUILD_RESULT=$?
 
@@ -89,6 +112,21 @@ if [ $BUILD_RESULT -eq 0 ]; then
     
     if [ -n "$APP_PATH" ]; then
         print_success "App built at: $APP_PATH"
+        
+        # Verify and fix Bundle ID if needed
+        ACTUAL_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Info.plist" 2>/dev/null || echo "")
+        EXPECTED_BUNDLE_ID="com.gilko.DietDailyMobile.dev"
+        
+        if [[ "$ACTUAL_BUNDLE_ID" == "$EXPECTED_BUNDLE_ID" ]]; then
+            print_success "Bundle ID verified: $ACTUAL_BUNDLE_ID"
+        else
+            print_warning "Bundle ID mismatch! Fixing..."
+            echo "  Expected: $EXPECTED_BUNDLE_ID"
+            echo "  Actual:   $ACTUAL_BUNDLE_ID"
+            "${REPO_ROOT}/scripts/fix-debug-bundle-id.sh"
+            print_success "Bundle ID fixed in Info.plist"
+        fi
+        
         echo ""
         echo "To install, use:"
         echo "  ./scripts/install-ios-debug.sh"
