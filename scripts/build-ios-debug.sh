@@ -113,20 +113,21 @@ if [ $BUILD_RESULT -eq 0 ]; then
     if [ -n "$APP_PATH" ]; then
         print_success "App built at: $APP_PATH"
         
-        # Verify and fix Bundle ID if needed
+        # Verify Bundle ID
         ACTUAL_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Info.plist" 2>/dev/null || echo "")
         EXPECTED_BUNDLE_ID="com.gilko.DietDailyMobile.dev"
         
         if [[ "$ACTUAL_BUNDLE_ID" == "$EXPECTED_BUNDLE_ID" ]]; then
             print_success "Bundle ID verified: $ACTUAL_BUNDLE_ID"
         else
-            print_error "Bundle ID mismatch!"
+            print_error "Bundle ID mismatch! Rebuilding with correct configuration..."
             echo "  Expected: $EXPECTED_BUNDLE_ID"
             echo "  Actual:   $ACTUAL_BUNDLE_ID"
             echo ""
-            echo "⚠️  Warning: Bundle ID is incorrect. The app may not install properly."
-            echo "   Please check that expo prebuild correctly applied the Debug Bundle ID."
-            echo "   You may need to manually verify the Xcode project configuration."
+            echo "⚠️  The Bundle ID is incorrect. This will cause installation to fail."
+            echo "   The app needs to be rebuilt with the correct Bundle ID from the start."
+            echo "   Please run this script again after ensuring expo prebuild applies the correct Bundle ID."
+            exit 1
         fi
         
         echo ""
