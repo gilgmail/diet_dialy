@@ -157,7 +157,7 @@ mobile/react-native-starter-kit/DietDailyMobile/src/
 # DietDailyDev build artifacts (tracked files: App.tsx, app.config.ts, package.json, src/, etc.)
 mobile/react-native-starter-kit/DietDailyDev/.expo/
 mobile/react-native-starter-kit/DietDailyDev/node_modules/
-mobile/react-native-starter-kit/DietDailyDev/ios/build/
-mobile/react-native-starter-kit/DietDailyDev/ios/Pods/
-mobile/react-native-starter-kit/DietDailyDev/ios/*.xcworkspace
-mobile/react-native-starter-kit/DietDailyDev/ios/*.xcodeproj/xcuserdata/
+mobile/react-native-starter-kit/DietDailyDev/ios/
+# Note: assets/ and node_modules/ are symlinks, but we ignore them anyway
+mobile/react-native-starter-kit/DietDailyDev/assets
+mobile/react-native-starter-kit/DietDailyDev/node_modules
