@@ -149,3 +149,15 @@ releaseIosApp/**
 !releaseIosApp/
 !releaseIosApp/*.ipa
 !releaseIosApp/.gitkeep
+
+# DietDailyMobile/src - synced from DietDailyDev via sync-src-to-release.sh
+# Only DietDailyDev/src is tracked in Git
+mobile/react-native-starter-kit/DietDailyMobile/src/
+
+# DietDailyDev build artifacts (tracked files: App.tsx, app.config.ts, package.json, src/, etc.)
+mobile/react-native-starter-kit/DietDailyDev/.expo/
+mobile/react-native-starter-kit/DietDailyDev/node_modules/
+mobile/react-native-starter-kit/DietDailyDev/ios/build/
+mobile/react-native-starter-kit/DietDailyDev/ios/Pods/
+mobile/react-native-starter-kit/DietDailyDev/ios/*.xcworkspace
+mobile/react-native-starter-kit/DietDailyDev/ios/*.xcodeproj/xcuserdata/
