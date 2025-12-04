@@ -158,3 +158,4 @@ export type MainTabParamList = {
 - 方便查看歷史記錄和趨勢
 - 透過進度追蹤保持記錄習慣
 
+

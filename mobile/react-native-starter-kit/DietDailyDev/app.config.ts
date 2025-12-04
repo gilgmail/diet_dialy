@@ -10,28 +10,21 @@ type ReleaseConfig = {
 
 function loadReleaseConfig(): ReleaseConfig {
   try {
-    const configPath = path.resolve(__dirname, '../../..', 'scripts', 'release-ios-app.conf')
+    const configPath = path.resolve(__dirname, '../../..', 'scripts', 'arch-20251128', 'release-ios-app.conf')
     if (!fs.existsSync(configPath)) {
       return {}
     }
-
     const content = fs.readFileSync(configPath, 'utf8')
     const result: ReleaseConfig = {}
-
     for (const line of content.split('\n')) {
       const trimmed = line.trim()
       if (!trimmed || trimmed.startsWith('#')) continue
-
-      const match = trimmed.match(
-        /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|(.+))$/
-      )
+      const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|(.+))$/)
       if (!match) continue
-
       const [, key, doubleQuoted, singleQuoted, unquoted] = match
       const value = doubleQuoted ?? singleQuoted ?? unquoted ?? ''
       result[key as keyof ReleaseConfig] = value.trim()
     }
-
     return result
   } catch (error) {
     console.warn('[app.config] Failed to load release-ios-app.conf:', error)
@@ -40,28 +33,15 @@ function loadReleaseConfig(): ReleaseConfig {
 }
 
 const releaseConfig = loadReleaseConfig()
+const appVersion = process.env.APP_VERSION || releaseConfig.APP_VERSION || '1.0.0'
+const iosBuildNumber = process.env.IOS_BUILD_NUMBER || releaseConfig.IOS_BUILD_NUMBER || '1'
 
-const appVersion =
-  process.env.APP_VERSION || releaseConfig.APP_VERSION || '1.0.0'
-const iosBuildNumber =
-  process.env.IOS_BUILD_NUMBER || releaseConfig.IOS_BUILD_NUMBER || '1'
-
-const androidVersionCodeRaw =
-  process.env.ANDROID_VERSION_CODE ||
-  releaseConfig.ANDROID_VERSION_CODE ||
-  iosBuildNumber
-const androidVersionCode = Number.parseInt(androidVersionCodeRaw, 10)
-const resolvedAndroidVersionCode = Number.isNaN(androidVersionCode)
-  ? 1
-  : androidVersionCode
-
-const RELEASE_IOS_GOOGLE_SERVICES = '../googleOAuth/client_470437922488-j76be7jruh6et0l0ms7h31qa1m5ln9a5.apps.googleusercontent.com.plist'
 const DEBUG_IOS_GOOGLE_SERVICES = '../googleOAuth/client_470437922488-4log890j2d0am1s9pg6shiom6ds6e3mq.apps.googleusercontent.com.plist'
-const RELEASE_GOOGLE_CLIENT_ID = '470437922488-j76be7jruh6et0l0ms7h31qa1m5ln9a5.apps.googleusercontent.com'
 const DEBUG_GOOGLE_CLIENT_ID = '470437922488-4log890j2d0am1s9pg6shiom6ds6e3mq.apps.googleusercontent.com'
 
-const baseConfig: ExpoConfig = {
-  name: 'DietDailyMobile',
+// Debug 配置 - 固定為 Debug 版本
+const config: ExpoConfig = {
+  name: 'DietDailyDev',
   slug: 'DietDailyMobile',
   version: appVersion,
   orientation: 'portrait',
@@ -76,9 +56,9 @@ const baseConfig: ExpoConfig = {
   },
   ios: {
     supportsTablet: true,
-    bundleIdentifier: 'com.gilko.DietDailyMobile',
+    bundleIdentifier: 'com.gilko.DietDailyMobile.dev',
     buildNumber: iosBuildNumber,
-    googleServicesFile: RELEASE_IOS_GOOGLE_SERVICES,
+    googleServicesFile: DEBUG_IOS_GOOGLE_SERVICES,
   },
   android: {
     adaptiveIcon: {
@@ -87,33 +67,19 @@ const baseConfig: ExpoConfig = {
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
-    package: 'com.gilko.DietDailyMobile',
-    versionCode: resolvedAndroidVersionCode,
+    package: 'com.gilko.DietDailyMobile.dev',
+    versionCode: Number.parseInt(iosBuildNumber, 10) || 1,
   },
   web: {
     favicon: './assets/favicon.png',
   },
   plugins: ['expo-web-browser'],
+  extra: {
+    appVariant: 'debug',
+    googleClientId: DEBUG_GOOGLE_CLIENT_ID,
+  },
 }
 
-export default ({ }: ConfigContext): ExpoConfig => {
-  // Release 配置 - 固定為 Release 版本
-  return {
-    ...baseConfig,
-    name: baseConfig.name,
-    ios: {
-      ...baseConfig.ios,
-      bundleIdentifier: 'com.gilko.DietDailyMobile',
-      googleServicesFile: RELEASE_IOS_GOOGLE_SERVICES,
-    },
-    android: {
-      ...baseConfig.android,
-      package: 'com.gilko.DietDailyMobile',
-    },
-    extra: {
-      ...(baseConfig.extra ?? {}),
-      appVariant: 'release',
-      googleClientId: RELEASE_GOOGLE_CLIENT_ID,
-    },
-  }
-}
+export default ({ }: ConfigContext): ExpoConfig => config
+
+
