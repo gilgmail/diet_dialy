@@ -7,8 +7,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-APP_DIR="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyMobile"
-INFO_PLIST="${APP_DIR}/ios/DietDailyMobile/Info.plist"
+APP_DIR="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyDev"
+# Find Info.plist (could be in different locations depending on scheme)
+INFO_PLIST=$(find "${APP_DIR}/ios" -name "Info.plist" -type f 2>/dev/null | head -1)
 
 if [ ! -f "$INFO_PLIST" ]; then
     echo "❌ Info.plist not found: $INFO_PLIST"

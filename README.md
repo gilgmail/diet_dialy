@@ -187,7 +187,7 @@ npm run test:e2e           # Playwright E2E tests
 1. **更新版本號**
    ```bash
    # 編輯版本號配置檔案
-   vim scripts/arch-20251128/release-ios-app.conf
+   vim scripts/release-ios-app.conf
    # 或直接編輯：
    # APP_VERSION="1.0.4"
    # IOS_BUILD_NUMBER="1"
@@ -195,7 +195,7 @@ npm run test:e2e           # Playwright E2E tests
 
 2. **編譯 Release 版本**
    ```bash
-   ./scripts/arch-20251128/release-ios-app.sh
+   ./scripts/build-ios-release.sh
    ```
    這會生成 `.ipa` 檔案到 `releaseIosApp/` 目錄，命名格式：`DietDailyMobile-v{版本號}.ipa`
 
@@ -207,13 +207,13 @@ npm run test:e2e           # Playwright E2E tests
 
 3. **安裝到設備**
    ```bash
-   ./scripts/arch-20251128/install-ios-app.sh
+   ./scripts/install-ios-release.sh
    ```
    腳本會自動偵測最新的 `.ipa` 並安裝到 Gil-Golden 設備。
 
    或指定特定檔案：
    ```bash
-   ./scripts/arch-20251128/install-ios-app.sh --ipa releaseIosApp/DietDailyMobile-v1.0.4.ipa
+   ./scripts/install-ios-release.sh --ipa releaseIosApp/DietDailyMobile-v1.0.4.ipa
    ```
 
 #### Debug 版本 (DietDailyDev)
@@ -285,15 +285,15 @@ npx expo start
 #### 相關腳本
 
 - `scripts/clean-ios-build-env.sh` - 環境清理腳本
-- `scripts/arch-20251128/release-ios-app.sh` - Release 版本編譯腳本（生成 .ipa）
-- `scripts/arch-20251128/install-ios-app.sh` - Release .ipa 安裝腳本
+- `scripts/build-ios-release.sh` - Release 版本編譯腳本（生成 .ipa）
+- `scripts/install-ios-release.sh` - Release .ipa 安裝腳本
 - `scripts/build-ios-debug.sh` - Debug 版本編譯腳本（只編譯，不安裝）
 - `scripts/install-ios-debug.sh` - Debug 版本安裝腳本（安裝已編譯的 .app，會檢查 Metro bundler）
 - `scripts/fix-debug-app-name.sh` - 修正 Debug 版本應用程式名稱腳本
 - `scripts/deploy-to-gil-golden.sh` - Debug/Release 版本直接編譯並安裝腳本（一鍵完成）
 - `scripts/start-metro-bundler.sh` - 啟動 Metro bundler（Debug 版本必需）
 - `scripts/stop-metro-bundler.sh` - 停止 Metro bundler
-- `scripts/arch-20251128/release-ios-app.conf` - 版本號配置檔案
+- `scripts/release-ios-app.conf` - 版本號配置檔案
 
 #### 故障排除
 

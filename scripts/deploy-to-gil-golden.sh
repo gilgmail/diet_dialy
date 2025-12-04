@@ -7,10 +7,13 @@ set -e  # Exit on error
 
 DEVICE_NAME="Gil-Golden"
 DEVICE_ID="00008140-00146D6A2610801C"
-APP_DIR="mobile/react-native-starter-kit/DietDailyMobile"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DEBUG_APP_DIR="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyDev"
+RELEASE_APP_DIR="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyMobile"
 DEBUG_APP_NAME="DietDailyDev"
 RELEASE_APP_NAME="DietDailyMobile"
 APP_NAME="$RELEASE_APP_NAME"
+APP_DIR="$RELEASE_APP_DIR"
 
 # Colors for output
 RED='\033[0;31m'
@@ -40,6 +43,7 @@ VARIANT="${1:-debug}"
 case "$VARIANT" in
     debug)
         APP_NAME="$DEBUG_APP_NAME"
+        APP_DIR="$DEBUG_APP_DIR"
         BUNDLE_ID="com.gilko.DietDailyMobile.dev"
         APP_VARIANT_ENV="debug"
         VARIANT_LABEL="Debug"
@@ -47,6 +51,7 @@ case "$VARIANT" in
         ;;
     release)
         APP_NAME="$RELEASE_APP_NAME"
+        APP_DIR="$RELEASE_APP_DIR"
         BUNDLE_ID="com.gilko.DietDailyMobile"
         APP_VARIANT_ENV="release"
         VARIANT_LABEL="Release"
@@ -64,7 +69,7 @@ case "$VARIANT" in
         ;;
 esac
 
-export APP_VARIANT="$APP_VARIANT_ENV"
+# No need to export APP_VARIANT since each directory has fixed config
 
 echo -e "${BLUE}╔════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║  ${APP_NAME} - Deploy to Gil-Golden              ║${NC}"
@@ -113,11 +118,17 @@ fi
 
 # Check current app version on device
 print_status "Checking installed app version..."
-INSTALLED_VERSION=$(xcrun devicectl device info apps --device "$DEVICE_ID" 2>/dev/null | grep -A1 "$BUNDLE_ID" | tail -1 | awk '{print $1}')
-if [ -n "$INSTALLED_VERSION" ]; then
-    print_success "Current version on device: $INSTALLED_VERSION"
+# devicectl output format: AppName BundleID Version BuildNumber
+# We need to find the line with our BUNDLE_ID and extract the app name (first column)
+INSTALLED_APP_NAME=$(xcrun devicectl device info apps --device "$DEVICE_ID" 2>/dev/null | grep "$BUNDLE_ID" | awk '{print $1}' | head -1)
+if [ -n "$INSTALLED_APP_NAME" ]; then
+    print_success "Current app on device: $INSTALLED_APP_NAME (Bundle ID: $BUNDLE_ID)"
+    INSTALLED_VERSION=$(xcrun devicectl device info apps --device "$DEVICE_ID" 2>/dev/null | grep "$BUNDLE_ID" | awk '{print $3}' | head -1)
+    if [ -n "$INSTALLED_VERSION" ]; then
+        echo "  Version: $INSTALLED_VERSION"
+    fi
 else
-    print_warning "App not currently installed on device"
+    print_warning "App with Bundle ID '$BUNDLE_ID' not currently installed on device"
 fi
 
 # Clean watchman to prevent build issues
@@ -125,6 +136,23 @@ print_status "Cleaning watchman..."
 watchman watch-del "$(pwd)" 2>/dev/null || true
 watchman watch-project "$(pwd)" >/dev/null 2>&1
 print_success "Watchman cleaned"
+
+# For Debug builds, sync source code if using symlink
+if [[ "$VARIANT" == "debug" ]]; then
+    print_status "Checking source code sync (Debug builds)..."
+    TARGET_SRC="${APP_DIR}/src"
+    if [ -L "$TARGET_SRC" ]; then
+        print_warning "Source directory is a symlink. Syncing to ensure compatibility..."
+        SYNC_SCRIPT="${REPO_ROOT}/scripts/sync-src-to-debug.sh"
+        if [ -f "$SYNC_SCRIPT" ]; then
+            "$SYNC_SCRIPT"
+        else
+            print_warning "Sync script not found. Continuing with symlink (may cause issues)..."
+        fi
+    else
+        print_success "Source directory is not a symlink (already synced)"
+    fi
+fi
 
 # Navigate to app directory
 cd "$APP_DIR"
@@ -143,23 +171,9 @@ rm -rf .expo
 rm -rf node_modules/.cache/metro
 rm -rf node_modules/.cache/expo
 rm -rf ios/.xcode.env.local
+# Also clear watchman cache for symbol links
+watchman watch-del-all 2>/dev/null || true
 print_success "Caches cleared"
-
-# Fix app name and Bundle ID for Debug builds
-if [[ "$APP_VARIANT_ENV" == "debug" ]]; then
-    print_status "Updating app name to DietDailyDev..."
-    if [ -f "ios/DietDailyMobile/Info.plist" ]; then
-        /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName DietDailyDev" ios/DietDailyMobile/Info.plist 2>/dev/null || true
-        /usr/libexec/PlistBuddy -c "Set :CFBundleName DietDailyDev" ios/DietDailyMobile/Info.plist 2>/dev/null || true
-    fi
-    
-    # Ensure Debug Bundle ID is correct in Xcode project
-    print_status "Verifying Debug Bundle ID in Xcode project..."
-    PROJECT_FILE="ios/DietDailyMobile.xcodeproj/project.pbxproj"
-    if [ -f "$PROJECT_FILE" ]; then
-        perl -i -pe 's/(name = Debug;[\s\S]*?PRODUCT_BUNDLE_IDENTIFIER = )com\.gilko\.DietDailyMobile(;)/$1com.gilko.DietDailyMobile.dev$2/g' "$PROJECT_FILE" 2>/dev/null || true
-    fi
-fi
 
 # Clean Xcode build artifacts (but keep Pods)
 print_status "Cleaning Xcode build artifacts..."
@@ -207,16 +221,16 @@ echo ""
 
 # Run build with clean flag
 # Using --no-build-cache to ensure fresh build (clears native derived data)
-# Try device name first, fall back to UDID if name doesn't work
+# No need to set APP_VARIANT since each directory has fixed config
 if command -v gtimeout &> /dev/null; then
-    APP_VARIANT="$APP_VARIANT_ENV" gtimeout 600 npx expo run:ios \
+    gtimeout 600 npx expo run:ios \
         --device "$DEVICE_ID" \
         --configuration "$XCODE_CONFIGURATION" \
         --no-build-cache \
         2>&1
     BUILD_RESULT=$?
 else
-    APP_VARIANT="$APP_VARIANT_ENV" npx expo run:ios \
+    npx expo run:ios \
         --device "$DEVICE_ID" \
         --configuration "$XCODE_CONFIGURATION" \
         --no-build-cache \
@@ -240,19 +254,76 @@ fi
 print_status "Verifying app installation..."
 sleep 2  # Give device time to register app
 
-NEW_VERSION=$(xcrun devicectl device info apps --device "$DEVICE_ID" 2>/dev/null | grep -A1 "$BUNDLE_ID" | tail -1 | awk '{print $1}')
+# devicectl output format: AppName BundleID Version BuildNumber
+NEW_APP_NAME=$(xcrun devicectl device info apps --device "$DEVICE_ID" 2>/dev/null | grep "$BUNDLE_ID" | awk '{print $1}' | head -1)
+NEW_VERSION=$(xcrun devicectl device info apps --device "$DEVICE_ID" 2>/dev/null | grep "$BUNDLE_ID" | awk '{print $3}' | head -1)
 
-if [ -n "$NEW_VERSION" ]; then
+if [ -n "$NEW_APP_NAME" ]; then
     print_success "App successfully installed on device"
-    echo -e "  Version: ${GREEN}$NEW_VERSION${NC}"
+    echo -e "  App: ${GREEN}$NEW_APP_NAME${NC}"
+    if [ -n "$NEW_VERSION" ]; then
+        echo -e "  Version: ${GREEN}$NEW_VERSION${NC}"
+    fi
 
     # Show what changed if we had a previous version
-    if [ -n "$INSTALLED_VERSION" ] && [ "$INSTALLED_VERSION" != "$NEW_VERSION" ]; then
+    if [ -n "$INSTALLED_VERSION" ] && [ -n "$NEW_VERSION" ] && [ "$INSTALLED_VERSION" != "$NEW_VERSION" ]; then
         echo -e "  ${YELLOW}Updated from version $INSTALLED_VERSION${NC}"
     fi
 else
     print_error "Failed to verify app installation"
     exit 1
+fi
+
+# For Debug builds, check Metro bundler status
+if [[ "$VARIANT" == "debug" ]]; then
+    echo ""
+    print_status "Checking Metro bundler status (required for Debug builds)..."
+    
+    # Check if Metro is running on port 8081
+    if lsof -ti tcp:8081 >/dev/null 2>&1; then
+        print_success "Metro bundler is already running on port 8081"
+    else
+        print_warning "Metro bundler is not running"
+        echo ""
+        echo "⚠️  Debug 版本需要 Metro bundler 才能運行"
+        echo ""
+        echo "請在另一個終端執行以下命令啟動 Metro bundler:"
+        echo ""
+        echo "  cd $APP_DIR"
+        echo "  npx expo start --dev-client --lan"
+        echo ""
+        echo "或者使用以下命令自動啟動（會在背景運行）:"
+        echo ""
+        echo "  ./scripts/start-metro-bundler.sh --background"
+        echo ""
+        read -p "是否現在啟動 Metro bundler? (y/N): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            print_status "Starting Metro bundler in background (dev-client mode)..."
+            cd "$APP_DIR"
+            # Use --dev-client for development builds, --lan to allow device connection
+            nohup npx expo start --dev-client --lan > /tmp/metro-bundler.log 2>&1 &
+            METRO_PID=$!
+            sleep 5  # Give Metro more time to start
+            
+            # Check if Metro started successfully
+            if kill -0 $METRO_PID 2>/dev/null && lsof -ti tcp:8081 >/dev/null 2>&1; then
+                print_success "Metro bundler started (PID: $METRO_PID)"
+                echo "Logs: /tmp/metro-bundler.log"
+                echo ""
+                echo "要停止 Metro bundler，執行:"
+                echo "  kill $METRO_PID"
+                echo "或"
+                echo "  ./scripts/stop-metro-bundler.sh"
+                echo ""
+                echo "⚠️  確保設備和電腦在同一網絡上"
+            else
+                print_error "Failed to start Metro bundler"
+                echo "請手動執行: cd $APP_DIR && npx expo start --dev-client --lan"
+                echo "或檢查日誌: tail -f /tmp/metro-bundler.log"
+            fi
+        fi
+    fi
 fi
 
 # Show recent git commits for context
@@ -267,4 +338,9 @@ echo -e "${GREEN}║  Deployment Complete! 🎉                       ║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "App is ready to use on ${GREEN}$DEVICE_NAME${NC}"
+if [[ "$VARIANT" == "debug" ]]; then
+    echo ""
+    echo "⚠️  Debug 版本需要 Metro bundler 運行才能正常使用"
+    echo "   如果看到 \"no script URL provided\" 錯誤，請確保 Metro bundler 正在運行"
+fi
 echo ""

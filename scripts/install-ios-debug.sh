@@ -7,7 +7,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-APP_DIR="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyMobile"
+APP_DIR="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyDev"
 IOS_DIR="${APP_DIR}/ios"
 
 DEVICE_NAME="Gil-Golden"
@@ -53,25 +53,82 @@ if [ -z "$DEVICE_LINE" ]; then
 fi
 print_success "Device found: $DEVICE_NAME"
 
-# Find the built .app
+# Find the built .app (could be DietDailyDev.app or DietDailyMobile.app depending on scheme)
 print_status "Locating built app..."
-APP_PATH=$(find "${IOS_DIR}/build" -name "DietDailyMobile.app" -path "*/Debug-iphoneos/*" 2>/dev/null | head -1)
+APP_PATH=""
 
+# First, try ios/build
+APP_PATH=$(find "${IOS_DIR}/build" -name "*.app" -path "*/Debug-iphoneos/*" 2>/dev/null | head -1)
+
+# Try DerivedData - check all possible locations and verify each one has Info.plist
 if [ -z "$APP_PATH" ]; then
-    # Try DerivedData
-    APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "DietDailyMobile.app" -path "*/Debug-iphoneos/*" 2>/dev/null | head -1)
+    for candidate in $(find ~/Library/Developer/Xcode/DerivedData -name "DietDailyDev.app" -type d 2>/dev/null | grep -E "(Build/Products|Index\.noindex/Build/Products)" | grep "Debug-iphoneos"); do
+        if [ -f "$candidate/Info.plist" ]; then
+            APP_PATH="$candidate"
+            break
+        fi
+    done
+fi
+
+# If still not found, try any DietDailyDev.app and check if it's valid
+if [ -z "$APP_PATH" ]; then
+    for candidate in $(find ~/Library/Developer/Xcode/DerivedData -name "DietDailyDev.app" -type d 2>/dev/null | head -10); do
+        if [ -f "$candidate/Info.plist" ]; then
+            APP_PATH="$candidate"
+            break
+        fi
+    done
 fi
 
 if [ -z "$APP_PATH" ]; then
-    print_error "Could not find built .app file"
-    echo "Please build the app first using:"
-    echo "  ./scripts/build-ios-debug.sh"
+    print_error "Could not find a valid built .app file"
     echo ""
-    echo "Or use:"
-    echo "  ./scripts/deploy-to-gil-golden.sh debug"
+    echo "所有找到的構建產物都缺少 Info.plist，表示構建未完成。"
+    echo ""
+    echo "請執行以下步驟："
+    echo "1. 確保設備已連接並解鎖"
+    echo "2. 運行構建腳本："
+    echo "   ./scripts/build-ios-debug.sh"
+    echo ""
+    echo "如果構建持續失敗，請檢查："
+    echo "- 設備連接狀態"
+    echo "- Xcode 項目配置"
+    echo "- 構建日誌：tail -50 /tmp/debug-build.log"
     exit 1
 fi
 
+# Verify the .app bundle is valid (should already be verified, but double-check)
+print_status "Verifying app bundle..."
+if [ ! -f "$APP_PATH/Info.plist" ]; then
+    print_error "Invalid .app bundle: Info.plist missing"
+    echo "  Path: $APP_PATH"
+    echo ""
+    echo "構建產物不完整。請重新運行構建腳本。"
+    exit 1
+fi
+
+# Verify Bundle ID exists
+ACTUAL_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Info.plist" 2>/dev/null || echo "")
+if [ -z "$ACTUAL_BUNDLE_ID" ] || [[ "$ACTUAL_BUNDLE_ID" == *"PRODUCT_BUNDLE_IDENTIFIER"* ]]; then
+    print_error "Invalid .app bundle: CFBundleIdentifier missing or not resolved"
+    echo "  Path: $APP_PATH/Info.plist"
+    echo "  Actual CFBundleIdentifier: '$ACTUAL_BUNDLE_ID'"
+    echo ""
+    echo "構建產物中的 Bundle ID 不正確。請確保 Xcode 項目已正確配置，並重新運行構建腳本。"
+    exit 1
+fi
+
+# Verify Bundle ID matches expected Debug ID
+if [[ "$ACTUAL_BUNDLE_ID" != "$BUNDLE_ID" ]]; then
+    print_error "Bundle ID mismatch in built app!"
+    echo "  Expected: $BUNDLE_ID"
+    echo "  Actual:   $ACTUAL_BUNDLE_ID"
+    echo ""
+    echo "構建產物中的 Bundle ID 不符合預期。請確保 Xcode 項目已正確配置，並重新運行構建腳本。"
+    exit 1
+fi
+
+print_success "App bundle verified (Bundle ID: $ACTUAL_BUNDLE_ID)"
 print_success "Found app at: $APP_PATH"
 
 # Install using devicectl
@@ -111,12 +168,12 @@ if [ $INSTALL_RESULT -eq 0 ]; then
         read -p "是否現在啟動 Metro bundler? (y/N): " -n 1 -r
         echo ""
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            print_status "Starting Metro bundler in background..."
+            print_status "Starting Metro bundler in background (dev-client mode)..."
             cd "$APP_DIR"
-            # Start Metro in background, redirect output to log file
-            nohup npx expo start > /tmp/metro-bundler.log 2>&1 &
+            # Use --dev-client for development builds, --lan to allow device connection
+            nohup npx expo start --dev-client --lan > /tmp/metro-bundler.log 2>&1 &
             METRO_PID=$!
-            sleep 3
+            sleep 5  # Give Metro more time to start
             
             # Check if Metro started successfully
             if kill -0 $METRO_PID 2>/dev/null && lsof -ti tcp:8081 >/dev/null 2>&1; then
@@ -125,9 +182,12 @@ if [ $INSTALL_RESULT -eq 0 ]; then
                 echo ""
                 echo "要停止 Metro bundler，執行:"
                 echo "  kill $METRO_PID"
+                echo ""
+                echo "⚠️  確保設備和電腦在同一網絡上"
             else
                 print_error "Failed to start Metro bundler"
-                echo "請手動執行: cd $APP_DIR && npx expo start"
+                echo "請手動執行: cd $APP_DIR && npx expo start --dev-client --lan"
+                echo "或檢查日誌: tail -f /tmp/metro-bundler.log"
             fi
         fi
     fi

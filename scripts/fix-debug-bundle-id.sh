@@ -6,15 +6,15 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyMobile"
+APP_DIR="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyDev"
 IOS_DIR="${APP_DIR}/ios"
 
-# Find the built .app
-APP_PATH=$(find "${IOS_DIR}/build" -name "DietDailyMobile.app" -path "*/Debug-iphoneos/*" 2>/dev/null | head -1)
+# Find the built .app (could be DietDailyDev.app or DietDailyMobile.app depending on scheme)
+APP_PATH=$(find "${IOS_DIR}/build" -name "*.app" -path "*/Debug-iphoneos/*" 2>/dev/null | head -1)
 
 if [ -z "$APP_PATH" ]; then
     # Try DerivedData
-    APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "DietDailyMobile.app" -path "*/Debug-iphoneos/*" 2>/dev/null | head -1)
+    APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "*.app" -path "*/Debug-iphoneos/*" 2>/dev/null | grep -i "dietdaily" | head -1)
 fi
 
 if [ -z "$APP_PATH" ]; then
