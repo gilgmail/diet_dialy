@@ -2189,6 +2189,81 @@ foodKnowledgeBase 說明：
 
 其他欄位（summary, reasoning_trace, foods_to_monitor 等）可以精簡，但 daily_food_breakdown 必須詳盡完整。
 
+${payload.lifestyleFactors.healthMetrics ? `
+## 健康因子與腸道症狀的綜合分析
+
+### 可用的健康數據
+本週提供以下 HealthKit 健康指標，請整合到飲食與症狀分析中：
+
+${payload.lifestyleFactors.healthMetrics.overview.steps ? `- **運動數據**：平均每日 ${Math.round(payload.lifestyleFactors.healthMetrics.overview.steps.average)} 步（範圍：${payload.lifestyleFactors.healthMetrics.overview.steps.min}-${payload.lifestyleFactors.healthMetrics.overview.steps.max}）
+  趨勢：${payload.lifestyleFactors.healthMetrics.overview.steps.trend === 'improving' ? '改善中 ↑' : payload.lifestyleFactors.healthMetrics.overview.steps.trend === 'declining' ? '下降中 ↓' : '穩定 →'}
+  資料完整度：${Math.round(payload.lifestyleFactors.healthMetrics.overview.steps.coverage)}%` : ''}
+
+${payload.lifestyleFactors.healthMetrics.overview.heartRate ? `- **心率數據**：平均 ${Math.round(payload.lifestyleFactors.healthMetrics.overview.heartRate.average)} bpm（範圍：${payload.lifestyleFactors.healthMetrics.overview.heartRate.min}-${payload.lifestyleFactors.healthMetrics.overview.heartRate.max}）
+  趨勢：${payload.lifestyleFactors.healthMetrics.overview.heartRate.trend === 'improving' ? '改善中 ↑' : payload.lifestyleFactors.healthMetrics.overview.heartRate.trend === 'declining' ? '升高中 ↑' : '穩定 →'}
+  資料完整度：${Math.round(payload.lifestyleFactors.healthMetrics.overview.heartRate.coverage)}%` : ''}
+
+${payload.lifestyleFactors.healthMetrics.overview.stressScore ? `- **壓力數據**：平均分數 ${payload.lifestyleFactors.healthMetrics.overview.stressScore.average.toFixed(1)}/10（範圍：${payload.lifestyleFactors.healthMetrics.overview.stressScore.min}-${payload.lifestyleFactors.healthMetrics.overview.stressScore.max}）
+  趨勢：${payload.lifestyleFactors.healthMetrics.overview.stressScore.trend === 'improving' ? '改善中 ↓' : payload.lifestyleFactors.healthMetrics.overview.stressScore.trend === 'declining' ? '惡化中 ↑' : '穩定 →'}
+  資料完整度：${Math.round(payload.lifestyleFactors.healthMetrics.overview.stressScore.coverage)}%` : ''}
+
+${payload.lifestyleFactors.healthMetrics.overview.waterIntake ? `- **水分數據**：平均每日 ${Math.round(payload.lifestyleFactors.healthMetrics.overview.waterIntake.average)}ml（範圍：${payload.lifestyleFactors.healthMetrics.overview.waterIntake.min}-${payload.lifestyleFactors.healthMetrics.overview.waterIntake.max}）
+  趨勢：${payload.lifestyleFactors.healthMetrics.overview.waterIntake.trend === 'improving' ? '增加中 ↑' : payload.lifestyleFactors.healthMetrics.overview.waterIntake.trend === 'declining' ? '減少中 ↓' : '穩定 →'}
+  資料完整度：${Math.round(payload.lifestyleFactors.healthMetrics.overview.waterIntake.coverage)}%` : ''}
+
+${payload.lifestyleFactors.healthMetrics.overview.activeCalories ? `- **活動消耗**：平均每日 ${Math.round(payload.lifestyleFactors.healthMetrics.overview.activeCalories.average)} kcal（範圍：${payload.lifestyleFactors.healthMetrics.overview.activeCalories.min}-${payload.lifestyleFactors.healthMetrics.overview.activeCalories.max}）
+  趨勢：${payload.lifestyleFactors.healthMetrics.overview.activeCalories.trend === 'improving' ? '增加中 ↑' : payload.lifestyleFactors.healthMetrics.overview.activeCalories.trend === 'declining' ? '減少中 ↓' : '穩定 →'}
+  資料完整度：${Math.round(payload.lifestyleFactors.healthMetrics.overview.activeCalories.coverage)}%` : ''}
+
+**資料品質**：${payload.lifestyleFactors.healthMetrics.dataQuality === 'excellent' ? '優秀' : payload.lifestyleFactors.healthMetrics.dataQuality === 'good' ? '良好' : payload.lifestyleFactors.healthMetrics.dataQuality === 'fair' ? '尚可' : '不足'}
+${payload.lifestyleFactors.healthMetrics.qualityNotes.length > 0 ? `**注意事項**：${payload.lifestyleFactors.healthMetrics.qualityNotes.join('；')}` : ''}
+
+${payload.lifestyleFactors.healthMetrics.correlations.length > 0 ? `### 健康-症狀關聯發現
+
+以下是透過統計分析發現的健康指標與症狀關聯：
+
+${payload.lifestyleFactors.healthMetrics.correlations.map(corr => `**${corr.metricLabel}**：
+- 低範圍（${corr.ranges.low.label}）：平均症狀 ${corr.ranges.low.avgSymptomScore} 分（${corr.ranges.low.dayCount} 天）
+- 中範圍（${corr.ranges.medium.label}）：平均症狀 ${corr.ranges.medium.avgSymptomScore} 分（${corr.ranges.medium.dayCount} 天）
+- 高範圍（${corr.ranges.high.label}）：平均症狀 ${corr.ranges.high.avgSymptomScore} 分（${corr.ranges.high.dayCount} 天）
+- 關聯強度：${corr.significance === 'strong' ? '強' : corr.significance === 'moderate' ? '中等' : corr.significance === 'weak' ? '弱' : '資料不足'}
+- 初步洞察：${corr.insight}`).join('\n\n')}` : ''}
+
+### 分析要求
+
+請將以上健康指標整合到你的分析中，重點關注：
+
+1. **運動與腸道健康**（若有步數/活動消耗數據）
+   - 分析活動量與症狀嚴重度的關聯
+   - 是否存在「最佳運動量」區間？
+   - 過度或不足的運動如何影響症狀
+   - 推薦：低衝擊運動、散步、瑜伽等適合 IBD 患者的活動
+
+2. **水分與消化系統**（若有飲水量數據）
+   - 評估飲水量充足性（IBD 建議 2000-3000ml/日）
+   - 脫水與症狀的關聯性
+   - 補水時機建議（餐前/餐後/運動後）
+
+3. **壓力與發炎反應**（若有壓力分數數據）
+   - 高壓力日與症狀發作的時間關聯
+   - 壓力管理策略（冥想、深呼吸、正念）
+   - 壓力下的飲食建議（避免刺激性食物）
+
+4. **心率與身體狀態**（若有心率數據）
+   - 靜息心率升高是否反映發炎？
+   - 心率變異與症狀的關係
+
+5. **綜合生活型態建議**
+   - 整合飲食、運動、壓力管理的最佳模式
+   - 預測性建議：維持某些指標可能改善症狀
+   - 具體可執行的生活調整方案
+
+**重要提醒**：
+- 在 summary 中納入健康因子的重要發現
+- 在 gut_health_recommendations 中加入運動、水分、壓力管理建議
+- 在 follow_up_actions 中包含健康指標追蹤建議
+- 如果資料品質為「尚可」或「不足」，請在分析中明確說明樣本量限制，避免過度解讀
+` : ''}
 週期資料：
 \u0060\u0060\u0060json
 ${dataset}
