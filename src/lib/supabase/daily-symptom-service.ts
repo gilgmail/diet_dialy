@@ -465,6 +465,13 @@ export class DailySymptomService {
       entry_source: dbEntry.entry_source,
       data_completeness_score: dbEntry.data_completeness_score,
 
+      // ========== HealthKit 健康指標 ==========
+      avg_heart_rate: dbEntry.avg_heart_rate ?? null,
+      daily_steps: dbEntry.daily_steps ?? null,
+      active_calories: dbEntry.active_calories ?? null,
+      water_intake_ml: dbEntry.water_intake_ml ?? null,
+      stress_score: dbEntry.stress_score ?? null,
+
       // Timestamps
       created_at: new Date(dbEntry.created_at),
       updated_at: new Date(dbEntry.updated_at)

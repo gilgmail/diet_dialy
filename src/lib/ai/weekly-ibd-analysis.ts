@@ -11,6 +11,7 @@ import type { FoodAnalysisLookupResult } from '@/lib/supabase/food-analysis-cach
 import { createAdminClient } from '@/lib/supabase/server'
 import type { FoodAnalysisCache, FoodEntry } from '@/types/supabase'
 import type { DailySymptomEntry, CoreSymptomScores } from '@/types/medical'
+import { calculateHealthFactors } from './health-metrics-calculator'
 
 // 更新版本時務必同步調整行動端顯示與報告標註
 export const WEEKLY_ANALYSIS_VERSION = '2025.11.09.8'
@@ -155,6 +156,12 @@ interface WeeklyAnalysisPayload {
     improvementFactors: string[]
     medications: string[]
     activityLevels: Record<string, number>
+    healthMetrics?: {
+      overview: import('@/types/medical').HealthMetricsOverview
+      correlations: import('@/types/medical').HealthSymptomCorrelation[]
+      dataQuality: string
+      qualityNotes: string[]
+    }
   }
   dataQuality: {
     warnings: string[]
@@ -1618,6 +1625,9 @@ export class IBDWeeklyAnalysisAgent {
         foods: (foodsByDate.get(item.entry.recorded_date) || []).map((food) => food.name)
       }))
 
+    // ========== 健康因子分析（新增）==========
+    const healthFactors = calculateHealthFactors(symptomEntries)
+
     const lifestyleFactors = {
       commonTriggers: collectUniqueStrings(
         symptomEntries.flatMap((entry) => entry.triggers_identified || [])
@@ -1633,7 +1643,16 @@ export class IBDWeeklyAnalysisAgent {
           acc[entry.activity_level] = (acc[entry.activity_level] || 0) + 1
         }
         return acc
-      }, {})
+      }, {}),
+      // ← 新增健康指標
+      ...(healthFactors.hasHealthData && healthFactors.dataQuality !== 'poor' ? {
+        healthMetrics: {
+          overview: healthFactors.overview,
+          correlations: healthFactors.correlations,
+          dataQuality: healthFactors.dataQuality,
+          qualityNotes: healthFactors.qualityNotes,
+        }
+      } : {})
     }
 
     const dataQualityWarnings: string[] = []
