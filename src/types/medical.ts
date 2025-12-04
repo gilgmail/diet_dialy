@@ -260,6 +260,13 @@ export interface DailySymptomEntry extends CoreSymptomScores, ContextualScores {
   entry_source: 'manual' | 'imported' | 'migrated';
   data_completeness_score: number; // 0.0 to 1.0
 
+  // ========== HealthKit 健康指標 ==========
+  avg_heart_rate: number | null;      // 平均心率 (30-250 bpm)
+  daily_steps: number | null;         // 每日步數 (>= 0)
+  active_calories: number | null;     // 活動消耗熱量 (>= 0 kcal)
+  water_intake_ml: number | null;     // 飲水量 (>= 0 ml)
+  stress_score: number | null;        // 壓力分數 (1-10)
+
   // Timestamps
   created_at: Date;
   updated_at: Date;
@@ -315,6 +322,74 @@ export interface SymptomPatternAnalysis {
   computed_at: Date;
   created_at: Date;
   updated_at: Date;
+}
+
+// ========== HealthKit Integration Types ==========
+
+/**
+ * 健康指標統計資料
+ * Statistical data for a single health metric over a time period
+ */
+export interface HealthMetricStatistics {
+  average: number;              // 平均值
+  min: number;                  // 最小值
+  max: number;                  // 最大值
+  daysWithData: number;         // 有資料的天數
+  totalDays: number;            // 總天數
+  coverage: number;             // 資料覆蓋率 (0-100%)
+  trend: 'improving' | 'stable' | 'declining' | 'insufficient_data';
+}
+
+/**
+ * 健康指標總覽
+ * Overview of all available health metrics for the analysis period
+ */
+export interface HealthMetricsOverview {
+  heartRate?: HealthMetricStatistics;
+  steps?: HealthMetricStatistics;
+  activeCalories?: HealthMetricStatistics;
+  waterIntake?: HealthMetricStatistics;
+  stressScore?: HealthMetricStatistics;
+}
+
+/**
+ * 健康指標與症狀的關聯分析
+ * Correlation analysis between a health metric and symptom severity
+ */
+export interface HealthSymptomCorrelation {
+  metric: 'avg_heart_rate' | 'daily_steps' | 'active_calories' | 'water_intake_ml' | 'stress_score';
+  metricLabel: string;          // 人類可讀的指標名稱 (e.g., "每日步數")
+  ranges: {
+    low: {
+      label: string;            // 範圍描述（如 "0-3000 步"）
+      avgSymptomScore: number;  // 該範圍內的平均症狀分數
+      dayCount: number;         // 樣本天數
+    };
+    medium: {
+      label: string;
+      avgSymptomScore: number;
+      dayCount: number;
+    };
+    high: {
+      label: string;
+      avgSymptomScore: number;
+      dayCount: number;
+    };
+  };
+  insight: string;              // AI 生成的關聯洞察
+  significance: 'strong' | 'moderate' | 'weak' | 'insufficient_data';
+}
+
+/**
+ * 完整的健康因子分析結果
+ * Complete health factor analysis including metrics overview and correlations
+ */
+export interface HealthFactorAnalysis {
+  overview: HealthMetricsOverview;
+  correlations: HealthSymptomCorrelation[];
+  hasHealthData: boolean;
+  dataQuality: 'excellent' | 'good' | 'fair' | 'poor';
+  qualityNotes: string[];
 }
 
 // Alert configuration types
