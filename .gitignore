@@ -144,11 +144,13 @@ logs/
 
 diet_daily_docker
 
-# iOS release artifacts (keep only ipa and gitkeep)
+# iOS release artifacts (keep only Release ipa and gitkeep)
 releaseIosApp/**
 !releaseIosApp/
-!releaseIosApp/*.ipa
+!releaseIosApp/DietDailyMobile-*.ipa
 !releaseIosApp/.gitkeep
+# Ignore Debug builds
+releaseIosApp/DietDailyDev.ipa
 
 # DietDailyMobile/src - synced from DietDailyDev via sync-src-to-release.sh
 # Only DietDailyDev/src is tracked in Git
