@@ -27,7 +27,7 @@ const significanceColors: Record<string, { badge: string; line: string }> = {
 };
 
 const CorrelationCard = ({ correlation }: { correlation: HealthSymptomCorrelation }) => {
-  const colors = significanceColors[correlation.significance];
+  const colors = (significanceColors[correlation.significance] || significanceColors.insufficient_data) as { badge: string; line: string };
 
   // Prepare data for chart
   const chartData = [

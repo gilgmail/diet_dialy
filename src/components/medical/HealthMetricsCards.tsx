@@ -152,7 +152,7 @@ export function HealthMetricsCards({
     { key: 'activeCalories', stats: overview.activeCalories },
     { key: 'waterIntake', stats: overview.waterIntake },
     { key: 'stressScore', stats: overview.stressScore }
-  ].filter(m => m.stats !== undefined);
+  ].filter(m => m.stats !== undefined && metricConfigs[m.key]);
 
   if (metrics.length === 0) {
     return null;
@@ -165,7 +165,7 @@ export function HealthMetricsCards({
     poor: { bg: 'bg-red-50', border: 'border-red-300', text: 'text-red-800' }
   };
 
-  const qualityColors = qualityColorMap[dataQuality] || qualityColorMap.fair;
+  const qualityColors = (qualityColorMap[dataQuality] || qualityColorMap.fair) as { bg: string; border: string; text: string };
 
   return (
     <div className={className}>
@@ -188,7 +188,7 @@ export function HealthMetricsCards({
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {metrics.map(({ key, stats }) => (
-          <MetricCard key={key} stats={stats!} config={metricConfigs[key]} />
+          <MetricCard key={key} stats={stats!} config={metricConfigs[key]!} />
         ))}
       </div>
     </div>
