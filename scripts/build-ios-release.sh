@@ -77,24 +77,6 @@ echo "  APP_VERSION     = ${APP_VERSION}"
 echo "  IOS_BUILD_NUMBER= ${IOS_BUILD_NUMBER}"
 echo ""
 
-# Automatically sync source code from DietDailyDev to DietDailyMobile
-# DietDailyMobile/src is not tracked in Git, so we always sync before building
-SOURCE_DEV="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyDev/src"
-SYNC_SCRIPT="${SCRIPT_DIR}/sync-src-to-release.sh"
-if [ -d "$SOURCE_DEV" ] && [ -f "$SYNC_SCRIPT" ]; then
-    # Always sync before building Release (DietDailyMobile/src is not in Git)
-    echo "🔄 Syncing source code from DietDailyDev to DietDailyMobile..."
-    echo "   (DietDailyMobile/src is not tracked in Git, syncing from DietDailyDev)"
-    echo ""
-    # Run sync script non-interactively
-    bash "$SYNC_SCRIPT" --yes || {
-        echo "❌ Sync failed. Cannot proceed with Release build."
-        echo "   Please run ./scripts/sync-src-to-release.sh manually"
-        exit 1
-    }
-    echo ""
-fi
-
 mkdir -p "${RELEASE_DIR}"
 
 echo "1️⃣ Ensuring Info.plist versions match..."

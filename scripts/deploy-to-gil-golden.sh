@@ -8,12 +8,8 @@ set -e  # Exit on error
 DEVICE_NAME="Gil-Golden"
 DEVICE_ID="00008140-00146D6A2610801C"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DEBUG_APP_DIR="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyDev"
 RELEASE_APP_DIR="${REPO_ROOT}/mobile/react-native-starter-kit/DietDailyMobile"
-DEBUG_APP_NAME="DietDailyDev"
 RELEASE_APP_NAME="DietDailyMobile"
-APP_NAME="$RELEASE_APP_NAME"
-APP_DIR="$RELEASE_APP_DIR"
 
 # Colors for output
 RED='\033[0;31m'
@@ -39,16 +35,8 @@ print_warning() {
     echo -e "${YELLOW}⚠️${NC} $1"
 }
 
-VARIANT="${1:-debug}"
+VARIANT="${1:-release}"
 case "$VARIANT" in
-    debug)
-        APP_NAME="$DEBUG_APP_NAME"
-        APP_DIR="$DEBUG_APP_DIR"
-        BUNDLE_ID="com.gilko.DietDailyMobile.dev"
-        APP_VARIANT_ENV="debug"
-        VARIANT_LABEL="Debug"
-        XCODE_CONFIGURATION="Debug"
-        ;;
     release)
         APP_NAME="$RELEASE_APP_NAME"
         APP_DIR="$RELEASE_APP_DIR"
@@ -58,13 +46,12 @@ case "$VARIANT" in
         XCODE_CONFIGURATION="Release"
         ;;
     -h|--help)
-        echo "Usage: $0 [debug|release]"
-        echo "  debug   (default) - deploys the debug bundle ID (com.gilko.DietDailyMobile.dev)"
-        echo "  release           - deploys the production bundle ID"
+        echo "Usage: $0 [release]"
+        echo "  release (default) - deploys DietDailyMobile to device"
         exit 0
         ;;
     *)
-        print_error "Unknown variant '$VARIANT'. Use 'release' or 'debug'."
+        print_error "Unknown variant '$VARIANT'. Use 'release' only (Debug version removed)."
         exit 1
         ;;
 esac

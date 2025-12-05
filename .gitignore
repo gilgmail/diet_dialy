@@ -149,17 +149,5 @@ releaseIosApp/**
 !releaseIosApp/
 !releaseIosApp/DietDailyMobile-*.ipa
 !releaseIosApp/.gitkeep
-# Ignore Debug builds
-releaseIosApp/DietDailyDev.ipa
 
-# DietDailyMobile/src - synced from DietDailyDev via sync-src-to-release.sh
-# Only DietDailyDev/src is tracked in Git
-mobile/react-native-starter-kit/DietDailyMobile/src/
-
-# DietDailyDev build artifacts (tracked files: App.tsx, app.config.ts, package.json, src/, etc.)
-mobile/react-native-starter-kit/DietDailyDev/.expo/
-mobile/react-native-starter-kit/DietDailyDev/node_modules/
-mobile/react-native-starter-kit/DietDailyDev/ios/
-# Note: assets/ and node_modules/ are symlinks, but we ignore them anyway
-mobile/react-native-starter-kit/DietDailyDev/assets
-mobile/react-native-starter-kit/DietDailyDev/node_modules
+# DietDailyMobile/src is now tracked in Git (Debug version DietDailyDev removed)
