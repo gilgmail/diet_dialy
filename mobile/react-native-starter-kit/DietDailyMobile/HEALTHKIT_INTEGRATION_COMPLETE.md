@@ -84,9 +84,14 @@ const result = await healthKitService.syncHealthData(7);
 ---
 
 ### 3. 導航整合 ✅
-**檔案**: `src/app/navigation/types.ts`
+**檔案**: `src/app/navigation/types.ts`, `MainNavigator.tsx`, `SettingsScreen.tsx`
 
-已添加 `HealthKitSettings` 路由到 `MainStackParamList`：
+**已完成內容**:
+- ✅ 已添加 `HealthKitSettings` 路由到 `MainStackParamList`
+- ✅ 已在 MainNavigator.tsx 中註冊 HealthKitSettings 畫面
+- ✅ 已在 SettingsScreen.tsx 的健康設定區塊添加導航選項（iOS only）
+
+**導航路由定義**:
 ```typescript
 export type MainStackParamList = {
   // ... 其他路由
@@ -94,23 +99,30 @@ export type MainStackParamList = {
 }
 ```
 
----
+**畫面註冊** (MainNavigator.tsx):
+```typescript
+import { HealthKitSettingsScreen } from '@/features/settings/screens/HealthKitSettingsScreen';
 
-## 🔧 需要手動完成的設定
+<Stack.Screen
+  name="HealthKitSettings"
+  component={HealthKitSettingsScreen}
+  options={{
+    headerShown: true,
+    title: 'HealthKit 設定',
+    headerBackTitle: '返回',
+    headerStyle: { backgroundColor: colors.surface },
+    headerTintColor: colors.text.primary,
+  }}
+/>
+```
 
-### ⚠️ 在 SettingsScreen 中添加導航選項
-
-**檔案**: `src/features/settings/screens/SettingsScreen.tsx`
-
-**位置**: 健康設定區塊（約 line 555-582）
-
-**需要添加的代碼**:
+**設定頁面整合** (SettingsScreen.tsx, line 559-576):
 ```typescript
 {/* Health Settings */}
 <View style={styles.section}>
   <Text style={styles.sectionTitle}>健康設定</Text>
 
-  {/* ===== 添加以下代碼 ===== */}
+  {/* HealthKit Integration - iOS only */}
   {Platform.OS === 'ios' && (
     <TouchableOpacity
       style={styles.settingRow}
@@ -128,39 +140,12 @@ export type MainStackParamList = {
       <Icon name="chevron-right" size={24} color={colors.text.secondary} />
     </TouchableOpacity>
   )}
-  {/* ===== 添加結束 ===== */}
 
   {/* 現有的慢性病類型選項 */}
   <TouchableOpacity style={styles.settingRow} onPress={handleChangeDisease}>
     ...
   </TouchableOpacity>
-
-  {/* 現有的已知過敏原選項 */}
-  <TouchableOpacity style={styles.settingRow} onPress={handleManageAllergies}>
-    ...
-  </TouchableOpacity>
 </View>
-```
-
----
-
-### ⚠️ 在主導航中註冊 HealthKitSettings 畫面
-
-**檔案**: 主導航 Stack（可能是 `src/app/navigation/MainNavigator.tsx` 或類似檔案）
-
-**需要添加的代碼**:
-```typescript
-import { HealthKitSettingsScreen } from '@/features/settings/screens/HealthKitSettingsScreen';
-
-// 在 Stack.Navigator 中添加
-<Stack.Screen
-  name="HealthKitSettings"
-  component={HealthKitSettingsScreen}
-  options={{
-    title: 'HealthKit 設定',
-    headerBackTitle: '返回',
-  }}
-/>
 ```
 
 ---
@@ -269,22 +254,20 @@ Web 前端展示 (HealthMetricsCards + Charts)
 | HealthKitService.ts | ✅ 完成 |
 | HealthKitSettingsScreen.tsx | ✅ 完成 |
 | 導航類型定義 | ✅ 完成 |
-| 導航整合（SettingsScreen） | ⚠️ 待手動添加 |
-| 導航註冊（MainNavigator） | ⚠️ 待手動添加 |
+| 導航整合（SettingsScreen） | ✅ 完成 |
+| 導航註冊（MainNavigator） | ✅ 完成 |
 | Xcode 設定 | ✅ 完成 |
 | 後端 API | ✅ 已部署 (Pi5) |
 | Web 前端 | ✅ 已完成 |
-| 資料庫遷移 | ⚠️ 待手動執行 |
+| 資料庫遷移 | ⚠️ 待執行 |
 
 ---
 
 ## 📝 後續步驟
 
 ### 立即需要：
-1. **在 SettingsScreen.tsx 添加 HealthKit 選項**（參考上方代碼）
-2. **在主導航中註冊 HealthKitSettings 畫面**
-3. **執行資料庫遷移**（參考 PI5_DEPLOYMENT_STATUS.md）
-4. **在真實 iOS 裝置上測試**
+1. **執行資料庫遷移**（參考 PI5_DEPLOYMENT_STATUS.md）
+2. **在真實 iOS 裝置上測試**
 
 ### 未來增強：
 - [ ] 自動後台同步（Background Tasks）
