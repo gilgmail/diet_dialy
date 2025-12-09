@@ -22,6 +22,7 @@ import { SettingsScreen } from '@/features/settings/screens/SettingsScreen'
 import { MedicationLogScreen } from '@/features/health-logs/screens/MedicationLogScreen'
 import { SleepLogScreen } from '@/features/health-logs/screens/SleepLogScreen'
 import { ActivityLogScreen } from '@/features/health-logs/screens/ActivityLogScreen'
+import { HealthKitSettingsScreen } from '@/features/settings/screens/HealthKitSettingsScreen'
 import { colors, typography, spacing } from '@/theme'
 import type { MainStackParamList, MainTabParamList } from './types'
 
@@ -478,6 +479,19 @@ export function MainNavigator() {
         options={{
           headerShown: true,
           title: 'AI 分析報告',
+          headerStyle: {
+            backgroundColor: colors.surface,
+          },
+          headerTintColor: colors.text.primary,
+        }}
+      />
+      <Stack.Screen
+        name="HealthKitSettings"
+        component={HealthKitSettingsScreen}
+        options={{
+          headerShown: true,
+          title: 'HealthKit 設定',
+          headerBackTitle: '返回',
           headerStyle: {
             backgroundColor: colors.surface,
           },

@@ -556,6 +556,25 @@ Device: ${Platform.OS} ${Platform.Version}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>健康設定</Text>
 
+        {/* HealthKit Integration - iOS only */}
+        {Platform.OS === 'ios' && (
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => navigation.navigate('HealthKitSettings')}
+          >
+            <View style={styles.settingInfo}>
+              <Icon name="heart-pulse" size={24} color={colors.error} />
+              <View style={styles.settingTextContainer}>
+                <Text style={styles.settingLabel}>HealthKit 整合</Text>
+                <Text style={styles.settingDescription}>
+                  同步 Apple Health 數據
+                </Text>
+              </View>
+            </View>
+            <Icon name="chevron-right" size={24} color={colors.text.secondary} />
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity style={styles.settingRow} onPress={handleChangeDisease}>
           <View style={styles.settingInfo}>
             <Icon name="medical-bag" size={24} color={colors.primary[500]} />

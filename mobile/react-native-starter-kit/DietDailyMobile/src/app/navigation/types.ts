@@ -39,6 +39,7 @@ export type MainStackParamList = {
   ReportDetail: {
     htmlContent: string
   }
+  HealthKitSettings: undefined
 }
 
 export type RootStackParamList = {
