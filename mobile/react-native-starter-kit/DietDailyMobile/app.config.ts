@@ -79,6 +79,16 @@ const baseConfig: ExpoConfig = {
     bundleIdentifier: 'com.gilko.DietDailyMobile',
     buildNumber: iosBuildNumber,
     googleServicesFile: RELEASE_IOS_GOOGLE_SERVICES,
+    infoPlist: {
+      NSHealthShareUsageDescription:
+        'DietDaily 需要讀取您的健康數據（步數、心率、活動消耗、飲水量、睡眠）以提供更準確的飲食與症狀分析。',
+      NSHealthUpdateUsageDescription:
+        'DietDaily 需要更新您的健康數據以同步您的健康狀態。',
+    },
+    entitlements: {
+      'com.apple.developer.healthkit': true,
+      'com.apple.developer.healthkit.access': [],
+    },
   },
   android: {
     adaptiveIcon: {
