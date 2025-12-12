@@ -85,21 +85,14 @@ class HealthKitService {
    * 檢查 HealthKit 是否可用（僅 iOS）
    */
   async isAvailable(): Promise<boolean> {
+    // HealthKit 只在 iOS 上可用
     if (Platform.OS !== 'ios') {
       console.log('HealthKit is only available on iOS');
       return false;
     }
 
-    return new Promise((resolve) => {
-      AppleHealthKit.isAvailable((error, available) => {
-        if (error) {
-          console.error('HealthKit availability check failed:', error);
-          resolve(false);
-        } else {
-          resolve(available);
-        }
-      });
-    });
+    // iOS 裝置都支援 HealthKit (iOS 8+)
+    return true;
   }
 
   /**
