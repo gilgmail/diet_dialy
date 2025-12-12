@@ -45,13 +45,22 @@ case "$VARIANT" in
         VARIANT_LABEL="Release"
         XCODE_CONFIGURATION="Release"
         ;;
+    debug)
+        APP_NAME="$RELEASE_APP_NAME"
+        APP_DIR="$RELEASE_APP_DIR"
+        BUNDLE_ID="com.gilko.DietDailyMobile"
+        APP_VARIANT_ENV="debug"
+        VARIANT_LABEL="Debug"
+        XCODE_CONFIGURATION="Debug"
+        ;;
     -h|--help)
-        echo "Usage: $0 [release]"
-        echo "  release (default) - deploys DietDailyMobile to device"
+        echo "Usage: $0 [release|debug]"
+        echo "  release (default) - deploys DietDailyMobile Release build"
+        echo "  debug           - deploys DietDailyMobile Debug build (requires Metro bundler)"
         exit 0
         ;;
     *)
-        print_error "Unknown variant '$VARIANT'. Use 'release' only (Debug version removed)."
+        print_error "Unknown variant '$VARIANT'. Use 'release' or 'debug'."
         exit 1
         ;;
 esac
