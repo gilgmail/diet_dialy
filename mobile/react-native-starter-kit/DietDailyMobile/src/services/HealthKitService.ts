@@ -4,7 +4,7 @@ import AppleHealthKit, {
 } from 'react-native-health';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/shared/api/supabase/client';
 
 // HealthKit 權限配置
 const HEALTHKIT_PERMISSIONS: HealthKitPermissions = {
