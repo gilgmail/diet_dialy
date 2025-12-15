@@ -6,8 +6,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { supabase } from '@/shared/api/supabase/client';
 
-// Get the actual HealthKit API - handle potential default wrapper
-const HealthKitAPI = (AppleHealthKit as any).default || AppleHealthKit;
+// The default export from react-native-health is the HealthKit object
+// (which includes both native methods and Constants)
+const HealthKitAPI = AppleHealthKit;
 
 // HealthKit 權限配置
 const HEALTHKIT_PERMISSIONS: HealthKitPermissions = {
