@@ -6,15 +6,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { supabase } from '@/shared/api/supabase/client';
 
+// Get the actual HealthKit API - handle potential default wrapper
+const HealthKitAPI = (AppleHealthKit as any).default || AppleHealthKit;
+
 // HealthKit 權限配置
 const HEALTHKIT_PERMISSIONS: HealthKitPermissions = {
   permissions: {
     read: [
-      AppleHealthKit.Constants.Permissions.Steps,
-      AppleHealthKit.Constants.Permissions.HeartRate,
-      AppleHealthKit.Constants.Permissions.ActiveEnergyBurned,
-      AppleHealthKit.Constants.Permissions.Water,
-      AppleHealthKit.Constants.Permissions.SleepAnalysis,
+      HealthKitAPI.Constants.Permissions.Steps,
+      HealthKitAPI.Constants.Permissions.HeartRate,
+      HealthKitAPI.Constants.Permissions.ActiveEnergyBurned,
+      HealthKitAPI.Constants.Permissions.Water,
+      HealthKitAPI.Constants.Permissions.SleepAnalysis,
     ],
     write: [],
   },
@@ -128,7 +131,7 @@ class HealthKitService {
     }
 
     return new Promise((resolve, reject) => {
-      AppleHealthKit.initHealthKit(HEALTHKIT_PERMISSIONS, (error: string, result: any) => {
+      HealthKitAPI.initHealthKit(HEALTHKIT_PERMISSIONS, (error: string, result: any) => {
         if (error) {
           console.error('HealthKit authorization error:', error);
           reject(new Error(`授權失敗: ${error}`));
@@ -170,7 +173,7 @@ class HealthKitService {
         endDate: endDate.toISOString(),
       };
 
-      AppleHealthKit.getDailyStepCountSamples(options, (error, results) => {
+      HealthKitAPI.getDailyStepCountSamples(options, (error, results) => {
         if (error) {
           console.error('Failed to fetch steps data:', error);
           reject(new Error(`獲取步數失敗: ${error}`));
@@ -193,7 +196,7 @@ class HealthKitService {
         limit: 1000,
       };
 
-      AppleHealthKit.getHeartRateSamples(options, (error, results) => {
+      HealthKitAPI.getHeartRateSamples(options, (error, results) => {
         if (error) {
           console.error('Failed to fetch heart rate data:', error);
           reject(new Error(`獲取心率失敗: ${error}`));
@@ -214,7 +217,7 @@ class HealthKitService {
         endDate: endDate.toISOString(),
       };
 
-      AppleHealthKit.getActiveEnergyBurned(options, (error, results) => {
+      HealthKitAPI.getActiveEnergyBurned(options, (error, results) => {
         if (error) {
           console.error('Failed to fetch active energy data:', error);
           reject(new Error(`獲取活動消耗失敗: ${error}`));
@@ -235,7 +238,7 @@ class HealthKitService {
         endDate: endDate.toISOString(),
       };
 
-      AppleHealthKit.getWaterSamples(options, (error, results) => {
+      HealthKitAPI.getWaterSamples(options, (error, results) => {
         if (error) {
           console.error('Failed to fetch water data:', error);
           reject(new Error(`獲取飲水量失敗: ${error}`));
@@ -256,7 +259,7 @@ class HealthKitService {
         endDate: endDate.toISOString(),
       };
 
-      AppleHealthKit.getSleepSamples(options, (error, results) => {
+      HealthKitAPI.getSleepSamples(options, (error, results) => {
         if (error) {
           console.error('Failed to fetch sleep data:', error);
           reject(new Error(`獲取睡眠數據失敗: ${error}`));
