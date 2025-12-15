@@ -103,7 +103,10 @@ const baseConfig: ExpoConfig = {
   web: {
     favicon: './assets/favicon.png',
   },
-  plugins: ['expo-web-browser'],
+  plugins: [
+    'expo-web-browser',
+    './plugins/withDisableNewArch',
+  ],
 }
 
 export default ({ }: ConfigContext): ExpoConfig => {
