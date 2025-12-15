@@ -6,9 +6,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { supabase } from '@/shared/api/supabase/client';
 
+// 🔍 DEBUG: 檢查模組載入狀況
+console.log('🔍 [HealthKitService] ===== MODULE IMPORT DEBUG =====');
+console.log('🔍 [HealthKitService] AppleHealthKit type:', typeof AppleHealthKit);
+console.log('🔍 [HealthKitService] AppleHealthKit is null?', AppleHealthKit === null);
+console.log('🔍 [HealthKitService] AppleHealthKit is undefined?', AppleHealthKit === undefined);
+if (AppleHealthKit) {
+  console.log('🔍 [HealthKitService] AppleHealthKit keys (first 10):', Object.keys(AppleHealthKit).slice(0, 10));
+  console.log('🔍 [HealthKitService] Has initHealthKit?', 'initHealthKit' in AppleHealthKit);
+  console.log('🔍 [HealthKitService] initHealthKit type:', typeof AppleHealthKit.initHealthKit);
+  console.log('🔍 [HealthKitService] Has Constants?', 'Constants' in AppleHealthKit);
+}
+console.log('🔍 [HealthKitService] ===== END MODULE DEBUG =====');
+
 // The default export from react-native-health is the HealthKit object
 // (which includes both native methods and Constants)
 const HealthKitAPI = AppleHealthKit;
+
+console.log('🔍 [HealthKitService] HealthKitAPI assigned, type:', typeof HealthKitAPI);
+console.log('🔍 [HealthKitService] HealthKitAPI.initHealthKit type:', HealthKitAPI ? typeof HealthKitAPI.initHealthKit : 'HealthKitAPI is null/undefined');
 
 // HealthKit 權限配置
 const HEALTHKIT_PERMISSIONS: HealthKitPermissions = {
@@ -126,23 +142,40 @@ class HealthKitService {
    * 請求 HealthKit 授權
    */
   async requestAuthorization(): Promise<boolean> {
+    console.log('🔍 [requestAuthorization] ===== START =====');
+    console.log('🔍 [requestAuthorization] Checking HealthKit availability...');
+
     const available = await this.isAvailable();
     if (!available) {
+      console.log('🔍 [requestAuthorization] HealthKit not available');
       throw new Error('HealthKit is not available on this device');
     }
 
+    console.log('🔍 [requestAuthorization] HealthKit is available');
+    console.log('🔍 [requestAuthorization] HealthKitAPI type:', typeof HealthKitAPI);
+    console.log('🔍 [requestAuthorization] HealthKitAPI.initHealthKit type:', typeof HealthKitAPI?.initHealthKit);
+    console.log('🔍 [requestAuthorization] About to call initHealthKit...');
+
     return new Promise((resolve, reject) => {
-      HealthKitAPI.initHealthKit(HEALTHKIT_PERMISSIONS, (error: string, result: any) => {
-        if (error) {
-          console.error('HealthKit authorization error:', error);
-          reject(new Error(`授權失敗: ${error}`));
-        } else {
-          this.isAuthorized = true;
-          AsyncStorage.setItem(STORAGE_KEYS.AUTH_STATUS, 'authorized');
-          console.log('HealthKit authorization granted');
-          resolve(true);
-        }
-      });
+      console.log('🔍 [requestAuthorization] Inside Promise, calling initHealthKit...');
+
+      try {
+        HealthKitAPI.initHealthKit(HEALTHKIT_PERMISSIONS, (error: string, result: any) => {
+          console.log('🔍 [requestAuthorization] Callback received - error:', error, 'result:', result);
+          if (error) {
+            console.error('HealthKit authorization error:', error);
+            reject(new Error(`授權失敗: ${error}`));
+          } else {
+            this.isAuthorized = true;
+            AsyncStorage.setItem(STORAGE_KEYS.AUTH_STATUS, 'authorized');
+            console.log('HealthKit authorization granted');
+            resolve(true);
+          }
+        });
+      } catch (err) {
+        console.error('🔍 [requestAuthorization] Exception caught:', err);
+        reject(err);
+      }
     });
   }
 
