@@ -68,7 +68,7 @@ const baseConfig: ExpoConfig = {
   icon: './assets/icon.png',
   scheme: 'dietdaily',
   userInterfaceStyle: 'light',
-  newArchEnabled: true,
+  newArchEnabled: false, // Disabled for react-native-health compatibility
   splash: {
     image: './assets/splash-icon.png',
     resizeMode: 'contain',
