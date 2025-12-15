@@ -128,7 +128,7 @@ class HealthKitService {
     }
 
     return new Promise((resolve, reject) => {
-      AppleHealthKit.initHealthKit(HEALTHKIT_PERMISSIONS, (error) => {
+      AppleHealthKit.initHealthKit(HEALTHKIT_PERMISSIONS, (error: string, result: any) => {
         if (error) {
           console.error('HealthKit authorization error:', error);
           reject(new Error(`授權失敗: ${error}`));
