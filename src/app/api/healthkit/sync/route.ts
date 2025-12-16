@@ -65,20 +65,30 @@ export async function POST(request: NextRequest) {
     }))
 
     // Upsert 到 health_metrics table（避免重複導入）
+    console.log('🔍 DEBUG: onConflict columns:', 'user_id,source,source_identifier,start_time');
+    console.log('🔍 DEBUG: Sample metric:', JSON.stringify(metricsToInsert[0], null, 2));
+
     const { data, error } = await supabase
       .from('health_metrics')
       .upsert(metricsToInsert, {
-        onConflict: 'source,source_identifier,start_time',
+        onConflict: 'user_id,source,source_identifier,start_time',
         ignoreDuplicates: false
       })
       .select()
 
     if (error) {
       console.error('❌ Supabase upsert error:', error)
+      console.error('🔍 DEBUG: Error code:', error.code);
+      console.error('🔍 DEBUG: Error details:', error.details);
+      console.error('🔍 DEBUG: Error hint:', error.hint);
       return NextResponse.json({
         success: false,
         message: `資料庫錯誤: ${error.message}`,
-        data: null
+        data: {
+          error_code: error.code,
+          error_details: error.details,
+          error_hint: error.hint
+        }
       }, { status: 500 })
     }
 

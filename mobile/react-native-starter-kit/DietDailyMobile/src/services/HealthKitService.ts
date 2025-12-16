@@ -316,6 +316,7 @@ class HealthKitService {
       end_time: sample.endDate,
       numeric_value: sample.value,
       unit: 'count',
+      detail_payload: {},
       device_name: sample.sourceName || 'iPhone',
       app_name: 'Apple Health',
     }));
@@ -333,6 +334,7 @@ class HealthKitService {
       end_time: sample.endDate,
       numeric_value: sample.value,
       unit: 'bpm',
+      detail_payload: {},
       device_name: sample.sourceName || 'Apple Watch',
       app_name: 'Apple Health',
     }));
@@ -350,6 +352,7 @@ class HealthKitService {
       end_time: sample.endDate,
       numeric_value: sample.value,
       unit: 'kcal',
+      detail_payload: {},
       device_name: sample.sourceName || 'Apple Watch',
       app_name: 'Apple Health',
     }));
@@ -367,6 +370,7 @@ class HealthKitService {
       end_time: sample.endDate,
       numeric_value: sample.value,
       unit: 'ml',
+      detail_payload: {},
       device_name: sample.sourceName || 'iPhone',
       app_name: 'Apple Health',
     }));
@@ -376,20 +380,49 @@ class HealthKitService {
    * 轉換睡眠數據為 HealthMetric 格式
    */
   private convertSleepToMetrics(sleepData: HealthValue[]): HealthMetric[] {
-    return sleepData.map((sample: any) => ({
-      source: 'healthkit',
-      source_identifier: `sleep-${sample.startDate}-${sample.value}`,
-      metric_type: METRIC_TYPE_MAP.sleep,
-      start_time: sample.startDate,
-      end_time: sample.endDate,
-      numeric_value: sample.value, // 睡眠狀態代碼
-      unit: 'minutes',
-      detail_payload: {
-        stage: this.getSleepStage(sample.value),
-      },
-      device_name: sample.sourceName || 'Apple Watch',
-      app_name: 'Apple Health',
-    }));
+    return sleepData.map((sample: any) => {
+      // 如果 value 是字串（如 "REM"、"AWAKE"），轉換為數字代碼
+      const numericValue = typeof sample.value === 'string'
+        ? this.getSleepNumericValue(sample.value)
+        : sample.value;
+
+      const stage = typeof sample.value === 'string'
+        ? sample.value.toLowerCase()
+        : this.getSleepStage(sample.value);
+
+      return {
+        source: 'healthkit',
+        source_identifier: `sleep-${sample.startDate}-${numericValue}`,
+        metric_type: METRIC_TYPE_MAP.sleep,
+        start_time: sample.startDate,
+        end_time: sample.endDate,
+        numeric_value: numericValue,
+        unit: 'minutes',
+        detail_payload: {
+          stage,
+        },
+        device_name: sample.sourceName || 'Apple Watch',
+        app_name: 'Apple Health',
+      };
+    });
+  }
+
+  /**
+   * 將睡眠階段字串轉換為數字代碼
+   */
+  private getSleepNumericValue(stageString: string): number {
+    // HealthKit 字串值對應到數字代碼
+    const stageToNumber: Record<string, number> = {
+      'INBED': 0,
+      'IN_BED': 0,
+      'ASLEEP': 1,
+      'AWAKE': 2,
+      'CORE': 3,
+      'DEEP': 4,
+      'REM': 5,
+    };
+    const upperStage = stageString.toUpperCase();
+    return stageToNumber[upperStage] !== undefined ? stageToNumber[upperStage] : 1; // 預設為 ASLEEP
   }
 
   /**
