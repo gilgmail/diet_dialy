@@ -5,7 +5,11 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import type { MainStackParamList } from '@/app/navigation/types'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useStreak } from '@/features/dashboard/hooks/useStreak'
 import { useDataCoverage } from '@/features/dashboard/hooks/useDataCoverage'
@@ -25,6 +29,7 @@ import { zhTW } from 'date-fns/locale'
  */
 export function InsightsScreen() {
   const { user } = useAuth()
+  const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>()
   const [refreshing, setRefreshing] = React.useState(false)
   
   // 獲取連續記錄數據
@@ -263,6 +268,24 @@ export function InsightsScreen() {
                 </Text>
               </View>
               </View>
+
+        {/* 排便追蹤導航卡片 */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.bowelTrackingCard}
+            onPress={() => navigation.navigate('BowelMovementDashboard', { days: 30 })}
+            activeOpacity={0.7}
+          >
+            <View style={styles.bowelTrackingIconContainer}>
+              <Icon name="chart-box-outline" size={32} color={colors.primary[500]} />
+            </View>
+            <View style={styles.bowelTrackingContent}>
+              <Text style={styles.bowelTrackingTitle}>排便追蹤儀表板</Text>
+              <Text style={styles.bowelTrackingSubtitle}>查看 Bristol Scale 分析和排便模式</Text>
+            </View>
+            <Icon name="chevron-right" size={24} color={colors.text.secondary} />
+          </TouchableOpacity>
+        </View>
 
         {/* 報表匯出卡片 */}
         <View style={styles.section}>
@@ -569,6 +592,46 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 
+  // 排便追蹤導航卡片
+  bowelTrackingCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  bowelTrackingIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: `${colors.primary[500]}15`,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bowelTrackingContent: {
+    flex: 1,
+  },
+  bowelTrackingTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs / 2,
+  },
+  bowelTrackingSubtitle: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+  },
 
   bottomSpacer: {
     height: spacing.xl,

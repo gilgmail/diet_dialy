@@ -12,7 +12,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { BowelMovementInsight } from '../hooks/useBowelMovementStats';
 
 interface Props {

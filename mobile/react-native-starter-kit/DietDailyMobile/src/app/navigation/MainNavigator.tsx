@@ -23,6 +23,7 @@ import { MedicationLogScreen } from '@/features/health-logs/screens/MedicationLo
 import { SleepLogScreen } from '@/features/health-logs/screens/SleepLogScreen'
 import { ActivityLogScreen } from '@/features/health-logs/screens/ActivityLogScreen'
 import { HealthKitSettingsScreen } from '@/features/settings/screens/HealthKitSettingsScreen'
+import { BowelMovementDashboardScreen } from '@/features/bowel-tracking'
 import { colors, typography, spacing } from '@/theme'
 import type { MainStackParamList, MainTabParamList } from './types'
 
@@ -498,6 +499,30 @@ export function MainNavigator() {
           headerTintColor: colors.text.primary,
         }}
       />
+      <Stack.Screen
+        name="BowelMovementDashboard"
+        options={{
+          headerShown: true,
+          title: '排便追蹤',
+          headerBackTitle: '返回',
+          headerStyle: {
+            backgroundColor: colors.surface,
+          },
+          headerTintColor: colors.text.primary,
+        }}
+      >
+        {(props) => {
+          const { user } = useAuth()
+          if (!user?.id) {
+            return (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Text>請先登入</Text>
+              </View>
+            )
+          }
+          return <BowelMovementDashboardScreen userId={user.id} days={props.route.params?.days} />
+        }}
+      </Stack.Screen>
     </Stack.Navigator>
   )
 }

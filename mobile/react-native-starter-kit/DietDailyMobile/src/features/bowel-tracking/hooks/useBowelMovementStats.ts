@@ -16,7 +16,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/shared/clients/supabaseClient';
+import { supabase } from '@/shared/clients/supabase';
 import { queryKeys } from '@/lib/query-client';
 import { subDays, format } from 'date-fns';
 

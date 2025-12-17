@@ -40,6 +40,9 @@ export type MainStackParamList = {
     htmlContent: string
   }
   HealthKitSettings: undefined
+  BowelMovementDashboard: {
+    days?: number // Analysis period in days, default 30
+  } | undefined
 }
 
 export type RootStackParamList = {
