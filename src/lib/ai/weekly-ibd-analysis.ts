@@ -108,6 +108,38 @@ interface FoodKnowledgeAlertEntry {
   reason: 'missing' | 'stale'
 }
 
+// 排便記錄類型定義（對應 bowel_movement_entries）
+interface BowelMovementEntry {
+  id: string
+  user_id: string
+  recorded_date: string
+  occurred_at: string
+  stool_type: number  // Bristol Scale 1-5
+  has_blood: boolean
+  difficulty?: 'normal' | 'difficult' | 'urgent'
+  duration_minutes?: number
+  notes?: string
+  created_at: string
+}
+
+// HealthKit 健康指標類型定義（對應 health_metrics）
+interface HealthMetric {
+  id: string
+  user_id: string
+  source: string
+  source_identifier: string
+  metric_type: string  // 'sleep_analysis' | 'workout' | 'heart_rate' | 'steps' | etc.
+  start_time: string
+  end_time: string
+  recorded_date: string
+  numeric_value?: number
+  unit?: string
+  detail_payload?: Record<string, any>
+  sync_status: 'synced' | 'pending' | 'error'
+  synced_at?: string
+  created_at: string
+}
+
 interface FoodKnowledgeAlertSummary {
   missingFoods: FoodKnowledgeAlertEntry[]
   staleFoods: FoodKnowledgeAlertEntry[]
@@ -120,6 +152,8 @@ interface WeeklyAnalysisPayload {
     totalFoodEntries: number
     uniqueFoods: number
     totalSymptomEntries: number
+    totalBowelMovements: number
+    totalHealthMetrics: number
     daysWithFoodOnly: string[]
   }
   foodImpacts: Array<{
@@ -453,7 +487,51 @@ const PROMPT_VARIANTS = {
 - **纖維攝取**：可溶性 vs 不溶性纖維比例
 - **FODMAP 食物**：高 FODMAP 食物的攝取量
 
-### 4. 個人化建議
+### 4. 排便模式分析（新增）
+如果有排便記錄數據（bowelMovementSummary），分析以下內容：
+- **Bristol Scale 分佈趨勢**：正常（3-4）vs 便秘（1-2）vs 腹瀉（5）的比例
+- **排便頻率分析**：平均每日次數是否在正常範圍（1-3次/天）
+- **便秘-腹瀉交替模式**：識別是否有便秘後腹瀉的循環模式
+- **血便事件關聯**：血便事件與飲食、症狀的時間關聯
+- **食物-排便關係**：
+  - 哪些食物導致便秘（Bristol 1-2）？（例如：精緻澱粉、低纖維飲食）
+  - 哪些食物導致腹瀉（Bristol 5）？（例如：高脂、辛辣、特定FODMAP食物）
+  - 哪些食物有助於正常排便（Bristol 3-4）？
+
+### 5. 生活方式-腸道健康關聯分析（新增）
+如果有 HealthKit 健康指標數據（healthKitSummary），分析以下維度：
+
+#### 睡眠-症狀關聯
+- **睡眠品質對次日症狀的影響**：
+  - 睡眠不足（<6小時）的天數 vs 症狀加劇的關聯
+  - 充足睡眠（≥7小時）的天數 vs 症狀緩解的關聯
+  - 睡眠建議：目標每晚7-8小時，睡前2小時避免進食刺激性食物
+
+#### 運動-腸道反應關聯
+- **運動對腸道的影響**：
+  - 規律運動日 vs 症狀改善的關聯
+  - 高強度運動是否加劇症狀（特別是腹痛、腹瀉）
+  - 最佳運動時機：建議餐後1.5-2小時進行中強度運動
+- **活動量建議**：根據步數、運動時長提供具體目標（例如：每日8000-10000步）
+
+#### 心率變異性-壓力指標
+- **靜息心率與症狀**：
+  - 高心率天數是否與症狀惡化相關（可能反映壓力或發炎）
+  - 提供壓力管理建議（冥想、深呼吸、瑜伽等）
+
+#### 飲水量-排便規律性
+- **飲水量對排便的影響**：
+  - 飲水不足（<2000ml/天）與便秘的關聯
+  - 建議：每日至少2000-2500ml，分散全天飲用
+  - 避免一次大量飲水，以免加劇腹瀉
+
+#### 綜合生活方式建議
+基於睡眠、運動、飲水、壓力的多維度分析，提供整合性建議：
+- **優先改善項目**：識別最影響腸道健康的生活方式因素
+- **協同效應**：例如「充足睡眠 + 規律運動 + 充足飲水 = 最佳腸道功能」
+- **警示信號**：識別需要醫師介入的模式（例如：持續高心率 + 睡眠障礙 + 症狀惡化）
+
+### 6. 個人化建議
 根據記錄週期提供下週飲食調整方案：
 
 #### 觸發食物管理
@@ -1382,9 +1460,76 @@ export class IBDWeeklyAnalysisAgent {
     }
   }
 
+  /**
+   * 獲取排便記錄
+   */
+  private async fetchBowelMovements(
+    userId: string,
+    timeframe: Timeframe
+  ): Promise<BowelMovementEntry[]> {
+    const supabase = createAdminClient()
+
+    const { data, error } = await supabase
+      .from('bowel_movement_entries')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('recorded_date', timeframe.startDate)
+      .lte('recorded_date', timeframe.endDate)
+      .order('occurred_at', { ascending: true })
+
+    if (error) {
+      console.error('[fetchBowelMovements] ❌ Error:', error)
+      return []
+    }
+
+    console.log(`[fetchBowelMovements] 📥 Retrieved ${data?.length || 0} bowel movement entries`)
+    return (data as BowelMovementEntry[]) || []
+  }
+
+  /**
+   * 獲取 HealthKit 健康指標
+   */
+  private async fetchHealthMetrics(
+    userId: string,
+    timeframe: Timeframe
+  ): Promise<HealthMetric[]> {
+    const supabase = createAdminClient()
+
+    const { data, error } = await supabase
+      .from('health_metrics')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('sync_status', 'synced')  // 只查詢已同步的數據
+      .gte('recorded_date', timeframe.startDate)
+      .lte('recorded_date', timeframe.endDate)
+      .order('recorded_date', { ascending: true })
+
+    if (error) {
+      console.error('[fetchHealthMetrics] ❌ Error:', error)
+      return []
+    }
+
+    console.log(`[fetchHealthMetrics] 📥 Retrieved ${data?.length || 0} health metrics`)
+
+    // 統計各類型指標數量
+    if (data && data.length > 0) {
+      const metricCounts = data.reduce((acc, m) => {
+        const metric = m as HealthMetric
+        acc[metric.metric_type] = (acc[metric.metric_type] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+
+      console.log('[fetchHealthMetrics] 📊 Breakdown by type:', metricCounts)
+    }
+
+    return (data as HealthMetric[]) || []
+  }
+
   private async fetchDataset(userId: string, timeframe: Timeframe): Promise<{
     foodEntries: FoodEntry[]
     symptomEntries: DailySymptomEntry[]
+    bowelMovements: BowelMovementEntry[]
+    healthMetrics: HealthMetric[]
   }> {
     // 🔍 Diagnostic logging for data fetching
     console.log('[fetchDataset] 🔍 Fetching data for analysis:')
@@ -1393,22 +1538,28 @@ export class IBDWeeklyAnalysisAgent {
     console.log('  📅 endDate:', timeframe.endDate)
     console.log('  📊 daysCovered:', timeframe.daysCovered)
 
-    const foodEntries = await this.foodEntryService.getUserFoodEntriesByDateRange(
-      userId,
-      timeframe.startDate,
-      timeframe.endDate
-    )
-
-    const symptomEntries = await DailySymptomService.getEntriesByRange(
-      userId,
-      timeframe.startDate,
-      timeframe.endDate
-    )
+    // 並行查詢所有 4 個數據源
+    const [foodEntries, symptomEntries, bowelMovements, healthMetrics] = await Promise.all([
+      this.foodEntryService.getUserFoodEntriesByDateRange(
+        userId,
+        timeframe.startDate,
+        timeframe.endDate
+      ),
+      DailySymptomService.getEntriesByRange(
+        userId,
+        timeframe.startDate,
+        timeframe.endDate
+      ),
+      this.fetchBowelMovements(userId, timeframe),
+      this.fetchHealthMetrics(userId, timeframe)
+    ])
 
     // 🔍 Diagnostic logging for retrieved data
     console.log('[fetchDataset] 📥 Data retrieved:')
     console.log('  🍽️ Food entries:', foodEntries.length)
     console.log('  ❤️ Symptom entries:', symptomEntries.length)
+    console.log('  💩 Bowel movements:', bowelMovements.length)
+    console.log('  📊 Health metrics:', healthMetrics.length)
 
     if (foodEntries.length > 0) {
       const dates = foodEntries.map(e => e.consumed_at.split('T')[0])
@@ -1444,12 +1595,19 @@ export class IBDWeeklyAnalysisAgent {
 
     return {
       foodEntries,
-      symptomEntries
+      symptomEntries,
+      bowelMovements,
+      healthMetrics
     }
   }
 
   private buildAnalysisPayload(
-    dataset: { foodEntries: FoodEntry[]; symptomEntries: DailySymptomEntry[] },
+    dataset: {
+      foodEntries: FoodEntry[]
+      symptomEntries: DailySymptomEntry[]
+      bowelMovements: BowelMovementEntry[]
+      healthMetrics: HealthMetric[]
+    },
     timeframe: Timeframe,
     foodKnowledgeBase: Record<string, FoodKnowledgeSummary>
   ): {
@@ -1458,7 +1616,7 @@ export class IBDWeeklyAnalysisAgent {
     highRiskFoods: Array<{ food: string; severity: number; dates: string[] }>
     protectiveFoods: Array<{ food: string; severity: number; occurrences: number }>
   } {
-    const { foodEntries, symptomEntries } = dataset
+    const { foodEntries, symptomEntries, bowelMovements, healthMetrics } = dataset
     const symptomByDate = new Map<string, DailySymptomEntry>()
     symptomEntries.forEach((entry) => {
       symptomByDate.set(entry.recorded_date, entry)
@@ -1625,7 +1783,103 @@ export class IBDWeeklyAnalysisAgent {
         foods: (foodsByDate.get(item.entry.recorded_date) || []).map((food) => food.name)
       }))
 
-    // ========== 健康因子分析（新增）==========
+    // ========== 排便記錄分析（新增）==========
+    const bowelMovementSummary = {
+      totalMovements: bowelMovements.length,
+      averageDailyFrequency: bowelMovements.length > 0
+        ? Number((bowelMovements.length / timeframe.daysCovered).toFixed(2))
+        : 0,
+      bristolDistribution: bowelMovements.reduce((acc, bm) => {
+        acc[bm.stool_type] = (acc[bm.stool_type] || 0) + 1
+        return acc
+      }, {} as Record<number, number>),
+      bloodStoolIncidents: bowelMovements.filter(bm => bm.has_blood).length,
+      concerningPatterns: [] as string[]
+    }
+
+    // 識別異常排便模式
+    if (bowelMovements.length > 0) {
+      const constipationCount = bowelMovements.filter(bm => bm.stool_type <= 2).length
+      const diarrheaCount = bowelMovements.filter(bm => bm.stool_type === 5).length
+
+      if (constipationCount > bowelMovements.length * 0.3) {
+        bowelMovementSummary.concerningPatterns.push('便秘傾向（Bristol Scale 1-2 比例偏高）')
+      }
+      if (diarrheaCount > bowelMovements.length * 0.3) {
+        bowelMovementSummary.concerningPatterns.push('腹瀉傾向（Bristol Scale 5 比例偏高）')
+      }
+      if (bowelMovementSummary.bloodStoolIncidents > 0) {
+        bowelMovementSummary.concerningPatterns.push(`血便事件 ${bowelMovementSummary.bloodStoolIncidents} 次`)
+      }
+      if (bowelMovementSummary.averageDailyFrequency > 3) {
+        bowelMovementSummary.concerningPatterns.push('排便頻率偏高（>3次/天）')
+      } else if (bowelMovementSummary.averageDailyFrequency < 0.5) {
+        bowelMovementSummary.concerningPatterns.push('排便頻率偏低（<0.5次/天）')
+      }
+    }
+
+    console.log('[buildAnalysisPayload] 💩 Bowel Movement Summary:', bowelMovementSummary)
+
+    // ========== HealthKit 健康指標分析（新增）==========
+    const sleepMetrics = healthMetrics.filter(m => m.metric_type === 'sleep_analysis')
+    const workoutMetrics = healthMetrics.filter(m => m.metric_type === 'workout')
+    const heartRateMetrics = healthMetrics.filter(m => m.metric_type === 'heart_rate')
+    const stepsMetrics = healthMetrics.filter(m => m.metric_type === 'steps')
+    const activeCaloriesMetrics = healthMetrics.filter(m => m.metric_type === 'active_energy')
+    const waterIntakeMetrics = healthMetrics.filter(m => m.metric_type === 'water_intake')
+
+    // 睡眠分析
+    const sleepAnalysis = sleepMetrics.length > 0 ? {
+      averageHours: Number((sleepMetrics.reduce((sum, m) => sum + (m.numeric_value || 0), 0) / sleepMetrics.length / 60).toFixed(1)),
+      qualityDays: sleepMetrics.filter(m => (m.numeric_value || 0) >= 420).length, // >= 7 hours
+      poorDays: sleepMetrics.filter(m => (m.numeric_value || 0) < 360).length // < 6 hours
+    } : null
+
+    // 運動分析
+    const activityAnalysis = {
+      averageDailySteps: stepsMetrics.length > 0
+        ? Math.round(stepsMetrics.reduce((sum, m) => sum + (m.numeric_value || 0), 0) / stepsMetrics.length)
+        : 0,
+      totalExerciseMinutes: workoutMetrics.reduce((sum, m) => sum + (m.numeric_value || 0), 0),
+      activeDays: workoutMetrics.length
+    }
+
+    // 心率分析
+    const restingHeartRateMetrics = heartRateMetrics.filter(m =>
+      m.detail_payload && m.detail_payload.context === 'resting'
+    )
+    const heartRateAnalysis = restingHeartRateMetrics.length > 0 ? {
+      averageResting: Math.round(
+        restingHeartRateMetrics.reduce((sum, m) => sum + (m.numeric_value || 0), 0) / restingHeartRateMetrics.length
+      ),
+      variabilityIndicator: 'normal' as 'low' | 'normal' | 'high'
+    } : null
+
+    // 飲水分析
+    const hydrationAnalysis = waterIntakeMetrics.length > 0 ? {
+      averageDailyMl: Math.round(
+        waterIntakeMetrics.reduce((sum, m) => sum + (m.numeric_value || 0), 0) / timeframe.daysCovered
+      ),
+      adequacyRate: Number(
+        (waterIntakeMetrics.filter(m => (m.numeric_value || 0) >= 2000).length / timeframe.daysCovered * 100).toFixed(1)
+      )
+    } : null
+
+    const healthKitSummary = {
+      sleep: sleepAnalysis,
+      activity: activityAnalysis,
+      heartRate: heartRateAnalysis,
+      hydration: hydrationAnalysis
+    }
+
+    console.log('[buildAnalysisPayload] 📊 HealthKit Summary:', {
+      sleep: sleepAnalysis ? `${sleepAnalysis.averageHours}hrs avg` : 'no data',
+      activity: `${activityAnalysis.averageDailySteps} steps avg`,
+      heartRate: heartRateAnalysis ? `${heartRateAnalysis.averageResting}bpm avg` : 'no data',
+      hydration: hydrationAnalysis ? `${hydrationAnalysis.averageDailyMl}ml avg` : 'no data'
+    })
+
+    // ========== 健康因子分析（現有）==========
     const healthFactors = calculateHealthFactors(symptomEntries)
 
     const lifestyleFactors = {
@@ -1644,7 +1898,15 @@ export class IBDWeeklyAnalysisAgent {
         }
         return acc
       }, {}),
-      // ← 新增健康指標
+      // ← 新增排便記錄摘要
+      ...(bowelMovements.length > 0 ? {
+        bowelMovementSummary
+      } : {}),
+      // ← 新增 HealthKit 摘要
+      ...(healthMetrics.length > 0 ? {
+        healthKitSummary
+      } : {}),
+      // ← 新增健康指標（現有）
       ...(healthFactors.hasHealthData && healthFactors.dataQuality !== 'poor' ? {
         healthMetrics: {
           overview: healthFactors.overview,
@@ -1715,6 +1977,8 @@ export class IBDWeeklyAnalysisAgent {
         totalFoodEntries: foodEntries.length,
         uniqueFoods: uniqueFoodNames.size,
         totalSymptomEntries: symptomEntries.length,
+        totalBowelMovements: bowelMovements.length,
+        totalHealthMetrics: healthMetrics.length,
         daysWithFoodOnly
       },
       foodImpacts: sortedFoodImpacts,
