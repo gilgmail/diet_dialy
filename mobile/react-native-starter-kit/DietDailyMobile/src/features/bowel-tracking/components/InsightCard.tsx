@@ -129,12 +129,12 @@ export const InsightCard: React.FC<Props> = ({ insight, onPress, showSuggestion 
       {/* Header: Icon + Priority + Title */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <MaterialCommunityIcons name={icon as any} size={24} color={colors.iconColor} />
+          <Icon name={icon as any} size={24} color={colors.iconColor} />
           {priorityLabel && <Text style={styles.priorityLabel}>{priorityLabel}</Text>}
         </View>
 
         {onPress && (
-          <MaterialCommunityIcons name="chevron-right" size={20} color={colors.iconColor} />
+          <Icon name="chevron-right" size={20} color={colors.iconColor} />
         )}
       </View>
 
@@ -147,7 +147,7 @@ export const InsightCard: React.FC<Props> = ({ insight, onPress, showSuggestion 
       {/* Suggestion (if enabled) */}
       {showSuggestion && insight.suggestion && (
         <View style={styles.suggestionContainer}>
-          <MaterialCommunityIcons name="lightbulb-on" size={16} color={colors.iconColor} />
+          <Icon name="lightbulb-on" size={16} color={colors.iconColor} />
           <Text style={[styles.suggestionText, { color: colors.textColor }]}>
             {insight.suggestion}
           </Text>
