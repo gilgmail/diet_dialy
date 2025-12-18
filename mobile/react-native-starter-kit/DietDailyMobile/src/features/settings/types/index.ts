@@ -17,6 +17,12 @@ export interface UserSettings {
   customPrompt?: string // 自訂 AI 提示詞
   modules?: ModuleToggleSettings
   gamificationHeroEnabled?: boolean
+  // 症狀和排便記錄提醒設置
+  symptomReminderEnabled?: boolean // 是否啟用症狀記錄提醒
+  symptomReminderTime?: string // 症狀記錄提醒時間（HH:mm 格式，預設 21:00）
+  bowelReminderEnabled?: boolean // 是否啟用排便記錄提醒
+  bowelReminderTime?: string // 排便記錄提醒時間（HH:mm 格式，預設 21:00）
+  enableBackfillReminder?: boolean // 是否啟用補記提醒（預設 true）
 }
 
 export interface ModuleToggleSettings {
@@ -46,6 +52,12 @@ export const DEFAULT_SETTINGS: UserSettings = {
     hero: true, // 健康冒險摘要模式（Gamification Hero）
   },
   gamificationHeroEnabled: true, // 保留以維持向後兼容性，但建議使用 modules.hero
+  // 症狀和排便記錄提醒預設值
+  symptomReminderEnabled: true,
+  symptomReminderTime: '21:00',
+  bowelReminderEnabled: true,
+  bowelReminderTime: '21:00',
+  enableBackfillReminder: true,
 }
 
 export const CHRONIC_DISEASES = [
