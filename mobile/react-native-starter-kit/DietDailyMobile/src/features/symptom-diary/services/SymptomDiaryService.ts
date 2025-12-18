@@ -464,4 +464,77 @@ export class SymptomDiaryService {
     if (score >= 2) return 'moderate'
     return 'severe'
   }
+
+  /**
+   * Create a zero symptom entry (all symptoms = 0, overall_health = 5)
+   * Used for quick "no symptoms" recording
+   */
+  static async createZeroSymptomEntry(
+    userId: string,
+    occurredAt?: string
+  ) {
+    try {
+      await this.ensureUserProfile(userId)
+      const occurredDate = occurredAt ? new Date(occurredAt) : new Date()
+      const recordedDate = format(occurredDate, 'yyyy-MM-dd')
+
+      // Create entry with all symptoms = 0 and overall_health = 5 (best)
+      const dbEntry: DailySymptomEntryInsert = {
+        user_id: userId,
+        recorded_date: recordedDate,
+        recorded_at: occurredDate.toISOString(),
+        overall_health: 5, // Best health
+        abdominal_pain: 0,
+        diarrhea: 0,
+        bloody_stool: 0,
+        bloating: 0,
+        additional_symptoms: [],
+        medications_taken: [],
+        triggers_identified: [],
+        improvement_factors: [],
+        related_food_entries: [],
+        entry_source: 'quick_zero',
+        data_completeness_score: 1.0,
+      }
+
+      const { data, error } = await supabase
+        .from('daily_symptom_entries')
+        .insert([dbEntry])
+        .select()
+        .single()
+
+      if (error) {
+        console.error('[SymptomDiaryService] Supabase error:', error)
+        throw error
+      }
+
+      console.log('[SymptomDiaryService] Successfully created zero symptom entry:', data)
+
+      return {
+        data: data ? this.transformFromDatabase(data) : null,
+        error: null
+      }
+    } catch (error) {
+      console.error('[SymptomDiaryService] Create zero symptom entry failed:', error)
+      const supabaseError =
+        error && typeof error === 'object' && 'message' in error
+          ? (error as { message?: string; code?: string; details?: string; hint?: string })
+          : null
+
+      const parts: string[] = []
+      if (supabaseError?.code) parts.push(`code=${supabaseError.code}`)
+      if (supabaseError?.message) parts.push(supabaseError.message)
+      if (supabaseError?.details) parts.push(supabaseError.details)
+      if (supabaseError?.hint) parts.push(`hint: ${supabaseError.hint}`)
+      const fallback =
+        error instanceof Error ? error.message : 'Failed to create zero symptom entry'
+
+      return {
+        data: null,
+        error: {
+          message: parts.length ? parts.join(' | ') : fallback,
+        },
+      }
+    }
+  }
 }

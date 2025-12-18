@@ -25,7 +25,7 @@ import { parseSymptomNames } from '../utils/parseSymptomNames'
 export function AddSymptomEntryScreen() {
   const navigation = useNavigation()
   const route = useRoute<RouteProp<MainStackParamList, 'AddSymptomEntry'>>()
-  const { entries, createEntry, updateEntry, deleteEntry, isCreating, isUpdating, isDeleting } = useSymptomDiary()
+  const { entries, createEntry, createZeroEntry, updateEntry, deleteEntry, isCreating, isCreatingZero, isUpdating, isDeleting } = useSymptomDiary()
 
   // Check if editing existing entry
   const entryId = route.params?.entryId
@@ -102,6 +102,20 @@ export function AddSymptomEntryScreen() {
         // Reset form for next entry
         setSymptomName('')
         setSeverity('mild')
+      }
+    } catch (error) {
+      Alert.alert('錯誤', error instanceof Error ? error.message : '記錄失敗')
+    }
+  }
+
+  // Handle quick "no symptoms" save
+  const handleQuickNoSymptoms = async () => {
+    try {
+      const newEntry = await createZeroEntry(selectedDate.toISOString())
+      
+      if (newEntry) {
+        Alert.alert('成功', '已記錄「無症狀」')
+        navigation.goBack()
       }
     } catch (error) {
       Alert.alert('錯誤', error instanceof Error ? error.message : '記錄失敗')
@@ -254,6 +268,17 @@ export function AddSymptomEntryScreen() {
               <Text style={styles.quickModeTitle}>快速記錄</Text>
               <Text style={styles.quickModeHint}>點擊症狀立即記錄（預設：輕微）</Text>
               
+              {/* No Symptoms Quick Button */}
+              <TouchableOpacity
+                style={[styles.quickSymptomButton, styles.noSymptomsButton]}
+                onPress={handleQuickNoSymptoms}
+                activeOpacity={0.7}
+                disabled={isCreatingZero}
+              >
+                <Text style={styles.quickSymptomIcon}>✅</Text>
+                <Text style={styles.quickSymptomName}>無症狀</Text>
+              </TouchableOpacity>
+
               <View style={styles.quickSymptomsGrid}>
                 {QUICK_SYMPTOMS.map((symptom) => (
                   <TouchableOpacity
@@ -759,6 +784,16 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
     textAlign: 'center',
+  },
+  noSymptomsButton: {
+    backgroundColor: colors.success + '20',
+    borderColor: colors.success,
+    borderWidth: 2,
+    marginBottom: spacing.md,
+    alignSelf: 'center',
+    width: 'auto',
+    minWidth: 150,
+    paddingHorizontal: spacing.lg,
   },
   manualEntrySection: {
     marginTop: spacing.xl,

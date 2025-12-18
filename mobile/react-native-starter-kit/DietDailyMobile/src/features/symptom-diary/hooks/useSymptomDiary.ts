@@ -173,6 +173,29 @@ export function useSymptomDiary() {
     return result.data
   }
 
+  // Mutation: Create zero symptom entry (no symptoms)
+  const createZeroEntryMutation = useMutation({
+    mutationFn: async (occurredAt?: string) => {
+      if (!user?.id) {
+        throw new Error('User not authenticated')
+      }
+
+      const result = await SymptomDiaryService.createZeroSymptomEntry(
+        user.id,
+        occurredAt
+      )
+
+      if (result.error) {
+        throw new Error(result.error.message)
+      }
+
+      return result.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['symptomEntries', user?.id] })
+    },
+  })
+
   return {
     // Data
     entries: entries || [],
@@ -181,6 +204,7 @@ export function useSymptomDiary() {
 
     // Actions
     createEntry: createEntryMutation.mutateAsync,
+    createZeroEntry: createZeroEntryMutation.mutateAsync,
     updateEntry: updateEntryMutation.mutateAsync,
     deleteEntry: deleteEntryMutation.mutateAsync,
     refetch,
@@ -188,11 +212,13 @@ export function useSymptomDiary() {
 
     // Mutation states
     isCreating: createEntryMutation.isPending,
+    isCreatingZero: createZeroEntryMutation.isPending,
     isUpdating: updateEntryMutation.isPending,
     isDeleting: deleteEntryMutation.isPending,
 
     // Mutation errors
     createError: createEntryMutation.error?.message || null,
+    createZeroError: createZeroEntryMutation.error?.message || null,
     updateError: updateEntryMutation.error?.message || null,
     deleteError: deleteEntryMutation.error?.message || null,
   }
