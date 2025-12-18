@@ -1,8 +1,11 @@
 import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
 import { FoodDiaryService } from '@/features/food-diary/services/FoodDiaryService'
+import { SymptomDiaryService } from '@/features/symptom-diary/services/SymptomDiaryService'
+import { BowelDiaryService } from '@/features/bowel-diary/services/BowelDiaryService'
 import { useSettingsStore } from '../stores/settingsStore'
 import type { MealReminderConfig } from '../types'
+import { format, subDays } from 'date-fns'
 
 type MealKey = keyof MealReminderConfig
 
@@ -76,6 +79,12 @@ async function ensureNotificationPermissions(): Promise<boolean> {
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#10B981',
+    })
+    await Notifications.setNotificationChannelAsync('health-reminders', {
+      name: '健康記錄提醒',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#EF4444',
     })
   }
 
@@ -323,5 +332,293 @@ export class NotificationService {
       meals: [meal],
       skipTodayMeals: [meal],
     })
+  }
+
+  /**
+   * Schedule symptom reminder notification
+   */
+  static async scheduleSymptomReminder(userId: string, time?: string): Promise<void> {
+    const { settings } = useSettingsStore.getState()
+    const reminderTime = time ?? settings.symptomReminderTime ?? '21:00'
+    const enabled = settings.symptomReminderEnabled ?? true
+
+    if (!enabled || !settings.notificationsEnabled) {
+      await Notifications.cancelScheduledNotificationAsync('symptom-reminder-daily')
+      return
+    }
+
+    try {
+      const hasPermission = await this.requestPermissions()
+      if (!hasPermission) {
+        console.warn('[NotificationService] No permission to schedule symptom reminder')
+        return
+      }
+
+      const { hour, minute } = parseTime(reminderTime)
+      if (Number.isNaN(hour) || Number.isNaN(minute)) {
+        console.warn('[NotificationService] Invalid time provided for symptom reminder:', reminderTime)
+        return
+      }
+
+      // Check if user already has symptom entry today
+      const today = new Date()
+      const todayStr = format(today, 'yyyy-MM-dd')
+      const { data: entries } = await SymptomDiaryService.getSymptomEntriesByDateRange(
+        userId,
+        today,
+        today
+      )
+      const hasEntryToday = entries && entries.length > 0
+
+      if (hasEntryToday) {
+        // Skip today, schedule for tomorrow
+        const nextTrigger = this.getNextTriggerDate(reminderTime, true)
+        await this.scheduleSymptomNotification(userId, nextTrigger)
+      } else {
+        // Schedule for today if time hasn't passed, otherwise tomorrow
+        const nextTrigger = this.getNextTriggerDate(reminderTime, false)
+        await this.scheduleSymptomNotification(userId, nextTrigger)
+      }
+
+      console.log('[NotificationService] Symptom reminder scheduled for', reminderTime)
+    } catch (error) {
+      console.error('[NotificationService] Error scheduling symptom reminder:', error)
+    }
+  }
+
+  /**
+   * Schedule bowel movement reminder notification
+   */
+  static async scheduleBowelReminder(userId: string, time?: string): Promise<void> {
+    const { settings } = useSettingsStore.getState()
+    const reminderTime = time ?? settings.bowelReminderTime ?? '21:00'
+    const enabled = settings.bowelReminderEnabled ?? true
+
+    if (!enabled || !settings.notificationsEnabled) {
+      await Notifications.cancelScheduledNotificationAsync('bowel-reminder-daily')
+      return
+    }
+
+    try {
+      const hasPermission = await this.requestPermissions()
+      if (!hasPermission) {
+        console.warn('[NotificationService] No permission to schedule bowel reminder')
+        return
+      }
+
+      const { hour, minute } = parseTime(reminderTime)
+      if (Number.isNaN(hour) || Number.isNaN(minute)) {
+        console.warn('[NotificationService] Invalid time provided for bowel reminder:', reminderTime)
+        return
+      }
+
+      // Check if user already has bowel entry today
+      const today = new Date()
+      const todayStr = format(today, 'yyyy-MM-dd')
+      const { data: entries } = await BowelDiaryService.getBowelMovementsByDateString(
+        userId,
+        todayStr
+      )
+      const hasEntryToday = entries && entries.length > 0
+
+      if (hasEntryToday) {
+        // Skip today, schedule for tomorrow
+        const nextTrigger = this.getNextTriggerDate(reminderTime, true)
+        await this.scheduleBowelNotification(userId, nextTrigger)
+      } else {
+        // Schedule for today if time hasn't passed, otherwise tomorrow
+        const nextTrigger = this.getNextTriggerDate(reminderTime, false)
+        await this.scheduleBowelNotification(userId, nextTrigger)
+      }
+
+      console.log('[NotificationService] Bowel reminder scheduled for', reminderTime)
+    } catch (error) {
+      console.error('[NotificationService] Error scheduling bowel reminder:', error)
+    }
+  }
+
+  /**
+   * Schedule symptom notification for specific date
+   */
+  private static async scheduleSymptomNotification(userId: string, triggerDate: Date): Promise<void> {
+    const identifier = 'symptom-reminder-daily'
+
+    await Notifications.cancelScheduledNotificationAsync(identifier).catch(() => {})
+
+    const trigger: Notifications.CalendarTriggerInput = {
+      type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+      hour: triggerDate.getHours(),
+      minute: triggerDate.getMinutes(),
+      second: 0,
+      repeats: true,
+    }
+
+    if (Platform.OS === 'ios') {
+      trigger.weekday = triggerDate.getDay() === 0 ? 1 : triggerDate.getDay() + 1
+    }
+
+    await Notifications.scheduleNotificationAsync({
+      identifier,
+      content: {
+        title: '記得記錄症狀',
+        body: '今天還沒有記錄症狀，點擊快速記錄「無症狀」',
+        sound: true,
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+        data: {
+          type: 'symptom-reminder',
+        },
+        ...(Platform.OS === 'ios' && {
+          summaryArgument: '症狀記錄',
+          summaryArgumentCount: 1,
+          interruptionLevel: 'passive' as Notifications.NotificationContentInput['interruptionLevel'],
+        }),
+        ...(Platform.OS === 'android' && {
+          channelId: 'health-reminders',
+        }),
+      },
+      trigger,
+    })
+  }
+
+  /**
+   * Schedule bowel notification for specific date
+   */
+  private static async scheduleBowelNotification(userId: string, triggerDate: Date): Promise<void> {
+    const identifier = 'bowel-reminder-daily'
+
+    await Notifications.cancelScheduledNotificationAsync(identifier).catch(() => {})
+
+    const trigger: Notifications.CalendarTriggerInput = {
+      type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+      hour: triggerDate.getHours(),
+      minute: triggerDate.getMinutes(),
+      second: 0,
+      repeats: true,
+    }
+
+    if (Platform.OS === 'ios') {
+      trigger.weekday = triggerDate.getDay() === 0 ? 1 : triggerDate.getDay() + 1
+    }
+
+    await Notifications.scheduleNotificationAsync({
+      identifier,
+      content: {
+        title: '記得記錄排便',
+        body: '今天還沒有記錄排便數據',
+        sound: true,
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+        data: {
+          type: 'bowel-reminder',
+        },
+        ...(Platform.OS === 'ios' && {
+          summaryArgument: '排便記錄',
+          summaryArgumentCount: 1,
+          interruptionLevel: 'passive' as Notifications.NotificationContentInput['interruptionLevel'],
+        }),
+        ...(Platform.OS === 'android' && {
+          channelId: 'health-reminders',
+        }),
+      },
+      trigger,
+    })
+  }
+
+  /**
+   * Check for missing entries from yesterday and send backfill reminder
+   */
+  static async checkAndRemindBackfill(userId: string): Promise<void> {
+    const { settings } = useSettingsStore.getState()
+    const enabled = settings.enableBackfillReminder ?? true
+
+    if (!enabled || !settings.notificationsEnabled) {
+      return
+    }
+
+    try {
+      const hasPermission = await this.requestPermissions()
+      if (!hasPermission) {
+        return
+      }
+
+      const yesterday = subDays(new Date(), 1)
+      const yesterdayStr = format(yesterday, 'yyyy-MM-dd')
+
+      // Check symptom entries
+      const { data: symptomEntries } = await SymptomDiaryService.getSymptomEntriesByDateRange(
+        userId,
+        yesterday,
+        yesterday
+      )
+      const hasSymptomEntry = symptomEntries && symptomEntries.length > 0
+
+      // Check bowel entries
+      const { data: bowelEntries } = await BowelDiaryService.getBowelMovementsByDateString(
+        userId,
+        yesterdayStr
+      )
+      const hasBowelEntry = bowelEntries && bowelEntries.length > 0
+
+      // Send reminder if either is missing
+      if (!hasSymptomEntry || !hasBowelEntry) {
+        const missingItems: string[] = []
+        if (!hasSymptomEntry) missingItems.push('症狀')
+        if (!hasBowelEntry) missingItems.push('排便')
+
+        const identifier = `backfill-reminder-${yesterdayStr}`
+        await Notifications.scheduleNotificationAsync({
+          identifier,
+          content: {
+            title: '補記提醒',
+            body: `昨天（${yesterdayStr}）還沒有記錄${missingItems.join('和')}數據，點擊補記`,
+            sound: true,
+            priority: Notifications.AndroidNotificationPriority.HIGH,
+            data: {
+              type: 'backfill-reminder',
+              date: yesterdayStr,
+              missingSymptom: !hasSymptomEntry,
+              missingBowel: !hasBowelEntry,
+            },
+            ...(Platform.OS === 'ios' && {
+              summaryArgument: '補記提醒',
+              summaryArgumentCount: 1,
+              interruptionLevel: 'passive' as Notifications.NotificationContentInput['interruptionLevel'],
+            }),
+            ...(Platform.OS === 'android' && {
+              channelId: 'health-reminders',
+            }),
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+            seconds: 1, // Send immediately
+          },
+        })
+
+        console.log('[NotificationService] Backfill reminder sent for', yesterdayStr)
+      }
+    } catch (error) {
+      console.error('[NotificationService] Error checking backfill:', error)
+    }
+  }
+
+  /**
+   * Cancel all health reminders (symptom and bowel)
+   */
+  static async cancelAllHealthReminders(): Promise<void> {
+    try {
+      await Notifications.cancelScheduledNotificationAsync('symptom-reminder-daily')
+      await Notifications.cancelScheduledNotificationAsync('bowel-reminder-daily')
+      
+      // Cancel all backfill reminders
+      const scheduled = await Notifications.getAllScheduledNotificationsAsync()
+      for (const notification of scheduled) {
+        if (notification.identifier.startsWith('backfill-reminder-')) {
+          await Notifications.cancelScheduledNotificationAsync(notification.identifier)
+        }
+      }
+
+      console.log('[NotificationService] All health reminders cancelled')
+    } catch (error) {
+      console.error('[NotificationService] Error cancelling health reminders:', error)
+    }
   }
 }
