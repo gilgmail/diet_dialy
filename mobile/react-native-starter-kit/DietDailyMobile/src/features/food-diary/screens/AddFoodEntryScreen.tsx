@@ -331,6 +331,41 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
 
         // Show success feedback
         const displayName = chosenFood?.name ?? trimmedName
+        
+        // Check if user has symptom entry today, if not, prompt to record
+        if (user?.id) {
+          try {
+            const today = new Date()
+            const { SymptomDiaryService } = await import('@/features/symptom-diary/services/SymptomDiaryService')
+            const { data: symptomEntries } = await SymptomDiaryService.getSymptomEntriesByDateRange(
+              user.id,
+              today,
+              today
+            )
+            const hasSymptomEntry = symptomEntries && symptomEntries.length > 0
+
+            if (!hasSymptomEntry) {
+              Alert.alert(
+                '成功',
+                `已新增「${displayName}」`,
+                [
+                  { text: '稍後提醒', style: 'cancel' },
+                  {
+                    text: '立即記錄',
+                    onPress: () => {
+                      navigation.navigate('AddSymptomEntry')
+                    },
+                  },
+                ]
+              )
+              return
+            }
+          } catch (checkError) {
+            console.warn('[AddFoodEntry] Error checking symptom entries:', checkError)
+            // Continue to show success alert even if check fails
+          }
+        }
+
         Alert.alert('成功', `已新增「${displayName}」`)
       }
     } catch (error) {
