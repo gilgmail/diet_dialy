@@ -20,7 +20,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
-import { supabase } from '@/shared/clients/supabaseClient';
+import { supabase } from '@/shared/api/supabase/client';
 
 const QUEUE_STORAGE_KEY = 'DIET_DAILY_OFFLINE_QUEUE';
 const MAX_RETRIES = 3;

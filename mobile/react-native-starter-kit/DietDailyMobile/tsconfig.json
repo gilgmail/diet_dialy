@@ -14,8 +14,7 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "types": [
-      "react-native",
-      "react-native-reanimated"
+      "react-native"
     ],
     "baseUrl": ".",
     "paths": {
