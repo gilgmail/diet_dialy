@@ -85,6 +85,9 @@ const CircularProgress: React.FC<{ value: number; size: number; strokeWidth: num
 export const ExerciseSymptomScreen: React.FC<Props> = ({ userId, days = 30 }) => {
   const { data: correlation, isLoading, error } = useExerciseCorrelation(userId, days);
 
+  console.log('[ExerciseSymptomScreen] Correlation data:', correlation);
+  console.log('[ExerciseSymptomScreen] Intensity analysis:', correlation?.intensityAnalysis);
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -95,6 +98,7 @@ export const ExerciseSymptomScreen: React.FC<Props> = ({ userId, days = 30 }) =>
   }
 
   if (error) {
+    console.error('[ExerciseSymptomScreen] Error:', error);
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>載入失敗，請稍後再試</Text>
@@ -103,6 +107,7 @@ export const ExerciseSymptomScreen: React.FC<Props> = ({ userId, days = 30 }) =>
   }
 
   if (!correlation) {
+    console.warn('[ExerciseSymptomScreen] No correlation data');
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyText}>暫無運動數據</Text>
@@ -112,6 +117,12 @@ export const ExerciseSymptomScreen: React.FC<Props> = ({ userId, days = 30 }) =>
 
   const scoreColor = getScoreColor(correlation.overallImpactScore);
   const scoreLabel = getScoreLabel(correlation.overallImpactScore);
+  
+  console.log('[ExerciseSymptomScreen] Rendering with:', {
+    overallImpactScore: correlation.overallImpactScore,
+    intensityAnalysisLength: correlation.intensityAnalysis.length,
+    intensityAnalysis: correlation.intensityAnalysis
+  });
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
