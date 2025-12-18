@@ -1,7 +1,7 @@
 // 健康報告產生器 UI 元件
 // 讓使用者產生並分享 7 天健康報告 PDF
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from 'react-native'
 import { format, subDays } from 'date-fns'
 import { zhTW } from 'date-fns/locale'
@@ -29,6 +29,18 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
   const [isGenerating, setIsGenerating] = useState(false)
   const [progress, setProgress] = useState(0)
   const [selectedPeriod, setSelectedPeriod] = useState<ReportPeriod>(propIncludeDays)
+  const isMountedRef = useRef(true)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // 清理函數
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
 
   /**
    * 處理報告產生
@@ -74,16 +86,27 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
       console.log('[ReportGenerator] PDF generated and shared successfully')
 
       // 完成 (100%)
-      setProgress(100)
+      if (isMountedRef.current) {
+        setProgress(100)
+      }
 
       // 成功後重置
-      setTimeout(() => {
-        setIsGenerating(false)
-        setProgress(0)
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+      timeoutRef.current = setTimeout(() => {
+        if (isMountedRef.current) {
+          setIsGenerating(false)
+          setProgress(0)
+        }
       }, 500)
 
     } catch (error) {
       console.error('[ReportGenerator] Error:', error)
+
+      if (!isMountedRef.current) {
+        return // 組件已卸載，不執行後續操作
+      }
 
       Alert.alert(
         '產生失敗',
@@ -92,8 +115,10 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
           {
             text: '確定',
             onPress: () => {
-              setIsGenerating(false)
-              setProgress(0)
+              if (isMountedRef.current) {
+                setIsGenerating(false)
+                setProgress(0)
+              }
             }
           }
         ]

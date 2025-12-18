@@ -21,6 +21,9 @@ export class PDFGeneratorService {
     report: WeeklyHealthReport,
     options?: PDFGenerationOptions
   ): Promise<PDFGenerationResult> {
+    let tempUri: string | null = null
+    let finalUri: string | null = null
+    
     try {
       console.log('[PDFGeneratorService] Generating PDF...')
 
@@ -32,6 +35,7 @@ export class PDFGeneratorService {
         html,
         base64: false
       })
+      tempUri = uri
 
       console.log('[PDFGeneratorService] PDF generated:', uri)
 
@@ -43,6 +47,7 @@ export class PDFGeneratorService {
       // 4. 重新命名檔案
       const directory = uri.substring(0, uri.lastIndexOf('/'))
       const newUri = `${directory}/${filename}`
+      finalUri = newUri
       
       // 如果目標檔案已存在，先刪除
       const fileInfo = await FileSystem.getInfoAsync(newUri)
@@ -61,6 +66,14 @@ export class PDFGeneratorService {
       // 5. 檢查是否可分享
       const canShare = await Sharing.isAvailableAsync()
       if (!canShare) {
+        // 清理文件
+        if (finalUri) {
+          try {
+            await FileSystem.deleteAsync(finalUri, { idempotent: true })
+          } catch (cleanupError) {
+            console.warn('[PDFGeneratorService] Failed to cleanup file:', cleanupError)
+          }
+        }
         return {
           success: false,
           error: '此裝置不支援分享功能'
@@ -79,6 +92,16 @@ export class PDFGeneratorService {
 
     } catch (error) {
       console.error('[PDFGeneratorService] Error:', error)
+      
+      // 清理臨時文件
+      if (tempUri && tempUri !== finalUri) {
+        try {
+          await FileSystem.deleteAsync(tempUri, { idempotent: true })
+        } catch (cleanupError) {
+          console.warn('[PDFGeneratorService] Failed to cleanup temp file:', cleanupError)
+        }
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'PDF 生成失敗'

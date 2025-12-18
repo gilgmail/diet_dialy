@@ -806,9 +806,10 @@ export function DashboardScreen({
   }
 
   const shareReportAsPDF = async (reportData: WeeklyReportData) => {
-    const html = buildWeeklyReportHtml(reportData)
+    let pdfResult: Print.PrintFileResult | null = null
     try {
-      const pdfResult = await Print.printToFileAsync({
+      const html = buildWeeklyReportHtml(reportData)
+      pdfResult = await Print.printToFileAsync({
         html,
         base64: false,
       })
@@ -826,6 +827,15 @@ export function DashboardScreen({
         })
       }
     } catch (error) {
+      // 清理臨時文件
+      if (pdfResult?.uri) {
+        try {
+          await FileSystem.deleteAsync(pdfResult.uri, { idempotent: true })
+        } catch (cleanupError) {
+          console.warn('[DashboardScreen] Failed to cleanup PDF file:', cleanupError)
+        }
+      }
+      
       if (error instanceof Error && error.message === NO_WRITABLE_DIR_ERROR) {
         Alert.alert('無法建立 PDF', '目前環境無法建立 PDF 檔案，已改為分享文字內容。')
         await fallbackShareText(buildWeeklyReportMarkdown(reportData))
