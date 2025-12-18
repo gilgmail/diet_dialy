@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Button, TextInput, SegmentedButtons, IconButton } from 'react-native-paper'
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useQuery } from '@tanstack/react-query'
 import { useFocusEffect } from '@react-navigation/native'
@@ -85,8 +86,29 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
   const [selectedDate, setSelectedDate] = useState(() =>
     parseDateInput(route.params?.date || existingEntry?.consumed_at || null)
   )
-  const [showDatePicker, setShowDatePicker] = useState(false)
   const [recentEntries, setRecentEntries] = useState<FoodEntry[]>([])
+  
+  // Fetch recent food entries (last 10) for quick selection
+  const { data: recentFoodEntries = [] } = useQuery({
+    queryKey: ['recentFoodEntries', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return []
+      // Get last 10 unique food names from recent entries
+      const result = await FoodDiaryService.getFoodEntriesByDateRange(
+        user.id,
+        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+        new Date()
+      )
+      const uniqueFoods = new Map<string, FoodEntry>()
+      result.data?.forEach(entry => {
+        if (!uniqueFoods.has(entry.food_name)) {
+          uniqueFoods.set(entry.food_name, entry)
+        }
+      })
+      return Array.from(uniqueFoods.values()).slice(0, 10)
+    },
+    enabled: !!user?.id && !isEditMode,
+  })
   const mealPriority: Record<MealType, number> = useMemo(
     () => ({ snack: 0, dinner: 1, lunch: 2, breakfast: 3 }),
     []
@@ -138,6 +160,8 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
   const [foodName, setFoodName] = useState('')
   const [selectedFood, setSelectedFood] = useState<FoodSearchResult | null>(null)
   const [mealType, setMealType] = useState<MealType>(getMealTypeByTime())
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
+  const [showDatePicker, setShowDatePicker] = useState(false)
 
   // Load existing entry data when available
   useEffect(() => {
@@ -149,6 +173,7 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
       })
       setFoodName(existingEntry.food_name)
       setMealType(existingEntry.meal_type)
+      setShowAdvancedOptions(true) // Show advanced options in edit mode
 
       // Update selected date to match entry date (with safety check)
       if (existingEntry.consumed_at) {
@@ -293,10 +318,16 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
           })
         }
 
-        // Clear input for next entry
-        setFoodName('')
-        setSelectedFood(null)
-        setMealType(getMealTypeByTime())
+        // Clear input for next entry (only in quick mode)
+        if (!showAdvancedOptions) {
+          setFoodName('')
+          setSelectedFood(null)
+          setMealType(getMealTypeByTime())
+        } else {
+          // In advanced mode, keep the form open for next entry
+          setFoodName('')
+          setSelectedFood(null)
+        }
 
         // Show success feedback
         const displayName = chosenFood?.name ?? trimmedName
@@ -341,129 +372,181 @@ export function AddFoodEntryScreen({ navigation, route }: AddFoodEntryScreenProp
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
-          {/* Date Picker */}
-          <View style={styles.datePickerContainer}>
-            <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setShowDatePicker(prev => !prev)}
-            >
-              <IconButton icon="calendar" size={20} />
-              <Text style={styles.dateText}>
-                {format(selectedDate, 'yyyy年MM月dd日 (E)', { locale: zhTW })}
-              </Text>
-              <IconButton icon={showDatePicker ? 'chevron-up' : 'chevron-down'} size={20} />
-            </TouchableOpacity>
-          </View>
-
-          {showDatePicker && (
-            <DateTimePicker
-              value={selectedDate}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={handleDateChange}
-              maximumDate={new Date()}
-            />
-          )}
-
-          {/* Today's Statistics & Meal Type Selector */}
-          <View style={styles.statsContainer}>
-            <View style={styles.statsHeader}>
-              <Text style={styles.statsTitle}>本日已記錄 · 選擇餐別</Text>
-            </View>
-            <View style={styles.statsRow}>
-              <TouchableOpacity
-                style={[
-                  styles.statItem,
-                  mealType === 'breakfast' && styles.statItemSelected
-                ]}
-                onPress={() => setMealType('breakfast')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.statIcon}>🌅</Text>
-                <Text style={styles.statCount}>{todayStats.breakfast}</Text>
-                <Text style={[
-                  styles.statLabel,
-                  mealType === 'breakfast' && styles.statLabelSelected
-                ]}>早餐</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.statItem,
-                  mealType === 'lunch' && styles.statItemSelected
-                ]}
-                onPress={() => setMealType('lunch')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.statIcon}>☀️</Text>
-                <Text style={styles.statCount}>{todayStats.lunch}</Text>
-                <Text style={[
-                  styles.statLabel,
-                  mealType === 'lunch' && styles.statLabelSelected
-                ]}>午餐</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.statItem,
-                  mealType === 'dinner' && styles.statItemSelected
-                ]}
-                onPress={() => setMealType('dinner')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.statIcon}>🌙</Text>
-                <Text style={styles.statCount}>{todayStats.dinner}</Text>
-                <Text style={[
-                  styles.statLabel,
-                  mealType === 'dinner' && styles.statLabelSelected
-                ]}>晚餐</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.statItem,
-                  mealType === 'snack' && styles.statItemSelected
-                ]}
-                onPress={() => setMealType('snack')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.statIcon}>🍪</Text>
-                <Text style={styles.statCount}>{todayStats.snack}</Text>
-                <Text style={[
-                  styles.statLabel,
-                  mealType === 'snack' && styles.statLabelSelected
-                ]}>點心</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.statsHint}>點擊選擇餐別</Text>
-          </View>
-
-          {/* Recent Entries */}
-          {recentEntries.length > 0 && (
-            <View style={styles.recentEntriesContainer}>
-              <Text style={styles.recentEntriesTitle}>剛新增的記錄</Text>
-              {recentEntries.map((entry) => (
-                <View key={entry.id} style={styles.recentEntryItem}>
-                  <Text style={styles.recentEntryIcon}>
-                    {MEAL_TYPES.find(m => m.value === entry.meal_type)?.icon}
-                  </Text>
-                  <Text style={styles.recentEntryText}>{entry.food_name}</Text>
+          {/* Quick Mode: Main Food Input - Large and Prominent */}
+          {!showAdvancedOptions && !isEditMode && (
+            <>
+              {/* Recent Food Quick Selection */}
+              {recentFoodEntries.length > 0 && (
+                <View style={styles.recentFoodsContainer}>
+                  <Text style={styles.recentFoodsTitle}>最近記錄的食物</Text>
+                  <View style={styles.recentFoodsGrid}>
+                    {recentFoodEntries.slice(0, 10).map((entry) => (
+                      <TouchableOpacity
+                        key={entry.id}
+                        style={styles.recentFoodButton}
+                        onPress={() => {
+                          setFoodName(entry.food_name)
+                          setMealType(entry.meal_type)
+                          if (entry.food_id) {
+                            // Try to find the food in search results
+                            setSelectedFood({
+                              id: entry.food_id,
+                              name: entry.food_name,
+                              category: entry.food_category || '',
+                              calories: entry.calories || 0,
+                            } as FoodSearchResult)
+                          }
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.recentFoodIcon}>
+                          {MEAL_TYPES.find(m => m.value === entry.meal_type)?.icon || '🍽️'}
+                        </Text>
+                        <Text style={styles.recentFoodName} numberOfLines={1}>
+                          {entry.food_name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </View>
-              ))}
-            </View>
+              )}
+
+              {/* Meal Type Quick Selector - Compact */}
+              <View style={styles.quickMealSelector}>
+                {MEAL_TYPES.map((meal) => (
+                  <TouchableOpacity
+                    key={meal.value}
+                    style={[
+                      styles.quickMealButton,
+                      mealType === meal.value && styles.quickMealButtonSelected,
+                    ]}
+                    onPress={() => setMealType(meal.value)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.quickMealIcon}>{meal.icon}</Text>
+                    <Text style={[
+                      styles.quickMealLabel,
+                      mealType === meal.value && styles.quickMealLabelSelected,
+                    ]}>
+                      {meal.label}
+                    </Text>
+                    {todayStats[meal.value] > 0 && (
+                      <Text style={styles.quickMealCount}>{todayStats[meal.value]}</Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Main Food Input - Large */}
+              <View style={styles.mainInputSection}>
+                <FoodSearchInput
+                  value={foodName}
+                  onChangeText={handleFoodInputChange}
+                  onSelectFood={handleSelectFood}
+                  placeholder={
+                    requireDatabaseFood
+                      ? '搜尋並選擇食物...'
+                      : '輸入食物名稱...'
+                  }
+                  requireDatabaseSelection={requireDatabaseFood}
+                />
+              </View>
+
+              {/* Advanced Options Toggle */}
+              <TouchableOpacity
+                style={styles.advancedToggle}
+                onPress={() => setShowAdvancedOptions(true)}
+              >
+                <Icon name="chevron-down" size={20} color={colors.primary[500]} />
+                <Text style={styles.advancedToggleText}>顯示進階選項（日期、詳細資訊）</Text>
+              </TouchableOpacity>
+            </>
           )}
 
-          {/* Food Name with Search */}
-          <View style={styles.section}>
-            <FoodSearchInput
-              value={foodName}
-              onChangeText={handleFoodInputChange}
-              onSelectFood={handleSelectFood}
-              placeholder={
-                requireDatabaseFood
-                  ? '搜尋並選擇資料庫中的食物...'
-                  : '輸入食物名稱...'
-              }
-              requireDatabaseSelection={requireDatabaseFood}
-            />
-          </View>
+          {/* Advanced Mode: Full Form */}
+          {(showAdvancedOptions || isEditMode) && (
+            <>
+              {/* Date Picker */}
+              <View style={styles.datePickerContainer}>
+                <TouchableOpacity
+                  style={styles.dateButton}
+                  onPress={() => setShowDatePicker(prev => !prev)}
+                >
+                  <IconButton icon="calendar" size={20} />
+                  <Text style={styles.dateText}>
+                    {format(selectedDate, 'yyyy年MM月dd日 (E)', { locale: zhTW })}
+                  </Text>
+                  <IconButton icon={showDatePicker ? 'chevron-up' : 'chevron-down'} size={20} />
+                </TouchableOpacity>
+              </View>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={handleDateChange}
+                  maximumDate={new Date()}
+                />
+              )}
+
+              {/* Today's Statistics & Meal Type Selector */}
+              <View style={styles.statsContainer}>
+                <View style={styles.statsHeader}>
+                  <Text style={styles.statsTitle}>本日已記錄 · 選擇餐別</Text>
+                </View>
+                <View style={styles.statsRow}>
+                  {MEAL_TYPES.map((meal) => (
+                    <TouchableOpacity
+                      key={meal.value}
+                      style={[
+                        styles.statItem,
+                        mealType === meal.value && styles.statItemSelected
+                      ]}
+                      onPress={() => setMealType(meal.value)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.statIcon}>{meal.icon}</Text>
+                      <Text style={styles.statCount}>{todayStats[meal.value]}</Text>
+                      <Text style={[
+                        styles.statLabel,
+                        mealType === meal.value && styles.statLabelSelected
+                      ]}>
+                        {meal.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={styles.statsHint}>點擊選擇餐別</Text>
+              </View>
+
+              {/* Food Name with Search */}
+              <View style={styles.section}>
+                <FoodSearchInput
+                  value={foodName}
+                  onChangeText={handleFoodInputChange}
+                  onSelectFood={handleSelectFood}
+                  placeholder={
+                    requireDatabaseFood
+                      ? '搜尋並選擇資料庫中的食物...'
+                      : '輸入食物名稱...'
+                  }
+                  requireDatabaseSelection={requireDatabaseFood}
+                />
+              </View>
+
+              {/* Collapse Advanced Options */}
+              {!isEditMode && (
+                <TouchableOpacity
+                  style={styles.advancedToggle}
+                  onPress={() => setShowAdvancedOptions(false)}
+                >
+                  <Icon name="chevron-up" size={20} color={colors.primary[500]} />
+                  <Text style={styles.advancedToggleText}>隱藏進階選項</Text>
+                </TouchableOpacity>
+              )}
+            </>
+          )}
         </View>
       </ScrollView>
 
@@ -641,13 +724,14 @@ const styles = StyleSheet.create({
   },
   floatingButton: {
     backgroundColor: colors.primary[500],
-    borderRadius: 12,
-    paddingVertical: spacing.xs,
+    borderRadius: 16,
+    paddingVertical: spacing.md,
+    minHeight: 56,
     flex: 1,
   },
   floatingButtonLabel: {
     fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
+    fontWeight: typography.fontWeight.bold,
     color: colors.text.inverse,
   },
   deleteButton: {
@@ -657,5 +741,101 @@ const styles = StyleSheet.create({
   },
   deleteButtonLabel: {
     color: colors.error,
+  },
+  recentFoodsContainer: {
+    backgroundColor: colors.primary[50],
+    borderRadius: 16,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  recentFoodsTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary[700],
+    marginBottom: spacing.sm,
+  },
+  recentFoodsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  recentFoodButton: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: spacing.sm,
+    minWidth: 80,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  recentFoodIcon: {
+    fontSize: 24,
+    marginBottom: spacing.xs / 2,
+  },
+  recentFoodName: {
+    fontSize: typography.fontSize.xs,
+    color: colors.text.primary,
+    textAlign: 'center',
+  },
+  quickMealSelector: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+    justifyContent: 'space-around',
+  },
+  quickMealButton: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: spacing.sm,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.border,
+    minHeight: 80,
+    justifyContent: 'center',
+  },
+  quickMealButtonSelected: {
+    borderColor: colors.primary[500],
+    backgroundColor: colors.primary[50],
+  },
+  quickMealIcon: {
+    fontSize: 28,
+    marginBottom: spacing.xs / 2,
+  },
+  quickMealLabel: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    fontWeight: typography.fontWeight.medium,
+  },
+  quickMealLabelSelected: {
+    color: colors.primary[700],
+    fontWeight: typography.fontWeight.semibold,
+  },
+  quickMealCount: {
+    fontSize: typography.fontSize.xs,
+    color: colors.primary[600],
+    marginTop: spacing.xs / 2,
+    fontWeight: typography.fontWeight.bold,
+  },
+  mainInputSection: {
+    marginBottom: spacing.lg,
+  },
+  advancedToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  advancedToggleText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.primary[500],
+    fontWeight: typography.fontWeight.medium,
   },
 })

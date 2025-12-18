@@ -1,11 +1,13 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { View, ActivityIndicator, StyleSheet } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { useQueryClient } from '@tanstack/react-query'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuthStore } from '@/shared/stores/authStore'
 import { AuthService } from '@/features/auth/services/AuthService'
 import { DashboardService } from '@/features/dashboard/services/DashboardService'
 import { realtimeService } from '@/shared/services/realtimeService'
+import { OnboardingScreen, ONBOARDING_STORAGE_KEY } from '@/features/onboarding/screens/OnboardingScreen'
 import { AuthNavigator } from './AuthNavigator'
 import { MainNavigator } from './MainNavigator'
 import { colors } from '@/theme'
@@ -13,6 +15,26 @@ import { colors } from '@/theme'
 export function RootNavigator() {
   const { user, isLoading } = useAuthStore()
   const queryClient = useQueryClient()
+  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null)
+
+  // Check onboarding status
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      try {
+        const completed = await AsyncStorage.getItem(ONBOARDING_STORAGE_KEY)
+        setShowOnboarding(completed !== 'true' && !!user)
+      } catch (error) {
+        console.error('[RootNavigator] Failed to check onboarding:', error)
+        setShowOnboarding(false)
+      }
+    }
+
+    if (user && !isLoading) {
+      checkOnboarding()
+    } else {
+      setShowOnboarding(false)
+    }
+  }, [user, isLoading])
 
   // Initialize auth listener on mount
   useEffect(() => {
@@ -84,11 +106,20 @@ export function RootNavigator() {
     }
   }, [user?.id, queryClient])
 
-  if (isLoading) {
+  if (isLoading || showOnboarding === null) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary[500]} />
       </View>
+    )
+  }
+
+  // Show onboarding for first-time users
+  if (showOnboarding && user) {
+    return (
+      <OnboardingScreen
+        onComplete={() => setShowOnboarding(false)}
+      />
     )
   }
 

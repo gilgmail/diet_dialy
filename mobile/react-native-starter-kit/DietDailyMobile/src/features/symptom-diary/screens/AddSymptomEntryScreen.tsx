@@ -48,6 +48,7 @@ export function AddSymptomEntryScreen() {
   const [severity, setSeverity] = useState<SeverityLevel>('mild')
   const [duration, setDuration] = useState('')
   const [notes, setNotes] = useState('')
+  const [quickMode, setQuickMode] = useState(!isEditMode) // Quick mode by default for new entries
 
   // Load existing entry data when available
   useEffect(() => {
@@ -76,8 +77,36 @@ export function AddSymptomEntryScreen() {
     }
   }, [existingEntry?.id])
   const [showOptionalFields, setShowOptionalFields] = useState(
-    !!(existingEntry?.duration_minutes || existingEntry?.notes)
+    !!(existingEntry?.duration_minutes || existingEntry?.notes) || isEditMode
   )
+  
+  // Common symptoms for quick selection (腹痛、腹瀉、脹氣、血便)
+  const QUICK_SYMPTOMS = [
+    { name: '腹痛', icon: '🤕' },
+    { name: '腹瀉', icon: '💩' },
+    { name: '脹氣', icon: '😖' },
+    { name: '血便', icon: '🩸' },
+  ]
+  
+  // Handle quick symptom selection with one-tap save
+  const handleQuickSymptomSave = async (symptomName: string) => {
+    try {
+      const newEntry = await createEntry({
+        symptom_name: symptomName,
+        severity: 'mild', // Default to mild
+        occurred_at: selectedDate.toISOString(),
+      })
+      
+      if (newEntry) {
+        Alert.alert('成功', `已記錄「${symptomName}」`)
+        // Reset form for next entry
+        setSymptomName('')
+        setSeverity('mild')
+      }
+    } catch (error) {
+      Alert.alert('錯誤', error instanceof Error ? error.message : '記錄失敗')
+    }
+  }
   const selectedSymptomNames = useMemo(
     () => parseSymptomNames(symptomName),
     [symptomName]
@@ -218,200 +247,326 @@ export function AddSymptomEntryScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
-        {/* Date Picker */}
-        <View style={styles.datePickerContainer}>
-          <TouchableOpacity
-            style={styles.dateButton}
-            onPress={() => setShowDatePicker(prev => !prev)}
-          >
-            <IconButton icon="calendar" size={20} />
-            <Text style={styles.dateText}>
-              {format(selectedDate, 'yyyy年MM月dd日 (E)', { locale: zhTW })}
-            </Text>
-            <IconButton icon={showDatePicker ? 'chevron-up' : 'chevron-down'} size={20} />
-          </TouchableOpacity>
-        </View>
+        {/* Quick Mode: One-tap symptom selection */}
+        {quickMode && !isEditMode && (
+          <>
+            <View style={styles.quickModeSection}>
+              <Text style={styles.quickModeTitle}>快速記錄</Text>
+              <Text style={styles.quickModeHint}>點擊症狀立即記錄（預設：輕微）</Text>
+              
+              <View style={styles.quickSymptomsGrid}>
+                {QUICK_SYMPTOMS.map((symptom) => (
+                  <TouchableOpacity
+                    key={symptom.name}
+                    style={styles.quickSymptomButton}
+                    onPress={() => handleQuickSymptomSave(symptom.name)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.quickSymptomIcon}>{symptom.icon}</Text>
+                    <Text style={styles.quickSymptomName}>{symptom.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
 
-        {showDatePicker && (
-          <DateTimePicker
-            value={selectedDate}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            onChange={handleDateChange}
-            maximumDate={new Date()}
-          />
-        )}
-
-        {/* Recent Entries */}
-        {recentEntries.length > 0 && (
-          <View style={styles.recentEntriesContainer}>
-            <Text style={styles.recentEntriesTitle}>剛新增的記錄</Text>
-            {recentEntries.map((entry) => {
-              const severityInfo = SEVERITY_LEVELS.find(s => s.value === entry.severity)
-              return (
-                <View key={entry.id} style={styles.recentEntryItem}>
-                  <Text style={styles.recentEntryIcon}>{severityInfo?.icon}</Text>
-                  <Text style={styles.recentEntryText}>
-                    {entry.symptom_name} ({severityInfo?.label})
-                  </Text>
+            {/* Manual Entry Section */}
+            <View style={styles.manualEntrySection}>
+              <Text style={styles.manualEntryTitle}>或手動輸入</Text>
+              
+              {/* Severity Selector - Large Buttons */}
+              <View style={styles.severityButtonsContainer}>
+                <Text style={styles.severityLabel}>嚴重程度</Text>
+                <View style={styles.severityButtonsRow}>
+                  {SEVERITY_LEVELS.map((level) => (
+                    <TouchableOpacity
+                      key={level.value}
+                      style={[
+                        styles.severityButton,
+                        severity === level.value && styles.severityButtonSelected,
+                        { borderColor: level.color },
+                      ]}
+                      onPress={() => setSeverity(level.value)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.severityIcon}>{level.icon}</Text>
+                      <Text style={[
+                        styles.severityLabelText,
+                        severity === level.value && styles.severityLabelTextSelected,
+                      ]}>
+                        {level.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-              )
-            })}
-          </View>
+              </View>
+
+              {/* Symptom Name Input */}
+              <View style={styles.section}>
+                <TextInput
+                  mode="outlined"
+                  placeholder="輸入症狀名稱..."
+                  value={symptomName}
+                  onChangeText={setSymptomName}
+                  style={[styles.input, styles.largeInput]}
+                  outlineColor={colors.border}
+                  activeOutlineColor={colors.primary[500]}
+                  textColor={colors.text.primary}
+                />
+                <Text style={styles.hint}>可使用逗號或頓號分隔多個症狀</Text>
+              </View>
+
+              {/* Common Symptoms Quick Select */}
+              <View style={styles.section}>
+                <Text style={styles.label}>常用症狀</Text>
+                <View style={styles.symptomsGrid}>
+                  {COMMON_SYMPTOMS.map((symptom) => (
+                    <TouchableOpacity
+                      key={symptom.name}
+                      style={[
+                        styles.symptomChip,
+                        selectedSymptomNames.includes(symptom.name) && styles.symptomChipActive,
+                      ]}
+                      onPress={() => handleCommonSymptomSelect(symptom.name)}
+                    >
+                      <Text style={styles.symptomIcon}>{symptom.icon}</Text>
+                      <Text
+                        style={[
+                          styles.symptomName,
+                          selectedSymptomNames.includes(symptom.name) && styles.symptomNameActive,
+                        ]}
+                      >
+                        {symptom.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Advanced Options Toggle */}
+              <TouchableOpacity
+                style={styles.advancedToggle}
+                onPress={() => {
+                  setShowOptionalFields(true)
+                  setQuickMode(false)
+                }}
+              >
+                <Icon name="chevron-down" size={20} color={colors.primary[500]} />
+                <Text style={styles.advancedToggleText}>顯示進階選項（日期、持續時間、備註）</Text>
+              </TouchableOpacity>
+            </View>
+          </>
         )}
 
-        {/* Symptom Name Input */}
-        <View style={styles.section}>
-          <Text style={styles.label}>
-            症狀名稱 <Text style={styles.required}>*</Text>
-          </Text>
-          <TextInput
-            mode="outlined"
-            placeholder="例：頭痛、腹痛"
-            value={symptomName}
-            onChangeText={setSymptomName}
-            style={styles.input}
-            outlineColor={colors.border}
-            activeOutlineColor={colors.primary[500]}
-            textColor={colors.text.primary}
-          />
-          <Text style={styles.hint}>可使用逗號或頓號分隔多個症狀</Text>
-        </View>
-
-        {/* Common Symptoms */}
-        <View style={styles.section}>
-          <Text style={styles.label}>常見症狀</Text>
-          <View style={styles.symptomsGrid}>
-            {COMMON_SYMPTOMS.map((symptom) => (
+        {/* Advanced Mode: Full Form */}
+        {(!quickMode || isEditMode) && (
+          <>
+            {/* Date Picker */}
+            <View style={styles.datePickerContainer}>
               <TouchableOpacity
-                key={symptom.name}
-                style={[
-                  styles.symptomChip,
-                  selectedSymptomNames.includes(symptom.name) && styles.symptomChipActive,
-                ]}
-                onPress={() => handleCommonSymptomSelect(symptom.name)}
+                style={styles.dateButton}
+                onPress={() => setShowDatePicker(prev => !prev)}
               >
-                <Text style={styles.symptomIcon}>{symptom.icon}</Text>
-                <Text
-                  style={[
-                    styles.symptomName,
-                    selectedSymptomNames.includes(symptom.name) && styles.symptomNameActive,
-                  ]}
-                >
-                  {symptom.name}
+                <IconButton icon="calendar" size={20} />
+                <Text style={styles.dateText}>
+                  {format(selectedDate, 'yyyy年MM月dd日 (E)', { locale: zhTW })}
+                </Text>
+                <IconButton icon={showDatePicker ? 'chevron-up' : 'chevron-down'} size={20} />
+              </TouchableOpacity>
+            </View>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleDateChange}
+                maximumDate={new Date()}
+              />
+            )}
+
+            {/* Recent Entries */}
+            {recentEntries.length > 0 && (
+              <View style={styles.recentEntriesContainer}>
+                <Text style={styles.recentEntriesTitle}>剛新增的記錄</Text>
+                {recentEntries.map((entry) => {
+                  const severityInfo = SEVERITY_LEVELS.find(s => s.value === entry.severity)
+                  return (
+                    <View key={entry.id} style={styles.recentEntryItem}>
+                      <Text style={styles.recentEntryIcon}>{severityInfo?.icon}</Text>
+                      <Text style={styles.recentEntryText}>
+                        {entry.symptom_name} ({severityInfo?.label})
+                      </Text>
+                    </View>
+                  )
+                })}
+              </View>
+            )}
+
+            {/* Symptom Name Input */}
+            <View style={styles.section}>
+              <Text style={styles.label}>
+                症狀名稱 <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                mode="outlined"
+                placeholder="例：頭痛、腹痛"
+                value={symptomName}
+                onChangeText={setSymptomName}
+                style={styles.input}
+                outlineColor={colors.border}
+                activeOutlineColor={colors.primary[500]}
+                textColor={colors.text.primary}
+              />
+              <Text style={styles.hint}>可使用逗號或頓號分隔多個症狀</Text>
+            </View>
+
+            {/* Common Symptoms */}
+            <View style={styles.section}>
+              <Text style={styles.label}>常見症狀</Text>
+              <View style={styles.symptomsGrid}>
+                {COMMON_SYMPTOMS.map((symptom) => (
+                  <TouchableOpacity
+                    key={symptom.name}
+                    style={[
+                      styles.symptomChip,
+                      selectedSymptomNames.includes(symptom.name) && styles.symptomChipActive,
+                    ]}
+                    onPress={() => handleCommonSymptomSelect(symptom.name)}
+                  >
+                    <Text style={styles.symptomIcon}>{symptom.icon}</Text>
+                    <Text
+                      style={[
+                        styles.symptomName,
+                        selectedSymptomNames.includes(symptom.name) && styles.symptomNameActive,
+                      ]}
+                    >
+                      {symptom.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Severity Selector */}
+            <View style={styles.section}>
+              <Text style={styles.label}>
+                嚴重程度 <Text style={styles.required}>*</Text>
+              </Text>
+              <SegmentedButtons
+                value={severity}
+                onValueChange={(value) => setSeverity(value as SeverityLevel)}
+                buttons={SEVERITY_LEVELS.map((level) => ({
+                  value: level.value,
+                  label: `${level.icon} ${level.label}`,
+                  style: severity === level.value ? { backgroundColor: level.color + '20' } : undefined,
+                  labelStyle: { color: colors.text.primary },
+                }))}
+                style={styles.segmentedButtons}
+              />
+            </View>
+
+            {/* Optional Fields Toggle */}
+            <View style={styles.section}>
+              <TouchableOpacity
+                style={styles.optionalFieldsToggle}
+                onPress={() => setShowOptionalFields(!showOptionalFields)}
+              >
+                <Icon
+                  name={showOptionalFields ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color={colors.primary[500]}
+                />
+                <Text style={styles.optionalFieldsToggleText}>
+                  {showOptionalFields ? '隱藏選填欄位' : '顯示選填欄位（持續時間、備註）'}
                 </Text>
               </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+            </View>
 
-        {/* Severity Selector */}
-        <View style={styles.section}>
-          <Text style={styles.label}>
-            嚴重程度 <Text style={styles.required}>*</Text>
-          </Text>
-          <SegmentedButtons
-            value={severity}
-            onValueChange={(value) => setSeverity(value as SeverityLevel)}
-            buttons={SEVERITY_LEVELS.map((level) => ({
-              value: level.value,
-              label: `${level.icon} ${level.label}`,
-              style: severity === level.value ? { backgroundColor: level.color + '20' } : undefined,
-              labelStyle: { color: colors.text.primary },
-            }))}
-            style={styles.segmentedButtons}
-          />
-        </View>
+            {/* Duration Input - Collapsible */}
+            {showOptionalFields && (
+              <View style={styles.section}>
+                <Text style={styles.label}>持續時間（分鐘）</Text>
+                <TextInput
+                  mode="outlined"
+                  placeholder="例：30"
+                  value={duration}
+                  onChangeText={setDuration}
+                  keyboardType="numeric"
+                  style={styles.input}
+                  outlineColor={colors.border}
+                  activeOutlineColor={colors.primary[500]}
+                  textColor={colors.text.primary}
+                />
+                <Text style={styles.hint}>選填 - 症狀持續的分鐘數</Text>
+              </View>
+            )}
 
-        {/* Optional Fields Toggle */}
-        <View style={styles.section}>
-          <TouchableOpacity
-            style={styles.optionalFieldsToggle}
-            onPress={() => setShowOptionalFields(!showOptionalFields)}
-          >
-            <Icon
-              name={showOptionalFields ? 'chevron-up' : 'chevron-down'}
-              size={20}
-              color={colors.primary[500]}
-            />
-            <Text style={styles.optionalFieldsToggleText}>
-              {showOptionalFields ? '隱藏選填欄位' : '顯示選填欄位（持續時間、備註）'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+            {/* Notes Input - Collapsible */}
+            {showOptionalFields && (
+              <View style={styles.section}>
+                <Text style={styles.label}>備註</Text>
+                <TextInput
+                  mode="outlined"
+                  placeholder="例：早上起床後開始，午餐後好轉"
+                  value={notes}
+                  onChangeText={setNotes}
+                  multiline
+                  numberOfLines={4}
+                  style={[styles.input, styles.textArea]}
+                  outlineColor={colors.border}
+                  activeOutlineColor={colors.primary[500]}
+                  textColor={colors.text.primary}
+                />
+                <Text style={styles.hint}>選填 - 其他相關資訊</Text>
+              </View>
+            )}
 
-        {/* Duration Input - Collapsible */}
-        {showOptionalFields && (
-          <View style={styles.section}>
-            <Text style={styles.label}>持續時間（分鐘）</Text>
-            <TextInput
-              mode="outlined"
-              placeholder="例：30"
-              value={duration}
-              onChangeText={setDuration}
-              keyboardType="numeric"
-              style={styles.input}
-              outlineColor={colors.border}
-              activeOutlineColor={colors.primary[500]}
-              textColor={colors.text.primary}
-            />
-            <Text style={styles.hint}>選填 - 症狀持續的分鐘數</Text>
-          </View>
+            {/* Collapse to Quick Mode */}
+            {!isEditMode && (
+              <TouchableOpacity
+                style={styles.advancedToggle}
+                onPress={() => setQuickMode(true)}
+              >
+                <Icon name="chevron-up" size={20} color={colors.primary[500]} />
+                <Text style={styles.advancedToggleText}>返回快速模式</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Submit and Delete Buttons */}
+            <View style={styles.floatingButtonContainer}>
+              {isEditMode && (
+                <Button
+                  mode="outlined"
+                  onPress={handleDelete}
+                  loading={isDeleting}
+                  disabled={isDeleting || isUpdating}
+                  style={[styles.floatingButton, styles.deleteButton]}
+                  labelStyle={styles.deleteButtonLabel}
+                  icon="delete"
+                >
+                  刪除記錄
+                </Button>
+              )}
+              <Button
+                mode="contained"
+                onPress={handleSubmit}
+                loading={isEditMode ? isUpdating : isCreating}
+                disabled={
+                  (isEditMode ? isUpdating : isCreating) ||
+                  isDeleting ||
+                  selectedSymptomNames.length === 0
+                }
+                style={styles.floatingButton}
+                labelStyle={styles.floatingButtonLabel}
+                buttonColor={colors.primary[500]}
+                textColor={colors.text.inverse}
+                icon="check"
+              >
+                {isEditMode ? '更新記錄' : '儲存記錄'}
+              </Button>
+            </View>
+          </>
         )}
-
-        {/* Notes Input - Collapsible */}
-        {showOptionalFields && (
-          <View style={styles.section}>
-            <Text style={styles.label}>備註</Text>
-            <TextInput
-              mode="outlined"
-              placeholder="例：早上起床後開始，午餐後好轉"
-              value={notes}
-              onChangeText={setNotes}
-              multiline
-              numberOfLines={4}
-              style={[styles.input, styles.textArea]}
-              outlineColor={colors.border}
-              activeOutlineColor={colors.primary[500]}
-              textColor={colors.text.primary}
-            />
-            <Text style={styles.hint}>選填 - 其他相關資訊</Text>
-          </View>
-        )}
-
-        {/* Submit and Delete Buttons */}
-        <View style={styles.floatingButtonContainer}>
-          {isEditMode && (
-            <Button
-              mode="outlined"
-              onPress={handleDelete}
-              loading={isDeleting}
-              disabled={isDeleting || isUpdating}
-              style={[styles.floatingButton, styles.deleteButton]}
-              labelStyle={styles.deleteButtonLabel}
-              icon="delete"
-            >
-              刪除記錄
-            </Button>
-          )}
-          <Button
-            mode="contained"
-            onPress={handleSubmit}
-            loading={isEditMode ? isUpdating : isCreating}
-            disabled={
-              (isEditMode ? isUpdating : isCreating) ||
-              isDeleting ||
-              selectedSymptomNames.length === 0
-            }
-            style={styles.floatingButton}
-            labelStyle={styles.floatingButtonLabel}
-            buttonColor={colors.primary[500]}
-            textColor={colors.text.inverse}
-            icon="check"
-          >
-            {isEditMode ? '更新記錄' : '儲存記錄'}
-          </Button>
-        </View>
       </View>
     </ScrollView>
   )
@@ -529,13 +684,14 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   floatingButton: {
-    borderRadius: 12,
-    paddingVertical: spacing.xs,
+    borderRadius: 16,
+    paddingVertical: spacing.md,
+    minHeight: 56,
     flex: 1,
   },
   floatingButtonLabel: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
   },
   deleteButton: {
     backgroundColor: 'transparent',
@@ -557,6 +713,124 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   optionalFieldsToggleText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.primary[500],
+    fontWeight: typography.fontWeight.medium,
+  },
+  quickModeSection: {
+    marginBottom: spacing.xl,
+  },
+  quickModeTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+    textAlign: 'center',
+  },
+  quickModeHint: {
+    fontSize: typography.fontSize.sm,
+    color: colors.text.secondary,
+    marginBottom: spacing.lg,
+    textAlign: 'center',
+  },
+  quickSymptomsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    justifyContent: 'center',
+  },
+  quickSymptomButton: {
+    width: 100,
+    height: 100,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.sm,
+  },
+  quickSymptomIcon: {
+    fontSize: 40,
+    marginBottom: spacing.xs,
+  },
+  quickSymptomName: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    textAlign: 'center',
+  },
+  manualEntrySection: {
+    marginTop: spacing.xl,
+    paddingTop: spacing.xl,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  manualEntryTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.lg,
+    textAlign: 'center',
+  },
+  severityButtonsContainer: {
+    marginBottom: spacing.lg,
+  },
+  severityLabel: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+  },
+  severityButtonsRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  severityButton: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 2,
+    padding: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 80,
+  },
+  severityButtonSelected: {
+    backgroundColor: colors.primary[50],
+    borderWidth: 3,
+  },
+  severityIcon: {
+    fontSize: 32,
+    marginBottom: spacing.xs,
+  },
+  severityLabelText: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.text.secondary,
+  },
+  severityLabelTextSelected: {
+    color: colors.primary[700],
+    fontWeight: typography.fontWeight.semibold,
+  },
+  largeInput: {
+    minHeight: 60,
+    fontSize: typography.fontSize.lg,
+  },
+  advancedToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  advancedToggleText: {
     fontSize: typography.fontSize.sm,
     color: colors.primary[500],
     fontWeight: typography.fontWeight.medium,

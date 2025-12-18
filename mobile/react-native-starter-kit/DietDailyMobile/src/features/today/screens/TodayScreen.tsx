@@ -317,29 +317,40 @@ export function TodayScreen() {
 
           {/* Summary View - Now the only view */}
           <View style={styles.summaryContainer}>
-            {/* Compact Stats Grid */}
-            <View style={styles.summaryGrid}>
+            {/* Quick Action Buttons - Large and Prominent */}
+            <View style={styles.quickActionsContainer}>
               {summaryCards.map((card) => (
                 <TouchableOpacity
                   key={card.key}
-                  style={[styles.summaryCard, { backgroundColor: card.accent }]}
+                  style={[styles.quickActionCard, { backgroundColor: card.accent }]}
                   onPress={card.onPress}
                   activeOpacity={0.85}
                 >
-                  <View style={styles.summaryCardHeader}>
-                    <Icon name={card.icon} size={24} color={card.key === 'food' ? colors.success : card.key === 'symptom' ? colors.error : '#D2691E'} />
-                    <Text style={styles.summaryCardTitle}>{card.title}</Text>
+                  <View style={styles.quickActionContent}>
+                    <Icon 
+                      name={card.icon} 
+                      size={32} 
+                      color={card.key === 'food' ? colors.success : card.key === 'symptom' ? colors.error : '#D2691E'} 
+                    />
+                    <View style={styles.quickActionText}>
+                      <Text style={styles.quickActionTitle}>{card.title}</Text>
+                      <Text style={styles.quickActionCount}>
+                        {card.count > 0 ? `已記錄 ${card.count} 筆` : '點擊開始記錄'}
+                      </Text>
+                    </View>
+                    <View style={styles.quickActionBadge}>
+                      <Text style={styles.quickActionBadgeText}>+</Text>
+                    </View>
                   </View>
-                  <Text style={styles.summaryCardCount}>{card.count}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            {/* Timeline - With detailed content */}
+            {/* Timeline - Simplified */}
             {timelineItems.length > 0 && (
               <View style={styles.timelineCard}>
                 <View style={styles.timelineHeader}>
-                  <Text style={styles.timelineTitle}>最近記錄</Text>
+                  <Text style={styles.timelineTitle}>今日記錄</Text>
                   <TouchableOpacity
                     onPress={() => {
                       const tabNav = findTabNavigator(navigation)
@@ -349,33 +360,21 @@ export function TodayScreen() {
                     }}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
-                    <View style={styles.viewAllButton}>
-                      <Icon name="file-document-outline" size={16} color={colors.primary[600]} />
-                      <Text style={styles.viewAllText}>查看完整歷史記錄</Text>
-                      <Icon name="chevron-right" size={16} color={colors.primary[600]} />
-                    </View>
+                    <Text style={styles.viewAllText}>查看全部</Text>
                   </TouchableOpacity>
                 </View>
-                {timelineItems.map((item) => (
+                {timelineItems.slice(0, 5).map((item) => (
                   <View key={`${item.type}-${item.id}`} style={styles.timelineItemRow}>
                     <View style={styles.timelineIconContainer}>
                       <Icon name={item.icon} size={20} color={item.color} />
                     </View>
                     <View style={styles.timelineItemContent}>
                       <Text style={styles.timelineItemTitle}>{item.title}</Text>
-                      <View style={styles.timelineMetaRow}>
-                        <Text style={styles.timelineItemTime}>
-                          {item.timestamp ? format(new Date(item.timestamp), 'HH:mm') : '--:--'}
-                        </Text>
-                        {item.meta && (
-                          <>
-                            <Text style={styles.timelineMetaDivider}>·</Text>
-                            <Text style={styles.timelineItemMeta}>{item.meta}</Text>
-                          </>
-                        )}
-                      </View>
+                      <Text style={styles.timelineItemTime}>
+                        {item.timestamp ? format(new Date(item.timestamp), 'HH:mm') : '--:--'}
+                        {item.meta && ` · ${item.meta}`}
+                      </Text>
                     </View>
-                    <View style={[styles.timelineStatusDot, { backgroundColor: item.color }]} />
                   </View>
                 ))}
               </View>
@@ -416,14 +415,15 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   headerTitle: {
-    fontSize: typography.fontSize['2xl'],
+    fontSize: typography.fontSize['3xl'],
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
     marginBottom: spacing.xs / 2,
   },
   headerSubtitle: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.base,
     color: colors.text.secondary,
+    fontWeight: typography.fontWeight.medium,
   },
   gamificationSection: {
     marginHorizontal: spacing.lg,
@@ -481,6 +481,50 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     color: colors.text.primary,
     marginTop: spacing.xs,
+  },
+  quickActionsContainer: {
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  quickActionCard: {
+    borderRadius: 20,
+    padding: spacing.lg,
+    borderWidth: 2,
+    borderColor: colors.border,
+    minHeight: 120,
+    justifyContent: 'center',
+  },
+  quickActionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  quickActionText: {
+    flex: 1,
+  },
+  quickActionTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    marginBottom: spacing.xs / 2,
+  },
+  quickActionCount: {
+    fontSize: typography.fontSize.base,
+    color: colors.text.secondary,
+    fontWeight: typography.fontWeight.medium,
+  },
+  quickActionBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primary[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickActionBadgeText: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text.inverse,
   },
   timelineCard: {
     backgroundColor: colors.surface,

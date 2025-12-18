@@ -9,6 +9,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Button, TextInput, RadioButton, IconButton } from 'react-native-paper'
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useFocusEffect } from '@react-navigation/native'
 import { format, isSameDay } from 'date-fns'
@@ -208,11 +209,11 @@ export function AddBowelMovementScreen({ navigation, route }: AddBowelMovementSc
             </View>
           )}
 
-          {/* Quick Selection (only in create mode) */}
+          {/* Quick Selection (only in create mode) - Enhanced */}
           {!isEditMode && !showDetails && (
             <View style={styles.quickSection}>
               <Text style={styles.sectionTitle}>快速記錄</Text>
-              <Text style={styles.sectionHint}>點擊形態立即儲存</Text>
+              <Text style={styles.sectionHint}>點擊形態立即儲存（不需要確認）</Text>
 
               <View style={styles.stoolTypeGrid}>
                 {STOOL_TYPES.map((type) => (
@@ -229,13 +230,14 @@ export function AddBowelMovementScreen({ navigation, route }: AddBowelMovementSc
                 ))}
               </View>
 
-              <Button
-                mode="text"
-                onPress={() => setShowDetails(true)}
+              <TouchableOpacity
                 style={styles.showDetailsButton}
+                onPress={() => setShowDetails(true)}
+                activeOpacity={0.7}
               >
-                或 填寫詳細資訊 ▼
-              </Button>
+                <Icon name="chevron-down" size={20} color={colors.primary[500]} />
+                <Text style={styles.showDetailsButtonText}>或 填寫詳細資訊（血便、困難度、備註）</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -506,13 +508,14 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   stoolTypeButton: {
-    width: '18%',
+    width: '22%',
+    minWidth: 80,
     aspectRatio: 1,
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: 2,
+    borderRadius: 16,
+    borderWidth: 2.5,
     borderColor: colors.border,
-    padding: spacing.xs,
+    padding: spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -521,8 +524,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary[50],
   },
   stoolTypeIcon: {
-    fontSize: 32,
-    marginBottom: spacing.xs / 2,
+    fontSize: 40,
+    marginBottom: spacing.xs,
   },
   stoolTypeLabel: {
     fontSize: typography.fontSize.xs,
@@ -540,7 +543,22 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs / 2,
   },
   showDetailsButton: {
-    marginTop: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: spacing.lg,
+    gap: spacing.sm,
+  },
+  showDetailsButtonText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.primary[500],
+    fontWeight: typography.fontWeight.medium,
   },
   radioRow: {
     flexDirection: 'row',
@@ -599,7 +617,9 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 16,
+    paddingVertical: spacing.md,
+    minHeight: 56,
   },
   deleteButton: {
     backgroundColor: 'transparent',
