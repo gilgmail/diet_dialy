@@ -1,21 +1,27 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { View, ActivityIndicator, StyleSheet } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { useQueryClient } from '@tanstack/react-query'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as Notifications from 'expo-notifications'
 import { useAuthStore } from '@/shared/stores/authStore'
+import { useSettingsStore } from '@/features/settings/stores/settingsStore'
 import { AuthService } from '@/features/auth/services/AuthService'
 import { DashboardService } from '@/features/dashboard/services/DashboardService'
+import { NotificationService } from '@/features/settings/services/notificationService'
 import { realtimeService } from '@/shared/services/realtimeService'
 import { OnboardingScreen, ONBOARDING_STORAGE_KEY } from '@/features/onboarding/screens/OnboardingScreen'
 import { AuthNavigator } from './AuthNavigator'
 import { MainNavigator } from './MainNavigator'
 import { colors } from '@/theme'
+import type { NavigationContainerRef } from '@react-navigation/native'
 
 export function RootNavigator() {
   const { user, isLoading } = useAuthStore()
+  const { settings } = useSettingsStore()
   const queryClient = useQueryClient()
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null)
+  const navigationRef = useRef<NavigationContainerRef<any>>(null)
 
   // Check onboarding status
   useEffect(() => {
@@ -69,6 +75,76 @@ export function RootNavigator() {
       realtimeService.cleanup()
     }
   }, [user?.id])
+
+  // Setup notification handlers
+  useEffect(() => {
+    // Handle notification received while app is in foreground
+    const notificationListener = Notifications.addNotificationReceivedListener((notification) => {
+      console.log('[RootNavigator] Notification received:', notification)
+    })
+
+    // Handle notification tap
+    const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data
+      const type = data?.type as string
+
+      console.log('[RootNavigator] Notification tapped:', type, data)
+
+      if (!navigationRef.current) {
+        console.warn('[RootNavigator] Navigation ref not ready')
+        return
+      }
+
+      if (type === 'symptom-reminder') {
+        navigationRef.current.navigate('AddSymptomEntry')
+      } else if (type === 'bowel-reminder') {
+        navigationRef.current.navigate('AddBowelMovement')
+      } else if (type === 'backfill-reminder') {
+        const date = data?.date as string
+        if (date) {
+          // Navigate to symptom entry with date parameter for backfill
+          navigationRef.current.navigate('AddSymptomEntry', { date })
+        } else {
+          navigationRef.current.navigate('AddSymptomEntry')
+        }
+      }
+    })
+
+    return () => {
+      notificationListener.remove()
+      responseListener.remove()
+    }
+  }, [])
+
+  // Schedule health reminders and check backfill on app start
+  useEffect(() => {
+    if (!user?.id || !settings.notificationsEnabled) {
+      return
+    }
+
+    const setupReminders = async () => {
+      try {
+        // Schedule symptom reminder
+        if (settings.symptomReminderEnabled) {
+          await NotificationService.scheduleSymptomReminder(user.id)
+        }
+
+        // Schedule bowel reminder
+        if (settings.bowelReminderEnabled) {
+          await NotificationService.scheduleBowelReminder(user.id)
+        }
+
+        // Check for missing entries from yesterday
+        if (settings.enableBackfillReminder) {
+          await NotificationService.checkAndRemindBackfill(user.id)
+        }
+      } catch (error) {
+        console.error('[RootNavigator] Error setting up reminders:', error)
+      }
+    }
+
+    setupReminders()
+  }, [user?.id, settings.notificationsEnabled, settings.symptomReminderEnabled, settings.bowelReminderEnabled, settings.enableBackfillReminder])
 
   // Warm up Dashboard query cache after login
   useEffect(() => {
@@ -124,7 +200,7 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       {user ? <MainNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   )
