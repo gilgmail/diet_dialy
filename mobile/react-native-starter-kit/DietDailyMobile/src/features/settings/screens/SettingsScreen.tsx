@@ -69,8 +69,17 @@ export function SettingsScreen() {
   const [debugMode, setDebugMode] = useState(settings.debugMode ?? false)
   const [customPrompt, setCustomPrompt] = useState(settings.customPrompt ?? '')
   const [showTimePicker, setShowTimePicker] = useState(false)
-  const [selectedMeal, setSelectedMeal] = useState<'breakfast' | 'lunch' | 'dinner' | null>(null)
+  const [selectedMeal, setSelectedMeal] = useState<'breakfast' | 'lunch' | 'dinner' | 'symptom' | 'bowel' | null>(null)
   const [tempTime, setTempTime] = useState(new Date())
+  const [symptomReminderEnabled, setSymptomReminderEnabled] = useState(
+    settings.symptomReminderEnabled ?? true
+  )
+  const [bowelReminderEnabled, setBowelReminderEnabled] = useState(
+    settings.bowelReminderEnabled ?? true
+  )
+  const [enableBackfillReminder, setEnableBackfillReminder] = useState(
+    settings.enableBackfillReminder ?? true
+  )
   const currentTimezone = useMemo(
     () => TIMEZONES.find((tz) => tz.value === settings.timezone),
     [settings.timezone]
@@ -355,19 +364,24 @@ export function SettingsScreen() {
       const minutes = selectedDate.getMinutes().toString().padStart(2, '0')
       const time = `${hours}:${minutes}`
 
-      const newReminders = {
-        ...settings.mealReminders,
-        [selectedMeal]: time,
-      }
+      if (selectedMeal === 'symptom') {
+        updateSettings(user.id, { symptomReminderTime: time })
+      } else if (selectedMeal === 'bowel') {
+        updateSettings(user.id, { bowelReminderTime: time })
+      } else if (selectedMeal === 'breakfast' || selectedMeal === 'lunch' || selectedMeal === 'dinner') {
+        const newReminders = {
+          ...settings.mealReminders,
+          [selectedMeal]: time,
+        }
+        updateSettings(user.id, { mealReminders: newReminders })
 
-      updateSettings(user.id, { mealReminders: newReminders })
-
-      // Reschedule notifications if enabled
-      if (settings.notificationsEnabled) {
-        NotificationService.scheduleMealReminders(user.id, newReminders, {
-          force: true,
-          meals: [selectedMeal],
-        })
+        // Reschedule notifications if enabled
+        if (settings.notificationsEnabled) {
+          NotificationService.scheduleMealReminders(user.id, newReminders, {
+            force: true,
+            meals: [selectedMeal],
+          })
+        }
       }
 
       setSelectedMeal(null)
@@ -381,19 +395,24 @@ export function SettingsScreen() {
     const minutes = tempTime.getMinutes().toString().padStart(2, '0')
     const time = `${hours}:${minutes}`
 
-    const newReminders = {
-      ...settings.mealReminders,
-      [selectedMeal]: time,
-    }
+    if (selectedMeal === 'symptom') {
+      await updateSettings(user.id, { symptomReminderTime: time })
+    } else if (selectedMeal === 'bowel') {
+      await updateSettings(user.id, { bowelReminderTime: time })
+    } else if (selectedMeal === 'breakfast' || selectedMeal === 'lunch' || selectedMeal === 'dinner') {
+      const newReminders = {
+        ...settings.mealReminders,
+        [selectedMeal]: time,
+      }
+      await updateSettings(user.id, { mealReminders: newReminders })
 
-    await updateSettings(user.id, { mealReminders: newReminders })
-
-    // Reschedule notifications if enabled
-    if (settings.notificationsEnabled) {
-      await NotificationService.scheduleMealReminders(user.id, newReminders, {
-        force: true,
-        meals: [selectedMeal],
-      })
+      // Reschedule notifications if enabled
+      if (settings.notificationsEnabled) {
+        await NotificationService.scheduleMealReminders(user.id, newReminders, {
+          force: true,
+          meals: [selectedMeal],
+        })
+      }
     }
 
     setShowTimePicker(false)
@@ -532,6 +551,137 @@ Device: ${Platform.OS} ${Platform.Version}
             </TouchableOpacity>
           </>
         )}
+      </View>
+
+      {/* Symptom and Bowel Movement Reminders Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>健康記錄提醒</Text>
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingInfo}>
+            <Icon name="heart-pulse" size={24} color={colors.error} />
+            <View style={styles.settingTextContainer}>
+              <Text style={styles.settingLabel}>症狀記錄提醒</Text>
+              <Text style={styles.settingDescription}>
+                {symptomReminderEnabled ? '已啟用' : '已關閉'}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={symptomReminderEnabled}
+            onValueChange={async (value) => {
+              setSymptomReminderEnabled(value)
+              await updateSettings(user.id, { symptomReminderEnabled: value })
+              if (value && settings.notificationsEnabled) {
+                // Will be scheduled by NotificationService
+                Alert.alert('成功', '症狀記錄提醒已啟用')
+              } else {
+                Alert.alert('成功', '症狀記錄提醒已關閉')
+              }
+            }}
+            trackColor={{ false: colors.border, true: colors.primary[300] }}
+            thumbColor={symptomReminderEnabled ? colors.primary[500] : colors.text.disabled}
+          />
+        </View>
+
+        {symptomReminderEnabled && (
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => {
+              const currentTime = settings.symptomReminderTime ?? '21:00'
+              const [hour, minute] = currentTime.split(':').map(Number)
+              const date = new Date()
+              date.setHours(hour, minute, 0, 0)
+              setTempTime(date)
+              setSelectedMeal(null) // Use null to indicate symptom reminder
+              setShowTimePicker(true)
+            }}
+          >
+            <View style={styles.settingInfo}>
+              <Icon name="clock-outline" size={24} color={colors.primary[500]} />
+              <View style={styles.settingTextContainer}>
+                <Text style={styles.settingLabel}>症狀提醒時間</Text>
+                <Text style={styles.settingDescription}>
+                  {settings.symptomReminderTime ?? '21:00'}
+                </Text>
+              </View>
+            </View>
+            <Icon name="chevron-right" size={24} color={colors.text.secondary} />
+          </TouchableOpacity>
+        )}
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingInfo}>
+            <Icon name="toilet" size={24} color={colors.warning} />
+            <View style={styles.settingTextContainer}>
+              <Text style={styles.settingLabel}>排便記錄提醒</Text>
+              <Text style={styles.settingDescription}>
+                {bowelReminderEnabled ? '已啟用' : '已關閉'}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={bowelReminderEnabled}
+            onValueChange={async (value) => {
+              setBowelReminderEnabled(value)
+              await updateSettings(user.id, { bowelReminderEnabled: value })
+              if (value && settings.notificationsEnabled) {
+                Alert.alert('成功', '排便記錄提醒已啟用')
+              } else {
+                Alert.alert('成功', '排便記錄提醒已關閉')
+              }
+            }}
+            trackColor={{ false: colors.border, true: colors.primary[300] }}
+            thumbColor={bowelReminderEnabled ? colors.primary[500] : colors.text.disabled}
+          />
+        </View>
+
+        {bowelReminderEnabled && (
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => {
+              const currentTime = settings.bowelReminderTime ?? '21:00'
+              const [hour, minute] = currentTime.split(':').map(Number)
+              const date = new Date()
+              date.setHours(hour, minute, 0, 0)
+              setTempTime(date)
+              setSelectedMeal('bowel')
+              setShowTimePicker(true)
+            }}
+          >
+            <View style={styles.settingInfo}>
+              <Icon name="clock-outline" size={24} color={colors.primary[500]} />
+              <View style={styles.settingTextContainer}>
+                <Text style={styles.settingLabel}>排便提醒時間</Text>
+                <Text style={styles.settingDescription}>
+                  {settings.bowelReminderTime ?? '21:00'}
+                </Text>
+              </View>
+            </View>
+            <Icon name="chevron-right" size={24} color={colors.text.secondary} />
+          </TouchableOpacity>
+        )}
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingInfo}>
+            <Icon name="calendar-clock" size={24} color={colors.info} />
+            <View style={styles.settingTextContainer}>
+              <Text style={styles.settingLabel}>補記提醒</Text>
+              <Text style={styles.settingDescription}>
+                提醒補記前一天的缺失記錄
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={enableBackfillReminder}
+            onValueChange={async (value) => {
+              setEnableBackfillReminder(value)
+              await updateSettings(user.id, { enableBackfillReminder: value })
+            }}
+            trackColor={{ false: colors.border, true: colors.primary[300] }}
+            thumbColor={enableBackfillReminder ? colors.primary[500] : colors.text.disabled}
+          />
+        </View>
       </View>
 
       {/* Hero 模組已整合到「健康模組」區塊中，請前往「模組」分頁進行設定 */}
