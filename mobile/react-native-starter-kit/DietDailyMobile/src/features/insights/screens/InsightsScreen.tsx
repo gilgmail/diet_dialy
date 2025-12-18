@@ -287,6 +287,24 @@ export function InsightsScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* 運動-症狀分析導航卡片 */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.bowelTrackingCard}
+            onPress={() => navigation.navigate('ExerciseSymptom', { days: 30 })}
+            activeOpacity={0.7}
+          >
+            <View style={styles.bowelTrackingIconContainer}>
+              <Icon name="run" size={32} color={colors.primary[500]} />
+            </View>
+            <View style={styles.bowelTrackingContent}>
+              <Text style={styles.bowelTrackingTitle}>運動-症狀分析</Text>
+              <Text style={styles.bowelTrackingSubtitle}>查看運動強度與腸道健康的關聯</Text>
+            </View>
+            <Icon name="chevron-right" size={24} color={colors.text.secondary} />
+          </TouchableOpacity>
+        </View>
+
         {/* 報表匯出卡片 */}
         <View style={styles.section}>
           <ReportGenerator includeDays={7} />

@@ -24,6 +24,7 @@ import { SleepLogScreen } from '@/features/health-logs/screens/SleepLogScreen'
 import { ActivityLogScreen } from '@/features/health-logs/screens/ActivityLogScreen'
 import { HealthKitSettingsScreen } from '@/features/settings/screens/HealthKitSettingsScreen'
 import { BowelMovementDashboardScreen } from '@/features/bowel-tracking'
+import { ExerciseSymptomScreen } from '@/features/exercise-correlation'
 import { colors, typography, spacing } from '@/theme'
 import type { MainStackParamList, MainTabParamList } from './types'
 
@@ -521,6 +522,30 @@ export function MainNavigator() {
             )
           }
           return <BowelMovementDashboardScreen userId={user.id} days={props.route.params?.days} />
+        }}
+      </Stack.Screen>
+      <Stack.Screen
+        name="ExerciseSymptom"
+        options={{
+          headerShown: true,
+          title: '運動-症狀分析',
+          headerBackTitle: '返回',
+          headerStyle: {
+            backgroundColor: colors.surface,
+          },
+          headerTintColor: colors.text.primary,
+        }}
+      >
+        {(props) => {
+          const { user } = useAuth()
+          if (!user?.id) {
+            return (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Text>請先登入</Text>
+              </View>
+            )
+          }
+          return <ExerciseSymptomScreen userId={user.id} days={props.route.params?.days} />
         }}
       </Stack.Screen>
     </Stack.Navigator>

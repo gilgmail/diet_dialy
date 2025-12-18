@@ -111,3 +111,4 @@ node scripts/check-healthkit-constraint.js
 - API 路由: `src/app/api/healthkit/sync/route.ts`
 - 驗證腳本: `scripts/check-healthkit-constraint.js`
 
+

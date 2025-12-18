@@ -31,3 +31,4 @@ WHERE tablename = 'health_metrics'
   AND indexname LIKE '%upsert%' OR indexname LIKE '%unique%' OR indexname LIKE '%user%'
 ORDER BY indexname;
 
+

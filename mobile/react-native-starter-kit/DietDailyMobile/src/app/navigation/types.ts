@@ -43,6 +43,9 @@ export type MainStackParamList = {
   BowelMovementDashboard: {
     days?: number // Analysis period in days, default 30
   } | undefined
+  ExerciseSymptom: {
+    days?: number // Analysis period in days, default 30
+  } | undefined
 }
 
 export type RootStackParamList = {

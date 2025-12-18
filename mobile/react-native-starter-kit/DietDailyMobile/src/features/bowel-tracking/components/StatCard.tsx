@@ -50,7 +50,7 @@ export const StatCard: React.FC<Props> = ({
       trend === 'up' ? 'trending-up' : trend === 'down' ? 'trending-down' : 'trending-neutral';
     const trendColor = trend === 'up' ? '#10B981' : trend === 'down' ? '#EF4444' : '#6B7280';
 
-    return <MaterialCommunityIcons name={iconName} size={20} color={trendColor} />;
+    return <Icon name={iconName} size={20} color={trendColor} />;
   };
 
   return (
@@ -59,7 +59,7 @@ export const StatCard: React.FC<Props> = ({
       <View style={styles.header}>
         {icon && (
           <View style={styles.iconContainer}>
-            <MaterialCommunityIcons name={icon as any} size={24} color={iconColor} />
+            <Icon name={icon as any} size={24} color={iconColor} />
           </View>
         )}
         {getTrendIcon()}
