@@ -60,6 +60,9 @@ function getIntensityLabel(intensity: string): string {
  * 運動強度圖表組件
  */
 export const ExerciseIntensityChart: React.FC<Props> = ({ data, height = 250 }) => {
+  console.log('[ExerciseIntensityChart] Received data:', data);
+  console.log('[ExerciseIntensityChart] Data length:', data.length);
+  
   const { width: screenWidth } = Dimensions.get('window');
   const chartWidth = screenWidth - 40;
 
@@ -70,17 +73,27 @@ export const ExerciseIntensityChart: React.FC<Props> = ({ data, height = 250 }) 
 
   // 計算最大症狀分數
   const maxScore = Math.max(...data.map((d) => d.avgSymptomScore), 5);
+  console.log('[ExerciseIntensityChart] Max score:', maxScore);
 
   // 計算柱狀圖位置
   const barWidth = plotWidth / (data.length * 2);
   const spacing = barWidth;
 
   if (data.length === 0) {
+    console.warn('[ExerciseIntensityChart] No data provided');
     return (
       <View style={styles.container}>
         <Text style={styles.emptyText}>暫無運動數據</Text>
       </View>
     );
+  }
+
+  // 檢查是否有實際數據（sampleSize > 0）
+  const hasData = data.some((d) => d.sampleSize > 0);
+  console.log('[ExerciseIntensityChart] Has data with sampleSize > 0:', hasData);
+  
+  if (!hasData) {
+    console.warn('[ExerciseIntensityChart] All data items have sampleSize = 0:', data);
   }
 
   return (
@@ -121,7 +134,17 @@ export const ExerciseIntensityChart: React.FC<Props> = ({ data, height = 250 }) 
 
         {/* 柱狀圖 */}
         {data.map((item, index) => {
-          const barHeight = (item.avgSymptomScore / maxScore) * plotHeight;
+          console.log(`[ExerciseIntensityChart] Rendering item ${index}:`, {
+            intensity: item.intensity,
+            avgSymptomScore: item.avgSymptomScore,
+            sampleSize: item.sampleSize,
+            exerciseMinutes: item.exerciseMinutes
+          });
+
+          // 確保最小高度，即使分數為0也能看到柱狀圖
+          const minBarHeight = 2; // 最小2像素高度
+          const calculatedHeight = (item.avgSymptomScore / maxScore) * plotHeight;
+          const barHeight = Math.max(calculatedHeight, minBarHeight);
           const x = chartPadding.left + index * (barWidth + spacing) + spacing;
           const y = chartPadding.top + plotHeight - barHeight;
 
@@ -153,7 +176,9 @@ export const ExerciseIntensityChart: React.FC<Props> = ({ data, height = 250 }) 
                 ]}
               >
                 <Text style={styles.valueText}>
-                  {item.avgSymptomScore.toFixed(1)}
+                  {item.avgSymptomScore === 0 
+                    ? '健康' 
+                    : item.avgSymptomScore.toFixed(1)}
                 </Text>
                 <Text style={styles.sampleText}>({item.sampleSize}天)</Text>
               </View>
