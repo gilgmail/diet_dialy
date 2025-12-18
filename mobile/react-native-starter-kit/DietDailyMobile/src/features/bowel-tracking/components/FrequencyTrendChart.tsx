@@ -13,7 +13,6 @@
 
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { Canvas, Path, Circle, Line as SkiaLine, vec, Skia } from '@shopify/react-native-skia';
 import type { DailyFrequency } from '../hooks/useBowelMovementStats';
 
 interface Props {
@@ -59,7 +58,7 @@ export const FrequencyTrendChart: React.FC<Props> = ({
 
   // Calculate chart data
   const chartData = useMemo(() => {
-    if (data.length === 0) {
+    if (!data || data.length === 0) {
       return { points: [], movingAvgPoints: [], maxCount: 5, bloodEventPoints: [] };
     }
 
@@ -95,124 +94,150 @@ export const FrequencyTrendChart: React.FC<Props> = ({
     return { points, movingAvgPoints, maxCount, bloodEventPoints };
   }, [data, showMovingAverage, plotWidth, plotHeight, chartPadding]);
 
-  // Create paths
-  const mainPath = useMemo(() => {
-    if (chartData.points.length === 0) return null;
-
-    const path = Skia.Path.Make();
-    const firstPoint = chartData.points[0];
-    path.moveTo(firstPoint.x, firstPoint.y);
-
-    for (let i = 1; i < chartData.points.length; i++) {
-      const point = chartData.points[i];
-      path.lineTo(point.x, point.y);
-    }
-
-    return path;
-  }, [chartData.points]);
-
-  const movingAvgPath = useMemo(() => {
-    if (chartData.movingAvgPoints.length === 0) return null;
-
-    const path = Skia.Path.Make();
-    const firstPoint = chartData.movingAvgPoints[0];
-    path.moveTo(firstPoint.x, firstPoint.y);
-
-    for (let i = 1; i < chartData.movingAvgPoints.length; i++) {
-      const point = chartData.movingAvgPoints[i];
-      path.lineTo(point.x, point.y);
-    }
-
-    return path;
-  }, [chartData.movingAvgPoints]);
-
   // Normal range reference lines (1-3 times/day)
   const normalRangeMin = chartPadding.top + plotHeight - (1 / chartData.maxCount) * plotHeight;
   const normalRangeMax = chartPadding.top + plotHeight - (3 / chartData.maxCount) * plotHeight;
+
+  if (!data || data.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>排便頻率趨勢</Text>
+        <Text style={styles.emptyText}>暫無數據</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>排便頻率趨勢</Text>
 
-      {/* Canvas for chart */}
-      <Canvas style={{ width: chartWidth, height }}>
+      {/* Chart using React Native Views */}
+      <View style={[styles.chartContainer, { width: chartWidth, height }]}>
         {/* Normal range background (green shade) */}
-        <SkiaLine
-          p1={vec(chartPadding.left, normalRangeMin)}
-          p2={vec(chartWidth - chartPadding.right, normalRangeMin)}
-          color="rgba(34, 197, 94, 0.1)"
-          strokeWidth={Math.abs(normalRangeMax - normalRangeMin)}
+        <View
+          style={[
+            styles.normalRangeBackground,
+            {
+              left: chartPadding.left,
+              right: chartPadding.right,
+              top: normalRangeMax,
+              height: Math.abs(normalRangeMax - normalRangeMin),
+            },
+          ]}
         />
 
         {/* Reference lines */}
-        <SkiaLine
-          p1={vec(chartPadding.left, normalRangeMin)}
-          p2={vec(chartWidth - chartPadding.right, normalRangeMin)}
-          color="#D1FAE5"
-          strokeWidth={1}
+        <View
+          style={[
+            styles.referenceLine,
+            {
+              left: chartPadding.left,
+              right: chartPadding.right,
+              top: normalRangeMin,
+            },
+          ]}
         />
-        <SkiaLine
-          p1={vec(chartPadding.left, normalRangeMax)}
-          p2={vec(chartWidth - chartPadding.right, normalRangeMax)}
-          color="#D1FAE5"
-          strokeWidth={1}
+        <View
+          style={[
+            styles.referenceLine,
+            {
+              left: chartPadding.left,
+              right: chartPadding.right,
+              top: normalRangeMax,
+            },
+          ]}
         />
-
-        {/* Moving average line (dashed) */}
-        {movingAvgPath && (
-          <Path
-            path={movingAvgPath}
-            color="#9CA3AF"
-            style="stroke"
-            strokeWidth={2}
-            strokeCap="round"
-            strokeJoin="round"
-          />
-        )}
-
-        {/* Main frequency line */}
-        {mainPath && (
-          <Path
-            path={mainPath}
-            color="#6366F1"
-            style="stroke"
-            strokeWidth={3}
-            strokeCap="round"
-            strokeJoin="round"
-          />
-        )}
-
-        {/* Data points */}
-        {chartData.points.map((point, index) => (
-          <Circle
-            key={index}
-            cx={point.x}
-            cy={point.y}
-            r={4}
-            color={point.hasBlood ? '#EF4444' : '#4F46E5'}
-          />
-        ))}
-
-        {/* Blood event markers (larger red circles) */}
-        {chartData.bloodEventPoints.map((point, index) => (
-          <Circle key={`blood-${index}`} cx={point.x} cy={point.y} r={8} color="#EF4444" />
-        ))}
 
         {/* Y-axis labels */}
         {[0, 1, 2, 3, 4, 5].map((value) => {
           const y = chartPadding.top + plotHeight - (value / chartData.maxCount) * plotHeight;
-
           return (
-            <SkiaLine
-              key={value}
-              p1={vec(chartPadding.left - 5, y)}
-              p2={vec(chartPadding.left, y)}
-              color="#6B7280"
-              strokeWidth={1}
-            />
+            <View key={value} style={[styles.yAxisTick, { top: y, left: chartPadding.left - 5 }]} />
           );
         })}
-      </Canvas>
+
+        {/* Data points and lines */}
+        {chartData.points.map((point, index) => {
+          const nextPoint = chartData.points[index + 1];
+          return (
+            <React.Fragment key={index}>
+              {/* Line to next point */}
+              {nextPoint && (
+                <View
+                  style={[
+                    styles.dataLine,
+                    {
+                      left: point.x,
+                      top: point.y,
+                      width: Math.sqrt(
+                        Math.pow(nextPoint.x - point.x, 2) + Math.pow(nextPoint.y - point.y, 2)
+                      ),
+                      transform: [
+                        {
+                          rotate: `${Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x)}rad`,
+                        },
+                      ],
+                    },
+                  ]}
+                />
+              )}
+              {/* Data point */}
+              <View
+                style={[
+                  styles.dataPoint,
+                  {
+                    left: point.x - 4,
+                    top: point.y - 4,
+                    backgroundColor: point.hasBlood ? '#EF4444' : '#4F46E5',
+                  },
+                ]}
+              />
+            </React.Fragment>
+          );
+        })}
+
+        {/* Blood event markers (larger red circles) */}
+        {chartData.bloodEventPoints.map((point, index) => (
+          <View
+            key={`blood-${index}`}
+            style={[
+              styles.bloodMarker,
+              {
+                left: point.x - 8,
+                top: point.y - 8,
+              },
+            ]}
+          />
+        ))}
+
+        {/* Moving average line (simplified) */}
+        {showMovingAverage &&
+          chartData.movingAvgPoints.length > 0 &&
+          chartData.movingAvgPoints.map((point, index) => {
+            const nextPoint = chartData.movingAvgPoints[index + 1];
+            if (!nextPoint) return null;
+            return (
+              <View
+                key={`avg-${index}`}
+                style={[
+                  styles.movingAvgLine,
+                  {
+                    left: point.x,
+                    top: point.y,
+                    width: Math.sqrt(
+                      Math.pow(nextPoint.x - point.x, 2) + Math.pow(nextPoint.y - point.y, 2)
+                    ),
+                    transform: [
+                      {
+                        rotate: `${Math.atan2(nextPoint.y - point.y, nextPoint.x - point.x)}rad`,
+                      },
+                    ],
+                  },
+                ]}
+              />
+            );
+          })}
+      </View>
 
       {/* Legend */}
       <View style={styles.legend}>
@@ -258,6 +283,53 @@ const styles = StyleSheet.create({
     color: '#111827',
     marginBottom: 16,
   },
+  chartContainer: {
+    position: 'relative',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  normalRangeBackground: {
+    position: 'absolute',
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+  },
+  referenceLine: {
+    position: 'absolute',
+    height: 1,
+    backgroundColor: '#D1FAE5',
+  },
+  yAxisTick: {
+    position: 'absolute',
+    width: 5,
+    height: 1,
+    backgroundColor: '#6B7280',
+  },
+  dataLine: {
+    position: 'absolute',
+    height: 3,
+    backgroundColor: '#6366F1',
+  },
+  dataPoint: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  bloodMarker: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#EF4444',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  movingAvgLine: {
+    position: 'absolute',
+    height: 2,
+    backgroundColor: '#9CA3AF',
+    opacity: 0.7,
+  },
   legend: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -302,6 +374,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#6B7280',
     fontStyle: 'italic',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    padding: 32,
   },
 });
 
